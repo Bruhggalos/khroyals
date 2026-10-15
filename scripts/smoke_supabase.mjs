@@ -80,28 +80,15 @@ ok(studentEvents.length === 1 && studentEvents[0].groups?.name, 'players see it 
 ok(must(await parent.from('events').select('id').eq('id', ev.id)).length === 0, 'non-members do not');
 must(await coach.from('events').delete().eq('id', ev.id));
 
-// Director: admin tools need an authenticator-verified session.
-const admin = await as('u-admin');
-const noMfa = await admin.rpc('admin_list_people');
-ok(/MFA_REQUIRED/.test(noMfa.error?.message ?? ''), 'admin tools refuse an email-only session');
-const factors = must(await admin.auth.mfa.listFactors());
-let factor = factors.totp.find((f) => f.status === 'verified');
-let secret = process.env.DEMO_DIRECTOR_TOTP_SECRET;
-if (!factor || !secret) {
-  for (const f of factors.all) await admin.auth.mfa.unenroll({ factorId: f.id });
-  const e = must(await admin.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'smoke test' }));
-  factor = { id: e.id }; secret = e.totp.secret;
-  console.log(`  (enrolled an authenticator for the demo director; secret ${secret})`);
+// Demo accounts ship with a public password, so none of them has admin powers.
+for (const legacy of ['u-admin', 'u-ap', 'u-eng']) {
+  const c = await as(legacy);
+  const r = await c.rpc('admin_list_people');
+  ok(!!r.error, `demo ${legacy} cannot open admin tools`);
 }
-must(await admin.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totp(secret) }));
-const people = must(await admin.rpc('admin_list_people'));
-ok(people.length >= 25 && people.some((p) => p.email), `verified director lists ${people.length} people with emails`);
-ok(!!(await parent.rpc('admin_list_people')).error, 'non-admins cannot');
-const audit = must(await admin.from('audit_log').select('*, groups(name)').limit(5));
-ok(Array.isArray(audit), 'director reads the activity log');
-const note = must(await admin.rpc('send_notification', { p_title: '[smoke test]', p_body: 'Test notification', p_audience: 'roles', p_roles: ['staff'] }));
-ok(!!note.id, 'director queues a push notification');
-ok(!!(await student.rpc('send_notification', { p_title: 'x', p_body: 'y', p_audience: 'everyone' })).error, 'students cannot');
+const studentPush = await student.rpc('send_notification', { p_title: 'x', p_body: 'y', p_audience: 'everyone' });
+ok(!!studentPush.error, 'students cannot send notifications');
+// Admin paths (MFA, tiers, push) are covered by tests/db.test.ts; the real director tests them in the portal.
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);

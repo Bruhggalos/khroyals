@@ -50,7 +50,7 @@ w("create or replace function app.seed_id(legacy text) returns uuid language sql
 w('\n-- People (accounts are created first by scripts/seed_supabase.mjs)')
 for u in users:
     w(f"update public.profiles set first_name = {q(u['firstName'])}, last_name = {q(u['lastName'])}, "
-      f"school_role = {q(u['schoolRole'])}, grade = {q(u.get('grade'))}, avatar_url = {q(u.get('avatar'))} "
+      f"school_role = {q('staff' if u['schoolRole'] == 'admin' else u['schoolRole'])}, grade = {q(u.get('grade'))}, avatar_url = {q(u.get('avatar'))} "
       f"where id = {sid(u['id'])};")
 
 w('\n-- Rosters')
@@ -90,10 +90,8 @@ for m in memberships:
         w(f"update public.memberships set muted_until = {q(m.get('mutedUntil'))}, can_post = {q(m.get('canPost', True))} "
           f"where group_id = {sid(m['groupId'])} and user_id = {sid(m['userId'])};")
 
-w('\n-- Admin tiers: the demo admin is the director unless a real one exists; the assistant principal an administrator.')
-w("do $$ begin if not exists (select 1 from public.profiles where admin_tier = 'director') then "
-  "perform app.bootstrap_director('u-admin@demo.khroyals.test'); end if; end $$;")
-w(f"update public.profiles set admin_tier = 'administrator' where id = {sid('u-ap')};")
+# No demo account gets admin powers: the demo password ships in the public app.
+# The real director is named with scripts/supabase_setup.mjs --director=email.
 
 w('\n-- Posts, polls, reactions, replies (demo history shouldn\'t trigger push notifications)')
 w('alter table public.posts disable trigger notify_post;')

@@ -165,6 +165,13 @@ coach, student, a muted student, or a parent and watch permissions change.
 4. Push notifications via `expo-notifications`; builds via EAS (`eas build -p all`).
 5. Student data: plan for FERPA/COPPA review, records retention, and district approval.
 
+## Web app (GitHub Pages)
+
+**Actions → Web app (GitHub Pages)** publishes the web version (school site,
+Royals Connect and the admin portal) to **https://bruhggalos.github.io/khroyals/**
+on every push. One-time setup: *Settings → Pages → Source: GitHub Actions*.
+The build is served under `/khroyals` (`expo.experiments.baseUrl`).
+
 ## Download the Android APK
 
 Every push to `main` (and every pull request) runs **Actions → Android APK**:

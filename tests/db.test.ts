@@ -45,6 +45,10 @@ before(async () => {
       [`${u.id}@demo.khroyals.test`, { first_name: u.firstName, last_name: u.lastName }]);
   }
   await db.exec(sql('supabase/seed.sql'));
+  // Test admins (the public seed gives demo accounts no admin powers).
+  await db.exec(`update profiles set school_role = 'admin' where id in (${id('u-admin')}, ${id('u-ap')});
+                 select app.bootstrap_director('u-admin@demo.khroyals.test');
+                 update profiles set admin_tier = 'administrator' where id = ${id('u-ap')};`);
 });
 
 test('seed: rule sync builds memberships from the roster', async () => {

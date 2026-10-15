@@ -1326,8 +1326,8 @@ begin;
 create or replace function app.seed_id(legacy text) returns uuid language sql immutable as $$ select md5('khroyals:' || legacy)::uuid $$;
 
 -- People (accounts are created first by scripts/seed_supabase.mjs)
-update public.profiles set first_name = 'Maria', last_name = 'Garcia', school_role = 'admin', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-admin' where id = app.seed_id('u-admin');
-update public.profiles set first_name = 'James', last_name = 'Davis', school_role = 'admin', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-ap' where id = app.seed_id('u-ap');
+update public.profiles set first_name = 'Maria', last_name = 'Garcia', school_role = 'staff', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-admin' where id = app.seed_id('u-admin');
+update public.profiles set first_name = 'James', last_name = 'Davis', school_role = 'staff', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-ap' where id = app.seed_id('u-ap');
 update public.profiles set first_name = 'Jennifer', last_name = 'Taylor', school_role = 'teacher', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-eng' where id = app.seed_id('u-eng');
 update public.profiles set first_name = 'Jessica', last_name = 'Allen', school_role = 'teacher', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-sci' where id = app.seed_id('u-sci');
 update public.profiles set first_name = 'Sandra', last_name = 'Martin', school_role = 'teacher', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-vbcoach' where id = app.seed_id('u-vbcoach');
@@ -1429,10 +1429,6 @@ insert into public.memberships (group_id, user_id, role, source, notification, j
 insert into public.memberships (group_id, user_id, role, source, notification, joined_at) values (app.seed_id('g-homecoming'), app.seed_id('u-s01'), 'member', 'manual', 'all', '2026-09-14T19:00:00-05:00') on conflict (group_id, user_id) do update set role = excluded.role, source = excluded.source;
 update public.memberships set muted_until = null, can_post = false where group_id = app.seed_id('g-eng-p3') and user_id = app.seed_id('u-s08');
 update public.memberships set muted_until = '2026-10-15T15:00:00-05:00', can_post = true where group_id = app.seed_id('g-vb') and user_id = app.seed_id('u-s03');
-
--- Admin tiers: the demo admin is the director unless a real one exists; the assistant principal an administrator.
-do $$ begin if not exists (select 1 from public.profiles where admin_tier = 'director') then perform app.bootstrap_director('u-admin@demo.khroyals.test'); end if; end $$;
-update public.profiles set admin_tier = 'administrator' where id = app.seed_id('u-ap');
 
 -- Posts, polls, reactions, replies (demo history shouldn't trigger push notifications)
 alter table public.posts disable trigger notify_post;

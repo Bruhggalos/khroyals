@@ -23,11 +23,13 @@
       "expo-notifications"
     ],
     "experiments": {
-      "typedRoutes": false
+      "typedRoutes": false,
+      "baseUrl": "/khroyals"
     },
     "icon": "./assets/icon.png",
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single"
     },
     "extra": {
       "supabaseUrl": "https://twmeenkvoedoryhterpf.supabase.co",

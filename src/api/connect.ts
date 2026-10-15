@@ -9,6 +9,7 @@
 import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import appJson from '../../app.json';
 import * as mock from './mockApi';
 import { supabase } from './supabase';
 import type { Decision } from '../comms/permissions';
@@ -287,7 +288,8 @@ export async function sendEmailCode(email: string, firstName?: string, lastName?
 
 /** Where sign-in links return to: this web page, or the app's khroyals://auth link. */
 export function authRedirectUrl() {
-  return Platform.OS === 'web' && typeof window !== 'undefined' ? `${window.location.origin}/auth` : Linking.createURL('auth');
+  const base = ((appJson as any).expo?.experiments?.baseUrl ?? '').replace(/\/$/, '');
+  return Platform.OS === 'web' && typeof window !== 'undefined' ? `${window.location.origin}${base}/auth` : Linking.createURL('auth');
 }
 
 /** Finish signing in from a sign-in link (tokens in the URL fragment or query). Returns true if it did. */
