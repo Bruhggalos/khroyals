@@ -6,7 +6,7 @@ name: Web app (GitHub Pages)
 
 on:
   push:
-    branches: [main, ccr-b318b4a2-l5s52d]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
