@@ -117,8 +117,22 @@ async function configureAuthEmail() {
         '<h2>Welcome to Royals Connect</h2><p>Your sign-in code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>',
     }),
   });
-  if (!r.ok) throw new Error(`Updating auth emails failed (${r.status}): ${await r.text()}`);
-  console.log('✓ sign-in emails send a 6-digit code');
+  if (!r.ok) {
+    // Free projects on Supabase's built-in email can't change templates; the
+    // default email has a sign-in link, which the app also handles.
+    console.log(`· sign-in email template unchanged (${r.status}): emails contain a sign-in link instead of a code`);
+  } else console.log('✓ sign-in emails send a 6-digit code');
+  // Where sign-in links may send people back to: the app (deep link) and the web portal.
+  const r2 = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      site_url: 'khroyals://auth',
+      uri_allow_list: ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(','),
+    }),
+  });
+  if (!r2.ok) throw new Error(`Updating redirect URLs failed (${r2.status}): ${await r2.text()}`);
+  console.log('✓ sign-in links open the app');
 }
 
 const migrated = await migrate();

@@ -31,7 +31,7 @@ export function SignIn({ onDone }: { onDone: () => void }) {
         <H>Sign in to Royals Connect</H>
         {step === 'email' ? (
           <>
-            <P muted>Enter your email and we'll send you a 6-digit code. No password needed.</P>
+            <P muted>Enter your email and we'll send you a sign-in link. No password needed.</P>
             <TextInput style={s.input} placeholder="Email" autoCapitalize="none" autoComplete="email" keyboardType="email-address"
               value={email} onChangeText={setEmail} />
             <View style={s.row}>
@@ -39,19 +39,20 @@ export function SignIn({ onDone }: { onDone: () => void }) {
               <TextInput style={[s.input, { flex: 1, minWidth: 0 }]} placeholder="Last name" value={last} onChangeText={setLast} />
             </View>
             <P muted>Name only needed the first time.</P>
-            <Button label={busy ? 'Sending…' : 'Email me a code'} disabled={busy || !valid}
+            <Button label={busy ? 'Sending…' : 'Email me a sign-in link'} disabled={busy || !valid}
               onPress={() => go(() => sendEmailCode(email, first || undefined, last || undefined), () => setStep('code'))} />
             <P muted>New here? Your account is approved by the school office before groups appear.</P>
           </>
         ) : (
           <>
-            <P muted>We sent a code to {email.trim()}. It expires in a few minutes.</P>
+            <P>Check {email.trim()} for an email from Royals Connect and tap <Text style={{ fontWeight: '700' }}>the sign-in link on this device</Text> — it opens Royals Connect and signs you in.</P>
+            <P muted>If your email shows a 6-digit code instead, enter it here:</P>
             <TextInput style={[s.input, { fontSize: 22, letterSpacing: 6, textAlign: 'center' }]} placeholder="123456" keyboardType="number-pad"
               autoComplete="one-time-code" maxLength={8} value={code} onChangeText={setCode} />
             <Button label={busy ? 'Checking…' : 'Sign in'} disabled={busy || code.trim().length < 6} onPress={() => go(() => verifyEmailCode(email, code))} />
             <View style={[s.row, { justifyContent: 'space-between' }]}>
               <Text style={{ color: C.primary }} onPress={() => { setStep('email'); setCode(''); }}>Use a different email</Text>
-              <Text style={{ color: C.primary }} onPress={() => go(() => sendEmailCode(email), () => Alert.alert('Sent', 'Check your email for a new code.'))}>Resend code</Text>
+              <Text style={{ color: C.primary }} onPress={() => go(() => sendEmailCode(email), () => Alert.alert('Sent', 'Check your email for a new code.'))}>Send again</Text>
             </View>
           </>
         )}

@@ -100,8 +100,12 @@ SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smo
 
 Without an access token, paste `supabase/setup_all.sql` into the dashboard's SQL editor.
 
-**Sign-in & admins.** Everyone signs in with a 6-digit code sent to their email
-(no passwords). Admin tiers: one **Director** (all powers; only one who manages
+**Sign-in & admins.** Everyone signs in from their email, with no passwords. On the free
+Supabase plan with its built-in email, the email holds a sign-in link that opens
+the app (`khroyals://auth`) or the web portal (`/auth`); once the project uses its
+own email service (custom SMTP, e.g. Resend), the setup script switches the email
+to a 6-digit code, which the app also accepts. The built-in email only sends a few
+messages an hour, so it's for testing. Admin tiers: one **Director** (all powers; only one who manages
 admins; can hand the role on), **Administrators** (everything but managing admins)
 and **Office** (approvals, families, school calendar, notifications, activity log);
 the director can also grant single permissions to anyone. Admin tools need a code
