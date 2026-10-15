@@ -100,6 +100,23 @@ SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smo
 
 Without an access token, paste `supabase/setup_all.sql` into the dashboard's SQL editor.
 
+**Sign-in & admins.** Everyone signs in with a 6-digit code sent to their email
+(no passwords). Admin tiers: one **Director** (all powers; only one who manages
+admins; can hand the role on), **Administrators** (everything but managing admins)
+and **Office** (approvals, families, school calendar, notifications, activity log);
+the director can also grant single permissions to anyone. Admin tools need a code
+from an authenticator app (free TOTP, enforced in the database; switch with
+`app.settings.require_admin_mfa`). The admin portal is the app's **Admin portal**
+screen: same on web (`npx expo export --platform web`, host the `dist/` folder),
+Android and iPhone.
+
+**Push notifications** go through Expo's free push service: new posts notify group
+members (per-group preferences), and the portal sends to everyone, a role, or a
+group. `supabase/functions/send-push` delivers them (deployed by the setup script).
+Devices register after sign-in once the build has an Expo project id
+(`eas init` → `extra.eas.projectId`) and, on Android, Firebase credentials
+(`google-services.json`).
+
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo
 logins on the sign-in screen. Remove it (and the accounts) before real families use the app.

@@ -17,10 +17,15 @@ const db = new PGlite();
 const id = (legacy: string) => `md5('khroyals:${legacy}')::uuid`;
 const CHI = (t: string) => `'${t} America/Chicago'::timestamptz`;
 
-async function asSuper() { await db.exec('reset role; select set_config(\'request.jwt.claim.sub\', \'\', false);'); }
-async function as(legacy: string) {
+async function asSuper() {
+  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claims', '', false);`);
+}
+/** Act as a demo person; `mfa` = session verified with an authenticator app (aal2). */
+async function as(legacy: string, mfa = false) {
   await asSuper();
-  await db.exec(`select set_config('request.jwt.claim.sub', ${id(legacy)}::text, false); set role authenticated;`);
+  await db.exec(`select set_config('request.jwt.claim.sub', ${id(legacy)}::text, false),
+                        set_config('request.jwt.claims', json_build_object('sub', ${id(legacy)}, 'aal', '${mfa ? 'aal2' : 'aal1'}')::text, false);
+                 set role authenticated;`);
 }
 async function one<T = any>(q: string): Promise<T> { return (await db.query<any>(q)).rows[0]; }
 async function rows<T = any>(q: string): Promise<T[]> { return (await db.query<any>(q)).rows; }
@@ -159,7 +164,7 @@ test('calendar: anyone reads the school calendar; only admins edit it; group eve
   assert.equal((await rows('select id from events where group_id is not null')).length, 0);
   await as('u-s01');
   await rejects(`insert into events (title, starts_on) values ('Party', '2026-11-01')`, /row-level security/);
-  await as('u-admin');
+  await as('u-admin', true);
   await one(`insert into events (title, starts_on) values ('Picture day', '2026-11-05') returning id`);
   await as('u-vbcoach');
   await one(`insert into events (group_id, title, starts_on) values (${id('g-vb')}, 'Team dinner', '2026-10-30') returning id`);
@@ -173,10 +178,10 @@ test('admin console: approve sign-ups and manage roles', async () => {
   await asSuper();
   await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000aa', 'new@demo.khroyals.test', '{"first_name":"New","last_name":"Parent"}')`);
   await as('u-s01');
-  await rejects(`select admin_list_people()`, /Admins only/);
-  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false); set role authenticated;`);
+  await rejects(`select admin_list_people()`, /permission/);
+  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000aa', false), set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000aa","aal":"aal1"}', false); set role authenticated;`);
   assert.equal((await rows('select id from groups')).length, 0, 'unapproved sign-ups see nothing');
-  await as('u-admin');
+  await as('u-admin', true);
   const pending = await rows(`select * from admin_list_people() where school_role is null`);
   assert.equal(pending.length, 1);
   assert.equal(pending[0].email, 'new@demo.khroyals.test');
@@ -185,4 +190,78 @@ test('admin console: approve sign-ups and manage roles', async () => {
   await asSuper();
   const vbFamily = await one(`select role from memberships where group_id = ${id('g-vb-parents')} and user_id = '00000000-0000-0000-0000-0000000000aa'`);
   assert.ok(vbFamily, 'linking a guardian adds them to their student\'s family groups');
+});
+
+test('admin tiers: one director; admin powers need an authenticator-verified session', async () => {
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'director');
+  await rejects(`update profiles set admin_tier = 'director' where id = ${id('u-ap')}`, /profiles_one_director|duplicate/);
+
+  await as('u-admin');  // signed in with email only
+  await rejects(`select * from admin_list_people()`, /MFA_REQUIRED/);
+  assert.equal((await rows(`select id from groups where slug = 'g-faculty'`)).length, 1, 'admins are members of the staff lounge');
+  assert.equal((await one(`select my_access() as a`)).a.mfaRequired, true);
+  await as('u-admin', true);
+  assert.ok((await rows(`select * from admin_list_people()`)).length >= 25);
+  assert.equal((await one(`select my_access() as a`)).a.permissions.includes('admins.manage'), true);
+});
+
+test('admin tiers: director grants tiers and permissions; others cannot', async () => {
+  await as('u-ap', true);  // administrator
+  await rejects(`select admin_set_access(${id('u-libr')}, 'office')`, /permission/);
+  await one(`select admin_update_profile(${id('u-s02')}, 'student', 11)`);  // administrators manage roles/grades
+  await rejects(`select admin_update_profile(${id('u-admin')}, 'teacher')`, /permission/);
+
+  await as('u-admin', true);
+  await one(`select admin_set_access(${id('u-libr')}, 'office')`);
+  await rejects(`select admin_set_access(${id('u-s01')}, 'office')`, /staff accounts/);
+  await rejects(`select admin_set_access(${id('u-eng')}, null, array['admins.manage'])`, /can't be granted/);
+  await one(`select admin_set_access(${id('u-eng')}, null, array['calendar.school'])`);  // a teacher runs the school calendar
+
+  await as('u-eng', true);
+  await one(`insert into events (title, starts_on) values ('Spirit week', '2026-11-09') returning id`);
+  await as('u-libr', true);  // office tier
+  await rejects(`select admin_update_profile(${id('u-s03')}, 'teacher')`, /permission/);
+  assert.ok((await rows(`select * from audit_log`)).length > 0, 'office staff read the activity log');
+});
+
+test('admin tiers: the director role can be transferred', async () => {
+  await as('u-admin', true);
+  await rejects(`select admin_update_profile(${id('u-admin')}, 'teacher')`, /Transfer the director/);
+  await one(`select transfer_director(${id('u-ap')})`);
+  await asSuper();
+  const tiers = await rows(`select id, admin_tier from profiles where admin_tier is not null order by admin_tier`);
+  assert.equal(tiers.filter((t) => t.admin_tier === 'director').length, 1);
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-ap')}`)).admin_tier, 'director');
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'administrator');
+  await as('u-ap', true);
+  await one(`select transfer_director(${id('u-admin')})`);  // hand it back for the other tests
+});
+
+test('push: new posts queue a notification for members, not the author or non-members', async () => {
+  await as('u-vbcoach');
+  const vb = id('g-vb');
+  const post = await one(`select id from create_post(${vb}, 'message', 'Practice moved to 4pm')`);
+  await asSuper();
+  const n = await one(`select * from notifications where post_id = '${post.id}'`);
+  assert.ok(n, 'notification queued');
+  assert.match(n.body, /Practice moved/);
+  await db.exec(`insert into push_tokens values ('ExponentPushToken[s05]', ${id('u-s05')}, 'android'),
+                 ('ExponentPushToken[coach]', ${id('u-vbcoach')}, 'ios'), ('ExponentPushToken[p02]', ${id('u-p02')}, 'android')`);
+  const targets = (await rows(`select user_id from app.push_targets('${n.id}')`)).map((r) => r.user_id);
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u;
+  assert.ok(targets.includes(await uid('u-s05')), 'teammate gets it');
+  assert.ok(!targets.includes(await uid('u-vbcoach')), 'author does not');
+  assert.ok(!targets.includes(await uid('u-p02')), 'non-member does not');
+  await db.exec(`update memberships set notification = 'none' where group_id = ${vb} and user_id = ${id('u-s05')}`);
+  assert.equal((await rows(`select 1 from app.push_targets('${n.id}')`)).length, 0, 'muted notifications respected');
+
+  await as('u-s01');
+  await rejects(`select send_notification('Hi', 'everyone', 'everyone')`, /permission/);
+  await rejects(`select * from app.push_targets('${n.id}')`, /permission denied/);
+  await as('u-admin', true);
+  const blast = await one(`select * from send_notification('Snow day', 'School is closed tomorrow.', 'roles', null, array['parent'])`);
+  await asSuper();
+  const parents = await rows(`select distinct user_id from app.push_targets('${blast.id}')`);
+  assert.equal(parents.length, 1, 'only the parent with a registered device');
 });

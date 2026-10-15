@@ -264,3 +264,86 @@ export async function editableCalendars(): Promise<{ groupId: string | null; nam
   const ids = new Set((mine as any[]).map((m) => m.group_id));
   return groups.filter((g) => ids.has(g.id)).map((g) => ({ groupId: g.id, name: g.name }));
 }
+
+// ---------------------------------------------------------------- email codes + authenticator app (MFA)
+
+/** Email a 6-digit sign-in code (creates the account on first use; admins approve new people). */
+export async function sendEmailCode(email: string, firstName?: string, lastName?: string) {
+  await run(sb().auth.signInWithOtp({
+    email: email.trim(),
+    options: { shouldCreateUser: true, data: firstName ? { first_name: firstName, last_name: lastName ?? '' } : undefined },
+  }) as any);
+}
+export async function verifyEmailCode(email: string, code: string) {
+  await run(sb().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' }) as any);
+  return session();
+}
+
+export type Access = { tier: 'director' | 'administrator' | 'office' | null; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
+export async function myAccess(): Promise<Access | null> {
+  if (!live || !current) return null;
+  return run(sb().rpc('my_access')) as Promise<Access>;
+}
+
+/** Where the session stands: 'none' (no app enrolled), 'needs-code', or 'verified'. */
+export async function mfaStatus(): Promise<{ state: 'none' | 'needs-code' | 'verified'; factorId?: string }> {
+  const factors: any = await run(sb().auth.mfa.listFactors() as any);
+  const totp = (factors.totp ?? []).find((f: any) => f.status === 'verified');
+  if (!totp) return { state: 'none' };
+  const aal: any = await run(sb().auth.mfa.getAuthenticatorAssuranceLevel() as any);
+  return { state: aal.currentLevel === 'aal2' ? 'verified' : 'needs-code', factorId: totp.id };
+}
+
+/** Start linking an authenticator app: returns the secret, an otpauth:// link and a QR (SVG data URI). */
+export async function mfaEnroll() {
+  const factors: any = await run(sb().auth.mfa.listFactors() as any);
+  for (const f of factors.all ?? []) if (f.status !== 'verified') await sb().auth.mfa.unenroll({ factorId: f.id });
+  const r: any = await run(sb().auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Royals Connect' }) as any);
+  return { factorId: r.id as string, secret: r.totp.secret as string, uri: r.totp.uri as string, qr: r.totp.qr_code as string };
+}
+
+/** Verify a 6-digit authenticator code (finishes enrollment, or upgrades this session to aal2). */
+export async function mfaVerify(factorId: string, code: string) {
+  await run(sb().auth.mfa.challengeAndVerify({ factorId, code: code.trim() }) as any);
+  return session();
+}
+
+// ---------------------------------------------------------------- admin tiers & permissions
+
+export type PermissionInfo = { key: string; label: string; description: string };
+export type AdminPerson = Person & { adminTier: Access['tier']; granted: string[] };
+
+export async function permissionCatalog(): Promise<PermissionInfo[]> {
+  return run(sb().rpc('permission_catalog')) as Promise<PermissionInfo[]>;
+}
+export async function adminListPeopleWithAccess(): Promise<AdminPerson[]> {
+  return (await run(sb().rpc('admin_list_people'))).map((p: any) => ({ ...toPerson(p), adminTier: p.admin_tier, granted: p.permissions ?? [] }));
+}
+export async function adminSetAccess(userId: string, tier: Access['tier'], permissions: string[]) {
+  await run(sb().rpc('admin_set_access', { p_user: userId, p_tier: tier, p_permissions: permissions }));
+}
+export async function transferDirector(userId: string) {
+  await run(sb().rpc('transfer_director', { p_user: userId }));
+}
+
+// ---------------------------------------------------------------- notifications
+
+export type Notice = { id: string; title: string; body: string; data: any; createdAt: string; status: string; sentCount: number; audience: string };
+export async function listNotifications(limit = 50): Promise<Notice[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('notifications').select('*').order('created_at', { ascending: false }).limit(limit))).map((n: any) => ({
+    id: n.id, title: n.title, body: n.body, data: n.data, createdAt: n.created_at, status: n.status, sentCount: n.sent_count, audience: n.audience,
+  }));
+}
+export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[] } = {}) {
+  await run(sb().rpc('send_notification', { p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null }));
+}
+export async function setNotificationPref(groupId: string, pref: 'all' | 'mentions' | 'none') {
+  await run(sb().rpc('set_notification_pref', { p_group: groupId, p_pref: pref }));
+}
+export async function registerPushToken(token: string, platform: string) {
+  await run(sb().rpc('register_push_token', { p_token: token, p_platform: platform }));
+}
+export async function unregisterPushToken(token: string) {
+  await run(sb().rpc('unregister_push_token', { p_token: token }));
+}

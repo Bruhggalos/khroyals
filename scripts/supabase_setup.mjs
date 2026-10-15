@@ -4,12 +4,15 @@
  *
  *   SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
  *   SUPABASE_ACCESS_TOKEN=… SUPABASE_PROJECT_REF=… \
- *   DEMO_PASSWORD=… node scripts/supabase_setup.mjs [--no-seed]
+ *   DEMO_PASSWORD=… NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs [--no-seed] [--director=email]
  *
  * 1. Applies supabase/migrations/*.sql that haven't run yet (needs a personal
  *    access token for the Management API — the service key can't change schema).
  * 2. Creates the demo accounts through the Auth admin API (service key).
  * 3. Loads supabase/seed.sql (demo groups, posts and the school calendar).
+ * 4. (token) Makes sign-in emails show a 6-digit code, deploys the send-push
+ *    Edge Function, and optionally names the director (--director=email; that
+ *    person must have signed in once).
  *
  * Without SUPABASE_ACCESS_TOKEN, steps 1 and 3 print the SQL files to paste
  * into the dashboard's SQL editor instead.
@@ -84,10 +87,53 @@ async function createDemoUsers() {
   }
 }
 
+/** Deploy supabase/functions/send-push and point the database at it. */
+async function deployPush() {
+  const code = readFileSync(join(ROOT, 'supabase/functions/send-push/index.ts'), 'utf8');
+  const form = new FormData();
+  form.append('metadata', JSON.stringify({ name: 'send-push', entrypoint_path: 'index.ts', verify_jwt: false }));
+  form.append('file', new Blob([code], { type: 'application/typescript' }), 'index.ts');
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions/deploy?slug=send-push`, {
+    method: 'POST', headers: { Authorization: `Bearer ${TOKEN}` }, body: form,
+  });
+  if (!r.ok) throw new Error(`Deploying send-push failed (${r.status}): ${await r.text()}`);
+  await sql(`create extension if not exists pg_net with schema extensions;
+             update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
+  console.log('✓ send-push function deployed');
+}
+
+/** Sign-in emails show the 6-digit code the app asks for (instead of only a magic link). */
+async function configureAuthEmail() {
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mailer_otp_length: 6,
+      mailer_subjects_magic_link: 'Your Royals Connect sign-in code',
+      mailer_templates_magic_link_content:
+        '<h2>Royals Connect</h2><p>Your sign-in code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p><p>It expires in a few minutes. If you didn\'t ask for it, ignore this email.</p>',
+      mailer_subjects_confirmation: 'Your Royals Connect sign-in code',
+      mailer_templates_confirmation_content:
+        '<h2>Welcome to Royals Connect</h2><p>Your sign-in code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>',
+    }),
+  });
+  if (!r.ok) throw new Error(`Updating auth emails failed (${r.status}): ${await r.text()}`);
+  console.log('✓ sign-in emails send a 6-digit code');
+}
+
 const migrated = await migrate();
 if (seed) {
   await createDemoUsers();
   if (migrated) { await sql(readFileSync(join(ROOT, 'supabase/seed.sql'), 'utf8')); console.log('✓ seed loaded'); }
   else console.log('Then paste supabase/seed.sql into the SQL editor.');
+}
+if (TOKEN) {
+  await configureAuthEmail();
+  await deployPush();
+  const director = process.argv.find((a) => a.startsWith('--director='))?.split('=')[1];
+  if (director) {
+    await sql(`select app.bootstrap_director('${director.replace(/'/g, "''")}')`);
+    console.log(`✓ ${director} is the director`);
+  }
 }
 console.log('Done.');

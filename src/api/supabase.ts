@@ -6,10 +6,11 @@
  */
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+// Read straight from app.json so web, Android and iOS builds all get it.
+import appJson from '../../app.json';
 
-const extra = (Constants.expoConfig?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string; demoPassword?: string };
+const extra = ((appJson as any).expo?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string; demoPassword?: string };
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra.supabaseUrl;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY || extra.supabaseKey;
 

@@ -90,7 +90,12 @@ for m in memberships:
         w(f"update public.memberships set muted_until = {q(m.get('mutedUntil'))}, can_post = {q(m.get('canPost', True))} "
           f"where group_id = {sid(m['groupId'])} and user_id = {sid(m['userId'])};")
 
-w('\n-- Posts, polls, reactions, replies')
+w('\n-- Admin tiers: the demo admin is the director; the assistant principal an administrator.')
+w("select app.bootstrap_director('u-admin@demo.khroyals.test');")
+w(f"update public.profiles set admin_tier = 'administrator' where id = {sid('u-ap')};")
+
+w('\n-- Posts, polls, reactions, replies (demo history shouldn\'t trigger push notifications)')
+w('alter table public.posts disable trigger notify_post;')
 for p in posts:
     w(f"insert into public.posts (id, group_id, author_id, kind, title, body, attachments, status, pinned, comments_locked, score, created_at) values "
       f"({sid(p['id'])}, {sid(p['groupId'])}, {sid(p['authorId'])}, {q(p['kind'])}, {q(p.get('title'))}, {q(p['body'])}, {q(p['attachments'])}, "
@@ -107,6 +112,8 @@ for c in comments:
     w(f"insert into public.comments (id, post_id, parent_comment_id, author_id, body, status, is_answer, score, created_at) values "
       f"({sid(c['id'])}, {sid(c['postId'])}, {sid(c['parentCommentId'])}, {sid(c['authorId'])}, {q(c['body'])}, {q(c['status'])}, "
       f"{q(c['isAnswer'])}, {q(c['score'])}, {q(c['createdAt'])}) on conflict (id) do nothing;")
+
+w('alter table public.posts enable trigger notify_post;')
 
 w('\n-- School calendar 2026–27 (from the official PDF via content/site/calendar.json)')
 for e in calendar['events']:

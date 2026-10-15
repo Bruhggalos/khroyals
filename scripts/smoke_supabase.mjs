@@ -8,7 +8,21 @@
  * Writes a few test rows (a post, a reply, a reaction, an event) and removes
  * the event again; posts stay, marked "[smoke test]".
  */
+import { createHmac } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
+
+/** RFC 6238 code from a base32 secret, like an authenticator app. */
+function totp(secret, at = Date.now()) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const ch of secret.replace(/=+$/, '').toUpperCase()) bits += alphabet.indexOf(ch).toString(2).padStart(5, '0');
+  const key = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)));
+  const msg = Buffer.alloc(8);
+  msg.writeBigUInt64BE(BigInt(Math.floor(at / 30000)));
+  const h = createHmac('sha1', key).update(msg).digest();
+  const o = h[h.length - 1] & 15;
+  return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
 
 const URL = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -66,12 +80,28 @@ ok(studentEvents.length === 1 && studentEvents[0].groups?.name, 'players see it 
 ok(must(await parent.from('events').select('id').eq('id', ev.id)).length === 0, 'non-members do not');
 must(await coach.from('events').delete().eq('id', ev.id));
 
+// Director: admin tools need an authenticator-verified session.
 const admin = await as('u-admin');
+const noMfa = await admin.rpc('admin_list_people');
+ok(/MFA_REQUIRED/.test(noMfa.error?.message ?? ''), 'admin tools refuse an email-only session');
+const factors = must(await admin.auth.mfa.listFactors());
+let factor = factors.totp.find((f) => f.status === 'verified');
+let secret = process.env.DEMO_DIRECTOR_TOTP_SECRET;
+if (!factor || !secret) {
+  for (const f of factors.all) await admin.auth.mfa.unenroll({ factorId: f.id });
+  const e = must(await admin.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'smoke test' }));
+  factor = { id: e.id }; secret = e.totp.secret;
+  console.log(`  (enrolled an authenticator for the demo director; secret ${secret})`);
+}
+must(await admin.auth.mfa.challengeAndVerify({ factorId: factor.id, code: totp(secret) }));
 const people = must(await admin.rpc('admin_list_people'));
-ok(people.length >= 25 && people.some((p) => p.email), `admin console lists ${people.length} people with emails`);
+ok(people.length >= 25 && people.some((p) => p.email), `verified director lists ${people.length} people with emails`);
 ok(!!(await parent.rpc('admin_list_people')).error, 'non-admins cannot');
 const audit = must(await admin.from('audit_log').select('*, groups(name)').limit(5));
-ok(Array.isArray(audit), 'admin reads the activity log');
+ok(Array.isArray(audit), 'director reads the activity log');
+const note = must(await admin.rpc('send_notification', { p_title: '[smoke test]', p_body: 'Test notification', p_audience: 'roles', p_roles: ['staff'] }));
+ok(!!note.id, 'director queues a push notification');
+ok(!!(await student.rpc('send_notification', { p_title: 'x', p_body: 'y', p_audience: 'everyone' })).error, 'students cannot');
 
 console.log(failures ? `\n${failures} check(s) failed` : '\nAll checks passed');
 process.exit(failures ? 1 : 0);

@@ -1,34 +1,58 @@
 /**
- * Admin console (school admins only; the database enforces it too):
- * approve sign-ups, set roles and grades, link parents to students, review the audit log.
- * Groups and calendars are managed from the Connect and Calendar tabs.
+ * Admin portal — same screens on web, Android and iPhone.
+ * What each admin sees follows their tier and permissions (the database
+ * enforces the same rules), and the whole portal sits behind authenticator-app
+ * verification (MfaGate).
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack } from 'expo-router';
 import {
-  adminGuardianLinks, adminLinkGuardian, adminListPeople, adminUpdateProfile, listAudit, me, type Person,
+  adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminUpdateProfile, listAudit,
+  listMyGroups, listNotifications, me, permissionCatalog, sendNotification, transferDirector,
+  type Access, type AdminPerson, type Notice, type PermissionInfo,
 } from '../../src/api/connect';
-import type { SchoolRole } from '../../src/comms/types';
-import { C, Card, Chip, Loading, P, s } from '../../src/ui';
+import { MfaGate } from '../../src/comms/MfaGate';
+import type { Group, SchoolRole } from '../../src/comms/types';
+import { Button, C, Card, Chip, H, Loading, P, s } from '../../src/ui';
 
 const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'parent', 'student'];
+const TIERS = [
+  { key: null, label: 'No admin access' },
+  { key: 'office', label: 'Office' },
+  { key: 'administrator', label: 'Administrator' },
+] as const;
+const TIER_LABEL: Record<string, string> = { director: 'Director', administrator: 'Administrator', office: 'Office' };
+
 const pill = (label: string, on: boolean, onPress: () => void, color = C.primary) => (
   <Text key={label} onPress={onPress} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', borderWidth: 1,
     borderColor: C.line, backgroundColor: on ? color : '#fff', color: on ? '#fff' : C.ink }}>{label}</Text>
 );
+const confirm = (title: string, msg: string, onYes: () => void) => {
+  if (Platform.OS === 'web') { if (globalThis.confirm?.(`${title}\n\n${msg}`)) onYes(); return; }
+  Alert.alert(title, msg, [{ text: 'Cancel', style: 'cancel' }, { text: 'Yes', style: 'destructive', onPress: onYes }]);
+};
+const fail = (e: any) => Alert.alert('Not allowed', e.message);
 
-function PersonCard({ p, people, links, onChange }: {
-  p: Person; people: Person[]; links: { guardianId: string; studentId: string }[]; onChange: () => void;
+// ------------------------------------------------------------------ people
+
+function PersonCard({ p, people, links, access, onChange }: {
+  p: AdminPerson; people: AdminPerson[]; links: { guardianId: string; studentId: string }[]; access: Access; onChange: () => void;
 }) {
   const [open, setOpen] = useState(!!p.pending);
-  const [grade, setGrade] = useState(p.grade ? String(p.grade) : '');
+  const [grade, setGrade] = useState(p.grade != null ? String(p.grade) : '');
   const [q, setQ] = useState('');
-  const fail = (e: any) => Alert.alert('Not allowed', e.message);
+  const can = (x: string) => access.permissions.includes(x);
+  const isAdminAccount = !!p.adminTier || p.schoolRole === 'admin';
+  const roleOptions = ROLES.filter((r) => {
+    if (r === 'admin' || isAdminAccount) return can('admins.manage');
+    if (p.pending && (r === 'parent' || r === 'student')) return can('people.approve') || can('people.roles');
+    return can('people.roles');
+  });
   const setRole = (r: SchoolRole | null) =>
-    adminUpdateProfile(p.id, r, r === 'student' && grade ? Number(grade) : null).then(onChange).catch(fail);
-  const children = links.filter((l) => l.guardianId === p.id).map((l) => people.find((x) => x.id === l.studentId)).filter(Boolean) as Person[];
-  const parents = links.filter((l) => l.studentId === p.id).map((l) => people.find((x) => x.id === l.guardianId)).filter(Boolean) as Person[];
+    adminUpdateProfile(p.id, r, r === 'student' && grade !== '' ? Number(grade) : p.grade ?? null).then(onChange).catch(fail);
+  const children = links.filter((l) => l.guardianId === p.id).map((l) => people.find((x) => x.id === l.studentId)).filter(Boolean) as AdminPerson[];
+  const parents = links.filter((l) => l.studentId === p.id).map((l) => people.find((x) => x.id === l.guardianId)).filter(Boolean) as AdminPerson[];
   const term = q.trim().toLowerCase();
   const students = term ? people.filter((x) => x.schoolRole === 'student' && `${x.firstName} ${x.lastName}`.toLowerCase().includes(term)).slice(0, 6) : [];
 
@@ -36,9 +60,10 @@ function PersonCard({ p, people, links, onChange }: {
     <Card onPress={() => setOpen(!open)}>
       <View style={s.row}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '700', color: C.ink }}>{p.firstName || p.lastName ? `${p.firstName} ${p.lastName}` : '(no name)'}</Text>
-          <P muted>{p.email}{p.grade ? ` · grade ${p.grade}` : ''}</P>
+          <Text style={{ fontWeight: '700', color: C.ink }}>{p.firstName || p.lastName ? `${p.firstName} ${p.lastName}` : '(no name yet)'}</Text>
+          <P muted>{p.email}{p.grade != null ? ` · grade ${p.grade}` : ''}</P>
         </View>
+        {p.adminTier && <Chip label={TIER_LABEL[p.adminTier]} color={C.accent} />}
         {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={p.schoolRole} />}
       </View>
       {(children.length > 0 || parents.length > 0) && (
@@ -46,17 +71,19 @@ function PersonCard({ p, people, links, onChange }: {
       )}
       {open && (
         <View style={{ gap: 8 }}>
-          <View style={[s.row, { flexWrap: 'wrap' }]}>
-            {ROLES.map((r) => pill(r, p.schoolRole === r && !p.pending, () => setRole(r)))}
-            {!p.pending && p.id !== me()?.id && pill('revoke access', false, () => setRole(null), C.danger)}
-          </View>
-          {p.schoolRole === 'student' && (
+          {roleOptions.length > 0 && p.adminTier !== 'director' && (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>
+              {roleOptions.map((r) => pill(r, p.schoolRole === r && !p.pending, () => setRole(r)))}
+              {!p.pending && p.id !== me()?.id && pill('revoke access', false, () => confirm('Revoke access?', `${p.firstName} will lose access to Royals Connect.`, () => setRole(null)), C.danger)}
+            </View>
+          )}
+          {p.schoolRole === 'student' && can('people.family') && (
             <View style={s.row}>
               <TextInput style={[s.input, { flex: 1, padding: 8 }]} placeholder="Grade (K2 = -2 … 12)" keyboardType="numbers-and-punctuation" value={grade} onChangeText={setGrade} />
               <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setRole('student')}>Save grade</Text>
             </View>
           )}
-          {p.schoolRole === 'parent' && (
+          {p.schoolRole === 'parent' && can('people.family') && (
             <View style={{ gap: 6 }}>
               {children.map((c) => (
                 <Text key={c.id} style={{ color: C.ink }}>👪 {c.firstName} {c.lastName}{'  '}
@@ -78,46 +105,190 @@ function PersonCard({ p, people, links, onChange }: {
   );
 }
 
-export default function Admin() {
-  const [tab, setTab] = useState<'people' | 'audit'>('people');
-  const [people, setPeople] = useState<Person[] | null>(null);
+// ------------------------------------------------------------------ admins & permissions (director)
+
+function AccessCard({ p, catalog, onChange }: { p: AdminPerson; catalog: PermissionInfo[]; onChange: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [tier, setTier] = useState<Access['tier']>(p.adminTier);
+  const [granted, setGranted] = useState<string[]>(p.granted);
+  const staff = ['admin', 'teacher', 'staff'].includes(p.schoolRole);
+  const tierPerms = (t: Access['tier']) => (t === 'administrator' ? catalog.map((c) => c.key).filter((k) => k !== 'admins.manage')
+    : t === 'office' ? ['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send', 'audit.view'] : []);
+  const save = () => adminSetAccess(p.id, tier, granted).then(onChange).catch(fail);
+
+  if (p.adminTier === 'director') {
+    return (
+      <Card>
+        <View style={s.row}><Text style={{ flex: 1, fontWeight: '800', color: C.ink }}>{p.firstName} {p.lastName}</Text><Chip label="Director" color={C.accent} /></View>
+        <P muted>The director has every permission and is the only one who manages admins.</P>
+      </Card>
+    );
+  }
+  return (
+    <Card onPress={() => setOpen(!open)}>
+      <View style={s.row}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>{p.firstName} {p.lastName}</Text>
+          <P muted>{p.schoolRole}{p.granted.length ? ` · +${p.granted.length} permission${p.granted.length > 1 ? 's' : ''}` : ''}</P>
+        </View>
+        {p.adminTier && <Chip label={TIER_LABEL[p.adminTier]} color={C.accent} />}
+      </View>
+      {open && (
+        <View style={{ gap: 10 }}>
+          {staff ? (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>{TIERS.map((t) => pill(t.label, tier === t.key, () => setTier(t.key)))}</View>
+          ) : <P muted>Admin tiers are for staff accounts; you can still grant individual permissions.</P>}
+          <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted }}>PERMISSIONS</Text>
+          {catalog.filter((c) => c.key !== 'admins.manage').map((c) => {
+            const fromTier = tierPerms(tier).includes(c.key);
+            const on = fromTier || granted.includes(c.key);
+            return (
+              <Text key={c.key} onPress={fromTier || p.schoolRole === 'student' ? undefined : () => setGranted(on ? granted.filter((g) => g !== c.key) : [...granted, c.key])}
+                style={{ color: fromTier ? C.muted : C.ink }}>
+                {on ? '☑' : '☐'} <Text style={{ fontWeight: '700' }}>{c.label}</Text>{fromTier ? ' (from tier)' : ''}{'\n'}
+                <Text style={{ color: C.muted, fontSize: 13 }}>{c.description}</Text>
+              </Text>
+            );
+          })}
+          <Button label="Save access" onPress={save} />
+          {staff && (
+            <Text style={{ color: C.danger, fontWeight: '600' }}
+              onPress={() => confirm('Transfer the director role?', `${p.firstName} ${p.lastName} becomes the director and you become an administrator.`,
+                () => transferDirector(p.id).then(onChange).catch(fail))}>
+              Make {p.firstName} the director…
+            </Text>
+          )}
+        </View>
+      )}
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------ notifications
+
+function Notifications({ access }: { access: Access }) {
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [audience, setAudience] = useState<'everyone' | 'roles' | 'group'>('everyone');
+  const [roles, setRoles] = useState<SchoolRole[]>(['parent']);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupId, setGroupId] = useState<string>();
+  const [history, setHistory] = useState<Notice[] | null>(null);
+  const load = useCallback(() => listNotifications(30).then(setHistory), []);
+  useEffect(() => { load(); listMyGroups().then(setGroups); }, [load]);
+  const canSend = access.permissions.includes('push.send');
+
+  const send = () => confirm('Send notification?', `"${title}" goes to ${audience === 'everyone' ? 'everyone' : audience === 'roles' ? roles.join(', ') : groups.find((g) => g.id === groupId)?.name}.`,
+    () => sendNotification(title, body, audience, { roles, groupId }).then(() => { setTitle(''); setBody(''); load(); }).catch(fail));
+
+  return (
+    <View style={{ gap: 12 }}>
+      {canSend ? (
+        <Card>
+          <H>Send a push notification</H>
+          <View style={[s.row, { flexWrap: 'wrap' }]}>
+            {pill('Everyone', audience === 'everyone', () => setAudience('everyone'))}
+            {pill('By role', audience === 'roles', () => setAudience('roles'))}
+            {pill('A group', audience === 'group', () => setAudience('group'))}
+          </View>
+          {audience === 'roles' && (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>
+              {(['parent', 'student', 'teacher', 'staff'] as SchoolRole[]).map((r) => pill(r, roles.includes(r), () => setRoles(roles.includes(r) ? roles.filter((x) => x !== r) : [...roles, r])))}
+            </View>
+          )}
+          {audience === 'group' && (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>{groups.map((g) => pill(`${g.icon} ${g.name}`, g.id === groupId, () => setGroupId(g.id)))}</View>
+          )}
+          <TextInput style={s.input} placeholder="Title (e.g. Weather closure)" value={title} onChangeText={setTitle} maxLength={80} />
+          <TextInput style={[s.input, { minHeight: 80 }]} multiline placeholder="Message" value={body} onChangeText={setBody} maxLength={400} />
+          <Button label="Send" onPress={send} disabled={!title.trim() || !body.trim() || (audience === 'group' && !groupId) || (audience === 'roles' && !roles.length)} />
+          <P muted>Goes to everyone in the audience who has the app with notifications on, and appears in their notification list.</P>
+        </Card>
+      ) : <P muted>You don't have permission to send school-wide notifications.</P>}
+      <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted }}>RECENT</Text>
+      {!history ? <Loading /> : history.map((n) => (
+        <Card key={n.id}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>{n.title}</Text>
+          <P>{n.body}</P>
+          <P muted>{new Date(n.createdAt).toLocaleString()} · {n.audience} · {n.status}{n.status === 'sent' ? ` to ${n.sentCount} device${n.sentCount === 1 ? '' : 's'}` : ''}</P>
+        </Card>
+      ))}
+    </View>
+  );
+}
+
+// ------------------------------------------------------------------ portal
+
+function Portal({ access }: { access: Access }) {
+  const can = (x: string) => access.permissions.includes(x);
+  const tabs = [
+    can('people.view') && ['people', 'People'],
+    can('admins.manage') && ['admins', 'Admins & permissions'],
+    ['notify', 'Notifications'],
+    can('audit.view') && ['audit', 'Activity log'],
+  ].filter(Boolean) as [string, string][];
+  const [tab, setTab] = useState(tabs[0][0]);
+  const [people, setPeople] = useState<AdminPerson[] | null>(null);
   const [links, setLinks] = useState<{ guardianId: string; studentId: string }[]>([]);
+  const [catalog, setCatalog] = useState<PermissionInfo[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
   const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     try {
-      const [p, l, a] = await Promise.all([adminListPeople(), adminGuardianLinks(), listAudit()]);
-      setPeople(p); setLinks(l); setAudit(a);
-    } catch (e: any) { Alert.alert('Admin console', e.message); setPeople([]); }
+      const [p, l, c, a] = await Promise.all([
+        can('people.view') ? adminListPeopleWithAccess() : Promise.resolve([]),
+        adminGuardianLinks(), permissionCatalog(), can('audit.view') ? listAudit() : Promise.resolve([]),
+      ]);
+      setPeople(p); setLinks(l); setCatalog(c); setAudit(a);
+    } catch (e: any) { Alert.alert('Admin portal', e.message); setPeople([]); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => { load(); }, [load]);
   if (!people) return <Loading />;
 
   const term = q.trim().toLowerCase();
   const shown = people.filter((p) => !term || `${p.firstName} ${p.lastName} ${p.email} ${p.schoolRole}`.toLowerCase().includes(term));
-  const pending = shown.filter((p) => p.pending);
   const name = (id: string) => { const p = people.find((x) => x.id === id); return p ? `${p.firstName} ${p.lastName}` : 'someone'; };
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Admin console' }} />
-      <View style={s.row}>{pill(`People (${people.length})`, tab === 'people', () => setTab('people'))}{pill('Activity log', tab === 'audit', () => setTab('audit'))}</View>
-      {tab === 'people' ? (
+      <P muted>{access.tier ? TIER_LABEL[access.tier] : 'Custom permissions'} · {me()?.email}</P>
+      <View style={[s.row, { flexWrap: 'wrap' }]}>{tabs.map(([k, label]) => pill(label, tab === k, () => setTab(k)))}</View>
+
+      {tab === 'people' && (
         <>
           <TextInput style={s.input} placeholder="Search people" value={q} onChangeText={setQ} />
-          {pending.length > 0 && <Text style={{ fontWeight: '800', color: '#B45309' }}>{pending.length} waiting for approval</Text>}
-          {shown.map((p) => <PersonCard key={p.id} p={p} people={people} links={links} onChange={load} />)}
+          {shown.some((p) => p.pending) && <Text style={{ fontWeight: '800', color: '#B45309' }}>{shown.filter((p) => p.pending).length} waiting for approval</Text>}
+          {shown.map((p) => <PersonCard key={p.id} p={p} people={people} links={links} access={access} onChange={load} />)}
         </>
-      ) : (
-        audit.length === 0 ? <P muted>No activity yet.</P> : audit.map((a) => (
-          <Card key={a.id}>
-            <Text style={{ fontWeight: '700', color: C.ink }}>{a.action}</Text>
-            <P muted>{name(a.actor_id)}{a.groups?.name ? ` · ${a.groups.name}` : ''} · {new Date(a.at).toLocaleString()}</P>
-            {a.target_id && people.some((p) => p.id === a.target_id) && <P muted>→ {name(a.target_id)}</P>}
-          </Card>
-        ))
       )}
+      {tab === 'admins' && (
+        <>
+          <P muted>Give staff an admin tier, or grant individual permissions to anyone (for example, a teacher who runs the school calendar).</P>
+          <TextInput style={s.input} placeholder="Search people" value={q} onChangeText={setQ} />
+          {[...shown].filter((p) => !p.pending && p.schoolRole !== 'student')
+            .sort((a, b) => Number(!!b.adminTier || b.granted.length > 0) - Number(!!a.adminTier || a.granted.length > 0))
+            .map((p) => <AccessCard key={p.id} p={p} catalog={catalog} onChange={load} />)}
+        </>
+      )}
+      {tab === 'notify' && <Notifications access={access} />}
+      {tab === 'audit' && (audit.length === 0 ? <P muted>No activity yet.</P> : audit.map((a) => (
+        <Card key={a.id}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>{a.action}</Text>
+          <P muted>{name(a.actor_id)}{a.groups?.name ? ` · ${a.groups.name}` : ''} · {new Date(a.at).toLocaleString()}</P>
+          {a.target_id && people.some((p) => p.id === a.target_id) && <P muted>→ {name(a.target_id)}</P>}
+        </Card>
+      )))}
     </ScrollView>
+  );
+}
+
+export default function Admin() {
+  return (
+    <>
+      <Stack.Screen options={{ title: 'Admin portal' }} />
+      <MfaGate>{(access) => <Portal access={access} />}</MfaGate>
+    </>
   );
 }

@@ -107,7 +107,12 @@ insert into public.memberships (group_id, user_id, role, source, notification, j
 update public.memberships set muted_until = null, can_post = false where group_id = app.seed_id('g-eng-p3') and user_id = app.seed_id('u-s08');
 update public.memberships set muted_until = '2026-10-15T15:00:00-05:00', can_post = true where group_id = app.seed_id('g-vb') and user_id = app.seed_id('u-s03');
 
--- Posts, polls, reactions, replies
+-- Admin tiers: the demo admin is the director; the assistant principal an administrator.
+select app.bootstrap_director('u-admin@demo.khroyals.test');
+update public.profiles set admin_tier = 'administrator' where id = app.seed_id('u-ap');
+
+-- Posts, polls, reactions, replies (demo history shouldn't trigger push notifications)
+alter table public.posts disable trigger notify_post;
 insert into public.posts (id, group_id, author_id, kind, title, body, attachments, status, pinned, comments_locked, score, created_at) values (app.seed_id('p-001'), app.seed_id('g-announce'), app.seed_id('u-admin'), 'announcement', 'Early Release Friday', 'Early release this Friday, Oct 16. Dismissal at 12:30 PM. Buses run 2.5 hours early.', '[]'::jsonb, 'published', true, false, 0, '2026-10-14T16:00:00-05:00') on conflict (id) do nothing;
 insert into public.reactions values (app.seed_id('p-001'), app.seed_id('u-p01'), '👍') on conflict do nothing;
 insert into public.reactions values (app.seed_id('p-001'), app.seed_id('u-p02'), '👍') on conflict do nothing;
@@ -171,6 +176,7 @@ insert into public.comments (id, post_id, parent_comment_id, author_id, body, st
 insert into public.comments (id, post_id, parent_comment_id, author_id, body, status, is_answer, score, created_at) values (app.seed_id('c-009'), app.seed_id('p-020'), null, app.seed_id('u-s05'), 'Mecanum. Strafing won us 2 matches at regionals.', 'published', false, 6, '2026-10-13T18:50:00-05:00') on conflict (id) do nothing;
 insert into public.comments (id, post_id, parent_comment_id, author_id, body, status, is_answer, score, created_at) values (app.seed_id('c-010'), app.seed_id('p-020'), null, app.seed_id('u-sci'), 'Whatever you choose, freeze the design by Oct 23.', 'published', false, 8, '2026-10-13T19:40:00-05:00') on conflict (id) do nothing;
 insert into public.comments (id, post_id, parent_comment_id, author_id, body, status, is_answer, score, created_at) values (app.seed_id('c-011'), app.seed_id('p-025'), null, app.seed_id('u-couns'), 'It depends on your other commitments. 2–3 is typical; come by drop-in hours and we''ll plan it together.', 'published', true, 0, '2026-10-12T18:40:00-05:00') on conflict (id) do nothing;
+alter table public.posts enable trigger notify_post;
 
 -- School calendar 2026–27 (from the official PDF via content/site/calendar.json)
 insert into public.events (id, title, starts_on, ends_on, all_day, category) values (app.seed_id('cal:ev-01'), 'Professional Development', '2026-07-27', '2026-07-30', true, 'Teacher In-Service') on conflict (id) do nothing;

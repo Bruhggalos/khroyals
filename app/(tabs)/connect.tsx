@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, me, onAuthChange, session, setMockUser, signOut,
+  joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session, setMockUser, signOut,
   type Person,
 } from '../../src/api/connect';
+import { disablePush } from '../../src/comms/push';
 import { MODE_LABELS } from '../../src/comms/presets';
 import { canCreateGroup } from '../../src/comms/permissions';
 import { SignIn } from '../../src/comms/SignIn';
@@ -36,6 +37,7 @@ export default function Connect() {
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [discover, setDiscover] = useState<Group[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -45,6 +47,8 @@ export default function Connect() {
         setGroups(await listMyGroups());
         setDiscover(await listDiscoverableGroups());
         if (!live) setPeople(await listUsers());
+        const a = live ? await myAccess() : null;
+        setIsAdmin(!!a && (!!a.tier || a.granted.length > 0));
       }
     } catch (e: any) {
       Alert.alert('Could not load groups', e.message);
@@ -64,7 +68,7 @@ export default function Connect() {
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Waiting for approval</Text>
           <P>Thanks, {person.firstName || person.email}. A Kingdom Heights administrator will confirm your account and add you to your groups.</P>
-          <Button kind="ghost" label="Sign out" onPress={() => signOut().then(load)} />
+          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(signOut).then(load)} />
         </Card>
       </View>
     );
@@ -76,7 +80,7 @@ export default function Connect() {
       {live ? (
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P>
-          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => signOut().then(load)}>Sign out</Text>
+          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(signOut).then(load)}>Sign out</Text>
         </View>
       ) : (
         <>
@@ -100,7 +104,7 @@ export default function Connect() {
 
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         {canCreateGroup(person) && <View style={{ flex: 1 }}><Button label="+ New group" onPress={() => router.push('/group/new')} /></View>}
-        {live && person.schoolRole === 'admin' && <View style={{ flex: 1 }}><Button kind="ghost" label="Admin console" onPress={() => router.push('/admin')} /></View>}
+        {isAdmin && <View style={{ flex: 1 }}><Button kind="ghost" label="Admin portal" onPress={() => router.push('/admin')} /></View>}
       </View>
 
       {groups.length === 0 && <P muted>You're not in any groups yet.</P>}
