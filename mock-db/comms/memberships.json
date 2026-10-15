@@ -1,0 +1,968 @@
+{
+  "_meta": {
+    "mock": true,
+    "generatedAt": "2026-10-14"
+  },
+  "memberships": [
+    {
+      "groupId": "g-announce",
+      "userId": "u-admin",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-ap",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-libr",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-eng",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-sci",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-vbcoach",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-couns",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s02",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s04",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s05",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s06",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s07",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s08",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s09",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-s10",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p02",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p04",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p05",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p06",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p07",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-announce",
+      "userId": "u-p08",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-all",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-eng",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-s01",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-p3",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-s02",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-p3",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-s03",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-p3",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-s04",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-p3",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3",
+      "userId": "u-s08",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-p3",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00",
+      "canPost": false
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-eng",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-s01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-p01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-s02",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-p02",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-s03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-p03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-s04",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-p04",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-s08",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-eng-p3-parents",
+      "userId": "u-p06",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-p3g",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-ap",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-eng",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-couns",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-s01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-p01",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-s02",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-p02",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-s03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-p03",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-s04",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-p04",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-s08",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-c2029-parents",
+      "userId": "u-p06",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-g10",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb",
+      "userId": "u-vbcoach",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb",
+      "userId": "u-s07",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb",
+      "userId": "u-s01",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-vb",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb",
+      "userId": "u-s03",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-vb",
+      "mutedUntil": "2026-10-15T15:00:00-05:00",
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb",
+      "userId": "u-s05",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-vb",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-vbcoach",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-p08",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-s01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-p01",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-s03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-p03",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-s05",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-p05",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-vb-parents",
+      "userId": "u-s07",
+      "role": "subscriber",
+      "source": "rule",
+      "ruleId": "r-vbp",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-sci",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-s10",
+      "role": "moderator",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-s02",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-rob",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-s04",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-rob",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-s05",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-rob",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-robotics",
+      "userId": "u-s06",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-rob",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-admin",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-ap",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-eng",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-sci",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-vbcoach",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-couns",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-faculty",
+      "userId": "u-libr",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-staff",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-couns",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s01",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s02",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s03",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s04",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s05",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s06",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s07",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s08",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s09",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-counsel",
+      "userId": "u-s10",
+      "role": "member",
+      "source": "rule",
+      "ruleId": "r-stu",
+      "mutedUntil": null,
+      "notification": "mentions",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-homecoming",
+      "userId": "u-ap",
+      "role": "owner",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-homecoming",
+      "userId": "u-s07",
+      "role": "member",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-homecoming",
+      "userId": "u-s05",
+      "role": "member",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-homecoming",
+      "userId": "u-s09",
+      "role": "member",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    },
+    {
+      "groupId": "g-homecoming",
+      "userId": "u-s01",
+      "role": "member",
+      "source": "manual",
+      "mutedUntil": null,
+      "notification": "all",
+      "joinedAt": "2026-09-14T19:00:00-05:00"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "_meta": {
+    "mock": true,
+    "generatedAt": "2026-10-14"
+  },
+  "events": [
+    {
+      "id": "a-1",
+      "groupId": "g-homecoming",
+      "actorId": "u-ap",
+      "action": "group.locked",
+      "detail": {
+        "reason": "Paused by Admin until Monday's meeting."
+      },
+      "at": "2026-10-12T17:00:00-05:00"
+    },
+    {
+      "id": "a-2",
+      "groupId": "g-eng-p3",
+      "actorId": "u-eng",
+      "action": "member.muted",
+      "targetId": "u-s08",
+      "detail": {
+        "canPost": false
+      },
+      "at": "2026-10-12T19:00:00-05:00"
+    },
+    {
+      "id": "a-3",
+      "groupId": "g-vb",
+      "actorId": "u-vbcoach",
+      "action": "member.muted",
+      "targetId": "u-s03",
+      "detail": {
+        "hours": 20
+      },
+      "at": "2026-10-14T15:00:00-05:00"
+    },
+    {
+      "id": "a-4",
+      "groupId": "g-eng-p3",
+      "actorId": "u-eng",
+      "action": "settings.updated",
+      "detail": {
+        "slowModeSeconds": [
+          0,
+          30
+        ]
+      },
+      "at": "2026-10-09T19:00:00-05:00"
+    }
+  ]
+}

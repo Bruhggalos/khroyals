@@ -1,0 +1,112 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "home",
+    "title": "Home",
+    "route": "/"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "slides": [
+        {
+          "image": "https://picsum.photos/seed/khrhero1/1600/900",
+          "headline": "Welcome, Royals!",
+          "subhead": "2026\u201327 school year",
+          "cta": {
+            "label": "Calendar",
+            "route": "/calendar"
+          }
+        },
+        {
+          "image": "https://picsum.photos/seed/khrhero2/1600/900",
+          "headline": "District Champs",
+          "subhead": "Varsity volleyball",
+          "cta": {
+            "label": "Athletics",
+            "route": "/athletics"
+          }
+        }
+      ]
+    },
+    {
+      "type": "quickLinks",
+      "items": [
+        {
+          "label": "Parent Portal",
+          "icon": "user",
+          "url": "https://portal.example"
+        },
+        {
+          "label": "Lunch Menu",
+          "icon": "utensils",
+          "route": "/dining"
+        },
+        {
+          "label": "Bell Schedule",
+          "icon": "clock",
+          "route": "/students#bell-schedule"
+        },
+        {
+          "label": "Report an Absence",
+          "icon": "alert",
+          "route": "/parents#attendance"
+        },
+        {
+          "label": "Enroll",
+          "icon": "pencil",
+          "route": "/enrollment"
+        },
+        {
+          "label": "Tickets",
+          "icon": "ticket",
+          "url": "https://tickets.example"
+        }
+      ]
+    },
+    {
+      "type": "newsFeed",
+      "source": "news",
+      "filter": {
+        "featured": true
+      },
+      "limit": 3
+    },
+    {
+      "type": "eventFeed",
+      "source": "calendar",
+      "limit": 5
+    },
+    {
+      "type": "principalMessage",
+      "staffId": "staff-001",
+      "name": "Maria Garcia",
+      "text": "Placeholder welcome message from the principal."
+    },
+    {
+      "type": "stats",
+      "items": [
+        {
+          "label": "Students",
+          "value": "1,240"
+        },
+        {
+          "label": "Clubs",
+          "value": "45+"
+        },
+        {
+          "label": "AP Courses",
+          "value": "18"
+        },
+        {
+          "label": "Student:Teacher",
+          "value": "16:1"
+        }
+      ]
+    }
+  ]
+}

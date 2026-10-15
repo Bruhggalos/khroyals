@@ -1,0 +1,108 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "students",
+    "title": "Students",
+    "route": "/students"
+  },
+  "bellSchedules": [
+    {
+      "id": "regular",
+      "name": "Regular Day",
+      "periods": [
+        {
+          "name": "1st",
+          "start": "08:00",
+          "end": "08:50"
+        },
+        {
+          "name": "2nd",
+          "start": "08:56",
+          "end": "09:46"
+        },
+        {
+          "name": "3rd",
+          "start": "09:52",
+          "end": "10:42"
+        },
+        {
+          "name": "4th",
+          "start": "10:48",
+          "end": "11:38"
+        },
+        {
+          "name": "Lunch",
+          "start": "11:38",
+          "end": "12:18"
+        },
+        {
+          "name": "5th",
+          "start": "12:24",
+          "end": "13:14"
+        },
+        {
+          "name": "6th",
+          "start": "13:20",
+          "end": "14:10"
+        },
+        {
+          "name": "7th",
+          "start": "14:16",
+          "end": "15:06"
+        }
+      ]
+    },
+    {
+      "id": "early-release",
+      "name": "Early Release",
+      "periods": [
+        {
+          "name": "1st",
+          "start": "08:00",
+          "end": "08:30"
+        },
+        {
+          "name": "7th",
+          "start": "12:00",
+          "end": "12:30"
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "title": "Canvas / LMS",
+      "url": "https://lms.example"
+    },
+    {
+      "title": "Library Catalog",
+      "url": "https://library.example"
+    },
+    {
+      "title": "Counseling",
+      "route": "/students#counseling"
+    },
+    {
+      "title": "Tutoring Schedule",
+      "url": "/docs/tutoring.pdf"
+    }
+  ],
+  "counselors": [
+    {
+      "staffId": "staff-004",
+      "name": "Robert Walker"
+    },
+    {
+      "staffId": "staff-005",
+      "name": "Patricia Green"
+    },
+    {
+      "staffId": "staff-006",
+      "name": "Michael Brown"
+    }
+  ]
+}

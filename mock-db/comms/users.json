@@ -1,0 +1,290 @@
+{
+  "_meta": {
+    "mock": true,
+    "generatedAt": "2026-10-14"
+  },
+  "users": [
+    {
+      "id": "u-admin",
+      "firstName": "Maria",
+      "lastName": "Garcia",
+      "schoolRole": "admin",
+      "staffId": "staff-001",
+      "avatar": "https://i.pravatar.cc/120?u=u-admin"
+    },
+    {
+      "id": "u-ap",
+      "firstName": "James",
+      "lastName": "Davis",
+      "schoolRole": "admin",
+      "staffId": "staff-002",
+      "avatar": "https://i.pravatar.cc/120?u=u-ap"
+    },
+    {
+      "id": "u-eng",
+      "firstName": "Jennifer",
+      "lastName": "Taylor",
+      "schoolRole": "teacher",
+      "staffId": "staff-007",
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-eng"
+    },
+    {
+      "id": "u-sci",
+      "firstName": "Jessica",
+      "lastName": "Allen",
+      "schoolRole": "teacher",
+      "staffId": "staff-013",
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-sci"
+    },
+    {
+      "id": "u-vbcoach",
+      "firstName": "Sandra",
+      "lastName": "Martin",
+      "schoolRole": "teacher",
+      "staffId": "staff-025",
+      "teamIds": [
+        "team-02"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-vbcoach"
+    },
+    {
+      "id": "u-couns",
+      "firstName": "Robert",
+      "lastName": "Walker",
+      "schoolRole": "staff",
+      "staffId": "staff-004",
+      "avatar": "https://i.pravatar.cc/120?u=u-couns"
+    },
+    {
+      "id": "u-libr",
+      "firstName": "Grace",
+      "lastName": "Okafor",
+      "schoolRole": "staff",
+      "avatar": "https://i.pravatar.cc/120?u=u-libr"
+    },
+    {
+      "id": "u-s01",
+      "firstName": "Ava",
+      "lastName": "Reyes",
+      "schoolRole": "student",
+      "grade": 10,
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "teamIds": [
+        "team-02"
+      ],
+      "clubIds": [],
+      "avatar": "https://i.pravatar.cc/120?u=u-s01"
+    },
+    {
+      "id": "u-s02",
+      "firstName": "Liam",
+      "lastName": "Chen",
+      "schoolRole": "student",
+      "grade": 10,
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "teamIds": [],
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-s02"
+    },
+    {
+      "id": "u-s03",
+      "firstName": "Mia",
+      "lastName": "Brooks",
+      "schoolRole": "student",
+      "grade": 10,
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "teamIds": [
+        "team-02"
+      ],
+      "clubIds": [],
+      "avatar": "https://i.pravatar.cc/120?u=u-s03"
+    },
+    {
+      "id": "u-s04",
+      "firstName": "Noah",
+      "lastName": "Kim",
+      "schoolRole": "student",
+      "grade": 10,
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "teamIds": [],
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-s04"
+    },
+    {
+      "id": "u-s05",
+      "firstName": "Zoe",
+      "lastName": "Ortiz",
+      "schoolRole": "student",
+      "grade": 11,
+      "sectionIds": [],
+      "teamIds": [
+        "team-02"
+      ],
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-s05"
+    },
+    {
+      "id": "u-s06",
+      "firstName": "Ethan",
+      "lastName": "Park",
+      "schoolRole": "student",
+      "grade": 11,
+      "sectionIds": [],
+      "teamIds": [],
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-s06"
+    },
+    {
+      "id": "u-s07",
+      "firstName": "Chloe",
+      "lastName": "Diaz",
+      "schoolRole": "student",
+      "grade": 12,
+      "sectionIds": [],
+      "teamIds": [
+        "team-02"
+      ],
+      "clubIds": [],
+      "avatar": "https://i.pravatar.cc/120?u=u-s07"
+    },
+    {
+      "id": "u-s08",
+      "firstName": "Lucas",
+      "lastName": "Ward",
+      "schoolRole": "student",
+      "grade": 10,
+      "sectionIds": [
+        "eng10-p3"
+      ],
+      "teamIds": [],
+      "clubIds": [],
+      "avatar": "https://i.pravatar.cc/120?u=u-s08"
+    },
+    {
+      "id": "u-s09",
+      "firstName": "Emma",
+      "lastName": "Shah",
+      "schoolRole": "student",
+      "grade": 9,
+      "sectionIds": [],
+      "teamIds": [],
+      "clubIds": [],
+      "avatar": "https://i.pravatar.cc/120?u=u-s09"
+    },
+    {
+      "id": "u-s10",
+      "firstName": "Jack",
+      "lastName": "Ross",
+      "schoolRole": "student",
+      "grade": 12,
+      "sectionIds": [],
+      "teamIds": [],
+      "clubIds": [
+        "club-03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-s10"
+    },
+    {
+      "id": "u-p01",
+      "firstName": "Rosa",
+      "lastName": "Reyes",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s01"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p01"
+    },
+    {
+      "id": "u-p02",
+      "firstName": "Wei",
+      "lastName": "Chen",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s02"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p02"
+    },
+    {
+      "id": "u-p03",
+      "firstName": "Dana",
+      "lastName": "Brooks",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s03"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p03"
+    },
+    {
+      "id": "u-p04",
+      "firstName": "Sun",
+      "lastName": "Kim",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s04"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p04"
+    },
+    {
+      "id": "u-p05",
+      "firstName": "Luis",
+      "lastName": "Ortiz",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s05"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p05"
+    },
+    {
+      "id": "u-p06",
+      "firstName": "Tara",
+      "lastName": "Ward",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s08"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p06"
+    },
+    {
+      "id": "u-p07",
+      "firstName": "Priya",
+      "lastName": "Shah",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s09"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p07"
+    },
+    {
+      "id": "u-p08",
+      "firstName": "Mark",
+      "lastName": "Diaz",
+      "schoolRole": "parent",
+      "guardianOf": [
+        "u-s07"
+      ],
+      "avatar": "https://i.pravatar.cc/120?u=u-p08"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "enrollment",
+    "title": "Enrollment",
+    "route": "/enrollment"
+  },
+  "steps": [
+    {
+      "n": 1,
+      "title": "Verify residency",
+      "body": "Placeholder."
+    },
+    {
+      "n": 2,
+      "title": "Complete online registration",
+      "body": "Placeholder.",
+      "link": "https://enroll.example"
+    },
+    {
+      "n": 3,
+      "title": "Submit documents",
+      "body": "Birth certificate, immunizations, proof of residence."
+    },
+    {
+      "n": 4,
+      "title": "Schedule with counselor",
+      "body": "Placeholder."
+    }
+  ],
+  "requiredDocuments": [
+    "Birth certificate",
+    "Immunization record",
+    "Proof of residency",
+    "Parent photo ID",
+    "Previous school records"
+  ],
+  "contact": {
+    "staffId": "staff-028",
+    "name": "Steven Miller"
+  },
+  "transferPolicyUrl": "/docs/transfer-policy.pdf"
+}

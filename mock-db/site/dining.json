@@ -1,0 +1,261 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "dining",
+    "title": "Lunch Menu",
+    "route": "/dining"
+  },
+  "prices": {
+    "breakfast": 2.0,
+    "lunch": 3.25,
+    "reducedLunch": 0.4
+  },
+  "paymentUrl": "https://pay.example",
+  "freeReducedApplicationUrl": "https://apply.example",
+  "menu": [
+    {
+      "date": "2026-10-12",
+      "breakfast": [
+        "Cereal & Milk",
+        "Pancakes",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Veggie Burger",
+          "Chicken Tenders"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "dairy",
+        "gluten"
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "breakfast": [
+        "Cereal & Milk",
+        "Breakfast Taco",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Turkey Sandwich",
+          "Chicken Tenders"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "dairy",
+        "soy"
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "breakfast": [
+        "Cereal & Milk",
+        "Breakfast Taco",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Chicken Tenders",
+          "Veggie Burger"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "gluten",
+        "egg"
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "breakfast": [
+        "Cereal & Milk",
+        "Breakfast Taco",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Chicken Tenders",
+          "BBQ Chicken"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "soy",
+        "gluten"
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "breakfast": [
+        "Cereal & Milk",
+        "Biscuit & Gravy",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Spaghetti & Meatballs",
+          "Beef Tacos"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "egg",
+        "gluten"
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "breakfast": [
+        "Cereal & Milk",
+        "Biscuit & Gravy",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Beef Tacos",
+          "Turkey Sandwich"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "egg",
+        "gluten"
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "breakfast": [
+        "Cereal & Milk",
+        "Pancakes",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "BBQ Chicken",
+          "Cheese Pizza"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "gluten",
+        "egg"
+      ]
+    },
+    {
+      "date": "2026-10-21",
+      "breakfast": [
+        "Cereal & Milk",
+        "Biscuit & Gravy",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "BBQ Chicken",
+          "Beef Tacos"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "egg",
+        "dairy"
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "breakfast": [
+        "Cereal & Milk",
+        "Pancakes",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Chicken Tenders",
+          "Turkey Sandwich"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "gluten",
+        "egg"
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "breakfast": [
+        "Cereal & Milk",
+        "Pancakes",
+        "Fruit"
+      ],
+      "lunch": {
+        "entrees": [
+          "Turkey Sandwich",
+          "BBQ Chicken"
+        ],
+        "sides": [
+          "Green Beans",
+          "Fresh Fruit",
+          "Salad Bar"
+        ],
+        "vegetarian": true
+      },
+      "allergens": [
+        "gluten",
+        "egg"
+      ]
+    }
+  ]
+}

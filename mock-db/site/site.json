@@ -1,0 +1,135 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "school": {
+    "name": "KH Royals",
+    "shortName": "KHR",
+    "mascot": "Royals",
+    "colors": {
+      "primary": "#4B2A7B",
+      "secondary": "#F2B705",
+      "ink": "#1B1530"
+    },
+    "logo": "assets/logo.png",
+    "tagline": "Once a Royal, always a Royal.",
+    "address": {
+      "line1": "100 Royal Way",
+      "city": "Placeholder",
+      "state": "TX",
+      "zip": "00000"
+    },
+    "phone": "(555) 010-2000",
+    "fax": "(555) 010-2001",
+    "email": "info@khroyals.example",
+    "hours": "Mon\u2013Fri 7:30 AM \u2013 4:00 PM"
+  },
+  "navigation": [
+    {
+      "id": "home",
+      "label": "Home",
+      "route": "/"
+    },
+    {
+      "id": "about",
+      "label": "About",
+      "route": "/about"
+    },
+    {
+      "id": "news",
+      "label": "News",
+      "route": "/news"
+    },
+    {
+      "id": "calendar",
+      "label": "Calendar",
+      "route": "/calendar"
+    },
+    {
+      "id": "academics",
+      "label": "Academics",
+      "route": "/academics"
+    },
+    {
+      "id": "athletics",
+      "label": "Athletics",
+      "route": "/athletics"
+    },
+    {
+      "id": "activities",
+      "label": "Clubs & Activities",
+      "route": "/activities"
+    },
+    {
+      "id": "staff",
+      "label": "Staff Directory",
+      "route": "/staff"
+    },
+    {
+      "id": "parents",
+      "label": "Parents",
+      "route": "/parents"
+    },
+    {
+      "id": "students",
+      "label": "Students",
+      "route": "/students"
+    },
+    {
+      "id": "enrollment",
+      "label": "Enrollment",
+      "route": "/enrollment"
+    },
+    {
+      "id": "dining",
+      "label": "Lunch Menu",
+      "route": "/dining"
+    },
+    {
+      "id": "contact",
+      "label": "Contact",
+      "route": "/contact"
+    }
+  ],
+  "footerLinks": [
+    {
+      "label": "Non-Discrimination Notice",
+      "url": "/legal/non-discrimination"
+    },
+    {
+      "label": "Accessibility",
+      "url": "/legal/accessibility"
+    },
+    {
+      "label": "Privacy Policy",
+      "url": "/legal/privacy"
+    }
+  ],
+  "social": [
+    {
+      "network": "facebook",
+      "url": "https://facebook.com/example"
+    },
+    {
+      "network": "instagram",
+      "url": "https://instagram.com/example"
+    },
+    {
+      "network": "x",
+      "url": "https://x.com/example"
+    },
+    {
+      "network": "youtube",
+      "url": "https://youtube.com/example"
+    }
+  ],
+  "alertBanner": {
+    "active": true,
+    "level": "info",
+    "message": "Early release Friday, Oct 16 \u2014 dismissal at 12:30 PM.",
+    "link": "/news/early-release-oct-16",
+    "expiresAt": "2026-10-16"
+  }
+}

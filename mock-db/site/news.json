@@ -1,0 +1,318 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "news",
+    "title": "News",
+    "route": "/news"
+  },
+  "categories": [
+    "academics",
+    "announcements",
+    "athletics",
+    "counseling",
+    "dining",
+    "events",
+    "fine-arts",
+    "health",
+    "seniors",
+    "student-life"
+  ],
+  "articles": [
+    {
+      "id": "news-001",
+      "slug": "royals-volleyball-clinches-district-title",
+      "title": "Royals Volleyball Clinches District Title",
+      "category": "athletics",
+      "summary": "The varsity volleyball team swept its final match to claim the district championship.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "The varsity volleyball team swept its final match to claim the district championship."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr0/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-10-14",
+      "featured": true,
+      "tags": [
+        "athletics"
+      ]
+    },
+    {
+      "id": "news-002",
+      "slug": "fall-book-fair-opens-monday",
+      "title": "Fall Book Fair Opens Monday",
+      "category": "events",
+      "summary": "The library hosts the fall book fair all week during lunch and after school.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "The library hosts the fall book fair all week during lunch and after school."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr1/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-10-12",
+      "featured": true,
+      "tags": [
+        "events"
+      ]
+    },
+    {
+      "id": "news-003",
+      "slug": "early-release-friday-oct-16",
+      "title": "Early Release Friday, Oct 16",
+      "category": "announcements",
+      "summary": "Students will dismiss at 12:30 PM for teacher professional development.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Students will dismiss at 12:30 PM for teacher professional development."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr2/1200/630",
+      "author": "Principal's Office",
+      "publishedAt": "2026-10-10",
+      "featured": true,
+      "tags": [
+        "announcements"
+      ]
+    },
+    {
+      "id": "news-004",
+      "slug": "band-earns-superior-rating-at-marching-contest",
+      "title": "Band Earns Superior Rating at Marching Contest",
+      "category": "fine-arts",
+      "summary": "The Royal Regiment earned a Division I rating at the regional marching contest.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "The Royal Regiment earned a Division I rating at the regional marching contest."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr3/1200/630",
+      "author": "Athletics Dept.",
+      "publishedAt": "2026-10-08",
+      "featured": false,
+      "tags": [
+        "fine-arts"
+      ]
+    },
+    {
+      "id": "news-005",
+      "slug": "parent-teacher-conferences-sign-up-open",
+      "title": "Parent-Teacher Conferences Sign-Up Open",
+      "category": "announcements",
+      "summary": "Schedule a 15-minute conference slot through the parent portal.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Schedule a 15-minute conference slot through the parent portal."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr4/1200/630",
+      "author": "Athletics Dept.",
+      "publishedAt": "2026-10-06",
+      "featured": false,
+      "tags": [
+        "announcements"
+      ]
+    },
+    {
+      "id": "news-006",
+      "slug": "robotics-team-advances-to-state",
+      "title": "Robotics Team Advances to State",
+      "category": "academics",
+      "summary": "Team 4021 placed second at regionals and qualified for the state championship.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Team 4021 placed second at regionals and qualified for the state championship."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr5/1200/630",
+      "author": "Athletics Dept.",
+      "publishedAt": "2026-10-04",
+      "featured": false,
+      "tags": [
+        "academics"
+      ]
+    },
+    {
+      "id": "news-007",
+      "slug": "flu-shot-clinic-oct-22",
+      "title": "Flu Shot Clinic Oct 22",
+      "category": "health",
+      "summary": "The school nurse is hosting a free flu shot clinic with parental consent.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "The school nurse is hosting a free flu shot clinic with parental consent."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr6/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-10-02",
+      "featured": false,
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "id": "news-008",
+      "slug": "homecoming-week-dress-up-days-announced",
+      "title": "Homecoming Week Dress-Up Days Announced",
+      "category": "student-life",
+      "summary": "Student council released the spirit-day themes for homecoming week.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Student council released the spirit-day themes for homecoming week."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr7/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-09-30",
+      "featured": false,
+      "tags": [
+        "student-life"
+      ]
+    },
+    {
+      "id": "news-009",
+      "slug": "new-counseling-office-hours",
+      "title": "New Counseling Office Hours",
+      "category": "counseling",
+      "summary": "Counselors now hold drop-in hours before school on Tuesdays and Thursdays.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Counselors now hold drop-in hours before school on Tuesdays and Thursdays."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr8/1200/630",
+      "author": "Fine Arts Dept.",
+      "publishedAt": "2026-09-28",
+      "featured": false,
+      "tags": [
+        "counseling"
+      ]
+    },
+    {
+      "id": "news-010",
+      "slug": "senior-portraits-due-nov-1",
+      "title": "Senior Portraits Due Nov 1",
+      "category": "seniors",
+      "summary": "Yearbook portraits for seniors must be submitted by November 1.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Yearbook portraits for seniors must be submitted by November 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr9/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-09-26",
+      "featured": false,
+      "tags": [
+        "seniors"
+      ]
+    },
+    {
+      "id": "news-011",
+      "slug": "theater-presents-the-royal-mystery",
+      "title": "Theater Presents 'The Royal Mystery'",
+      "category": "fine-arts",
+      "summary": "The fall play opens Nov 6 in the auditorium; tickets on sale now.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "The fall play opens Nov 6 in the auditorium; tickets on sale now."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr10/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-09-24",
+      "featured": false,
+      "tags": [
+        "fine-arts"
+      ]
+    },
+    {
+      "id": "news-012",
+      "slug": "cafeteria-adds-grab-and-go-breakfast",
+      "title": "Cafeteria Adds Grab-and-Go Breakfast",
+      "category": "dining",
+      "summary": "Breakfast carts now open at each entrance from 7:15 to 7:45 AM.",
+      "body": [
+        {
+          "type": "paragraph",
+          "text": "Breakfast carts now open at each entrance from 7:15 to 7:45 AM."
+        },
+        {
+          "type": "paragraph",
+          "text": "Placeholder body copy. Replace with the article text from the live site."
+        }
+      ],
+      "heroImage": "https://picsum.photos/seed/khr11/1200/630",
+      "author": "Communications Office",
+      "publishedAt": "2026-09-22",
+      "featured": false,
+      "tags": [
+        "dining"
+      ]
+    }
+  ],
+  "pagination": {
+    "pageSize": 10,
+    "total": 12
+  }
+}

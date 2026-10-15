@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "mock": true,
+    "generatedAt": "2026-10-14"
+  },
+  "comments": [
+    {
+      "id": "c-001",
+      "postId": "p-005",
+      "parentCommentId": null,
+      "authorId": "u-s02",
+      "body": "Tragic hero. He believes he can rebuild the past, and that belief is what destroys him.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 7,
+      "createdAt": "2026-10-14T09:40:00-05:00"
+    },
+    {
+      "id": "c-002",
+      "postId": "p-005",
+      "parentCommentId": "c-001",
+      "authorId": "u-s01",
+      "body": "Agree with Liam, but I'd say his flaw is that he never sees Daisy as she really is.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 4,
+      "createdAt": "2026-10-14T10:00:00-05:00"
+    },
+    {
+      "id": "c-003",
+      "postId": "p-005",
+      "parentCommentId": null,
+      "authorId": "u-s04",
+      "body": "Hot take: Nick is the real protagonist.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 5,
+      "createdAt": "2026-10-14T10:40:00-05:00"
+    },
+    {
+      "id": "c-004",
+      "postId": "p-006",
+      "parentCommentId": null,
+      "authorId": "u-eng",
+      "body": "Full MLA heading please. Template is in the files tab.",
+      "status": "published",
+      "isAnswer": true,
+      "score": 6,
+      "createdAt": "2026-10-14T14:20:00-05:00"
+    },
+    {
+      "id": "c-005",
+      "postId": "p-009",
+      "parentCommentId": null,
+      "authorId": "u-p01",
+      "body": "Thanks! Is the essay typed or handwritten?",
+      "status": "published",
+      "isAnswer": false,
+      "score": 0,
+      "createdAt": "2026-10-14T04:50:00-05:00"
+    },
+    {
+      "id": "c-006",
+      "postId": "p-009",
+      "parentCommentId": null,
+      "authorId": "u-eng",
+      "body": "Typed, submitted on Canvas.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 0,
+      "createdAt": "2026-10-14T05:20:00-05:00"
+    },
+    {
+      "id": "c-007",
+      "postId": "p-010",
+      "parentCommentId": null,
+      "authorId": "u-couns",
+      "body": "Scores post to the College Board site in early December. We'll send a how-to guide.",
+      "status": "published",
+      "isAnswer": true,
+      "score": 0,
+      "createdAt": "2026-10-13T11:20:00-05:00"
+    },
+    {
+      "id": "c-008",
+      "postId": "p-019",
+      "parentCommentId": null,
+      "authorId": "u-p08",
+      "body": "I can take 4 if we leave by 7.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 0,
+      "createdAt": "2026-10-14T11:30:00-05:00"
+    },
+    {
+      "id": "c-009",
+      "postId": "p-020",
+      "parentCommentId": null,
+      "authorId": "u-s05",
+      "body": "Mecanum. Strafing won us 2 matches at regionals.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 6,
+      "createdAt": "2026-10-13T18:50:00-05:00"
+    },
+    {
+      "id": "c-010",
+      "postId": "p-020",
+      "parentCommentId": null,
+      "authorId": "u-sci",
+      "body": "Whatever you choose, freeze the design by Oct 23.",
+      "status": "published",
+      "isAnswer": false,
+      "score": 8,
+      "createdAt": "2026-10-13T19:40:00-05:00"
+    },
+    {
+      "id": "c-011",
+      "postId": "p-025",
+      "parentCommentId": null,
+      "authorId": "u-couns",
+      "body": "It depends on your other commitments. 2\u20133 is typical; come by drop-in hours and we'll plan it together.",
+      "status": "published",
+      "isAnswer": true,
+      "score": 0,
+      "createdAt": "2026-10-12T18:40:00-05:00"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "_meta": {
+    "mock": true,
+    "source": "https://www.khroyals.com/",
+    "generatedAt": "2026-10-14"
+  },
+  "page": {
+    "id": "activities",
+    "title": "Clubs & Activities",
+    "route": "/activities"
+  },
+  "clubs": [
+    {
+      "id": "club-01",
+      "name": "Student Council",
+      "sponsor": null,
+      "meets": "1st Fri monthly",
+      "room": "100",
+      "description": "Student Council (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-02",
+      "name": "National Honor Society",
+      "sponsor": null,
+      "meets": "Tue lunch",
+      "room": "101",
+      "description": "National Honor Society (placeholder description).",
+      "category": "academic"
+    },
+    {
+      "id": "club-03",
+      "name": "Robotics",
+      "sponsor": null,
+      "meets": "Tue lunch",
+      "room": "102",
+      "description": "Robotics (placeholder description).",
+      "category": "academic"
+    },
+    {
+      "id": "club-04",
+      "name": "Debate",
+      "sponsor": null,
+      "meets": "Thu lunch",
+      "room": "103",
+      "description": "Debate (placeholder description).",
+      "category": "academic"
+    },
+    {
+      "id": "club-05",
+      "name": "Theater",
+      "sponsor": null,
+      "meets": "1st Fri monthly",
+      "room": "104",
+      "description": "Theater (placeholder description).",
+      "category": "fine-arts"
+    },
+    {
+      "id": "club-06",
+      "name": "Choir",
+      "sponsor": null,
+      "meets": "Tue lunch",
+      "room": "105",
+      "description": "Choir (placeholder description).",
+      "category": "fine-arts"
+    },
+    {
+      "id": "club-07",
+      "name": "Band",
+      "sponsor": null,
+      "meets": "Wed after school",
+      "room": "106",
+      "description": "Band (placeholder description).",
+      "category": "fine-arts"
+    },
+    {
+      "id": "club-08",
+      "name": "Art Club",
+      "sponsor": null,
+      "meets": "1st Fri monthly",
+      "room": "107",
+      "description": "Art Club (placeholder description).",
+      "category": "fine-arts"
+    },
+    {
+      "id": "club-09",
+      "name": "Key Club",
+      "sponsor": null,
+      "meets": "1st Fri monthly",
+      "room": "108",
+      "description": "Key Club (placeholder description).",
+      "category": "service"
+    },
+    {
+      "id": "club-10",
+      "name": "FFA",
+      "sponsor": null,
+      "meets": "Thu lunch",
+      "room": "109",
+      "description": "FFA (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-11",
+      "name": "FCCLA",
+      "sponsor": null,
+      "meets": "Tue lunch",
+      "room": "110",
+      "description": "FCCLA (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-12",
+      "name": "HOSA",
+      "sponsor": null,
+      "meets": "1st Fri monthly",
+      "room": "111",
+      "description": "HOSA (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-13",
+      "name": "Yearbook",
+      "sponsor": null,
+      "meets": "Tue lunch",
+      "room": "112",
+      "description": "Yearbook (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-14",
+      "name": "Chess Club",
+      "sponsor": null,
+      "meets": "Wed after school",
+      "room": "113",
+      "description": "Chess Club (placeholder description).",
+      "category": "academic"
+    },
+    {
+      "id": "club-15",
+      "name": "Spanish Club",
+      "sponsor": null,
+      "meets": "Thu lunch",
+      "room": "114",
+      "description": "Spanish Club (placeholder description).",
+      "category": "general"
+    },
+    {
+      "id": "club-16",
+      "name": "Esports",
+      "sponsor": null,
+      "meets": "Wed after school",
+      "room": "115",
+      "description": "Esports (placeholder description).",
+      "category": "general"
+    }
+  ]
+}

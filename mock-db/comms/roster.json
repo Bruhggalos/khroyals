@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "mock": true,
+    "generatedAt": "2026-10-14"
+  },
+  "roster": {
+    "sections": [
+      {
+        "id": "eng10-p3",
+        "name": "English 10 \u2013 Period 3",
+        "teacherId": "u-eng"
+      }
+    ],
+    "teams": [
+      {
+        "id": "team-02",
+        "name": "Volleyball",
+        "coachId": "u-vbcoach"
+      }
+    ],
+    "clubs": [
+      {
+        "id": "club-03",
+        "name": "Robotics",
+        "sponsorId": "u-sci"
+      }
+    ]
+  }
+}
