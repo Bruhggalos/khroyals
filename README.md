@@ -78,3 +78,15 @@ coach, student, a muted student, or a parent and watch permissions change.
 3. Roster sync: feed `syncRuleMemberships()` from the SIS (OneRoster/Clever/ClassLink).
 4. Push notifications via `expo-notifications`; builds via EAS (`eas build -p all`).
 5. Student data: plan for FERPA/COPPA review, records retention, and district approval.
+
+## Download the Android APK
+
+Every push to `main` (and every pull request) runs **Actions → Android APK**:
+type-check, tests, then a release build. Open the finished run and download
+**khroyals-android-apk** under *Artifacts*. Unzip it and install the `.apk`
+on an Android phone (allow "Install unknown apps" for your browser or Files app).
+You can also start a build by hand with **Run workflow**.
+
+The APK is signed with the default development key, which is fine for testing.
+Before publishing to Google Play, create an upload keystore and store it as a
+repository secret (or switch to EAS Build).
