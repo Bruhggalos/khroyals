@@ -83,10 +83,18 @@ coach, student, a muted student, or a parent and watch permissions change.
 
 Every push to `main` (and every pull request) runs **Actions → Android APK**:
 type-check, tests, then a release build. Open the finished run and download
-**khroyals-android-apk** under *Artifacts*. Unzip it and install the `.apk`
+**khroyals-android-0.N** under *Artifacts*. Unzip it and install the `.apk`
 on an Android phone (allow "Install unknown apps" for your browser or Files app).
 You can also start a build by hand with **Run workflow**.
 
 The APK is signed with the default development key, which is fine for testing.
 Before publishing to Google Play, create an upload keystore and store it as a
 repository secret (or switch to EAS Build).
+
+## Versioning (beta)
+
+`app.config.ts` sets the version from the CI build number: Actions run **N**
+produces version **0.N**, Android `versionCode` N and iOS `buildNumber` N, so each
+build installs as an upgrade over the last. Local builds report `0.0`. Run numbers
+are per workflow, so an iOS pipeline should be added as a job in the same workflow
+to keep both platforms on one number.

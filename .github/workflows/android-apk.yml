@@ -29,6 +29,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      # app.config.ts turns this into version 0.<run number> and versionCode <run number>.
+      APP_BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v5
 
@@ -72,11 +75,11 @@ jobs:
         run: |
           mkdir -p out
           cp android/app/build/outputs/apk/release/app-release.apk \
-             "out/khroyals-${GITHUB_SHA::7}.apk"
+             "out/khroyals-0.${APP_BUILD_NUMBER}-${GITHUB_SHA::7}.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: khroyals-android-apk
+          name: khroyals-android-0.${{ github.run_number }}
           path: out/*.apk
           retention-days: 30
