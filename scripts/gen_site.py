@@ -1,4 +1,4 @@
-"""Generate per-page mock database for the KH Royals school site.
+"""Generate per-page mock database for the Kingdom Heights Preparatory School site.
 
 All content is PLACEHOLDER: khroyals.com blocks automated fetching, so these
 files mirror the structure of a typical K-12 school site. Replace values with
@@ -38,11 +38,13 @@ nav = [
 ]
 write("site", {
     "school": {
-        "name": "KH Royals", "shortName": "KHR", "mascot": "Royals",
-        "colors": {"primary": "#4B2A7B", "secondary": "#F2B705", "ink": "#1B1530"},
-        "logo": "assets/logo.png", "tagline": "Once a Royal, always a Royal.",
-        "address": {"line1": "100 Royal Way", "city": "Placeholder", "state": "TX", "zip": "00000"},
-        "phone": "(555) 010-2000", "fax": "(555) 010-2001", "email": "info@khroyals.example",
+        # Name, contact details, colors and tagline are the school's real ones (khroyals.com).
+        "name": "Kingdom Heights Preparatory School", "shortName": "Kingdom Heights", "mascot": "Royals",
+        "colors": {"primary": "#0031DC", "navy": "#2D328D", "accent": "#FC1723", "ink": "#110E08"},
+        "logo": "assets/logo.png",
+        "tagline": "A boldly Christian school that will not compromise on biblical truth.",
+        "address": {"line1": "3401 Holmes Ave NW", "city": "Huntsville", "state": "AL", "zip": "35816"},
+        "phone": "(256) 210-1343", "email": "info@khroyals.com", "admissionsEmail": "admissions@khroyals.com",
         "hours": "Mon–Fri 7:30 AM – 4:00 PM",
     },
     "navigation": nav,
@@ -52,10 +54,8 @@ write("site", {
         {"label": "Privacy Policy", "url": "/legal/privacy"},
     ],
     "social": [
-        {"network": "facebook", "url": "https://facebook.com/example"},
-        {"network": "instagram", "url": "https://instagram.com/example"},
-        {"network": "x", "url": "https://x.com/example"},
-        {"network": "youtube", "url": "https://youtube.com/example"},
+        {"network": "facebook", "url": "https://www.facebook.com/khroyals/"},
+        {"network": "instagram", "url": "https://www.instagram.com/khroyals/"},
     ],
     "alertBanner": {"active": True, "level": "info",
                      "message": "Early release Friday, Oct 16 — dismissal at 12:30 PM.",
@@ -160,8 +160,11 @@ write("home", {
     "page": {"id": "home", "title": "Home", "route": "/"},
     "blocks": [
         {"type": "hero", "slides": [
-            {"image": "https://picsum.photos/seed/khrhero1/1600/900", "headline": "Welcome, Royals!", "subhead": "2026–27 school year", "cta": {"label": "Calendar", "route": "/calendar"}},
-            {"image": "https://picsum.photos/seed/khrhero2/1600/900", "headline": "District Champs", "subhead": "Varsity volleyball", "cta": {"label": "Athletics", "route": "/athletics"}},
+            {"image": "https://picsum.photos/seed/khrhero1/1600/900",
+             "headline": "A boldly Christian school that will not compromise on", "headlineAccent": "biblical truth.",
+             "subhead": "Kingdom Heights (K2–12) develops students to thrive and lead in a rapidly changing world.",
+             "ctas": [{"label": "Schedule a Tour", "route": "/enrollment"},
+                      {"label": "Tuition & Admissions Process", "route": "/enrollment"}]},
         ]},
         {"type": "quickLinks", "items": [
             {"label": "Parent Portal", "icon": "user", "url": "https://portal.example"},
@@ -309,8 +312,8 @@ write("dining", {"page": {"id": "dining", "title": "Lunch Menu", "route": "/dini
 
 # ---------- contact ----------
 write("contact", {"page": {"id": "contact", "title": "Contact", "route": "/contact"},
-    "mainOffice": {"phone": "(555) 010-2000", "email": "info@khroyals.example", "hours": "Mon–Fri 7:30 AM – 4:00 PM"},
-    "map": {"lat": 0.0, "lng": 0.0, "label": "KH Royals Campus (placeholder)"},
+    "mainOffice": {"phone": "(256) 210-1343", "email": "info@khroyals.com", "hours": "Mon–Fri 7:30 AM – 4:00 PM"},
+    "map": {"label": "Kingdom Heights Campus", "address": "3401 Holmes Ave NW, Huntsville, AL 35816"},
     "keyContacts": [{"role": "Attendance", **staff_by("Attendance Clerk")},
                     {"role": "Registrar", **staff_by("Registrar")},
                     {"role": "Nurse", **staff_by("School Nurse")},

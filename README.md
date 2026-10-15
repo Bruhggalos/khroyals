@@ -1,4 +1,4 @@
-# KH Royals — cross-platform app (mock data)
+# Kingdom Heights — cross-platform app (mock data)
 
 One Expo / React Native codebase that ships to **iOS, Android and web**, backed by a
 per-page mock database so the app can be built and tested before any real API exists.
@@ -98,3 +98,19 @@ produces version **0.N**, Android `versionCode` N and iOS `buildNumber` N, so ea
 build installs as an upgrade over the last. Local builds report `0.0`. Run numbers
 are per workflow, so an iOS pipeline should be added as a job in the same workflow
 to keep both platforms on one number.
+
+## Branding
+
+The app follows khroyals.com: royal blue `#0031DC`, red `#FC1723`, crest navy
+`#2D328D`, off-white `#FAFAF9`, and the **Montserrat** typeface (loaded with
+`@expo-google-fonts/montserrat`; `Text` from `src/ui.tsx` maps `fontWeight` onto it,
+so screens import `Text` from there rather than from `react-native`).
+
+App icon, Android adaptive icon, splash, favicon and the in-app logo/crown are all
+generated from `assets/brand/kingdom-heights-logo.webp`:
+
+```bash
+python3 scripts/gen_brand_assets.py   # needs Pillow
+```
+
+Drop in a higher-resolution or vector export of the logo and re-run for sharper icons.

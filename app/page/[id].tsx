@@ -5,10 +5,10 @@
  * Staff gets a searchable directory since it's the most-used page.
  */
 import { useState } from 'react';
-import { Image, Linking, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Linking, ScrollView, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getPage, type PageId } from '../../src/api/mockApi';
-import { C, Card, H, Loading, P, s, useLoad } from '../../src/ui';
+import { C, Card, H, Loading, P, s, Text, useLoad } from '../../src/ui';
 
 const human = (k: string) => k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 const TITLE_KEYS = ['title', 'name', 'label', 'sport', 'q', 'role', 'n'];

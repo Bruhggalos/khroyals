@@ -1,7 +1,7 @@
-import { Image, ScrollView, Text } from 'react-native';
+import { Image, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getArticle } from '../../src/api/mockApi';
-import { C, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { C, Chip, Loading, P, s, Text, useLoad } from '../../src/ui';
 
 export default function Article() {
   const { slug } = useLocalSearchParams<{ slug: string }>();

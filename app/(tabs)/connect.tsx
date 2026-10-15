@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { listMyGroups, listUsers, me, setCurrentUser } from '../../src/api/mockApi';
 import { MODE_LABELS } from '../../src/comms/presets';
 import { canCreateGroup } from '../../src/comms/permissions';
-import { Button, C, Card, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { Button, C, Card, Chip, Loading, P, s, Text, useLoad } from '../../src/ui';
 
 /** Test switcher: view the app as any mock user to verify permissions. */
 const TEST_USERS = ['u-admin', 'u-eng', 'u-vbcoach', 'u-s01', 'u-s08', 'u-p01'];

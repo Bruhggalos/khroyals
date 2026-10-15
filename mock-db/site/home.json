@@ -15,21 +15,19 @@
       "slides": [
         {
           "image": "https://picsum.photos/seed/khrhero1/1600/900",
-          "headline": "Welcome, Royals!",
-          "subhead": "2026\u201327 school year",
-          "cta": {
-            "label": "Calendar",
-            "route": "/calendar"
-          }
-        },
-        {
-          "image": "https://picsum.photos/seed/khrhero2/1600/900",
-          "headline": "District Champs",
-          "subhead": "Varsity volleyball",
-          "cta": {
-            "label": "Athletics",
-            "route": "/athletics"
-          }
+          "headline": "A boldly Christian school that will not compromise on",
+          "headlineAccent": "biblical truth.",
+          "subhead": "Kingdom Heights (K2\u201312) develops students to thrive and lead in a rapidly changing world.",
+          "ctas": [
+            {
+              "label": "Schedule a Tour",
+              "route": "/enrollment"
+            },
+            {
+              "label": "Tuition & Admissions Process",
+              "route": "/enrollment"
+            }
+          ]
         }
       ]
     },

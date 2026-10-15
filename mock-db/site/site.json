@@ -5,25 +5,26 @@
     "generatedAt": "2026-10-14"
   },
   "school": {
-    "name": "KH Royals",
-    "shortName": "KHR",
+    "name": "Kingdom Heights Preparatory School",
+    "shortName": "Kingdom Heights",
     "mascot": "Royals",
     "colors": {
-      "primary": "#4B2A7B",
-      "secondary": "#F2B705",
-      "ink": "#1B1530"
+      "primary": "#0031DC",
+      "navy": "#2D328D",
+      "accent": "#FC1723",
+      "ink": "#110E08"
     },
     "logo": "assets/logo.png",
-    "tagline": "Once a Royal, always a Royal.",
+    "tagline": "A boldly Christian school that will not compromise on biblical truth.",
     "address": {
-      "line1": "100 Royal Way",
-      "city": "Placeholder",
-      "state": "TX",
-      "zip": "00000"
+      "line1": "3401 Holmes Ave NW",
+      "city": "Huntsville",
+      "state": "AL",
+      "zip": "35816"
     },
-    "phone": "(555) 010-2000",
-    "fax": "(555) 010-2001",
-    "email": "info@khroyals.example",
+    "phone": "(256) 210-1343",
+    "email": "info@khroyals.com",
+    "admissionsEmail": "admissions@khroyals.com",
     "hours": "Mon\u2013Fri 7:30 AM \u2013 4:00 PM"
   },
   "navigation": [
@@ -110,19 +111,11 @@
   "social": [
     {
       "network": "facebook",
-      "url": "https://facebook.com/example"
+      "url": "https://www.facebook.com/khroyals/"
     },
     {
       "network": "instagram",
-      "url": "https://instagram.com/example"
-    },
-    {
-      "network": "x",
-      "url": "https://x.com/example"
-    },
-    {
-      "network": "youtube",
-      "url": "https://youtube.com/example"
+      "url": "https://www.instagram.com/khroyals/"
     }
   ],
   "alertBanner": {

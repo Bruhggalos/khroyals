@@ -1,7 +1,7 @@
-import { ScrollView, Text } from 'react-native';
+import { ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { getPage } from '../../src/api/mockApi';
-import { C, Card, Loading, s, useLoad } from '../../src/ui';
+import { C, Card, Loading, s, Text, useLoad } from '../../src/ui';
 
 const IN_TABS = new Set(['home', 'news', 'calendar']);
 

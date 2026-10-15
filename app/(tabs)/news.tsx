@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { FlatList, Image, ScrollView, Text } from 'react-native';
+import { FlatList, Image, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { getPage } from '../../src/api/mockApi';
-import { C, Card, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { C, Card, Chip, Loading, P, s, Text, useLoad } from '../../src/ui';
 
 export default function News() {
   const { data } = useLoad(() => getPage('news'));

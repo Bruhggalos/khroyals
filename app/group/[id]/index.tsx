@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, TextInput, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { addComment, createPost, getComments, getGroup, getUser, moderatePost } from '../../../src/api/mockApi';
 import type { Post } from '../../../src/comms/types';
-import { Button, C, Card, Chip, Loading, P, s, useLoad } from '../../../src/ui';
+import { Button, C, Card, Chip, Loading, P, s, Text, useLoad } from '../../../src/ui';
 
 function Author({ id, anon }: { id: string | null; anon?: boolean }) {
   const u = id ? getUser(id) : null;

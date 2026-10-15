@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput } from 'react-native';
+import { Alert, ScrollView, TextInput } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { createGroup } from '../../src/api/mockApi';
 import { defaultSettings } from '../../src/comms/presets';
 import { SettingsForm } from '../../src/comms/SettingsForm';
 import type { AssignmentRule, Group, SchoolRole } from '../../src/comms/types';
-import { Button, C, Card, H, P, s } from '../../src/ui';
+import { Button, C, Card, H, P, s, Text } from '../../src/ui';
 
 const ROLES: SchoolRole[] = ['student', 'parent', 'teacher', 'staff'];
 

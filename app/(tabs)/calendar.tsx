@@ -1,6 +1,6 @@
-import { SectionList, Text, View } from 'react-native';
+import { SectionList, View } from 'react-native';
 import { getPage } from '../../src/api/mockApi';
-import { C, Card, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { C, Card, Chip, Loading, P, s, Text, useLoad } from '../../src/ui';
 
 export default function Calendar() {
   const { data } = useLoad(() => getPage('calendar'));

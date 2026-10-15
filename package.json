@@ -13,10 +13,14 @@
     "regen-mock": "python3 scripts/gen_site.py mock-db/site && python3 scripts/gen_comms.py mock-db/comms mock-db/site"
   },
   "dependencies": {
+    "@expo-google-fonts/montserrat": "^0.4.2",
+    "@expo/vector-icons": "^15.1.1",
     "expo": "^57.0.29",
     "expo-constants": "~57.0.22",
+    "expo-font": "~57.0.4",
     "expo-linking": "~57.0.13",
     "expo-router": "~57.0.27",
+    "expo-splash-screen": "~57.0.10",
     "expo-status-bar": "~57.0.1",
     "react": "^19.2.3",
     "react-native": "^0.86.3",

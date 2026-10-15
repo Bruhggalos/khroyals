@@ -1,7 +1,7 @@
-import { Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch, TextInput, View } from 'react-native';
 import type { Audience, GroupMode, GroupPermissions, GroupSettings, JoinPolicy, Visibility } from './types';
 import { MODE_LABELS, PERMISSION_PRESETS } from './presets';
-import { C, Card, H, P, s } from '../ui';
+import { C, Card, H, P, s, Text } from '../ui';
 
 const AUDIENCES: Audience[] = ['nobody', 'owners', 'moderators', 'members', 'subscribers'];
 const PERM_LABELS: Record<keyof GroupPermissions, string> = {

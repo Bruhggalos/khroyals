@@ -10,14 +10,13 @@
     "route": "/contact"
   },
   "mainOffice": {
-    "phone": "(555) 010-2000",
-    "email": "info@khroyals.example",
+    "phone": "(256) 210-1343",
+    "email": "info@khroyals.com",
     "hours": "Mon\u2013Fri 7:30 AM \u2013 4:00 PM"
   },
   "map": {
-    "lat": 0.0,
-    "lng": 0.0,
-    "label": "KH Royals Campus (placeholder)"
+    "label": "Kingdom Heights Campus",
+    "address": "3401 Holmes Ave NW, Huntsville, AL 35816"
   },
   "keyContacts": [
     {
