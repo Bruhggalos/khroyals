@@ -90,8 +90,9 @@ for m in memberships:
         w(f"update public.memberships set muted_until = {q(m.get('mutedUntil'))}, can_post = {q(m.get('canPost', True))} "
           f"where group_id = {sid(m['groupId'])} and user_id = {sid(m['userId'])};")
 
-w('\n-- Admin tiers: the demo admin is the director; the assistant principal an administrator.')
-w("select app.bootstrap_director('u-admin@demo.khroyals.test');")
+w('\n-- Admin tiers: the demo admin is the director unless a real one exists; the assistant principal an administrator.')
+w("do $$ begin if not exists (select 1 from public.profiles where admin_tier = 'director') then "
+  "perform app.bootstrap_director('u-admin@demo.khroyals.test'); end if; end $$;")
 w(f"update public.profiles set admin_tier = 'administrator' where id = {sid('u-ap')};")
 
 w('\n-- Posts, polls, reactions, replies (demo history shouldn\'t trigger push notifications)')

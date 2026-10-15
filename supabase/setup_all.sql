@@ -1430,8 +1430,8 @@ insert into public.memberships (group_id, user_id, role, source, notification, j
 update public.memberships set muted_until = null, can_post = false where group_id = app.seed_id('g-eng-p3') and user_id = app.seed_id('u-s08');
 update public.memberships set muted_until = '2026-10-15T15:00:00-05:00', can_post = true where group_id = app.seed_id('g-vb') and user_id = app.seed_id('u-s03');
 
--- Admin tiers: the demo admin is the director; the assistant principal an administrator.
-select app.bootstrap_director('u-admin@demo.khroyals.test');
+-- Admin tiers: the demo admin is the director unless a real one exists; the assistant principal an administrator.
+do $$ begin if not exists (select 1 from public.profiles where admin_tier = 'director') then perform app.bootstrap_director('u-admin@demo.khroyals.test'); end if; end $$;
 update public.profiles set admin_tier = 'administrator' where id = app.seed_id('u-ap');
 
 -- Posts, polls, reactions, replies (demo history shouldn't trigger push notifications)

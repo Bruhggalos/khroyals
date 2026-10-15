@@ -6,7 +6,7 @@ import { Button, C, Card, H, P, s } from '../ui';
 
 /** Seeded demo accounts for testing each role (only when a demo password is configured). */
 const DEMO = [
-  ['u-admin', 'Director'], ['u-ap', 'Administrator'], ['u-eng', 'Teacher'], ['u-vbcoach', 'Coach'],
+  ['u-admin', 'Administrator'], ['u-ap', 'Asst. principal'], ['u-eng', 'Teacher'], ['u-vbcoach', 'Coach'],
   ['u-s01', 'Student'], ['u-s08', 'Silenced student'], ['u-p01', 'Parent'],
 ] as const;
 
