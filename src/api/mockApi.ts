@@ -90,8 +90,9 @@ export function getGroup(groupId: string) {
     posts,
     members: db.memberships.filter((m) => m.groupId === groupId),
     abilities: {
-      post: can(c, 'post'), askQuestion: can(c, 'askQuestion'), react: can(c, 'react'),
-      createPolls: can(c, 'createPolls'), moderate: mod, editSettings: canEditSettings(c),
+      post: can(c, 'post'), askQuestion: can(c, 'askQuestion'), react: can(c, 'react'), comment: can(c, 'comment'),
+      createPolls: can(c, 'createPolls'), attachFiles: can(c, 'attachFiles'), pin: can(c, 'pin'),
+      moderate: mod, editSettings: canEditSettings(c), createEvents: false,
     },
   });
 }

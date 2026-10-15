@@ -27,6 +27,11 @@
     "icon": "./assets/icon.png",
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "supabaseUrl": "https://twmeenkvoedoryhterpf.supabase.co",
+      "supabaseKey": "sb_publishable_pcQNIbtqTwFStmRKIz1kbA_yo5XQvRX",
+      "demoPassword": "Royals-Demo-FUEOmiY82nBA"
     }
   }
 }

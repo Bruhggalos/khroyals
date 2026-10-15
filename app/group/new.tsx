@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { createGroup } from '../../src/api/mockApi';
+import { createGroup } from '../../src/api/connect';
 import { defaultSettings } from '../../src/comms/presets';
 import { SettingsForm } from '../../src/comms/SettingsForm';
 import type { AssignmentRule, Group, SchoolRole } from '../../src/comms/types';

@@ -57,7 +57,8 @@ to it. The calendar's dates are transcribed in the importer from the official PD
 
 ```
 content/site/    real site content (see above)
-mock-db/comms/   Royals Connect demo data (npm run regen-comms)
+mock-db/comms/   Royals Connect demo data (npm run regen-comms); seeds Supabase
+supabase/        migrations, seed, local test stubs
 scripts/         import_site.py (website), gen_comms.py (Connect demo)
 src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() later
 src/site/             block renderer, link routing, video players
@@ -65,6 +66,43 @@ src/comms/            types, presets, permission engine, roster auto-assignment,
 app/                  expo-router screens (tabs: Home · News · Calendar · Connect · More)
 tests/                permission engine tests
 ```
+
+## Backend (Supabase)
+
+Royals Connect, group calendars and the admin console run on Supabase when
+`app.json → expo.extra.supabaseUrl/supabaseKey` are set (otherwise the app uses
+the bundled demo data). The publishable key ships in the app; **the database
+enforces every rule**:
+
+- `supabase/migrations/` — tables (profiles, rosters, groups, memberships, posts,
+  replies, reactions, votes, polls, audit log, events), row-level security, and
+  the API functions the app calls. `app.can()` is a port of
+  `src/comms/permissions.ts` (locks, quiet hours in Central time, mutes, slow
+  mode, approval queues), and roster rules keep group membership in sync
+  (`app.sync_rule_memberships`, triggered by roster/guardian/profile changes).
+- Writes only go through the functions (`create_post`, `add_comment`,
+  `moderate_post`, `create_group`, `update_group_settings`, `set_membership`,
+  `admin_update_profile`, `admin_link_guardian`, …); direct table writes are
+  refused, except calendar events, which have their own policies.
+- Realtime is on for posts, replies, reactions, poll votes, memberships and events.
+  A private `attachments` storage bucket is ready (`<group id>/<file>`); the app
+  doesn't upload yet.
+- New sign-ups wait for an admin to approve them in **Connect → Admin console**.
+
+```bash
+npm test                         # includes tests/db.test.ts: migrations + seed + RLS in PGlite
+python3 scripts/gen_seed.py      # rebuild supabase/seed.sql and supabase/setup_all.sql
+# apply to a project (needs a personal access token for schema changes):
+SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… DEMO_PASSWORD=… \
+  NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs
+SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smoke_supabase.mjs
+```
+
+Without an access token, paste `supabase/setup_all.sql` into the dashboard's SQL editor.
+
+**Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
+share the password in `expo.extra.demoPassword`, which also shows one-tap demo
+logins on the sign-in screen. Remove it (and the accounts) before real families use the app.
 
 ## Royals Connect — how groups work
 

@@ -1,54 +1,123 @@
-import { useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { listMyGroups, listUsers, me, setCurrentUser } from '../../src/api/mockApi';
+import {
+  joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, me, onAuthChange, session, setMockUser, signOut,
+  type Person,
+} from '../../src/api/connect';
 import { MODE_LABELS } from '../../src/comms/presets';
 import { canCreateGroup } from '../../src/comms/permissions';
-import { Button, C, Card, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { SignIn } from '../../src/comms/SignIn';
+import type { Group } from '../../src/comms/types';
+import { Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
 
-/** Test switcher: view the app as any mock user to verify permissions. */
+/** Demo-data mode: view the app as any demo person to check permissions. */
 const TEST_USERS = ['u-admin', 'u-eng', 'u-vbcoach', 'u-s01', 'u-s08', 'u-p01'];
 
+function GroupRow({ g, onPress, action }: { g: Group; onPress?: () => void; action?: React.ReactNode }) {
+  return (
+    <Card onPress={onPress} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+      <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: g.color + '22', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22 }}>{g.icon}</Text>
+      </View>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={{ fontWeight: '700', color: C.ink }}>{g.name}{g.settings.locked ? '  🔒' : ''}</Text>
+        {!!g.description && <P muted>{g.description}</P>}
+        <View style={s.row}><Chip label={MODE_LABELS[g.settings.mode].title} color={g.color} /><Chip label={g.settings.visibility} color={C.muted} /></View>
+      </View>
+      {action}
+    </Card>
+  );
+}
+
 export default function Connect() {
-  const [who, setWho] = useState(me().id);
-  const { data: users } = useLoad(listUsers);
-  const { data: groups, reload } = useLoad(listMyGroups, [who]);
-  useFocusEffect(useCallback(() => reload(), []));
-  if (!groups || !users) return <Loading />;
-  const u = me();
+  const [ready, setReady] = useState(false);
+  const [person, setPerson] = useState<Person | null>(null);
+  const [groups, setGroups] = useState<Group[] | null>(null);
+  const [discover, setDiscover] = useState<Group[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+
+  const load = useCallback(async () => {
+    try {
+      const p = await session();
+      setPerson(p);
+      if (p && !p.pending) {
+        setGroups(await listMyGroups());
+        setDiscover(await listDiscoverableGroups());
+        if (!live) setPeople(await listUsers());
+      }
+    } catch (e: any) {
+      Alert.alert('Could not load groups', e.message);
+    } finally {
+      setReady(true);
+    }
+  }, []);
+
+  useEffect(() => onAuthChange(load), [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  if (!ready) return <Loading />;
+  if (live && !person) return <SignIn onDone={load} />;
+  if (person?.pending) {
+    return (
+      <View style={[s.screen, s.pad]}>
+        <Card>
+          <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Waiting for approval</Text>
+          <P>Thanks, {person.firstName || person.email}. A Kingdom Heights administrator will confirm your account and add you to your groups.</P>
+          <Button kind="ghost" label="Sign out" onPress={() => signOut().then(load)} />
+        </Card>
+      </View>
+    );
+  }
+  if (!groups || !person) return <Loading />;
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted }}>VIEWING AS (TEST)</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-        {TEST_USERS.map((id) => {
-          const x = users.find((y) => y.id === id)!;
-          const on = id === who;
-          return (
-            <Text key={id} onPress={() => { setCurrentUser(id); setWho(id); }}
-              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: C.line,
-                backgroundColor: on ? C.primary : '#fff', color: on ? '#fff' : C.ink }}>
-              {x.firstName} · {x.schoolRole}
-            </Text>
-          );
-        })}
-      </ScrollView>
+      {live ? (
+        <View style={[s.row, { justifyContent: 'space-between' }]}>
+          <P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P>
+          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => signOut().then(load)}>Sign out</Text>
+        </View>
+      ) : (
+        <>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted }}>VIEWING AS (DEMO DATA)</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            {TEST_USERS.map((id) => {
+              const x = people.find((y) => y.id === id);
+              if (!x) return null;
+              const on = id === person.id;
+              return (
+                <Text key={id} onPress={() => { setMockUser(id); load(); }}
+                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: C.line,
+                    backgroundColor: on ? C.primary : '#fff', color: on ? '#fff' : C.ink }}>
+                  {x.firstName} · {x.schoolRole}
+                </Text>
+              );
+            })}
+          </ScrollView>
+        </>
+      )}
 
-      {canCreateGroup(u) && <Button label="+ New group" onPress={() => router.push('/group/new')} />}
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        {canCreateGroup(person) && <View style={{ flex: 1 }}><Button label="+ New group" onPress={() => router.push('/group/new')} /></View>}
+        {live && person.schoolRole === 'admin' && <View style={{ flex: 1 }}><Button kind="ghost" label="Admin console" onPress={() => router.push('/admin')} /></View>}
+      </View>
 
-      {groups.map((g) => (
-        <Card key={g.id} onPress={() => router.push(`/group/${g.id}`)} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: g.color + '22', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 22 }}>{g.icon}</Text>
-          </View>
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ fontWeight: '700', color: C.ink }}>{g.name}{g.settings.locked ? '  🔒' : ''}</Text>
-            <P muted>{g.description}</P>
-            <View style={s.row}><Chip label={MODE_LABELS[g.settings.mode].title} color={g.color} /><Chip label={g.settings.visibility} color={C.muted} /></View>
-          </View>
-        </Card>
-      ))}
+      {groups.length === 0 && <P muted>You're not in any groups yet.</P>}
+      {groups.map((g) => <GroupRow key={g.id} g={g} onPress={() => router.push(`/group/${g.id}`)} />)}
+
+      {discover.length > 0 && (
+        <>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted, marginTop: 8 }}>MORE GROUPS</Text>
+          {discover.map((g) => (
+            <GroupRow key={g.id} g={g}
+              onPress={g.settings.visibility === 'public' || g.settings.visibility === 'school' ? () => router.push(`/group/${g.id}`) : undefined}
+              action={g.settings.joinPolicy === 'open'
+                ? <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => joinGroup(g.id).then(load).catch((e) => Alert.alert('Not allowed', e.message))}>Join</Text>
+                : <Text style={{ color: C.muted, fontSize: 12 }}>{g.settings.joinPolicy === 'request' ? 'Ask a moderator' : 'By invitation'}</Text>} />
+          ))}
+        </>
+      )}
     </ScrollView>
   );
 }

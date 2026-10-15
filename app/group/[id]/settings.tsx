@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { getGroup, updateGroupSettings } from '../../../src/api/mockApi';
+import { getGroup, updateGroupSettings } from '../../../src/api/connect';
 import { SettingsForm } from '../../../src/comms/SettingsForm';
 import type { GroupSettings } from '../../../src/comms/types';
 import { Button, Loading, s } from '../../../src/ui';
