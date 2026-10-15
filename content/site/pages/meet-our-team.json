@@ -1,0 +1,242 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/meet-our-team",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "meet-our-team",
+    "title": "Meet Our Team",
+    "sourceUrl": "https://www.khroyals.com/meet-our-team"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "HEAD OF SCHOOL",
+              "text": "Dr. Rachel Ballard serves as the inaugural Head of School for Kingdom Heights Preparatory, bringing a proven track record of academic leadership, innovation, and a deep commitment to Christ-centered education.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1740003330599-PJEN3TCB3YEMEFNCCLFT/Image.jpeg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "DEAN OF INSTRUCTION AND ACCOUNTABILITY",
+              "text": "Dean Kelly Wynn, MA serves as the Dean of Instruction and Accountability at Kingdom Heights Preparatory, bringing over 20 years of experience as a teacher, principal, and ministry leader. She is passionate about academic excellence rooted in Kingdom values and equipping students to thrive.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/52acd88f-d0ba-4a69-ad3c-40114551a824/DSC00531-2.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "ASSOCIATE DEAN OF STUDENT SERVICES AND OPERATIONS",
+              "text": "Pastor Cheryl Bennett serves as the Associate Dean of Student Support Services at Kingdom Heights Preparatory. With a background spanning education, human resources, and pastoral ministry, she leads with compassion and clarity to foster a culture of care and connection for every student and family.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/abe11639-1d08-46ff-9ee7-54aae6715f72/DSC00500-3.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "DEAN OF SPIRITUAL FORMATION",
+              "text": "Dean Daniel Jackson, MDIV serves as the Dean of Spiritual Formation at Kingdom Heights Preparatory, where he leads chapels, Bible classes, and discipleship with a passion for guiding students into deep formation in Christ and bold mission in the world.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/58e61597-7c35-4212-87f5-7c5d73c01f62/DSC09992.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "FINE ARTS DIRECTOR",
+              "text": "Director Kat Holder, MA serves as Fine Arts Director at Kingdom Heights Preparatory, bringing more than 17 years of leadership in worship and fine arts at The Rock Family Worship Center. With advanced training in worship and leadership, she has directed choirs, dramas, and national award-winning student ensembles, and now oversees the Dream Theatre as a vibrant space for KHPS students to learn, grow, and shine.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7df5a5a5-ea6a-4b93-afd1-c47cd50c9be2/DSC00593-2.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "ATHLETIC DIRECTOR",
+              "text": "Coach Kendrick Epps serves as the Athletics Director at Kingdom Heights Preparatory, bringing over 25 years of coaching experience and a lifelong passion for discipling students through sports. A graduate of Auburn University and licensed youth minister, he is dedicated to building a dynamic, Christ-centered athletics program at KHPS.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f2fa5669-9b12-42f7-a981-0ece24dea9ec/DSC00508+%281%29.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "DIRECTOR OF ADMISSIONS AND REGISTRAR",
+              "text": "Maria Sudhakar serves as the Director of Admissions and Registrar at Kingdom Heights, bringing 25 years of ministry experience - 13 of those specifically in Christian education. She is passionate about God, her husband, her children, and loving people well. Maria is devoted to following Jesus wholeheartedly and finds joy in helping others grow as His disciples.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2d4a879a-fa76-438e-9653-9549ec807cb9/DSC03577.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "mailto:admissions@khroyals.com?"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "K2 TEACHER",
+              "text": "Miss Hunt passionately believes that twos are terrific, not terrible. With four years of experience in K-2, she loves learning about the growth and development of this crucial age. She is pursuing a degree in psychology and applying her newfound knowledge in the classroom.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1b44d8bb-8b50-4894-82c6-4acd12508267/DSC03639.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "mailto:lhunt@khroyals.com?"
+              }
+            },
+            {
+              "title": "KINDERGARTEN TEACHER",
+              "text": "Monica Sorensen has taught multiple grades over the last 25 years. She earned her teaching degree at the University of Wisconsin–Stout and is passionate about teaching in an environment that supports the whole student and family.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/31d69250-241d-484a-99d0-cbaadd41e5c5/DSC09785-3.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "FIRST GRADE TEACHER",
+              "text": "Rachel Counts graduated from Auburn University in 1998 with a degree in Early Childhood Education. She has taught in private preschool, homeschooled her three children, and served as a learning coach and administrator in Huntsville.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/e35974b8-52d9-4823-8982-8cfdd221f411/DSC09723.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "SECOND-THIRD GRADE TEACHER",
+              "text": "Lauren Schad has a background in Business Management and a Master’s in Elementary Education. She is passionate about creating a joyful, challenging, and faith-filled learning environment and incorporates financial literacy and entrepreneurship into her teaching.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4fa7a848-3e43-4058-82b4-48cf00361800/DSC09867.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "FOURTH GRADE TEACHER",
+              "text": "Harriet Watson holds a degree in Early Childhood and Elementary Education from the University of Jacksonville in Alabama. She has two years of classroom teaching experience along with many years of additional hands-on teaching experience. A Huntsville native, she is excited to teach at Kingdom Heights and bring her creativity into the classroom. Harriet enjoys painting and crafts, and she and her husband, Will, love being part of the local community.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/54508903-07e0-4147-9127-e599018e5324/DSC09833-2.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "FIFTH GRADE TEACHER",
+              "text": "Karla Murphy earned a Bachelor’s in Interdisciplinary Studies with a focus in Education and Natural Science and is pursuing a Master’s in Trauma-Informed Care in Urban Education. She has experience in both public and private schools and is passionate about helping students grow academically and spiritually.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c7258ad8-8e5c-41cf-bc9d-5eac534b8cf4/DSC09822-4.jpg?format=1500w",
+              "button": {
+                "label": "Contact",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "SCIENCE TEACHER",
+              "text": "Justin Staples brings more than 15 years of ministry and educational experience, teaching in both public and Christian schools across the U.S. and abroad. He holds a bachelor’s in Liberal Arts and Biblical Studies from San Diego Christian College.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f1e77712-81e1-422f-abad-e11995ffea7c/DSC09869-3.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "HISTORY TEACHER",
+              "text": "Jennifer Winebrener has more than twenty years of experience homeschooling and teaching classical integrated humanities. She holds a bachelor’s degree in history and is completing her graduate degree in education.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/638c8615-ad54-4085-adc0-cd71d59b71cb/DSC09896.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "ENGLISH TEACHER",
+              "text": "Katie Graham graduated from Athens State University in 2023 with a Bachelor’s in English Language Arts and Secondary Education. This will be her third year teaching ELA.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/bade40c4-8386-424c-b000-7096e6ca56a0/DSC09975-2.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "ELA TEAM",
+              "text": "Lana Torhina has a background in early childhood education and is part of the daycare staff at Kingdom Heights. She is passionate about nurturing young children in a Christ-centered environment.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/55171870-f91d-458b-9e38-ed80f632c7ce/DSC09909-2.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/"
+              }
+            },
+            {
+              "title": "FRONT DESK",
+              "text": "Ashlee Rodgers brings over ten years of experience in early childhood education and administration, along with nine years in emergency medical services. She is dedicated to creating environments where children are nurtured academically, emotionally, and spiritually.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6c7cfc4a-f9e0-4993-8579-0f92af8d4404/DSC09750-3.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "SCHOOL NURSE",
+              "text": "Bianca Hughes is a registered nurse who has served since 2013. She is deeply committed to her faith and passionate about supporting the health and well-being of students.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b28da7e7-bb58-41bf-94c0-4d9c2ead9846/DSC09777.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "I.T.",
+              "text": "Brenten Calvert leads our IT department.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/74d838d3-8c38-413c-b6d8-c3eb18b91206/DSC09761-5+%281%29.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "https://www.khroyals.com/contact-us"
+              }
+            },
+            {
+              "title": "ADMINISTRATIVE COORDINATOR",
+              "text": "Olivia Clary serves as the Administrative Coordinator at Kingdom Heights Preparatory School. She holds a Bachelor of Arts in Graphic Design from the University of Alabama and has lived in Huntsville her entire life, giving her a deep love and appreciation for the local community. She considers it a blessing to play a role in what God is doing through the school by connecting with families in the community and partnering with them to educate and nurture children in both knowledge and faith.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/fc578bd8-c26a-44ee-bab0-b194f67232bc/DSC09935.jpg?format=1500w",
+              "button": {
+                "label": "CONTACT",
+                "url": "mailto:oclary@khroyals.com?"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Contact Us"
+        },
+        {
+          "type": "paragraph",
+          "text": "info@khroyals.com admissions@khroyals.com (256) 210-1343"
+        },
+        {
+          "type": "paragraph",
+          "text": "3401 Holmes Ave NW Huntsville, AL 35816"
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    }
+  ]
+}

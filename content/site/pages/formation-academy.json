@@ -1,0 +1,654 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/formation-academy",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "formation-academy",
+    "title": "Formation Academy: K-5th Grade",
+    "sourceUrl": "https://www.khroyals.com/formation-academy"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Formation Academy: Christ-Centered Elementary Education in Huntsville, Alabama"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7c97fa07-3ce8-4d94-9c6a-2dc31d74701e/DSC06510-2-2.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "FORMATION ACADEMY ✦"
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/294eef01-aad1-49c6-8fd7-8a7202ed1ad2/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/294eef01-aad1-49c6-8fd7-8a7202ed1ad2/thumbnail",
+          "durationSeconds": 96,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "APPLY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Kindergarten - 5th Grade"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Fostering curiosity as your child embarks on a lifelong love of learning."
+        },
+        {
+          "type": "button",
+          "label": "CURRICULUM ➺",
+          "url": "#curriculum"
+        },
+        {
+          "type": "button",
+          "label": "S.T.E.A.M. ➺",
+          "url": "#steam"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW ➺",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "DISTINCTIVES ➺",
+          "url": "#distinctives"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Building a strong foundation for lifelong success."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "At Kingdom Heights Preparatory School, our Formation Academy provides a Christ-centered, academically excellent elementary education for K-5th grade students. We partner with families to nurture each child's heart, mind, and spirit, ensuring they are equipped for future success. Our approach goes beyond academics—it's about shaping confident, compassionate leaders who are grounded in biblical truth."
+        },
+        {
+          "type": "marquee",
+          "text": "HOLY ✦ ROYAL ✦ CHOSEN ✦"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1e9e87fe-8bbb-45c1-81c9-6b6931eb281f/DSC06144.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Ready to invest in your child's future?"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/cae40a28-84ed-463c-b865-3823cdefeabf/DSC06506-2.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "What Sets Formation Academy Apart ?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choosing the right school for your child is one of the most important decisions you’ll make. At Kingdom Heights, we offer:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Christ-Centered Learning: Every subject is taught through the lens of biblical truth.",
+            "Academic Excellence: We offer challenging curriculum designed to foster critical thinking and problem-solving.",
+            "Character Formation: We cultivate leadership, compassion, and integrity in every student.",
+            "Safe & Secure Campus: We have invested in a state-of-the-art security system and we are located in the historic Butler High School, originally built as a military shelter during the Cold War, ensuring unparalleled safety.",
+            "Small Class Sizes: We offer personalized attention and a standards-based learning approach to meet the unique needs of every learner."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Discover how Kingdom Heights can shape your child’s future."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/38aa3ac4-0962-444e-871d-a5d2a496fc02/elementary-learning-environment.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c1d19ca6-6478-42a9-b8d2-4b4f3e1c5503/elementary-student-learning.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Our Curriculum: Excellence in Every Subject"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Bible",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Grounding students in biblical truth and spiritual formation."
+                }
+              ]
+            },
+            {
+              "title": "Language Arts",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Developing strong communication through reading, writing, and speaking."
+                }
+              ]
+            },
+            {
+              "title": "Mathematics",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Promoting critical thinking and problem-solving."
+                }
+              ]
+            },
+            {
+              "title": "Science",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Encouraging curiosity through hands-on experiments."
+                }
+              ]
+            },
+            {
+              "title": "Social Studies",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Exploring history, culture, and citizenship from a biblical worldview."
+                }
+              ]
+            },
+            {
+              "title": "Physical Education",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Promoting health, wellness, and teamwork."
+                }
+              ]
+            },
+            {
+              "title": "Arts Education",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Fostering creativity and self-expression."
+                }
+              ]
+            },
+            {
+              "title": "Latin (2 Grade+)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Strengthening vocabulary and critical thinking."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Students at the Formation Academy engage in integrated, hands-on learning across core subjects, designed to build a strong academic foundation while nurturing spiritual growth."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH OUR ADMISSIONS TEAM",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "SCIENCE ✦ TECHNOLOGY ✦ ENGINEERING ✦ ARTS ✦ AGRICULTURE ✦ MATHEMATICS ✦"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aed78a3c-27b8-4c24-99be-3ae8e6f6574a/career-readiness-elementary-student.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c3f3fa6a-c1a9-4c71-bb50-5cf15d5b363c/elementary-career-clusters.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/817e4db9-63d3-44ac-a5dd-53afc6c5d1fa/elementary-career-clusters-private-school.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "S.T.E.A.M. & Career Readiness: Preparing Future Leaders"
+        },
+        {
+          "type": "paragraph",
+          "text": "We believe that career readiness starts early . That’s why we integrate STEAM (Science, Technology, Engineering, Arts, Agriculture and Math) education from Kindergarten onward . This hands-on approach encourages creativity, critical thinking, and collaboration , while preparing students for future success."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our curriculum introduces students to the 16 Career Clusters , helping them explore career paths and discover their God-given gifts. At Kingdom Heights Formation Academy in Huntsville, Alabama , we envision a future where career exploration begins early. Our goal is to introduce elementary students to the 16 career clusters through hands-on activities , STEAM projects , and real-world connections , preparing them for future success while nurturing biblical values ."
+        },
+        {
+          "type": "paragraph",
+          "text": "These clusters include:"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Agriculture, Food & Natural Resources",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to establish school gardens, partner with local farms, and offer environmental science projects to help students understand sustainability and stewardship of natural resources. Building a foundation in agriculture and sustainability. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Architecture & Construction",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future plans include hands-on building projects, design challenges, and digital modeling activities, encouraging creativity while exploring safe construction practices. Exploring architecture through hands-on learning. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Arts, A/V Technology & Communications",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to offer media arts, storytelling projects, and digital design opportunities, connecting students to Huntsville’s creative community. Inspiring creativity and communication skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Business Management & Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes entrepreneurship projects, classroom businesses, and leadership training, introducing students to basic business principles. Encouraging leadership and business skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Education & Training",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to launch peer mentoring programs, reading buddies, and leadership workshops, cultivating teaching and mentoring skills. Developing future educators and leaders. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Finance",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Future programs will include classroom economies, budgeting lessons, and mock banks, teaching financial literacy through real-world scenarios. Empowering students with money management skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Government & Public Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to offer mock elections, student councils, and civic engagement projects, teaching students about government roles and responsibilities. Inspiring future community leaders. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Health Science",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes health workshops, basic first aid training, and wellness projects, promoting healthy habits and compassionate care. Exploring careers in healthcare and wellness. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Hospitality & Tourism",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to introduce hospitality projects, event planning exercises, and community service initiatives, teaching the importance of customer service. Building hospitality and leadership skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Human Services",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs include community service projects, mentorship opportunities, and leadership training, promoting compassionate leadership. Fostering empathy and service. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Information Technology",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to offer coding classes, robotics projects, and digital storytelling, introducing students to the world of technology. Empowering students with IT skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Law, Public Safety, Corrections & Security",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Future plans include safety drills, conflict resolution programs, and visits from first responders, teaching responsibility and leadership. Promoting safety and leadership. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Manufacturing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We envision engineering challenges, simple machines projects, and hands-on manufacturing activities, connecting students to Huntsville’s advanced manufacturing sector. Introducing future innovators to manufacturing. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Marketing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs include school store projects, advertising campaigns, and branding exercises, promoting entrepreneurial thinking. Encouraging creativity and business skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Science, Technology, Engineering & Mathematics (STEM)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to expand our STEAM curriculum with coding, engineering challenges, and hands-on experiments, preparing students for STEM careers. Fueling curiosity through STEM learning. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Transportation, Distribution & Logistics",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to develop mapping projects, supply chain simulations, and transportation-focused activities, connecting learning to Huntsville’s logistics hubs. Exploring the world of logistics. APPLY NOW"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we’re building programs to prepare students for life . Start your child’s journey now."
+        },
+        {
+          "type": "button",
+          "label": "APPLY TODAY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Fine Arts: Inspiring Creativity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our state-of-the-art performing arts theatre provides students with opportunities to explore the Fine Arts , enriching their education through creativity and self-expression. Every student has the opportunity to participate in:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Music: Building rhythm, melody, and music appreciation Theater: Encouraging confidence and storytelling Visual Arts: Inspiring creativity through drawing, painting, and design Dance: Promoting coordination and expression Media Arts: Exploring digital creativity and production"
+        },
+        {
+          "type": "paragraph",
+          "text": "Unlock your child’s creative potential ."
+        },
+        {
+          "type": "button",
+          "label": "PLAN A VISIT",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aeb51d0f-3d43-4559-92cf-7235d2d6e598/CB12.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/71a122af-6098-4026-be35-9a5c50adc799/elementary-apply-now-private-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Latin: Building Strong Thinkers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting in 2nd grade , students begin studying Latin , the root of Romance languages and much of the English language . Research shows that students who study Latin score significantly higher on standardized tests , particularly in vocabulary, reading comprehension, and math ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Latin instruction strengthens:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Vocabulary development",
+            "Critical thinking skills",
+            "Problem-solving abilities",
+            "Cultural and historical understanding"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "See how Latin enhances academic achievement."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH US",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "ROYAL HOUR"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Character & Leadership Development"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/e02b63c2-95c0-4b6f-9ba8-c71779411fec/DSC00034-2.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we don’t just educate—we equip future leaders . Our students are encouraged to grow spiritually, academically, and socially. We foster biblical character traits like integrity, humility, resilience, and compassion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Royal Hour: Each day, students enjoy Royal Hour , a time for tutoring, enrichment, or extracurricular clubs . This encourages them to take ownership of their education , explore their passions, and develop independence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empower your child to lead with confidence."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Standards-Based Grading & Limited Homework"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our standards-based grading approach ensures that students master each concept before advancing. If a child needs more time to grasp a skill, they receive targeted support without feeling rushed. Likewise, advanced learners can progress without unnecessary repetition."
+        },
+        {
+          "type": "paragraph",
+          "text": "We also value family time . That’s why homework is limited , allowing evenings to be spent connecting, resting, and growing together ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Learn how we prioritize both academic success and family balance."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH ADMISSIONS",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/ee876a35-a44e-476f-91da-43b2c1b6abfb/elementary-apply-now-private-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Tuition & Discounts"
+        },
+        {
+          "type": "paragraph",
+          "text": "We offer several tuition discounts to make a Kingdom Heights education more accessible:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Multi-Student Discount: $250 off for the second child, $500 for the third, and $1,000 for the fourth or more",
+            "Full Payment Discount: 5% off total tuition for families paying in full",
+            "Active Military Discount: 10% off for active-duty military families"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights is a part of the Alabama Choose Act , which gives qualifying families access to up to $7k in tuition reimbursement for a private education.",
+          "links": [
+            {
+              "label": "Alabama Choose Act",
+              "url": "https://classwallet.com/alchoose/"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Invest in your child’s future with flexible tuition options."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "TUITION SHEET",
+          "url": "https://www.khroyals.com/s/KH-Tuition-Sheet-d7fh.pdf"
+        },
+        {
+          "type": "button",
+          "label": "ALABAMA CHOOSE ACT",
+          "url": "https://classwallet.com/alchoose/"
+        }
+      ]
+    }
+  ]
+}

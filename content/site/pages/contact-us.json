@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/contact-us",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "contact-us",
+    "title": "Contact Us",
+    "sourceUrl": "https://www.khroyals.com/contact-us"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Contact Us"
+        },
+        {
+          "type": "paragraph",
+          "text": "info@khroyals.com admissions@khroyals.com (256) 210-1343"
+        },
+        {
+          "type": "paragraph",
+          "text": "3401 Holmes Ave NW Huntsville, AL 35816"
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/",
+    "scrapedAt": "2026-10-15"
+  },
+  "school": {
+    "name": "Kingdom Heights Preparatory School",
+    "shortName": "KHPS",
+    "mascot": "Royals",
+    "grades": "K2–12",
+    "motto": "Regnum Dei Primum",
+    "mottoTranslation": "God's Kingdom First",
+    "colors": {
+      "primary": "#00239C",
+      "secondary": "#FC1723",
+      "ink": "#0B1928"
+    },
+    "logo": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/bd78b752-747e-4d7d-b857-eca836ca369c/Untitled+%281920+x+1080+px%29+%281920+x+600+px%29+%281400+x+600+px%29.png",
+    "address": {
+      "line1": "3401 Holmes Ave NW",
+      "city": "Huntsville",
+      "state": "AL",
+      "zip": "35816"
+    },
+    "phone": "(256) 210-1343",
+    "email": "info@khroyals.com",
+    "admissionsEmail": "admissions@khroyals.com",
+    "ministryOf": {
+      "name": "Rock Family Worship Center",
+      "url": "https://www.therockfamily.org/"
+    }
+  },
+  "navigation": [
+    {
+      "label": "Admissions",
+      "items": [
+        {
+          "label": "Plan a Visit",
+          "url": "https://www.khroyals.com/plan-a-visit"
+        },
+        {
+          "label": "Our Process",
+          "url": "https://www.khroyals.com/admissions"
+        },
+        {
+          "label": "Tuition Calculator",
+          "url": "https://www.khroyals.com/admissions#tuition-calculator"
+        },
+        {
+          "label": "Early Learning Academy Tuition",
+          "url": "https://www.khroyals.com/s/ELA-Tuition-Sheet.pdf"
+        },
+        {
+          "label": "K-12 Tuition Sheet",
+          "url": "https://www.khroyals.com/s/KH-Tuition-Sheet-d7fh.pdf"
+        },
+        {
+          "label": "Choose Act Information",
+          "url": "https://classwallet.com/alchoose/"
+        },
+        {
+          "label": "Military Families",
+          "url": "https://www.khroyals.com/military-families"
+        }
+      ]
+    },
+    {
+      "label": "About",
+      "items": [
+        {
+          "label": "Our Story",
+          "url": "https://www.khroyals.com/our-story"
+        },
+        {
+          "label": "Statement of Faith",
+          "url": "https://www.khroyals.com/s/KH-Statement-of-Faith.pdf"
+        },
+        {
+          "label": "Employment",
+          "url": "https://khroyals.isolvedhire.com/jobs/"
+        },
+        {
+          "label": "Contact Us",
+          "url": "https://www.khroyals.com/contact-us"
+        },
+        {
+          "label": "Meet Our Team",
+          "url": "https://www.khroyals.com/meet-our-team"
+        },
+        {
+          "label": "The Historic Butler High School Campus",
+          "url": "https://www.khroyals.com/the-historic-butler-high-school-campus"
+        },
+        {
+          "label": "Student / Parent Handbook",
+          "url": "https://www.khroyals.com/s/KH-Student-Handbook-nj4p.pdf"
+        }
+      ]
+    },
+    {
+      "label": "Academics",
+      "items": [
+        {
+          "label": "Curriculum from Hillsdale College",
+          "url": "https://www.khroyals.com/hillsdale"
+        },
+        {
+          "label": "Early Learning Academy: K2-K4",
+          "url": "https://www.khroyals.com/early-learning-academy"
+        },
+        {
+          "label": "Formation Academy: K-5th Grade",
+          "url": "https://www.khroyals.com/formation-academy"
+        },
+        {
+          "label": "Presence Academy: 6th-8th Grade",
+          "url": "https://www.khroyals.com/presence-academy"
+        },
+        {
+          "label": "Kingdom Academy: 9th-12th Grade",
+          "url": "https://www.khroyals.com/kingdom-academy"
+        },
+        {
+          "label": "Transcript Request",
+          "url": "https://docs.google.com/forms/d/e/1FAIpQLSdpmdcyrXXCVLHnSDoBkIrj7bgo_IelhlgG6XN1EFz8McAAJw/viewform?embedded=true"
+        }
+      ]
+    },
+    {
+      "label": "Student Life",
+      "items": [
+        {
+          "label": "School Calendar 2026-2027",
+          "url": "https://www.khroyals.com/s/2026-2027-Calendar-2.pdf"
+        },
+        {
+          "label": "School Supply Lists",
+          "url": "https://www.khroyals.com/s/School-Supply-Lists-4.pdf"
+        },
+        {
+          "label": "Spiritual Life",
+          "url": "https://www.khroyals.com/spiritual-life"
+        },
+        {
+          "label": "Athletics",
+          "url": "https://www.khroyals.com/athletics"
+        },
+        {
+          "label": "Fine Arts",
+          "url": "https://www.khroyals.com/fine-arts"
+        },
+        {
+          "label": "Uniforms",
+          "url": "https://www.khroyals.com/uniforms"
+        },
+        {
+          "label": "Fan Store",
+          "url": "https://khroyals.printful.me/"
+        },
+        {
+          "label": "PE Uniform Store",
+          "url": "https://kingdom_heights_preparatory_school_1402.kustomimprints.com"
+        }
+      ]
+    },
+    {
+      "label": "Invest",
+      "items": [
+        {
+          "label": "Giving",
+          "url": "https://www.khroyals.com/giving"
+        },
+        {
+          "label": "Corporate Giving",
+          "url": "https://www.khroyals.com/giving/#corporatesponsorship"
+        },
+        {
+          "label": "Partners",
+          "url": "https://www.khroyals.com/partners"
+        },
+        {
+          "label": "Sign-up to Volunteer",
+          "url": "https://securevolunteer.com/kingdom-heights-schools-of-huntsville/home"
+        }
+      ]
+    },
+    {
+      "label": "News",
+      "url": "https://www.khroyals.com/news"
+    },
+    {
+      "label": "Family Portal",
+      "url": "https://sis.factsmgt.com/family-portal"
+    },
+    {
+      "label": "Student Support",
+      "items": [
+        {
+          "label": "Support Services",
+          "url": "https://www.khroyals.com/support-services"
+        },
+        {
+          "label": "Bullying",
+          "url": "https://www.khroyals.com/bullying"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "about": "Kingdom Heights Preparatory School is a ministry of the Rock Family Worship Center. Kingdom Heights Preparatory School serves students in grades K2-12 from a single, convenient campus in Huntsville, Alabama. The mission of KHPS is to train the minds and improve the hearts of young people through a content-rich classical education in the liberal arts and sciences with instruction in the principles of moral character and civic virtue. KHPS is a Hillsdale College Curriculum School.",
+    "nonDiscrimination": "Kingdom Heights Preparatory admits students of any race, color, national, and ethnic origin to all the rights, privileges, programs, and activities made available to students at the school. Kingdom Heights Preparatory does not discriminate based on race, color, national and ethnic origin, in the administration of its educational policies, admissions practices, scholarship programs, athletics, co-curricular activities, or other school-administered programs. Terms of Service Privacy Policy",
+    "quickLinks": [
+      {
+        "label": "Video/Photography Policy",
+        "url": "https://www.khroyals.com/videophotography-policy"
+      },
+      {
+        "label": "School Calendar",
+        "url": "https://www.khroyals.com/s/KH-2025-2026-School-Calendar.pdf"
+      },
+      {
+        "label": "Uniforms",
+        "url": "https://www.khroyals.com/uniforms"
+      },
+      {
+        "label": "Family Portal",
+        "url": "https://sis.factsmgt.com/family-portal"
+      },
+      {
+        "label": "Giving",
+        "url": "https://www.khroyals.com/giving"
+      }
+    ],
+    "actions": [
+      {
+        "label": "Schedule A Tour",
+        "url": "https://admissions-parent.renweb.com/en-us/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+      },
+      {
+        "label": "Employment",
+        "url": "https://khroyals.isolvedhire.com/jobs/"
+      },
+      {
+        "label": "Apply",
+        "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+      },
+      {
+        "label": "Family Portal",
+        "url": "https://sis.factsmgt.com/family-portal"
+      }
+    ]
+  },
+  "social": [
+    {
+      "service": "Instagram",
+      "url": "https://www.instagram.com/khroyals/"
+    },
+    {
+      "service": "Facebook",
+      "url": "https://www.facebook.com/khroyals"
+    },
+    {
+      "service": "YouTube",
+      "url": "https://www.youtube.com/@KingdomHeightsRoyals"
+    }
+  ]
+}

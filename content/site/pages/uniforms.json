@@ -1,0 +1,36 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/uniforms",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "uniforms",
+    "title": "Uniforms",
+    "sourceUrl": "https://www.khroyals.com/uniforms"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "OUR UNIFORM REQUIREMENTS"
+        },
+        {
+          "type": "button",
+          "label": "SHOP NOW",
+          "url": "https://www.frenchtoast.com/schoolbox/schools/kingdom-heights-prep-QS61ALG#"
+        },
+        {
+          "type": "button",
+          "label": "UNIFORM GUIDE",
+          "url": "https://www.khroyals.com/s/Uniform-Guide.pdf"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/d83bc848-3d36-479b-8b44-160e89ba009d/DSC04178.jpg?format=1500w"
+      }
+    }
+  ]
+}

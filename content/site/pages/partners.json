@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/partners",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "partners",
+    "title": "Partners",
+    "sourceUrl": "https://www.khroyals.com/partners"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Partners in Purpose:"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Grateful for Your Service and Support in Christian Education"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aeb7c8c1-5edf-44a4-84fa-21ab3e3a50dc/Sapphire-Dream-3-imgg-gi3-leh7_90j.png?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3de405a2-2310-4c8e-9707-b55d233f5083/GA_Primary_FullColor.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c9aecfc8-ee5d-42b0-a263-f4934ac5c6d1/haleysArtboard+1.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/0e0b4186-a378-4c14-a36c-6c097c384d8f/alabama-credit-unino.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/8174a9f5-6321-4047-8594-9ccb83c9e274/tloArtboard+1.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4c2b06a8-bf00-4c47-b908-ac4ad7f024dd/brighteyedlogo.png?format=1500w"
+          ]
+        }
+      ]
+    }
+  ]
+}

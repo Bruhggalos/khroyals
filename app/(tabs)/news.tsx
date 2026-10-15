@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { FlatList, Image, ScrollView, Text } from 'react-native';
-import { router } from 'expo-router';
-import { getPage } from '../../src/api/mockApi';
-import { C, Card, Chip, Loading, P, s, useLoad } from '../../src/ui';
+import { FlatList, ScrollView, Text } from 'react-native';
+import { getNews } from '../../src/api/mockApi';
+import { ArticleCard } from '../../src/site/Blocks';
+import { C, Loading, s, useLoad } from '../../src/ui';
 
 export default function News() {
-  const { data } = useLoad(() => getPage('news'));
+  const { data } = useLoad(getNews);
   const [cat, setCat] = useState<string | null>(null);
   if (!data) return <Loading />;
   const items = data.articles.filter((a) => !cat || a.category === cat);
@@ -18,13 +18,6 @@ export default function News() {
               backgroundColor: cat === c ? C.primary : '#fff', color: cat === c ? '#fff' : C.ink, borderWidth: 1, borderColor: C.line }}>{c ?? 'All'}</Text>
           ))}
         </ScrollView>}
-      renderItem={({ item: a }) => (
-        <Card onPress={() => router.push(`/news/${a.slug}`)}>
-          <Image source={{ uri: a.heroImage }} style={{ height: 140, borderRadius: 10 }} />
-          <Chip label={a.category} />
-          <Text style={{ fontWeight: '700', fontSize: 16, color: C.ink }}>{a.title}</Text>
-          <P muted>{a.publishedAt} · {a.author}</P>
-        </Card>
-      )} />
+      renderItem={({ item }) => <ArticleCard a={item} />} />
   );
 }

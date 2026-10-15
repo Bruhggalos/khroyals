@@ -1,0 +1,37 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/videophotography-policy",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "videophotography-policy",
+    "title": "Video/Photography Policy",
+    "sourceUrl": "https://www.khroyals.com/videophotography-policy"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/5c921096-2dc7-439b-a391-dfd1dbe17795/DSC09751-4.jpg?format=1500w"
+        },
+        {
+          "type": "paragraph",
+          "text": "Photography & Videography Notice"
+        },
+        {
+          "type": "paragraph",
+          "text": "By entering the campus of Kingdom Heights Preparatory School or participating in school-sponsored events, you acknowledge that photography, video recording, and/or audio recording may take place for promotional, educational, or marketing purposes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School will not publicly disclose students’ last names or other personal identifying information without prior consent."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you do not wish for your or your child’s image or voice to be used, please submit a written request to info@khroyals.com prior to your visit or participation."
+        }
+      ]
+    }
+  ]
+}

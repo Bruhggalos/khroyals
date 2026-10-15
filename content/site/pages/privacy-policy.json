@@ -1,0 +1,194 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/privacy-policy",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "privacy-policy",
+    "title": "Privacy Policy",
+    "sourceUrl": "https://www.khroyals.com/privacy-policy"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Privacy Policy"
+        },
+        {
+          "type": "paragraph",
+          "text": "Effective Date: February 12, 2026"
+        },
+        {
+          "type": "paragraph",
+          "text": "No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. Information sharing to subcontractors in support services, such as customer service, is permitted. All other use case categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties."
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School, a ministry of The Rock Family Worship Center (“we,” “our,” or “us”), respects your privacy and is committed to protecting your information."
+        },
+        {
+          "type": "paragraph",
+          "text": "1. What Information We Collect"
+        },
+        {
+          "type": "paragraph",
+          "text": "We may collect the following information when you interact with our website, Facebook/Instagram lead forms, or other official communication channels:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Name",
+            "Email address",
+            "Phone number",
+            "Student grade level or enrollment interest",
+            "Any information voluntarily submitted through forms"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "We may also automatically collect certain technical information such as IP address, browser type, and device information through cookies and tracking tools."
+        },
+        {
+          "type": "paragraph",
+          "text": "2. How User Data Is Used"
+        },
+        {
+          "type": "paragraph",
+          "text": "We use collected information to:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Respond to inquiries",
+            "Provide enrollment information",
+            "Send event reminders",
+            "Send school updates",
+            "Improve our website and communication"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "We do not sell, rent, or trade personal information to third parties."
+        },
+        {
+          "type": "paragraph",
+          "text": "3. SMS Opt-In Details"
+        },
+        {
+          "type": "paragraph",
+          "text": "By providing your phone number through our website or Facebook/Instagram lead forms, you consent to receive SMS communication from Kingdom Heights Preparatory School, a ministry of The Rock Family Worship Center."
+        },
+        {
+          "type": "paragraph",
+          "text": "SMS messages may include event reminders, enrollment information, and school updates."
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Message frequency varies.",
+            "Message and data rates may apply.",
+            "Reply STOP to opt out at any time.",
+            "Reply HELP for assistance.",
+            "Consent is not a condition of enrollment."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Opt-in occurs when a user voluntarily submits their phone number through an official lead form that includes SMS disclosure language."
+        },
+        {
+          "type": "paragraph",
+          "text": "4. Cookie & Tracking Practices"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our website may use cookies and similar tracking technologies to:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Improve user experience",
+            "Analyze website traffic",
+            "Enhance functionality"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Users may adjust browser settings to refuse cookies; however, some features of the website may not function properly."
+        },
+        {
+          "type": "paragraph",
+          "text": "We may use third-party services such as analytics tools or social media platforms that operate under their own privacy policies."
+        },
+        {
+          "type": "paragraph",
+          "text": "5. Data Security & Handling"
+        },
+        {
+          "type": "paragraph",
+          "text": "We implement reasonable administrative, technical, and physical safeguards to protect personal information from unauthorized access, disclosure, alteration, or destruction."
+        },
+        {
+          "type": "paragraph",
+          "text": "While we strive to protect user data, no method of transmission over the internet is 100% secure."
+        },
+        {
+          "type": "paragraph",
+          "text": "6. User Rights"
+        },
+        {
+          "type": "paragraph",
+          "text": "Users may request to:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Access their personal information",
+            "Correct inaccurate information",
+            "Request deletion of their information"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "To make a request, please contact:"
+        },
+        {
+          "type": "paragraph",
+          "text": "info@khroyals.com or sjackson@therockfwc.org 256-210-1343",
+          "links": [
+            {
+              "label": "256-210-1343",
+              "url": "tel:+12562101343"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "7. Mobile Information Sharing Statement"
+        },
+        {
+          "type": "paragraph",
+          "text": "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes."
+        },
+        {
+          "type": "paragraph",
+          "text": "All other categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties."
+        },
+        {
+          "type": "paragraph",
+          "text": "8. Updates to This Policy"
+        },
+        {
+          "type": "paragraph",
+          "text": "We may update this Privacy Policy periodically. Updates will be posted on this page with a revised effective date."
+        }
+      ]
+    }
+  ]
+}

@@ -10,7 +10,7 @@ export default function TabsLayout() {
       headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff',
       tabBarActiveTintColor: C.primary,
     }}>
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: icon('🏠') }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: 'Kingdom Heights', tabBarIcon: icon('🏠') }} />
       <Tabs.Screen name="news" options={{ title: 'News', tabBarIcon: icon('📰') }} />
       <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: icon('📅') }} />
       <Tabs.Screen name="connect" options={{ title: 'Connect', tabBarIcon: icon('💬') }} />

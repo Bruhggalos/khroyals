@@ -1,22 +1,17 @@
 /**
- * Mock API. Every screen talks to this module only, so swapping in the real
+ * App data API. Every screen talks to this module only, so swapping in a live
  * backend later means replacing these function bodies with fetch() calls —
- * screens don't change. Set USE_MOCK=false and implement `http()`.
+ * screens don't change.
+ *
+ * Site content (content/site) is the real khroyals.com content, imported by
+ * `npm run import-site`. Royals Connect (mock-db/comms) is still demo data.
  */
-import site from '../../mock-db/site/site.json';
-import home from '../../mock-db/site/home.json';
-import about from '../../mock-db/site/about.json';
-import news from '../../mock-db/site/news.json';
-import calendar from '../../mock-db/site/calendar.json';
-import academics from '../../mock-db/site/academics.json';
-import athletics from '../../mock-db/site/athletics.json';
-import activities from '../../mock-db/site/activities.json';
-import staff from '../../mock-db/site/staff.json';
-import parents from '../../mock-db/site/parents.json';
-import students from '../../mock-db/site/students.json';
-import enrollment from '../../mock-db/site/enrollment.json';
-import dining from '../../mock-db/site/dining.json';
-import contact from '../../mock-db/site/contact.json';
+import site from '../../content/site/site.json';
+import home from '../../content/site/home.json';
+import news from '../../content/site/news.json';
+import calendar from '../../content/site/calendar.json';
+import pageIndex from '../../content/site/pages/index.json';
+import { pages } from '../../content/site/pages';
 
 import usersDb from '../../mock-db/comms/users.json';
 import groupsDb from '../../mock-db/comms/groups.json';
@@ -26,6 +21,7 @@ import commentsDb from '../../mock-db/comms/comments.json';
 import auditDb from '../../mock-db/comms/audit-log.json';
 
 import type { Comment, Group, GroupSettings, Membership, Post, User } from '../comms/types';
+import type { Article, CalendarEvent, NavItem, SitePage } from '../site/types';
 import { can, canComment, canEditSettings, canModerate, type Context } from '../comms/permissions';
 
 export const USE_MOCK = true;
@@ -34,10 +30,23 @@ const LATENCY_MS = 250;
 const delay = <T,>(v: T) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), LATENCY_MS));
 
 // ---------------- Site content ----------------
-const pages = { site, home, about, news, calendar, academics, athletics, activities, staff, parents, students, enrollment, dining, contact };
-export type PageId = keyof typeof pages;
-export const getPage = <K extends PageId>(id: K) => delay(pages[id]);
-export const getArticle = (slug: string) => delay(news.articles.find((a) => a.slug === slug) ?? null);
+const aliases: Record<string, string> = pageIndex.aliases;
+/** Resolve a site path segment ("plan-a-visit") to a page id, following redirects. */
+export const resolvePageId = (slug: string): string | null => {
+  const id = aliases[slug] ?? slug;
+  return pages[id] ? id : null;
+};
+
+export const getSite = () => delay({ ...site, navigation: site.navigation as NavItem[] });
+export const getHome = () => delay(home as unknown as SitePage);
+export function getPage(id: string) {
+  const pid = resolvePageId(id);
+  return pid ? delay(pages[pid]) : Promise.reject(new Error('Page not found.'));
+}
+export const getNews = () => delay({ categories: news.categories, articles: news.articles as unknown as Article[] });
+export const getArticle = (slug: string) =>
+  delay((news.articles as unknown as Article[]).find((a) => a.slug === slug) ?? null);
+export const getCalendar = () => delay({ ...calendar, events: calendar.events as CalendarEvent[] });
 
 // ---------------- Comms (in-memory, mutable) ----------------
 const db = {

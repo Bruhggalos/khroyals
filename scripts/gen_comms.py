@@ -2,7 +2,7 @@
 import json, os, sys, copy
 from datetime import datetime, timedelta
 
-OUT, SITE = sys.argv[1], sys.argv[2]
+OUT = sys.argv[1]
 os.makedirs(OUT, exist_ok=True)
 NOW = datetime(2026, 10, 14, 19, 0)
 META = {"mock": True, "generatedAt": "2026-10-14"}
@@ -11,7 +11,7 @@ def write(name, key, data):
     with open(os.path.join(OUT, f"{name}.json"), "w") as f:
         json.dump({"_meta": META, key: data}, f, indent=2)
 
-staff = json.load(open(os.path.join(SITE, "staff.json")))["staff"]
+staff = json.load(open(os.path.join(OUT, "demo-staff.json")))["staff"]
 def st(title): return next(s for s in staff if s["title"] == title)
 
 # ---------- presets (mirror src/comms/presets.ts) ----------

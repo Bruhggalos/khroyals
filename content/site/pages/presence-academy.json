@@ -1,0 +1,659 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/presence-academy",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "presence-academy",
+    "title": "Presence Academy: 6th-8th Grade",
+    "sourceUrl": "https://www.khroyals.com/presence-academy"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Presence Academy: Christ-Centered Middle School Education in Huntsville, Alabama"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/fa5692c4-bbad-405f-b911-dc938901c7a1/DSC06681.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "PRESENCE ACADEMY ✦"
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/14b5733c-2f37-4a39-a7fa-c8c8ccc7e175/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/14b5733c-2f37-4a39-a7fa-c8c8ccc7e175/thumbnail",
+          "durationSeconds": 127,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "APPLY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "6th Grade - 8th Grade"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "A transformative middle school experience"
+        },
+        {
+          "type": "button",
+          "label": "CURRICULUM ➺",
+          "url": "#curriculum"
+        },
+        {
+          "type": "button",
+          "label": "S.T.E.A.M. ➺",
+          "url": "#steam"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW ➺",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "DISTINCTIVES ➺",
+          "url": "#distinctives"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "In Presence Academy , 6th-8th grade students are equipped with the academic skills, spiritual foundation, and leadership qualities they need to thrive."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Our middle school program goes beyond textbooks, encouraging students to think critically , problem-solve creatively , and lead confidently , all while being rooted in biblical truth . Middle school is a time of growth, discovery, and preparation for future success. In Presence Academy, we prioritize the development of reasoning and analytical skills , helping students make connections and engage deeply with the world around them. Our curriculum challenges students to think for themselves , solve problems , and lead with integrity ."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6f8f6907-1ca3-4bfe-88a7-b25c6528f4b7/diverse-students-private-christian-school.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Rooted in Truth. Prepared for Every Sphere of Society."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7760971c-d402-45cb-a826-0dc5e3bca54e/middle-school-boys-private-christian-school-huntsville-madison.png?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "What Sets Presence Academy Apart ?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choosing the right middle school for your child is one of the most important decisions you'll make. In Presence Academy , we provide an environment where academic excellence , spiritual formation , and personal growth go hand in hand. Here’s what makes us unique:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Christ-Centered Learning: Every subject is taught through the lens of biblical truth, encouraging students to develop a Christian worldview while excelling academically.",
+            "Academic Excellence: Our challenging curriculum fosters critical thinking, problem-solving, and analytical reasoning, equipping students with the skills they need to succeed in high school and beyond.",
+            "Character Formation: We prioritize leadership development, compassion, and integrity, helping students grow into confident, Christ-like leaders who impact their communities.",
+            "Safe & Secure Campus: We have invested in a state-of-the-art security system and we are located in the historic Butler High School, originally built as a military shelter during the Cold War, ensuring unparalleled safety.",
+            "Small Class Sizes: With personalized attention and a standards-based learning approach, we meet the unique needs of every learner, ensuring that each student receives the support and challenge they need to thrive."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Discover how our Presence Academy can equip your middle schooler for a bright future."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c79b7eb8-ca1b-4642-80e7-87e0cbb9ea8d/middle-school-student-curriculum-private-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/04282277-10c4-4664-a091-ae45b9f2dc58/middle-school-boy-curriculum-private-school-huntsville-madison.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Our Curriculum: Excellence in Every Subject"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Bible",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Building a strong foundation in God’s Word."
+                }
+              ]
+            },
+            {
+              "title": "English",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Developing communication, writing, and critical reading skills."
+                }
+              ]
+            },
+            {
+              "title": "Mathematics",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Strengthening problem-solving and logical reasoning."
+                }
+              ]
+            },
+            {
+              "title": "Science",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Encouraging curiosity through hands-on experiments."
+                }
+              ]
+            },
+            {
+              "title": "History",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Exploring history, culture, and citizenship from a biblical worldview."
+                }
+              ]
+            },
+            {
+              "title": "Physical Education",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Promoting health, wellness, and teamwork."
+                }
+              ]
+            },
+            {
+              "title": "Logic",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Enhancing analytical thinking and sound reasoning."
+                }
+              ]
+            },
+            {
+              "title": "Latin (2 Grade+)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Latin , the foundation of Romance languages, improves vocabulary, reading comprehension, and standardized test scores."
+                }
+              ]
+            },
+            {
+              "title": "Electives",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Presence Academy offers a variety of electives to help students discover their passions while building practical skills. Students can explore their interests in: Fine Arts: Music, theater, visual arts, dance, and media arts STEAM: Hands-on learning in science, technology, engineering, arts, and math Languages: Including Latin , the foundation of Romance languages, which improves vocabulary, reading comprehension, and standardized test scores Cyber/Robotics: Developing coding, programming, and problem-solving skills Debate: Sharpening communication, research, and critical thinking"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "In Presence Academy , our Christ-centered curriculum challenges students to think critically, solve problems creatively, and engage deeply with the world around them. We equip 6th-8th grade students with the academic foundation and biblical worldview they need to excel in high school, college, and life. Each subject is taught with purpose and intentionality , shaping leaders of character who are prepared to make a difference."
+        },
+        {
+          "type": "paragraph",
+          "text": "Explore how our curriculum prepares students for success:"
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH OUR ADMISSIONS TEAM",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "SCIENCE ✦ TECHNOLOGY ✦ ENGINEERING ✦ ARTS ✦ AGRICULTURE ✦ MATHEMATICS ✦"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c59d5d81-dd17-48ae-aabc-1795dfcb8135/C_C00045.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/a7636019-258e-47b1-8aa4-6fedaed5368d/career-clusters-middle-school-student-private-christian-school.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aff17f55-3f8e-4405-a638-f02196b6c4e2/DSC06631-5-3.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "S.T.E.A.M. & Career Readiness: Preparing Future Leaders"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our STEAM program (Science, Technology, Engineering, Arts, and Math) starts in Kindergarten and continues through middle school , equipping students with 21st-century skills . Through hands-on projects , teamwork , and creative problem-solving , students engage with real-world challenges while exploring future careers."
+        },
+        {
+          "type": "paragraph",
+          "text": "We introduce students to the 16 Career Clusters , preparing them for the future. These clusters include:"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Agriculture, Food & Natural Resources",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to develop environmental science projects, hydroponic gardens, and local farm partnerships, helping students understand sustainability, food production, and natural resource management. Building a foundation in agriculture and sustainability. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Architecture & Construction",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future plans include engineering challenges, digital modeling projects, and hands-on construction activities, allowing students to explore design principles and safe building practices. Exploring architecture through hands-on learning. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Arts, A/V Technology & Communications",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We aim to introduce media arts, digital storytelling, and video production, connecting students to Huntsville's creative and technology-driven community. Inspiring creativity and communication skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Business Management & Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes entrepreneurship projects, leadership workshops, and mock business ventures, helping students understand organizational management and financial literacy. Encouraging leadership and business skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Education & Training",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to offer peer mentoring, leadership development, and teaching workshops, encouraging students to become role models and future educators. Developing future educators and leaders. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Finance",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Future programs will include budgeting exercises, personal finance projects, and classroom economies, teaching students how to manage money wisely. Empowering students with money management skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Government & Public Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to introduce mock elections, student government, and civic projects, teaching students about leadership roles and community service. Inspiring future community leaders. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Health Science",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes first aid training, health education workshops, and wellness initiatives, promoting healthy habits and compassionate care. Exploring careers in healthcare and wellness. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Hospitality & Tourism",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to introduce event planning projects, customer service activities, and tourism-focused learning, connecting students to Huntsville’s hospitality industry. Building hospitality and leadership skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Human Services",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs include community service projects, mentorship programs, and leadership training, promoting empathy and compassion. Fostering empathy and service. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Information Technology",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to offer coding classes, robotics projects, and cybersecurity challenges, preparing students for technology careers in Huntsville’s tech sector. Empowering students with IT skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Law, Public Safety, Corrections & Security",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our plans include conflict resolution programs, safety drills, and first responder visits, teaching students about community safety and leadership. Promoting safety and leadership Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Manufacturing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We envision engineering challenges, simple machines projects, and hands-on manufacturing activities, connecting students to Huntsville's advanced manufacturing sector. Introducing future innovators to manufacturing. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Marketing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs will include school store projects, branding exercises, and advertising campaigns, promoting entrepreneurial thinking. Encouraging creativity and business skills. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Science, Technology, Engineering & Mathematics (STEM)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to expand our STEAM curriculum with coding, engineering challenges, and real-world experiments, preparing students for STEM careers. Fueling curiosity through STEM learning. Apply Now"
+                }
+              ]
+            },
+            {
+              "title": "Transportation, Distribution & Logistics",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We aim to introduce supply chain simulations, mapping projects, and transportation-focused activities, connecting learning to Huntsville’s logistics hubs. Exploring the world of logistics. Apply Now"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "In Presence Academy, we're preparing middle school students for life, leadership, and lifelong learning."
+        },
+        {
+          "type": "button",
+          "label": "APPLY TODAY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Fine Arts: Inspiring Creativity"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Our state-of-the-art performing arts theatre offers middle school students the opportunity to explore the fine arts and express creativity through:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Music: Developing rhythm, melody, and performance skills. Theater: Encouraging confidence and storytelling. Visual Arts: Inspiring creativity through drawing, painting, and design. Dance: Promoting coordination and self-expression. Media Arts: Exploring digital creativity and production."
+        },
+        {
+          "type": "paragraph",
+          "text": "Unleash your child’s creative potential."
+        },
+        {
+          "type": "button",
+          "label": "PLAN A VISIT",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f0f28ca2-cfcf-497f-a676-cbb50631a6d2/C_C00431-2.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/d456617c-a66f-45a8-8948-6509016ad6d5/middle-school-students-private-school-huntsville-madison?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Latin: the key to academic success"
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting in 2nd grade , students at Kingdom Heights begin studying Latin , the building block for Romance languages like Spanish, French, and Italian."
+        },
+        {
+          "type": "paragraph",
+          "text": "Research shows that students who study Latin score higher on standardized tests , especially in:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Vocabulary",
+            "Reading Comprehension",
+            "Math"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Learn how Latin strengthens academic achievement:"
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH US",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "ROYAL HOUR"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Character & Leadership Development"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4af1e5e0-a2db-4dc8-aa2d-899724355187/extracurricular-activity-middle-school-huntsville-madison?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we don’t just educate—we equip future leaders . Our students are encouraged to grow spiritually, academically, and socially. We foster biblical character traits like integrity, humility, resilience, and compassion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Royal Hour: Each day, students participate in Royal Hour , a dedicated time for tutoring, enrichment, or extracurricular clubs . This encourages students to take ownership of their education , explore interests, and seek help when needed."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empower your child to thrive."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Standards-Based Grading & Limited Homework"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we believe education should be progress-driven, not pressure-driven . Our standards-based grading approach ensures students advance only when they’ve mastered each concept . If a student needs more time, they receive personalized support without falling behind. Likewise, students ready to move ahead can progress without unnecessary repetition."
+        },
+        {
+          "type": "paragraph",
+          "text": "We also believe in protecting family time . That’s why homework is limited , ensuring evenings are spent connecting, creating, and resting , not stressing over assignments."
+        },
+        {
+          "type": "paragraph",
+          "text": "Learn how we balance academic success and family life."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH ADMISSIONS",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3c6a424b-301c-492e-b43d-a7b51fbd2052/middle-school-private-christian-school-huntsville-madison.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Tuition & Discounts"
+        },
+        {
+          "type": "paragraph",
+          "text": "We offer several tuition discounts to make a Kingdom Heights education more accessible:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Multi-Student Discount: $250 off for the second child, $500 for the third, and $1,000 for the fourth or more",
+            "Full Payment Discount: 5% off total tuition for families paying in full",
+            "Active Military Discount: 10% off for active-duty military families"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights is a part of the Alabama Choose Act , which gives qualifying families access to up to $7k in tuition reimbursement for a private education.",
+          "links": [
+            {
+              "label": "Alabama Choose Act",
+              "url": "https://classwallet.com/alchoose/"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Invest in your child’s future with flexible tuition options."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "TUITION SHEET",
+          "url": "https://www.khroyals.com/s/KH-Tuition-Sheet-d7fh.pdf"
+        },
+        {
+          "type": "button",
+          "label": "ALABAMA CHOOSE ACT",
+          "url": "https://classwallet.com/alchoose/"
+        }
+      ]
+    }
+  ]
+}

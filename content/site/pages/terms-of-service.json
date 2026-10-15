@@ -1,0 +1,164 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/terms-of-service",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "terms-of-service",
+    "title": "Terms of Service",
+    "sourceUrl": "https://www.khroyals.com/terms-of-service"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Effective Date: February 12, 2026"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can cancel the SMS service at any time. Just text \"STOP\" to the +1 256-469-8994 After you send the SMS message \"STOP\" to us, we will send you an SMS message to confirm that you have been unsubscribed. After this, you will no longer receive SMS messages from us. If you want to join again, just sign up as you did the first time and we will start sending SMS messages to you again. If you are experiencing issues with the messaging program you can reply with the keyword HELP for more assistance, or you can get help directly at info@khroyals.com"
+        },
+        {
+          "type": "paragraph",
+          "text": "Carriers are not liable for delayed or undelivered messages."
+        },
+        {
+          "type": "paragraph",
+          "text": "As always, message and data rates may apply for any messages sent to you from us and to us from you. You will receive occasional messages. If you have any questions about your text plan or data plan, it is best to contact your wireless provider."
+        },
+        {
+          "type": "paragraph",
+          "text": "These Terms of Service govern your use of the website and communication services of Kingdom Heights Preparatory School, a ministry of The Rock Family Worship Center ."
+        },
+        {
+          "type": "paragraph",
+          "text": "By using this website or submitting your information, you agree to these Terms."
+        },
+        {
+          "type": "paragraph",
+          "text": "1. Description of SMS Use Cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School, a ministry of The Rock Family Worship Center, may send SMS messages to individuals who voluntarily opt in through official website forms or Facebook/Instagram lead forms."
+        },
+        {
+          "type": "paragraph",
+          "text": "SMS messages may include:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Event reminders",
+            "Enrollment information",
+            "Application updates",
+            "School announcements",
+            "Responses to parent inquiries"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Message frequency varies."
+        },
+        {
+          "type": "paragraph",
+          "text": "2. Opt-Out Instructions"
+        },
+        {
+          "type": "paragraph",
+          "text": "You may opt out of SMS communications at any time by replying:"
+        },
+        {
+          "type": "paragraph",
+          "text": "STOP"
+        },
+        {
+          "type": "paragraph",
+          "text": "After you send STOP, you will receive a confirmation message and will no longer receive SMS messages from us unless you opt in again."
+        },
+        {
+          "type": "paragraph",
+          "text": "For assistance, reply:"
+        },
+        {
+          "type": "paragraph",
+          "text": "HELP"
+        },
+        {
+          "type": "paragraph",
+          "text": "3. Customer Support Contact"
+        },
+        {
+          "type": "paragraph",
+          "text": "For questions about SMS communication or these Terms, please contact:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School A ministry of The Rock Family Worship Center 3401 Holmes Ave NW, Huntsville, AL 35816 info@khroyals.com 256-210-1343",
+          "links": [
+            {
+              "label": "256-210-1343",
+              "url": "tel:+12562101343"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "4. Message & Data Rate Disclosure"
+        },
+        {
+          "type": "paragraph",
+          "text": "Message and data rates may apply to SMS messages sent or received. Message frequency varies depending on user interaction and school communication needs."
+        },
+        {
+          "type": "paragraph",
+          "text": "5. Carrier Liability Disclaimer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Carriers are not liable for delayed or undelivered messages."
+        },
+        {
+          "type": "paragraph",
+          "text": "6. Age Restriction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our SMS communication services are intended for parents and legal guardians who are 18 years of age or older."
+        },
+        {
+          "type": "paragraph",
+          "text": "7. Link to Privacy Policy"
+        },
+        {
+          "type": "paragraph",
+          "text": "Please review our Privacy Policy for additional details on how we collect, use, and protect your information:"
+        },
+        {
+          "type": "paragraph",
+          "text": "[Insert Direct Link to Privacy Policy Page]"
+        },
+        {
+          "type": "paragraph",
+          "text": "8. Governing Law"
+        },
+        {
+          "type": "paragraph",
+          "text": "These Terms are governed by the laws of the State of Alabama."
+        },
+        {
+          "type": "paragraph",
+          "text": "Privacy Policy link",
+          "links": [
+            {
+              "label": "Privacy Policy link",
+              "url": "https://www.khroyals.com/privacy-policy"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

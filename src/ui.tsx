@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import site from '../mock-db/site/site.json';
+import site from '../content/site/site.json';
 
 export const C = {
   primary: site.school.colors.primary,
-  gold: site.school.colors.secondary,
+  accent: site.school.colors.secondary,
   ink: site.school.colors.ink,
-  bg: '#F7F5FB',
+  bg: '#F5F7FC',
   card: '#FFFFFF',
-  muted: '#6B6680',
-  line: '#E6E1F0',
+  muted: '#5B6577',
+  line: '#E1E6F0',
   danger: '#B42318',
 };
 

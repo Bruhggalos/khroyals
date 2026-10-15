@@ -6,9 +6,19 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "ios": { "bundleIdentifier": "com.khroyals.app", "supportsTablet": true },
-    "android": { "package": "com.khroyals.app" },
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": false }
+    "ios": {
+      "bundleIdentifier": "com.khroyals.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.khroyals.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-video"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }

@@ -1,0 +1,141 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/athletics",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "athletics",
+    "title": "Athletics",
+    "sourceUrl": "https://www.khroyals.com/athletics"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Kingdom Heights Athletics"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Building champions on and off the field"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/a08bb609-ba54-4114-85ed-f1322ff8ec7f/DSC01858.png?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Kingdom Heights Preparatory School is proud to be a member of the Alabama High School Athletic Association (AHSAA) and to continue growing our athletics program for students in grades 6th–12th. Through competitive sports, our student-athletes are challenged to develop both physically and spiritually while representing our school with excellence."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Under the leadership of our Athletic Director, we are expanding and strengthening a dynamic athletics program that emphasizes teamwork, discipline, sportsmanship, and Christ-like character. Our goal is to provide opportunities for students to compete, grow in their God-given talents, and build lasting relationships both on and off the field."
+        },
+        {
+          "type": "button",
+          "label": "Purchase Athletic Tickets",
+          "url": "https://gofan.co/app/school/AL101542"
+        },
+        {
+          "type": "button",
+          "label": "2026 Volleyball Season",
+          "url": "https://www.khroyals.com/s/2026-Volleyball-Season.pdf"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/d3c6bec6-86f6-43d6-9730-af2a1169dfad/Image+%282%29.jpeg?format=1500w",
+          "url": "mailto:info@khroyals.com?subject=athletics%20inquiry"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Be a part of something extraordinary."
+        },
+        {
+          "type": "paragraph",
+          "text": "Athletics at Kingdom Heights is more than just competition—it’s about developing the whole student . Our program emphasizes:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Teamwork: Students learn to work together, support one another, and celebrate shared victories.",
+            "Discipline: Through training and competition, athletes develop habits of perseverance, time management, and personal responsibility.",
+            "Character Formation: Every practice, game, and competition is rooted in Christian values, teaching students to compete with humility, integrity, and grace.",
+            "Physical Wellness: Sports promote healthy habits, physical fitness, and mental resilience—skills that benefit students long after the final whistle."
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Help us shape the future of youth athletics in Huntsville."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "We Need Your Help: Get Involved!"
+        },
+        {
+          "type": "paragraph",
+          "text": "As we build our athletics program, we’re calling on parents , alumni , and community members to partner with us . From coaching and team management to event coordination and fundraising , there are countless ways to support this exciting new initiative ."
+        },
+        {
+          "type": "paragraph",
+          "text": "How You Can Help:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Coaching: Share your skills by leading a team or assisting with practices",
+            "Team Support: Help with snacks , uniform distribution , and game-day logistics",
+            "Fundraising: Assist with spirit nights , sponsorship outreach , and athletic events",
+            "Facilities: Help us prepare fields , courts , and equipment for upcoming seasons"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Interested in volunteering?"
+        },
+        {
+          "type": "button",
+          "label": "REACH OUT",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/484b0a06-8b5f-4fe5-80b8-b9a93fc029e4/C_C00625.jpg?format=1500w",
+          "url": "mailto:info@khroyals.com?subject=inquiry%20about%20athletics"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "LET'S GO ROYALS"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/80031fa0-c75e-4469-b687-d0ba4abc291c/IMG_3738.jpg?format=1500w"
+      }
+    }
+  ]
+}

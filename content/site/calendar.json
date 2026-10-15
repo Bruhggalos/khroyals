@@ -1,0 +1,273 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/s/2026-2027-Calendar-2.pdf",
+    "scrapedAt": "2026-10-15"
+  },
+  "schoolYear": "2026–2027",
+  "pdf": "https://www.khroyals.com/s/2026-2027-Calendar-2.pdf",
+  "categories": [
+    "Academic",
+    "E-Learning",
+    "No School",
+    "Special Student Day",
+    "Teacher In-Service"
+  ],
+  "events": [
+    {
+      "id": "ev-01",
+      "title": "Professional Development",
+      "date": "2026-07-27",
+      "endDate": "2026-07-30",
+      "allDay": true,
+      "category": "Teacher In-Service"
+    },
+    {
+      "id": "ev-02",
+      "title": "Staff Development",
+      "date": "2026-08-03",
+      "endDate": "2026-08-06",
+      "allDay": true,
+      "category": "Teacher In-Service"
+    },
+    {
+      "id": "ev-03",
+      "title": "Take-A-Peek",
+      "date": "2026-08-07",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-04",
+      "title": "First Day of School",
+      "date": "2026-08-10",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-05",
+      "title": "Labor Day – Closed",
+      "date": "2026-09-07",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-06",
+      "title": "E-Learning Day",
+      "date": "2026-09-11",
+      "endDate": null,
+      "allDay": true,
+      "category": "E-Learning"
+    },
+    {
+      "id": "ev-07",
+      "title": "Formal Hall Ceremony",
+      "date": "2026-09-16",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-08",
+      "title": "End of First Quarter",
+      "date": "2026-10-02",
+      "endDate": null,
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-09",
+      "title": "Fall Break",
+      "date": "2026-10-05",
+      "endDate": "2026-10-09",
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-10",
+      "title": "First Day of 2nd Quarter",
+      "date": "2026-10-12",
+      "endDate": null,
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-11",
+      "title": "ACT Testing (10th–12th) / E-Learning Day (6th–9th)",
+      "date": "2026-11-03",
+      "endDate": "2026-11-04",
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-12",
+      "title": "Veteran’s Day – Closed",
+      "date": "2026-11-11",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-13",
+      "title": "Thanksgiving Break",
+      "date": "2026-11-23",
+      "endDate": "2026-11-27",
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-14",
+      "title": "Christmas Program",
+      "date": "2026-12-01",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-15",
+      "title": "6th–12th Semester Exams",
+      "date": "2026-12-16",
+      "endDate": "2026-12-18",
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-16",
+      "title": "6th–12th Semester Exams and Semester Ends / Half-Day",
+      "date": "2026-12-18",
+      "endDate": null,
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-17",
+      "title": "Christmas Break",
+      "date": "2026-12-21",
+      "endDate": "2027-01-01",
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-18",
+      "title": "Professional Development",
+      "date": "2027-01-04",
+      "endDate": null,
+      "allDay": true,
+      "category": "Teacher In-Service"
+    },
+    {
+      "id": "ev-19",
+      "title": "First Day of 3rd Quarter for Students",
+      "date": "2027-01-05",
+      "endDate": null,
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-20",
+      "title": "Rev. Dr. MLK Jr. Day – Closed",
+      "date": "2027-01-18",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-21",
+      "title": "E-Learning Day / Professional Development",
+      "date": "2027-02-05",
+      "endDate": null,
+      "allDay": true,
+      "category": "E-Learning"
+    },
+    {
+      "id": "ev-22",
+      "title": "President’s Day",
+      "date": "2027-02-15",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-23",
+      "title": "End of 3rd Quarter",
+      "date": "2027-03-12",
+      "endDate": null,
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-24",
+      "title": "Spring Break",
+      "date": "2027-03-15",
+      "endDate": "2027-03-19",
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-25",
+      "title": "Good Friday",
+      "date": "2027-03-26",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-26",
+      "title": "Easter Monday",
+      "date": "2027-03-29",
+      "endDate": null,
+      "allDay": true,
+      "category": "No School"
+    },
+    {
+      "id": "ev-27",
+      "title": "E-Learning Day",
+      "date": "2027-04-14",
+      "endDate": null,
+      "allDay": true,
+      "category": "E-Learning"
+    },
+    {
+      "id": "ev-28",
+      "title": "Kindergarten Graduation",
+      "date": "2027-05-13",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-29",
+      "title": "Formal Hall & 12th Grade Commencement",
+      "date": "2027-05-14",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-30",
+      "title": "6th–11th Grade Exams",
+      "date": "2027-05-18",
+      "endDate": "2027-05-19",
+      "allDay": true,
+      "category": "Academic"
+    },
+    {
+      "id": "ev-31",
+      "title": "Last Day of School / Semester Ends (Half Day)",
+      "date": "2027-05-20",
+      "endDate": null,
+      "allDay": true,
+      "category": "Special Student Day"
+    },
+    {
+      "id": "ev-32",
+      "title": "Teacher Work Day",
+      "date": "2027-05-21",
+      "endDate": null,
+      "allDay": true,
+      "category": "Teacher In-Service"
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/hillsdale",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "hillsdale",
+    "title": "Curriculum from Hillsdale College",
+    "sourceUrl": "https://www.khroyals.com/hillsdale"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Kingdom Heights Preparatory School is a Hillsdale College Curriculum School."
+        },
+        {
+          "type": "button",
+          "label": "LEARN MORE",
+          "url": "https://k12.hillsdale.edu/Schools/Affiliation-levels/"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7fcc126d-12ed-426b-a577-8cda0d33d8fb/DJI_0019.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Curriculum from Hillsdale College"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is a Hillsdale College Curriculum School, a distinction that offers our school access to a tried and true K-12 Curriculum from the Hillsdale College K-12 Education Office."
+        },
+        {
+          "type": "youtube",
+          "id": "PSHOx_36dAo",
+          "aspectRatio": 1.7699
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "About Hillsdale"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/85613ba3-9dbc-45d0-85c6-bfdac456b3b0/Hillsdale.png?format=1500w"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hillsdale College was founded to provide the kind of sound learning necessary to preserve the blessings of liberty. For over 175 years, it has offered an outstanding liberal arts education for undergraduate students. Restoring excellence to American K-12 education is a natural extension of the College’s mission, and Hillsdale has been helping K-12 schools for over three decades."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hillsdale teaches K-12 schools to provide an education that is both classical and American in its orientation; one that is rooted in the liberal arts and sciences, offers a firm grounding in civic virtue, and cultivates moral character."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hillsdale’s curriculum, contained in the Hillsdale College K-12 Program Guide , is available to KHPS at no cost; it is made possible by the generous support of friends of Hillsdale College."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "For more information about Hillsdale College support for schools like Kingdom Heights Preparatory School, visit k12.hillsdale.edu ."
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "What is an American Classical Education?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Learn More HERE. Key Characteristics of Hillsdale Classical Schools A curriculum that is content-rich, balanced, and strong across the four disciplines of math, science, literature, and history The Western tradition is central in the study of history, literature, philosophy, and the fine arts Study of the American literary, moral, philosophical, political, and historical traditions Explicit instruction in phonics and grammar The study of Latin as a requirement for all students An approach to instruction that acknowledges objective standards of truth, goodness, and beauty A well-educated and articulate faculty who use traditional, teacher-led methods of instruction A commitment to use technology effectively without diminishing the faculty leadership that is crucial to academic achievement A plan to serve Grades K through 12 (though the school opens with fewer grades) so as to provide continuity and a recurrent examination of subjects throughout a student’s career A school culture of moral virtue, decorum, respect, discipline, and studiousness among both students and faculty"
+                }
+              ]
+            },
+            {
+              "title": "Hillsdale Classical Schools Across the Nation",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Learn more HERE. The Hillsdale College K-12 Office serves as advisors to public and private schools—including charter schools through the Barney Charter School Initiative. A select number of Hillsdale College Member Schools work closely with the office and serve as examples of excellence to K-12 schools nationwide."
+                }
+              ]
+            },
+            {
+              "title": "Founding a Hillsdale Classical School",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Learn more HERE. How To Start A Hillsdale College Member School Mission Alignment Hillsdale College provides assistance to a network of Member Schools that serve a wide variety of local communities. Each has its unique challenges and opportunities, but the network is bound together by a common understanding of American classical education and shared program features. Classical education is a model of K-12 instruction that is rooted in the liberal arts and sciences, offers a firm grounding in civic virtue, and cultivates moral character: It emphasizes the centrality of the Western tradition in the study of history, literature, philosophy, and the fine arts. It features a rich and recurring examination of the American literary, moral, philosophical, political, and historical traditions to equip students for citizenship. Its curriculum is balanced and strong across the four core disciplines of math, science, literature, and history, with explicit phonics instruction leading to reading fluency and explicit grammar instruction leading to language mastery. Well-educated and articulate teachers are central to the classroom, in contrast to conventional “student-centered learning” models. The school culture demands moral virtue, decorum, respect, discipline, and studiousness among the students and faculty—and simultaneously produces a spirit of wonder and a desire to know that which is good, true, and beautiful. In short, classical education offers K-12 students the sort of rigorous education that undergraduate students receive at Hillsdale College. Each of the Member Schools serves students from Kindergarten through 12th grade or has a plan to serve all grades as it grows and matures."
+                }
+              ]
+            },
+            {
+              "title": "Frequently asked questions about Hillsdale’s support for K-12 schools",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Learn more HERE . Since Hillsdale is a college, why does it care about education for K-12 students? Hillsdale College is a teaching institution . Its primary work is the teaching of college students in the liberal arts and sciences. The college’s mission states that it will “furnish all persons who wish, irrespective of nation, color or sex, a literary and scientific education.” Hillsdale was the first American college to prohibit in its charter any discrimination based on race, religion, or sex, and became an early force for the abolition of slavery. It was also the second college in the nation to grant four-year liberal arts degrees to women. Its work in K-12 education arises out of this desire to help “all who wish” to learn. This includes children in K-12 schools and those who are responsible for providing for their educations—first parents, then statesmen and teachers. What do Hillsdale Member Schools teach students? Students in Hillsdale’s member schools receive a thorough and well-rounded American classical education in the liberal arts and sciences that reflects Hillsdale College’s course of study for undergraduates. A more detailed overview of Hillsdale College’s recommended K-12 curriculum is available here ."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c0f2fa09-68f5-46a2-9000-230ebf977fdc/170286_hero.jpg?format=1500w"
+      }
+    }
+  ]
+}

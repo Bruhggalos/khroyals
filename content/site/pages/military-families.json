@@ -1,0 +1,283 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/military-families",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "military-families",
+    "title": "Military Families",
+    "sourceUrl": "https://www.khroyals.com/military-families"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Welcome to Kingdom Heights Preparatory School, Military Families!"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is proud to support military-connected students and families. Located minutes from Redstone Arsenal , we understand the unique challenges military families face, including frequent relocations, deployments, and transitions between school systems."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our goal is simple: to provide stability, belonging, and excellence for students whose families serve our nation."
+        },
+        {
+          "type": "button",
+          "label": "REACH OUT FOR SUPPORT",
+          "url": "mailto:msudhakar@khroyals.com?subject=Military%20Family%20Question"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1767720988271-U4PYWVMWMKULMTFQOW1J/unsplash-image-z2RlWyJ2-RU.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Our Commitment to Military Families"
+        },
+        {
+          "type": "paragraph",
+          "text": "We work to ensure that military-connected students experience:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "A smooth transition into our academic and spiritual community",
+            "Faculty and staff who understand military life and culture",
+            "Clear communication and support during deployments or relocations",
+            "Connection to trusted local resources in the Huntsville area"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Whether your family is stationed here temporarily or long-term, you belong at Kingdom Heights Preparatory School."
+        },
+        {
+          "type": "button",
+          "label": "REACH OUT FOR SUPPORT",
+          "url": "mailto:msudakar@khroyals.com?subject=Military%20Family"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2d4a879a-fa76-438e-9653-9549ec807cb9/DSC03577.jpg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Military Point of Contact"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School designates a staff member to serve as a Military Family Liaison , available to assist with:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Enrollment transitions",
+            "Records and placement questions",
+            "Social and emotional support during deployment cycles",
+            "Connecting families to local military resources"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Maria Sudhakar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Director of Admissions and Registrar 3401 Holmes Ave NW, Huntsville, AL 35816 msudhakar@khroyals.com 256-210-1343",
+          "links": [
+            {
+              "label": "256-210-1343",
+              "url": "tel:+12562101343"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "North Huntsville",
+              "text": "Moores Mill & Meridianville North Huntsville is a rapidly growing area that appeals to families seeking newer homes, more land, and quieter suburban living, while still maintaining access to Redstone Arsenal and downtown Huntsville. - Expanding residential developments - Short commute via Highway 231/431 - Close to parks, greenways, and outdoor recreation - Popular with families planning longer-term stays",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/9dffa0bb-5457-4e05-b0fd-3e5668bd03d9/NA-Railroad-Museum2_c0e5a4e9-5056-a36a-08cee45e81f221c4.jpg?format=1500w"
+            },
+            {
+              "title": "Hazel Green",
+              "text": "Located just north of Huntsville, Hazel Green is known for its open spaces, family-friendly atmosphere, and growing residential developments. It is a popular choice for families looking for affordability and room to grow. - Larger lots and newer subdivisions - Easy access to North Huntsville and Meridianville - Slower pace with a strong sense of community - Ideal for families who enjoy a quieter lifestyle",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c1feba5b-459b-4b19-a8a3-632662e9eb3a/Hazel+Green%2C+Alabama+%281%29.jpeg?format=1500w"
+            },
+            {
+              "title": "Madison",
+              "text": "Madison is one of the most popular areas for military families due to its central location and access to major commuting routes. - Family-friendly neighborhoods - Convenient access to Redstone Arsenal - Shopping, dining, and community amenities - Mix of established and newer developments",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f731267c-d0d5-4d15-b17c-163ee96ef392/Honest-inside-2.jpg?format=1500w"
+            },
+            {
+              "title": "Hampton Cove",
+              "text": "Hampton Cove is a master-planned community located in Southeast Huntsville, known for its scenic setting and outdoor lifestyle. - Parks, trails, and green spaces - Neighborhood pools and recreation areas - Easy access to downtown Huntsville and surrounding areas - Strong sense of community",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/eca433f6-0f23-490c-8808-e947c6d80af7/HamptonCove-Morning2.jpg?format=1500w"
+            },
+            {
+              "title": "Owens Cross Roads",
+              "text": "Owens Cross Roads Owens Cross Roads offers quieter suburban living near Monte Sano and other outdoor recreation areas, appealing to families who value space and natural surroundings. - Peaceful neighborhoods near hiking and greenways - Short drive to Huntsville and Redstone Arsenal - Family-oriented atmosphere - Mix of new and established homes",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/579ecd8d-4030-45a1-99dd-e61739139142/563891f534c4e313e00487d771714ec4.jpeg?format=1500w"
+            },
+            {
+              "title": "South Huntsville",
+              "text": "South Huntsville combines established neighborhoods with convenient access to major roadways, parks, and daily amenities. - Close to Arsenal gates and Memorial Parkway - Mature trees and established communities - Access to hiking, parks, and outdoor activities - Balanced suburban lifestyle",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3f8e2f9b-99e5-4c7f-8379-968010bd5516/ditto-landing-sunset-scaled.jpeg?format=1500w"
+            },
+            {
+              "title": "Harvest",
+              "text": "Harvest is a growing community west of Huntsville that attracts families looking for more space and affordability while remaining connected to the city. - Larger lots and newer subdivisions - Growing residential developments - Easy access to Huntsville and surrounding areas - Quiet, family-oriented environment",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2bc86750-7f35-4962-9d87-d120b3595de6/Screenshot+2026-01-06+at+12.08.30%E2%80%AFPM.png?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Veterans Day Parade Huntsville",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aca4e300-9615-4d92-9b29-fd2e87056719/HV-VETERANS-DAY-PARADE-LEAD_WHNT8d2b_136.mxf_.00_00_00_00.Still001.webp?format=1500w"
+            },
+            {
+              "title": "Panoply Arts Festival",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2d1d7717-aaeb-49dd-a0a3-d6d442ec34ce/PanoplyFireworks042514_0263dKeim_c35e251a-6582-4db2-ae71-b124335bfb7a.jpg?format=1500w"
+            },
+            {
+              "title": "Trash Pandas",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/40d6deb5-062b-481b-8988-33796ca25a15/HBJTrashPandasSunset.jpg?format=1500w"
+            },
+            {
+              "title": "Space and Rocket Center",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1d12da3a-a732-4eed-984c-d1d2c7ace7cf/200729120845-us-space-rocket-center-restricted.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Parks, Libraries, & Family Spaces"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/d43b5b57-acb5-445f-a98e-663d9c616b5a/ConcertsInThePark062722nK-0720dKeim--scaled.jpg?format=1500w"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Big Spring International Park – Downtown green space and events",
+            "Monte Sano State Park – Hiking, camping, and scenic overlooks",
+            "Huntsville-Madison County Public Library – Storytimes, homeschool resources, and teen programs"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1767723831174-16G0066FCE5689ZXSFAW/unsplash-image-gnJC_Z6gG60.jpg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Military & Family Support"
+        },
+        {
+          "type": "paragraph",
+          "text": "Army Community Service",
+          "links": [
+            {
+              "label": "Army Community Service",
+              "url": "https://redstone.armymwr.com/programs/acs"
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Alabama"
+        },
+        {
+          "type": "paragraph",
+          "text": "Alabama Military Family Liaison Jennifer Holliday Alabama Military Family Liaison"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Cell: 912-318-3897",
+            "Email: jen@heroeswelcome.alabama.gov"
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Redstone"
+        },
+        {
+          "type": "paragraph",
+          "text": "Redstone Arsenal School Liaison Officer Erica S. Lewis School Liaison Officer Child & Youth Services"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Desk: 256-842-9642",
+            "Cell: 256-947-1576",
+            "Email: erica.s.lewis.naf@army.mil"
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "MCEC"
+        },
+        {
+          "type": "paragraph",
+          "text": "MCEC Community Coordinator Sonya Mulack Community Coordinator"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Desk: 254-953-1923 ext. 1129",
+            "Cell: 913-240-1608",
+            "Email: Sonya.Mulack@MilitaryChild.org"
+          ]
+        }
+      ]
+    }
+  ]
+}

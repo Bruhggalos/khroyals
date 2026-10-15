@@ -1,0 +1,167 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/support-services",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "support-services",
+    "title": "Support Services",
+    "sourceUrl": "https://www.khroyals.com/support-services"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Academic Support"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights Preparatory School, we are committed to academic excellence. Our Academic Support services include tutoring programs, advanced placement guidance, and individualized learning plans for students who need extra assistance. We also provide support for students with learning differences through specialized resources and faculty mentorship."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7d5d951a-60c8-4af5-9a1e-37a319f4aea4/DSC01320.jpg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Student Services"
+        },
+        {
+          "type": "paragraph",
+          "text": "The well-being of our students is a top priority. Our Student Services team offers guidance counseling, personal development programs, and character formation rooted in biblical principles. Whether students need emotional support, college and career advising, or help adjusting to a new environment, our counselors are here to walk alongside them."
+        },
+        {
+          "type": "button",
+          "label": "CONTACT US",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Technology Support"
+        },
+        {
+          "type": "paragraph",
+          "text": "We integrate technology into the learning experience to prepare students for the future. Our Technology Support team provides assistance with school-issued devices, troubleshooting software issues, and ensuring students have access to safe and effective digital learning tools. Parents and students can reach out for help with login credentials, online platforms, and classroom technology."
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/67cd5f0a-f69d-4677-a357-ddd7fb7fa4cf/C_C09787.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Parent Resources"
+        },
+        {
+          "type": "paragraph",
+          "text": "We believe education is a partnership between school and home. Our Parent Resources include school policies, family handbooks, volunteer opportunities, and helpful guides for navigating the academic year. Stay informed about upcoming events, important announcements, and ways to get involved in our school community."
+        },
+        {
+          "type": "button",
+          "label": "CONTACT US",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6cd4851b-57a0-4abd-8e5f-ec2e0a5f3662/christian-education-private-christian-school-huntsville-alabama?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Financial Aid"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is committed to making Christ-centered education accessible to families. Our Tuition Sheet provides details about tuition assistance, multi-student discounts, paid-in-full incentives, and the CHOOSE ACT tax program available for qualifying students. We encourage families to explore options that best support their educational goals."
+        },
+        {
+          "type": "button",
+          "label": "TUITION SHEET",
+          "url": "https://www.khroyals.com/s/Tuition-Sheet"
+        },
+        {
+          "type": "button",
+          "label": "CHOOSE ACT",
+          "url": "https://classwallet.com/alchoose/?utm_term=alabama%20choose%20act&utm_campaign=Search+%232+Launch&utm_source=adwords&utm_medium=ppc&hsa_acc=7188513546&hsa_cam=22076971422&hsa_grp=175969715907&hsa_ad=727577086296&hsa_src=g&hsa_tgt=kwd-2388352298285&hsa_kw=alabama%20choose%20act&hsa_mt=b&hsa_net=adwords&hsa_ver=3&gad_source=1&gclid=Cj0KCQjwm7q-BhDRARIsACD6-fUpeuDgQgvp_kxtam8c6484gtY_3czhNPTT8-L8mvtxc1zlIwZGvMAaAkJNEALw_wcB"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Spiritual Support"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we prioritize discipleship and spiritual growth. Our Spiritual Support includes weekly chapel services, small group mentorship, and prayer resources for students and families. Our pastoral team is available for counseling and encouragement, helping students grow in their faith and biblical literacy."
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/739abe69-dffc-46ca-9e1a-d5e64e3f252a/DSC00031-2-2.jpg?format=1500w"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/474abdae-b2ae-4a54-b4b0-c6a9ec9c7e7f/C_C00388.jpg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Community Support & Partnerships"
+        },
+        {
+          "type": "paragraph",
+          "text": "We are blessed to be part of a strong Christian community in Huntsville. Our Community Support & Partnerships page highlights local resources, outreach opportunities, and ways our students can engage in service projects. From mission trips to community service initiatives, we encourage students to live out their faith through action."
+        },
+        {
+          "type": "button",
+          "label": "Learn more",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Contact Support Team"
+        },
+        {
+          "type": "paragraph",
+          "text": "Need assistance? Our Support Team is here to help. Whether you have questions about academics, student life, technology, or financial aid, our staff is ready to assist you."
+        },
+        {
+          "type": "button",
+          "label": "CONTACT",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    }
+  ]
+}

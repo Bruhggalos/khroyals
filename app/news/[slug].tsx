@@ -1,20 +1,24 @@
-import { Image, ScrollView, Text } from 'react-native';
+import { Image, Linking, ScrollView, Text } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getArticle } from '../../src/api/mockApi';
+import { BlockList, formatDate } from '../../src/site/Blocks';
 import { C, Chip, Loading, P, s, useLoad } from '../../src/ui';
 
 export default function Article() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: a } = useLoad(() => getArticle(slug), [slug]);
   if (!a) return <Loading />;
+  // The hero image usually repeats as the last body image; don't show it twice.
+  const body = a.body.filter((b, i) => !(b.type === 'image' && a.heroImage && b.src === a.heroImage && i === a.body.length - 1));
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
       <Stack.Screen options={{ title: 'News' }} />
-      <Image source={{ uri: a.heroImage }} style={{ height: 200, borderRadius: 12 }} />
+      {a.heroImage && <Image source={{ uri: a.heroImage }} style={{ height: 220, borderRadius: 12 }} />}
       <Chip label={a.category} />
       <Text style={{ fontSize: 24, fontWeight: '800', color: C.ink }}>{a.title}</Text>
-      <P muted>{a.publishedAt} · {a.author}</P>
-      {a.body.map((b, i) => <P key={i}>{b.text}</P>)}
+      <P muted>{formatDate(a.publishedAt, { month: 'long', day: 'numeric', year: 'numeric' })} · {a.author}</P>
+      <BlockList blocks={body} />
+      <Text style={{ color: C.primary, fontWeight: '600', marginTop: 8 }} onPress={() => Linking.openURL(a.sourceUrl)}>View on khroyals.com ›</Text>
     </ScrollView>
   );
 }

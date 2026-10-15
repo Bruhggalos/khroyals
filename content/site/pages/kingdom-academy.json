@@ -1,0 +1,708 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/kingdom-academy",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "kingdom-academy",
+    "title": "Kingdom Academy: 9th-12th Grade",
+    "sourceUrl": "https://www.khroyals.com/kingdom-academy"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Kingdom Academy: Shaping High School Education in Huntsville, Alabama"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1511861e-b372-425e-8be8-e08236ffca54/DSC06189.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "Kingdom Academy ✦ 9th-12th Grade ✦"
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1c09a1f0-4e76-4dd6-91c7-a800c2e2674d/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1c09a1f0-4e76-4dd6-91c7-a800c2e2674d/thumbnail",
+          "durationSeconds": 114,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "APPLY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "9th-12th Grade"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Kingdom Academy empowers 9th-12th graders to pursue God’s calling with confidence ."
+        },
+        {
+          "type": "button",
+          "label": "CURRICULUM ➺",
+          "url": "#curriculum"
+        },
+        {
+          "type": "button",
+          "label": "S.T.E.A.M. ➺",
+          "url": "#steam"
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW ➺",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "DISTINCTIVES ➺",
+          "url": "#distinctives"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Empower your child for success and significance."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "The Kingdom Academy at Kingdom Heights Preparatory School is a transformative high school experience designed to prepare 9th-12th grade students for college, the workforce, or the military while equipping them to serve and build God’s Kingdom in every sphere of society."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Our Christ-centered curriculum, career readiness programs, entrepreneurship opportunities, STEAM focus, and leadership opportunities ensure that students graduate with the skills, knowledge, and character needed to thrive in life and purposefully impact the world."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2c404b97-970a-4a3b-96f8-9f1e1edfc96d/high-school-student-huntsville-alabama.png?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Give Them More Than a Diploma."
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Prepare your student for college, career, and Kingdom impact."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/a0c5816e-d910-4b94-b98a-21bd3e88b887/high-school-students-private-christian-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Why Kingdom Academy ?"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "High school is more than academics—it’s a time to shape character, deepen faith, and prepare for life beyond graduation."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "In Kingdom Academy, we provide:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rigorous, Christ-Centered Academics: A challenging curriculum that equips students with critical thinking, problem-solving, and communication skills, all taught through the lens of biblical truth."
+        },
+        {
+          "type": "paragraph",
+          "text": "Leadership Development: Students collaborate, create, and lead, gaining confidence and skills to serve as Christ-like leaders in any setting."
+        },
+        {
+          "type": "paragraph",
+          "text": "Career Readiness: Through STEAM education, internships, and hands-on learning, students explore future careers and develop real-world skills."
+        },
+        {
+          "type": "paragraph",
+          "text": "Senior Capstone Project: Every senior completes a culminating project, presenting either a traditional senior thesis before a panel of university professors or launching a global business idea before a panel of business leaders."
+        },
+        {
+          "type": "paragraph",
+          "text": "Economics & Personal Finance: We equip students to manage God’s resources wisely, preparing them for financial independence and stewardship."
+        },
+        {
+          "type": "paragraph",
+          "text": "Faith in Action: Weekly chapel, discipleship opportunities, and community service projects encourage students to live out their faith boldly."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Discover how Kingdom Academy prepares students for life and eternity."
+        },
+        {
+          "type": "button",
+          "label": "Schedule a Tour",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c79b7eb8-ca1b-4642-80e7-87e0cbb9ea8d/middle-school-student-curriculum-private-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c982e4c0-1817-433f-b5ec-e15873d6a4cd/DSC00595.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Academics: A Curriculum That Prepares for College, Career & Life"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Bible: 4 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Deepening understanding of Scripture and applying biblical principles to daily life."
+                }
+              ]
+            },
+            {
+              "title": "English: 4 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Building strong communication skills through reading , writing , and critical analysis ."
+                }
+              ]
+            },
+            {
+              "title": "Mathematics: 4 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Strengthening logical reasoning and problem-solving abilities ."
+                }
+              ]
+            },
+            {
+              "title": "Science: 4 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Encouraging curiosity through hands-on experiments."
+                }
+              ]
+            },
+            {
+              "title": "Social Studies: 4 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Exploring history, culture, and citizenship from a biblical worldview."
+                }
+              ]
+            },
+            {
+              "title": "Economics: 0.5 credit",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "At Kingdom Academy, students gain practical financial literacy through our Economics course, learning to manage God’s resources wisely. From budgeting and investing to understanding global markets, students develop the skills to make sound financial decisions while exploring how biblical stewardship shapes economic choices."
+                }
+              ]
+            },
+            {
+              "title": "US Government: 0.5 credit",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our U.S. Government course equips students to become engaged citizens, understanding the foundations of American democracy, civic responsibility, and the biblical principles that shaped our nation. Students explore the Constitution, branches of government, and current events, developing the skills to lead and advocate with integrity."
+                }
+              ]
+            },
+            {
+              "title": "Health: 0.5 credit",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "The Health course at Kingdom Academy empowers students to make wise choices for their physical, mental, and emotional well-being. From nutrition and fitness to mental health awareness, students develop a Christ-centered understanding of holistic health, preparing them for lifelong wellness."
+                }
+              ]
+            },
+            {
+              "title": "Arts Education, Career & Technical Education, or World Languages: 3 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Kingdom Academy offers a range of electives to cultivate creativity, career readiness, and global awareness. Students can explore the arts through music, theater, and visual design, develop technical skills in STEAM fields, or pursue world languages, including Latin, to enhance communication and cultural literacy."
+                }
+              ]
+            },
+            {
+              "title": "Electives: 2.5 credits",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Electives: Students personalize their education with courses in: Fine Arts: Music, theater, visual arts, dance, and media arts STEAM: Project-based learning in science, technology, engineering, arts, and math Languages: Including Latin, the foundation of Romance languages, proven to improve test scores and critical thinking Cyber/Robotics: Developing skills for future careers in technology and engineering Debate: Enhancing public speaking, reasoning, and persuasive communication"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The Kingdom Academy curriculum is designed to meet Alabama's graduation requirements while exceeding expectations for college readiness and life success. Our courses are taught from a biblical worldview, encouraging academic excellence, character development, and spiritual growth."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH OUR ADMISSIONS TEAM",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "SCIENCE ✦ TECHNOLOGY ✦ ENGINEERING ✦ ARTS ✦ AGRICULTURE ✦ MATHEMATICS ✦"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/87b2f59e-db7e-42fc-a6f9-3b1783ef74f6/career-clusters-steam-private-school-huntsville-madison.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b67b5b25-991e-4749-99d7-4f1bdfc75395/career-prep-private-high-school-huntsville.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/dfe1e415-080b-49e6-aef9-97886ecfca05/high-school-student-career-clusters-huntsville-alabama.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "S.T.E.A.M. & Career Readiness: Preparing Future Leaders"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our STEAM program (Science, Technology, Engineering, Arts, and Math) prepares students for 21st-century careers through hands-on projects , problem-solving activities , and career exploration ."
+        },
+        {
+          "type": "paragraph",
+          "text": "We introduce students to the 16 Career Clusters , guiding them toward God-honoring professions :"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Agriculture, Food & Natural Resources",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to develop environmental science projects, hydroponic gardens, and local farm partnerships, helping students understand sustainability, food production, and natural resource management. Building a foundation in agriculture and sustainability. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Architecture & Construction",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future plans include engineering challenges, digital modeling projects, and hands-on construction activities, allowing students to explore design principles and safe building practices. Exploring architecture through hands-on learning. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Arts, A/V Technology & Communications",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We aim to introduce media arts, digital storytelling, and video production, connecting students to Huntsville's creative and technology-driven community. Inspiring creativity and communication skills. APPLY NOWAPPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Business Management & Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes entrepreneurship projects, leadership workshops, and mock business ventures, helping students understand organizational management and financial literacy. Encouraging leadership and business skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Education & Training",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to offer peer mentoring, leadership development, and teaching workshops, encouraging students to become role models and future educators. Developing future educators and leaders. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Finance",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Future programs will include budgeting exercises, personal finance projects, and classroom economies, teaching students how to manage money wisely. Empowering students with money management skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Government & Public Administration",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to introduce mock elections, student government, and civic projects, teaching students about leadership roles and community service. Inspiring future community leaders. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Health Science",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our vision includes first aid training, health education workshops, and wellness initiatives, promoting healthy habits and compassionate care. Exploring careers in healthcare and wellness. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Hospitality & Tourism",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to introduce event planning projects, customer service activities, and tourism-focused learning, connecting students to Huntsville’s hospitality industry. Building hospitality and leadership skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Human Services",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs include community service projects, mentorship programs, and leadership training, promoting empathy and compassion. Fostering empathy and service. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Information Technology",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We hope to offer coding classes, robotics projects, and cybersecurity challenges, preparing students for technology careers in Huntsville’s tech sector. Empowering students with IT skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Law, Public Safety, Corrections & Security",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our plans include conflict resolution programs, safety drills, and first responder visits, teaching students about community safety and leadership. Promoting safety and leadership APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Manufacturing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We envision engineering challenges, simple machines projects, and hands-on manufacturing activities, connecting students to Huntsville's advanced manufacturing sector. Introducing future innovators to manufacturing. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Marketing",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our future programs will include school store projects, branding exercises, and advertising campaigns, promoting entrepreneurial thinking. Encouraging creativity and business skills. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Science, Technology, Engineering & Mathematics (STEM)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We plan to expand our STEAM curriculum with coding, engineering challenges, and real-world experiments, preparing students for STEM careers. Fueling curiosity through STEM learning. APPLY NOW"
+                }
+              ]
+            },
+            {
+              "title": "Transportation, Distribution & Logistics",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We aim to introduce supply chain simulations, mapping projects, and transportation-focused activities, connecting learning to Huntsville’s logistics hubs. Exploring the world of logistics. APPLY NOW"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "In Kingdom Academy, we're preparing high school students for life, leadership, and lifelong learning."
+        },
+        {
+          "type": "button",
+          "label": "APPLY TODAY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Senior Capstone Project:"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Preparing for What’s Next"
+        },
+        {
+          "type": "paragraph",
+          "text": "The Senior Capstone Project is a defining moment for Kingdom Academy students. Seniors choose one of two paths:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Traditional Senior Thesis: Present a research-based thesis before a panel of university professors , demonstrating intellectual rigor , critical thinking , and effective communication ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Global Business Project: Develop and pitch a business idea to a panel of industry leaders , gaining real-world experience in entrepreneurship and problem-solving ."
+        },
+        {
+          "type": "paragraph",
+          "text": "This project ensures students graduate ready for college, career, or military service."
+        },
+        {
+          "type": "button",
+          "label": "PLAN A VISIT",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c2f3603d-67ee-4db2-b287-ad6cb1c7a014/DSC00001.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f0f52096-1c24-4da3-be79-a264f2298890/high-school-students-private-christian-school-huntsville-madison.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Spiritual Formation & Leadership Development"
+        },
+        {
+          "type": "paragraph",
+          "text": "In Kingdom Academy, we believe high school is about more than academics—it's a time to develop spiritual maturity, strong character, and Christ-centered leadership. Our program equips students to lead with integrity and serve others faithfully, both now and in the future."
+        },
+        {
+          "type": "paragraph",
+          "text": "Through Kingdom Academy, students engage in:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Bible Classes: Daily instruction rooted in Scripture, teaching Christian values while encouraging deep, personal faith",
+            "Mentorship: One-on-one guidance from Christ-centered leaders, offering personalized support in both spiritual growth and life skills",
+            "Chapel Services: Weekly worship, prayer, and biblical teaching, creating space for reflection, discipleship, and spiritual renewal",
+            "Community Service: Opportunities to serve locally and globally, encouraging students to live out their faith through hands-on service"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Empower your child to grow in faith and lead with purpose."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH US",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "ROYAL HOUR"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Character & Leadership Development"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/0ad048c8-b36c-4683-ac69-a194e315c672/high-school-student-extracurricular-huntsville-madison.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we don’t just educate, we equip future leaders . Our students are encouraged to grow spiritually, academically, and socially. We foster biblical character traits like integrity, humility, resilience, and compassion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Royal Hour: Each day, students participate in Royal Hour , a dedicated time for tutoring, enrichment, or extracurricular clubs . This encourages students to take ownership of their education , explore interests, and seek help when needed."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empower your child to thrive."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Standards-Based Grading & Limited Homework"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we believe education should be progress-driven, not pressure-driven . Our standards-based grading approach ensures students advance only when they’ve mastered each concept . If a student needs more time, they receive personalized support without falling behind. Likewise, students ready to move ahead can progress without unnecessary repetition."
+        },
+        {
+          "type": "paragraph",
+          "text": "We also believe in protecting family time . That’s why homework is limited , ensuring evenings are spent connecting, creating, and resting , not stressing over assignments."
+        },
+        {
+          "type": "paragraph",
+          "text": "Learn how we balance academic success and family life."
+        },
+        {
+          "type": "button",
+          "label": "CONNECT WITH ADMISSIONS",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/34121766-8990-4a86-85f6-6639c68ea1f0/feb27.png?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Tuition & Discounts"
+        },
+        {
+          "type": "paragraph",
+          "text": "We offer several tuition discounts to make a Kingdom Heights education more accessible:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Multi-Student Discount: $250 off for the second child, $500 for the third, and $1,000 for the fourth or more",
+            "Full Payment Discount: 5% off total tuition for families paying in full",
+            "Active Military Discount: 10% off for active-duty military families"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights is a part of the Alabama Choose Act , which gives qualifying families access to up to $7k in tuition reimbursement for a private education.",
+          "links": [
+            {
+              "label": "Alabama Choose Act",
+              "url": "https://classwallet.com/alchoose/"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Invest in your child’s future with flexible tuition options."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "TUITION SHEET",
+          "url": "https://www.khroyals.com/s/KH-Tuition-Sheet-d7fh.pdf"
+        },
+        {
+          "type": "button",
+          "label": "ALABAMA CHOOSE ACT",
+          "url": "https://classwallet.com/alchoose/"
+        }
+      ]
+    }
+  ]
+}

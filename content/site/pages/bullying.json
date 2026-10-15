@@ -1,0 +1,247 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/bullying",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "bullying",
+    "title": "Bullying",
+    "sourceUrl": "https://www.khroyals.com/bullying"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1742315872592-5HVJOQEYSR87WYY8CP84/elementary+school.jpg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Bullying Policy & Reporting"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Creating a safe, Christ-centered learning environment for every student."
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is committed to cultivating a culture where every student is known, valued, and protected. Rooted in our mission to reflect Christ’s love and character, we take concerns related to bullying, intimidation, harassment, and threats seriously."
+        },
+        {
+          "type": "paragraph",
+          "text": "This page provides parents with:"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "01 Clear Information about our Bullying Policy"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "02 How Concerns are Addressed"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "03 How to Submit a Formal Complaint"
+        },
+        {
+          "type": "button",
+          "label": "Submit a Bullying Complaint",
+          "url": "https://www.khroyals.com/bullying#submit-a-complaint"
+        },
+        {
+          "type": "button",
+          "label": "View Bullying Policy",
+          "url": "https://www.khroyals.com/s/Bullying-Packet-1.pdf"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Our Commitment to a Safe & Respectful Environment"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is dedicated to fostering a learning environment that supports the emotional, physical, and spiritual well-being of every student. Bullying, intimidation, violence, and threats of violence - whether occurring on campus, online, or at school-sponsored events - are not tolerated."
+        },
+        {
+          "type": "paragraph",
+          "text": "All reports are handled with care, confidentiality, and discretion, and all responses are guided by both accountability and restoration."
+        },
+        {
+          "type": "button",
+          "label": "SUBMIT A BULLYING COMPLAINT",
+          "url": "https://www.khroyals.com/bullying#submit-a-complaint"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "What Is Considered Bullying?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Bullying is defined as a continuous pattern of intentional behavior that may occur on or off school property, including during school-sponsored activities. This behavior may be verbal, physical, social, or electronic in nature and may:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Place a student in reasonable fear of harm to their person or property",
+            "Substantially interfere with a student’s educational performance or opportunities",
+            "Disrupt the orderly operation of the school",
+            "Create a hostile, intimidating, or abusive environment"
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Common Forms of Bullying"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Verbal Bullying",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Teasing or taunting Name-calling Inappropriate or threatening comments"
+                }
+              ]
+            },
+            {
+              "title": "Social Bullying",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Intentional exclusion or isolation Spreading rumors Embarrassing a student publicly"
+                }
+              ]
+            },
+            {
+              "title": "Physical Bullying",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Hitting, kicking, pushing, or tripping Damaging or taking personal property"
+                }
+              ]
+            },
+            {
+              "title": "Cyber Bullying",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Harassing text messages or emails Social media posts, images, or videos intended to intimidate or shame"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "label": "SUBMIT A BULLYING COMPLAINT",
+          "url": "https://www.khroyals.com/bullying#submit-a-complaint"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "How KHPS Responds to Bullying"
+        },
+        {
+          "type": "paragraph",
+          "text": "All reported incidents are reviewed by school leadership in accordance with school policy and Alabama state law."
+        },
+        {
+          "type": "paragraph",
+          "text": "When a formal complaint is submitted:"
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "items": [
+            "The Head of School or Associate Dean of Student Services reviews the report",
+            "A prompt and reasonable investigation is conducted",
+            "Relevant facts and circumstances are considered",
+            "Appropriate disciplinary and/or restorative actions are implemented if a violation is confirmed"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Retaliation against any student who reports bullying or participates in an investigation is strictly prohibited."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you believe your child has experienced bullying, harassment, intimidation, or threats of violence, please complete the official Bullying Complaint Form."
+        },
+        {
+          "type": "paragraph",
+          "text": "What to Expect After Submission:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Your complaint will be reviewed by school administration",
+            "You may be contacted for additional information",
+            "Submission of a complaint does not guarantee a specific disciplinary outcome",
+            "All matters are handled with care, confidentiality, and discretion"
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Questions or Immediate Concerns?"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you believe there is an immediate safety concern, please contact the school office directly."
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Email: info@khroyals.cm",
+            "Phone Number: 256-210-1343"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "For questions regarding this policy or the reporting process, families may contact the Associate Dean of Student Services or the Head of School."
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School partners with families to shape students who walk in truth, dignity, and Christlike character. We are grateful for your trust and partnership in keeping our community safe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "SUBMIT A BULLYING COMPLAINT"
+        }
+      ]
+    }
+  ]
+}

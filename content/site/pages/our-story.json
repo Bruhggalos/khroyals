@@ -1,0 +1,175 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/our-story",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "our-story",
+    "title": "Our Story",
+    "sourceUrl": "https://www.khroyals.com/our-story"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "OUR STORY"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/935e886f-42fe-4d18-a229-edc331f3f43a/kingdom-heights-teachers-private-school-huntsville-al.jpg?format=1500w",
+          "url": "https://www.khroyals.com/plan-a-visit"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "\"People don’t have ideas... ideas have people.\""
+        },
+        {
+          "type": "paragraph",
+          "text": "In January of 2024, Pastors Scott and Britt Silcox were handed the baton from founding pastors, Pastors Rusty and Leisa Nelson, of head leadership at the Rock Family. The Rock is a legacy church in Huntsville, founded in 1999."
+        },
+        {
+          "type": "paragraph",
+          "text": "As part of their inaugural Vision Sunday in August of 2024, Pastors Scott and Britt Silcox released the vision to start a K-12 school at the site of the historic Butler High School campus. This vision was met with resounding support from the congregation and Huntsville community."
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4761c262-9673-4627-8cb8-44c9a52f8118/kingdom-heights-founding-pastors-giving-campaign-huntsville-al.jpg?format=1500w",
+          "url": "https://pushpay.com/g/therockfamily?fnd=CRc58dBGQzTq7ZtbzztugQ&fndv=Lock&utm_source=pushpay&utm_medium=email&utm_content=link1&utm_campaign=PledgeCreated"
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/683b7e06-23d4-4b3e-a6dc-376387185a3f/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/683b7e06-23d4-4b3e-a6dc-376387185a3f/thumbnail",
+          "durationSeconds": 171,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "JOIN THE VISION",
+          "url": "https://www.khroyals.com/giving"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/70f03363-fac3-44e9-b383-bccdb028ed67/high-school-student-globe-christian-school-huntsville-al.jpg?format=1500w",
+          "url": "https://www.khroyals.com/plan-a-visit"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "DUAL ACCREDITATION"
+        },
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309644072-PGHUSAGW56ALCCUGZ5FS/cognia-image-1024x400.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309723744-249WYZT7S68GP0U6GFAU/LCS-LOGO-2020-mobile-320x132-1.jpg?format=1500w"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "We are a Christ-centered academic community that empowers students to fully realize their God-given potential through rigorous academic programs, comprehensive support, and experiential learning opportunities."
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3cac574b-e7ad-4c1a-9d16-6aff1718d078/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3cac574b-e7ad-4c1a-9d16-6aff1718d078/thumbnail",
+          "durationSeconds": 30,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "At Kingdom Heights Preparatory School, we believe the time has come for an idea that transforms education, faith, and leadership in Huntsville, Alabama. While we may not be able to reform the entire education system, we are uniquely positioned to form and fortify the minds of the next generation of Christ-centered leaders, equipping them to impact every sphere of society—from space and technology to government, business, and the arts."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aa3dd61d-d894-4741-98f8-a493586f044c/hsv+campus.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "paragraph",
+          "text": "Introducing our Head of School:"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Dr. Rachel Ballard, PhD"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1740003330599-PJEN3TCB3YEMEFNCCLFT/dr-rachel-ballard-head-of-school-kingdom-heights-huntsville-al.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dr. Rachel Ballard was selected as the inaugural Head of School for Kingdom Heights Preparatory after an extensive national search. With advanced degrees in education and leadership, Dr. Ballard brings a wealth of experience in Christian education, curriculum development, and school administration. Passionate about shaping students both academically and spiritually, she embodies Kingdom Heights' mission to develop bold, Christ-centered leaders who will impact every sphere of society. Dr. Ballard's leadership marks an exciting chapter as we launch Kingdom Heights Preparatory for the 2025-2026 school year."
+        },
+        {
+          "type": "button",
+          "label": "REACH OUT",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3e0308a8-c9ce-46a1-8fee-6df6665e4ea3/DSC01148-2.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "OUR MISSION"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Our mission is to foster a Christ-centered academic community that empowers students to fully realize their God-given potential. Through a rigorous academic program, comprehensive support, and experiential learning opportunities, we prepare students for success in higher education, the military, or the workforce. Our goal is to equip them to serve with purpose, integrity, and influence in their careers and communities."
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c46567d6-5c91-48d5-8928-af6b5ded6b0d/fine-arts-violin-student-private-school-huntsville-al.jpg?format=1500w",
+          "url": "https://www.khroyals.com/admissions"
+        },
+        {
+          "type": "marquee",
+          "text": "Regnum Dei Primum ✦ God’s Kingdom First ✦"
+        }
+      ]
+    }
+  ]
+}

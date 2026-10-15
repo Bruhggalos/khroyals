@@ -1,0 +1,99 @@
+{
+  "pages": [
+    {
+      "id": "plan-a-visit",
+      "title": "Plan a Visit"
+    },
+    {
+      "id": "admissions",
+      "title": "Our Process"
+    },
+    {
+      "id": "military-families",
+      "title": "Military Families"
+    },
+    {
+      "id": "our-story",
+      "title": "Our Story"
+    },
+    {
+      "id": "contact-us",
+      "title": "Contact Us"
+    },
+    {
+      "id": "meet-our-team",
+      "title": "Meet Our Team"
+    },
+    {
+      "id": "the-historic-butler-high-school-campus",
+      "title": "The Historic Butler High School Campus"
+    },
+    {
+      "id": "hillsdale",
+      "title": "Curriculum from Hillsdale College"
+    },
+    {
+      "id": "early-learning-academy",
+      "title": "Early Learning Academy: K2-K4"
+    },
+    {
+      "id": "formation-academy",
+      "title": "Formation Academy: K-5th Grade"
+    },
+    {
+      "id": "presence-academy",
+      "title": "Presence Academy: 6th-8th Grade"
+    },
+    {
+      "id": "kingdom-academy",
+      "title": "Kingdom Academy: 9th-12th Grade"
+    },
+    {
+      "id": "spiritual-life",
+      "title": "Spiritual Life"
+    },
+    {
+      "id": "athletics",
+      "title": "Athletics"
+    },
+    {
+      "id": "fine-arts",
+      "title": "Fine Arts"
+    },
+    {
+      "id": "uniforms",
+      "title": "Uniforms"
+    },
+    {
+      "id": "giving",
+      "title": "Giving"
+    },
+    {
+      "id": "partners",
+      "title": "Partners"
+    },
+    {
+      "id": "support-services",
+      "title": "Support Services"
+    },
+    {
+      "id": "bullying",
+      "title": "Bullying"
+    },
+    {
+      "id": "terms-of-service",
+      "title": "Terms of Service"
+    },
+    {
+      "id": "privacy-policy",
+      "title": "Privacy Policy"
+    },
+    {
+      "id": "videophotography-policy",
+      "title": "Video/Photography Policy"
+    }
+  ],
+  "aliases": {
+    "early-childhood-education": "early-learning-academy"
+  }
+}

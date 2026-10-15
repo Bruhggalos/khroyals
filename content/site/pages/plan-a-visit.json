@@ -1,0 +1,218 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/plan-a-visit",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "plan-a-visit",
+    "title": "Plan a Visit",
+    "sourceUrl": "https://www.khroyals.com/plan-a-visit"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "RSVP Now for Tuesday Tours"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Join us every Tuesday at 9 am for a guided tour of Kingdom Heights Preparatory School with our Head of School, Dr. Rachel Ballard, PhD. Explore our newly renovated K2–12th grade campus - including a state-of-the-art performing arts center, secure facilities, and athletic fields - housed in the historic Butler High School."
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://sis.factsmgt.com/admissions-parent/inquire?districtCode=KH-AL&memberId=18500&sessionId=OAOE_3_8553922_a5fe85eeb2a55032-1583AC3D-FC8F-BFFD-00303B093B65631C&path=%252Foa%252Finquiry.cfm&code=anonymouspath"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3c7f84ec-fe5d-4f98-9b25-8a4e0d5edfb1/C_C00110.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "SCHEDULE A TOUR",
+              "text": "Join us on a Tuesday at 9:00 AM to experience Kingdom Heights in action. Meet our team, explore our campus, and discover what makes our approach to Christian education different.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f87e7837-86cd-4371-b9ba-d37c9d9d0448/1.jpg?format=1500w"
+            },
+            {
+              "title": "APPLY ONLINE",
+              "text": "Complete our online application and submit the required documents. Our admissions team will guide you through each step of the process.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4bebe3ec-ef47-4e58-8a38-cafc2703b82c/2.jpg?format=1500w"
+            },
+            {
+              "title": "STUDENT ASSESSMENT",
+              "text": "Students participate in an age-appropriate assessment to help us understand their academic readiness and identify how we can best support their growth.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/53641385-a985-4b73-a26a-dfae19b9cde0/3.jpg?format=1500w"
+            },
+            {
+              "title": "FAMILY INTERVIEW",
+              "text": "We believe education is a partnership. During the family interview, you will meet with school leaders to discuss your goals, ask questions, and ensure Kingdom Heights is the right fit for your family.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6de1678e-dc27-4c9c-b6d6-c76ac7d10cee/4.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Upcoming events for prospective families"
+        },
+        {
+          "type": "newsFeed",
+          "limit": 3
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f5cc64cb-6880-4862-bcc6-a3617d88ba7b/head-of-school-private-christian-school-huntsville-alabama.jpg?format=1500w",
+          "url": "https://www.khroyals.com/contact-us"
+        },
+        {
+          "type": "marquee",
+          "text": "Contact"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "We would love to schedule a time to connect and answer any questions you may have. Please fill out the form below as a first step."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "We offer campus wide tours every Tuesday at 9:00 AM. You can also reach us at: admissions@khroyals.com or 256-210-1343 ."
+        },
+        {
+          "type": "button",
+          "label": "CONTACT US",
+          "url": "https://sis.factsmgt.com/admissions-parent/inquire?districtCode=KH-AL&memberId=18500&sessionId=OAOE_3_8553922_a5fe85eeb2a55032-1583AC3D-FC8F-BFFD-00303B093B65631C&path=%252Foa%252Finquiry.cfm&code=anonymouspath"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "ACADEMICALLY PREPARED",
+              "text": "Fully Accredited through COGNIA and the League of Christian Schools",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/392a2660-1da1-49f5-844d-0ad39b701388/3948259cb0b17a2abf54d74a05852797.jpeg?format=1500w"
+            },
+            {
+              "title": "GROWTH ON AND OFF THE FIELD",
+              "text": "Character is formed through teamwork, leadership, and responsibility",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f7be31d4-2ec9-496e-908a-02155281c265/DSC02228-2.jpg?format=1500w"
+            },
+            {
+              "title": "SPACIOUS, BEAUTIFUL LEARNING ENVIRONMENT",
+              "text": "Our expansive campus inside the beautifully renovated historic Butler High School gives students room to grow",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/838c1d61-daad-4a10-97e2-509bbfb66950/C_C00110.jpg?format=1500w"
+            },
+            {
+              "title": "CREATIVE & HANDS ON",
+              "text": "Learning comes alive through movement, creativity, and exploration.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/9cb55587-6c78-4789-8f13-338e75571740/DSC09871.jpg?format=1500w"
+            },
+            {
+              "title": "CLASSICAL AND RIGORIOUS",
+              "text": "We are North Alabama’s only school that is a Hillsdale curriculum school.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/5986f965-aa23-4af0-adaf-d37ba17b9bea/DSC06182.jpg?format=1500w"
+            },
+            {
+              "title": "PEACE OF MIND",
+              "text": "Students experience joyful play in a safe, secure environment",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/65988ce7-b6f7-4350-ac00-1e4b50274d68/DSC05742.jpg?format=1500w"
+            },
+            {
+              "title": "LEARNING BEYOND THE DESK",
+              "text": "During Royal Hour, students grow in critical thinking through creative outlets like podcasting, chess, and cooking with a professional chef.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aea8eca2-397f-4af3-87c4-4cff1d5a6759/DSC00029.jpg?format=1500w"
+            },
+            {
+              "title": "FRIENDSHIP & BELONGING",
+              "text": "Students build real friendships and a sense of belonging.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1a4e913c-5e56-4eea-96db-6f70559b381d/DSC00445-2.jpg?format=1500w"
+            },
+            {
+              "title": "KNOWN AND CHALLENGED",
+              "text": "Credentialed teachers deliver a clear, standards-based education.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/608e6271-ac9a-48bd-9807-effdd0cc544e/DSC09917-3.jpg?format=1500w"
+            },
+            {
+              "title": "SAFE AND SOUND",
+              "text": "Student safety is a top priority.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/e107eed8-db99-418d-ab45-2586efe97efd/DSC01038.jpg?format=1500w"
+            },
+            {
+              "title": "STEM, CYBER, AND TECH",
+              "text": "We prepare students to lead in Huntsville’s space, cyber, and technology fields.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/9b1b10fe-64e9-46ff-bbb2-076e415ec3e0/DSC00487.jpg?format=1500w"
+            },
+            {
+              "title": "ARTISTIC EXPRESSION",
+              "text": "Students thrive in fine arts through music, acting, and playwriting.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/bf59d4f6-b40c-4758-a35b-8a452c323ad6/DSC01251.jpg?format=1500w"
+            },
+            {
+              "title": "BUILT FOR WORKING FAMILIES",
+              "text": "We support busy families with dependable wrap-around care.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/45925c28-ed31-4212-9755-1f9b6b0df547/DSC09690.jpg?format=1500w"
+            },
+            {
+              "title": "EARLY LEARNING PROGRAM",
+              "text": "Our K2–K4 program launches a classical Christian education as early as age two.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/206493e6-b205-4631-ae8e-c43cec50eacf/DSC09859-3.jpg?format=1500w"
+            },
+            {
+              "title": "CELEBRATED AND EMPOWERED",
+              "text": "Students are celebrated here, and their gifts are intentionally cultivated.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/a85b774f-9241-4c95-9f7c-3ce88b614b2e/DSC09976-3.jpg?format=1500w"
+            },
+            {
+              "title": "SPIRIT-FILLED WORSHIP",
+              "text": "Weekly chapel invites students into a beautiful, good, and faithful life with Christ.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b954a871-9d6b-4f17-b060-c40c37524bfd/DSC05860.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Take the next step towards a transformative education with Kingdom Heights."
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://kh-al.client.renweb.com/oa/inquiry.cfm?memberid=18500"
+        },
+        {
+          "type": "button",
+          "label": "APPLY",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/93921c36-eb7c-458f-8ac0-512f159efccc/DSC06527-2.jpg?format=1500w"
+      }
+    }
+  ]
+}

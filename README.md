@@ -1,13 +1,9 @@
-# KH Royals — cross-platform app (mock data)
+# KH Royals — cross-platform app
 
-One Expo / React Native codebase that ships to **iOS, Android and web**, backed by a
-per-page mock database so the app can be built and tested before any real API exists.
-
-> **About the content.** khroyals.com blocks automated fetching (robots.txt), so the
-> pages could not be curled. Every JSON file under `mock-db/site/` is placeholder
-> content shaped like a typical K-12 school site, marked `"_meta": { "mock": true }`.
-> Paste in the real copy (or export it from the site's CMS) and keep the same keys —
-> no screen code changes.
+One Expo / React Native codebase that ships to **iOS, Android and web** for
+**Kingdom Heights Preparatory School** (Huntsville, AL). The site content —
+every page, news post, video and the school calendar — is imported from the
+real [khroyals.com](https://www.khroyals.com/).
 
 ## Run it
 
@@ -18,23 +14,53 @@ npm test                # permission engine tests
 npm run typecheck
 ```
 
-Scan the QR code with **Expo Go** to try it on a real phone.
+Video playback uses native modules (`expo-video`, `react-native-webview`), so use a
+development build or the APK below rather than Expo Go to see the videos.
+
+## Site content (real, from khroyals.com)
+
+```bash
+pip install beautifulsoup4
+npm run import-site     # re-scrape khroyals.com into content/site/
+```
+
+`scripts/import_site.py` reads the sitemap, every page and the news collection
+(Squarespace `?format=json`) and writes:
+
+```
+content/site/
+  site.json        school info, colours, the site menu, footer, social links
+  home.json        the home page
+  pages/*.json     all 23 menu/footer pages (admissions, academies, our story, …)
+  pages.ts         generated import map of those pages
+  news.json        all 55 news posts with full bodies
+  calendar.json    2026–27 important dates (from the official calendar PDF)
+```
+
+Each page is a list of sections → blocks (heading, paragraph, button, image,
+gallery, cards, accordion, video, …) rendered natively by `src/site/Blocks.tsx`.
+Links keep the site's URLs; `src/site/links.ts` opens site pages and news in-app,
+videos in the in-app player, and PDFs/portals/forms in the browser.
+
+**Videos** are the site's own:
+
+| Where | Source | Played with |
+|---|---|---|
+| Home hero background, Our Story, Admissions, academy pages, Giving, Butler campus | Squarespace-hosted (HLS) | `expo-video` |
+| "What parents are saying" testimonials, "Our Story" vision film | Vimeo | WebView / iframe |
+| Hillsdale curriculum, CHOOSE Act, motto section | YouTube | WebView / iframe |
+
+The tuition calculator is an interactive widget on the website, so the app links
+to it. The calendar's dates are transcribed in the importer from the official PDF.
 
 ## Layout
 
 ```
-mock-db/
-  site/          one JSON per website page
-    site.json        school info, colors, nav, footer, social, alert banner
-    home.json        hero, quick links, feeds, principal message, stats
-    about.json  news.json  calendar.json  academics.json  athletics.json
-    activities.json  staff.json  parents.json  students.json
-    enrollment.json  dining.json  contact.json
-  comms/         Royals Connect (communication app)
-    users.json  groups.json  memberships.json  posts.json
-    comments.json  audit-log.json  roster.json
-scripts/         regenerate mock data (npm run regen-mock)
+content/site/    real site content (see above)
+mock-db/comms/   Royals Connect demo data (npm run regen-comms)
+scripts/         import_site.py (website), gen_comms.py (Connect demo)
 src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() later
+src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI
 app/                  expo-router screens (tabs: Home · News · Calendar · Connect · More)
 tests/                permission engine tests
@@ -73,7 +99,8 @@ coach, student, a muted student, or a parent and watch permissions change.
 
 ## Moving to production
 
-1. Replace `mockApi.ts` bodies with real HTTP calls (same return shapes).
+1. Replace `mockApi.ts` bodies with real HTTP calls (same return shapes), or run
+   `npm run import-site` on a schedule to refresh content.
 2. Re-run `can()` **on the server** for every write; the client copy is for UI only.
 3. Roster sync: feed `syncRuleMemberships()` from the SIS (OneRoster/Clever/ClassLink).
 4. Push notifications via `expo-notifications`; builds via EAS (`eas build -p all`).

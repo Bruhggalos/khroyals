@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/fine-arts",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "fine-arts",
+    "title": "Fine Arts",
+    "sourceUrl": "https://www.khroyals.com/fine-arts"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Kingdom Heights Fine Arts Department"
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "Cultivating Wonder, Worship, and Wisdom Through the Arts"
+        },
+        {
+          "type": "button",
+          "label": "BUILD WITH US",
+          "url": "https://admissions-parent.renweb.com/home?districtCode=KH-AL&memberId=18500&path=%2Foa%2Finquiry.cfm"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/00eba205-371c-420b-8131-9b79be077243/DSC01308.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "At Kingdom Heights, Fine Arts is not extracurricular—it’s essential. Rooted in the classical Christian tradition inspired by Hillsdale College, our Fine Arts program teaches students not only to create but also to understand, honor, and use the arts to reflect God’s truth and beauty."
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "We believe the Creator of the universe has placed a spark of creativity within each person, and every student is gifted and called to create. Our program nurtures this gift, helping students grow in skill, wisdom, and purpose as they journey through music, art, dance, writing, theatre, and media. From early exploration to cultural influence, students learn to worship with excellence and express with eternal purpose."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/474abdae-b2ae-4a54-b4b0-c6a9ec9c7e7f/dream-theater-private-school-huntsville-alabama.jpg?format=1500w",
+          "url": "mailto:mailto:info@thedreamtheatre.com?subject=inquiring%20about%20the%20dream%20theater?subject=inquiry%20about%20Dream%20Theater"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "A Legacy of Creativity: The Dream Theatre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our fine arts program is uniquely enriched by the Dream Theatre , a state-of-the-art performing arts center located on the Kingdom Heights campus. Once known as the Butler High School Theatre, this historic venue has undergone extensive renovations, transforming into a premier performance space for students and the community.",
+          "links": [
+            {
+              "label": "the Dream Theatre",
+              "url": "https://thedreamtheatre.com/"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Theatre Highlights:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "State-of-the-Art Performance Venue for school productions, concerts, and community events",
+            "Professional Sound and Lighting Systems to support high-quality performances",
+            "Flexible Event Space for rehearsals, workshops, and creative gatherings"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Host your next performance or event with us."
+        },
+        {
+          "type": "button",
+          "label": "CONTACT THE DREAM THEATRE",
+          "url": "mailto:info@thedreamtheatre.com?subject=inquiring%20about%20the%20dream%20theater"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Royal Tune Travelers (K2-K4)",
+              "text": "Early Childhood Fine Arts Guiding Words: Explore. Encounter. Express. Vision Statement: Awakening young hearts to joyfully explore God’s creativity through music, movement, and art. Psalm 150:6 \"Let everything that has breath praise the Lord.\" Our youngest learners begin their artistic adventure as Royal Tune Travelers, joyfully journeying across the globe to: Experience world music, instruments, and rhythms through playful exploration. Explore cultural dance, art styles, and global traditions with wonder and curiosity. Encounter God’s creativity in every culture, color, and sound. This stage awakens joy, curiosity, and reverence through hands-on, imaginative learning rooted in praise and wonder. Through music, movement, and art, our Royal Tune Travelers begin to develop a lifelong love of creativity and a heart of worship.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b0812f7f-bc85-4641-b9b1-e1f947e0c7e4/DSC05858.jpg?format=1500w"
+            },
+            {
+              "title": "Royal Explorers (K-5th Grade)",
+              "text": "Formation Academy Guiding Words: Declare, Detect, Discover, Demonstrate Vision Statement: Forming hearts to reflect the Creator through truth, beauty, and goodness. Isaiah 64:8 — “Yet you, Lord, are our Father. We are the clay, you are the potter; we are all the work of your hand.” In Formation Academy, students begin their fine arts journey as Royal Explorers, where imagination is nurtured and hearts are formed. In these foundational years, they are gently shaped like clay in the hands of the Potter as they learn to recognize beauty, express creativity, and worship with joy. They: Declare what they see and hear in music, art, and dance, celebrating God’s creative handiwork. Detect patterns, rhythms, and meaning in beauty. Discover classical composers, artists, and cultural stories. Demonstrate creativity through thoughtful expression. As students explore the sounds, stories, and symbols of world cultures and music history, they begin to understand how the arts reflect faith, tradition, and the human longing for beauty. This early formation lays the foundation for lifelong appreciation and Christ-centered creativity.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c9efbb88-6393-4734-a6f4-82c5002e48e2/DSC00036-2.jpg?format=1500w"
+            },
+            {
+              "title": "Royal Ambassadors (6th-8th Grade)",
+              "text": "Presence Academy Guiding Words: Proclaim, Pursue, Prepare, Practice Vision Statement: Training hearts to dwell in God’s presence through truth, beauty, and goodness. Colossians 3:23 — “Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.” At Presence Academy, students step into the role of Royal Ambassadors, developing discipline, excellence, and identity through the fine arts. They begin to understand that their gifts are not only for performance but for purpose, carrying the presence of Christ into every rehearsal, performance, and creative endeavor. They: Proclaim truth, beauty, and goodness with boldness and joy through creative worship, music, art, and dance. Pursue patterns, forms, and meaning through reflection and excellence, knowing their creativity reflects the One they represent. Prepare for deeper expression by studying artistic traditions across time, cultures, and disciplines. Practice foundational techniques with focus and joy, expressing understanding through skillful movement, sound, and visual design. As carriers of the Kingdom, these students begin to internalize what it means to create not for applause, but from presence—making art that points to truth, invites worship, and honors their Creator.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/63798d78-9d97-4347-939a-30afecb0069a/DSC00034-3.jpg?format=1500w"
+            },
+            {
+              "title": "Royal Visionaries (9th-12th Grade)",
+              "text": "Academy and Kingdom Academy Guiding Words: Create. Cultivate. Communicate. Commission. Vision Statement: Developing visionary artists who use their gifts to influence the world with truth, beauty, and purpose. Ephesians 2:10 — “For we are God’s workmanship, created in Christ Jesus to do good works, which God prepared in advance for us to do.” As Royal Visionaries, high school students embrace the fullness of their creative identity as God’s workmanship—designed with intention and purpose. Through immersive study and disciplined practice, they grow as imaginative communicators and Kingdom-minded leaders, prepared to reflect beauty, speak truth, and serve culture with conviction and grace. They: Communicate the timeless ideals of truth, beauty, and goodness with boldness and joy through music, visual art, dance, and creative worship. Cultivate discipline and excellence through focused practice, study of form, and attentive observation—developing both skill and virtue. Cherish the rich inheritance of artistic expression across centuries and cultures, discovering meaning, order, and wonder in the great works of the past. Commission their creativity to serve a higher purpose—using their gifts to reflect God’s glory, uplift others, and speak truth into the world.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3e403337-6de2-4a2b-9083-bcbf23775a3f/DSC09986-3.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "High School Fine Arts Pathways"
+        },
+        {
+          "type": "paragraph",
+          "text": "Students choose from advanced Fine Arts Pathways that integrate hands-on training with historical appreciation and spiritual formation. Each culminates in a creative commission—a final work that reflects personal growth, artistic excellence, and Kingdom purpose. Music : Vocal and instrumental opportunities that encourage musical literacy, performance, and collaboration.",
+          "links": [
+            {
+              "label": "purpose. Music",
+              "url": "http://purpose.Music"
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Visual Arts Pathway: Seeing God’s beauty through visual expression and craftsmanship",
+            "Digital Media Pathway: Creating culture through story, sound, and screen",
+            "Performing Arts Pathway: Bringing truth to life through movement, music, and drama",
+            "Technical Arts Pathway: Serving through design, direction, and behind-the-scenes excellence",
+            "Creative Writing Pathway: Forming writers who speak truth with beauty and conviction"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights, we believe that from the first spark of creativity in our Tune Travelers to the bold expression of our Royal Visionaries, we are shaping students who create with purpose, worship with passion, and lead with beauty and truth."
+        },
+        {
+          "type": "paragraph",
+          "text": "1 Peter 2:9 says, “You are a chosen race, a royal priesthood… that you may proclaim the excellencies of Him who called you out of darkness into His marvelous light.”"
+        },
+        {
+          "type": "paragraph",
+          "text": "We invite you to partner with us as we raise up a generation of Kingdom-minded creatives. Come discover your place in the story—be a Royal with us."
+        },
+        {
+          "type": "button",
+          "label": "PLAN YOUR VISIT",
+          "url": "https://www.khroyals.com/plan-a-visit"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7568cbcd-29f8-4b20-8437-36a15c6e23a5/C_C00785.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Fine Arts and STEAM: Creativity Meets Innovation"
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights , fine arts is not just about performance —it's an integral part of our STEAM (Science, Technology, Engineering, Arts, and Mathematics) curriculum. Through project-based learning , students explore how creativity fuels innovation and how the arts connect to problem-solving and critical thinking ."
+        },
+        {
+          "type": "paragraph",
+          "text": "STEAM-Integrated Projects:"
+        },
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            "Music and Math: Exploring rhythm, patterns, and sound engineering",
+            "Theater and Technology: Stage design, lighting, and sound production",
+            "Visual Arts and Science: Exploring perspective, symmetry, and digital design"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Empower your child through creativity and innovation."
+        },
+        {
+          "type": "button",
+          "label": "APPLY NOW",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/ec257eb3-915c-4ff0-9bf0-2519b5f22c98/dream-theater-sound-board-kingdom-heights-huntsville-al.jpg?format=1500w",
+          "url": "https://kh-al.client.renweb.com/oa/index.cfm?memberid=18500"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325780007-HSFDYQWU19O9NFL2R30G/CB1.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325779990-1ZHR4ZA32ZW311O99D3E/CB2.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325782306-YGY7M65QY0LDXYB3KO8R/CB4.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325782444-6DLKGPXZN8FEBE35TUXO/CB10.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325784585-6JMM13TB92UHYOUWHX90/CB14.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325785098-TDJQ2JUYPNKQJGNPBABM/CB21+%281%29.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325790915-VDEKL3EHI0VAXAMY5POE/DSC00033-3+%281%29.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325791365-U3PLI67OBMRRC1L71H9P/DSC00034-3.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325794408-6NF1KGZX21WPKZJJGUSM/DSC00112-2.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325795312-5VCFBDPT81OPF7L0N4KD/DSC00203.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782325797281-B7LOVD0MRQWQVXQNCEB4/DSC03443.jpg?format=1500w"
+          ]
+        }
+      ]
+    }
+  ]
+}

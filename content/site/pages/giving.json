@@ -1,0 +1,355 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/giving",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "giving",
+    "title": "Giving",
+    "sourceUrl": "https://www.khroyals.com/giving"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Make an impact today"
+        },
+        {
+          "type": "paragraph",
+          "text": "Support the Launch of Kingdom Heights Preparatory School"
+        },
+        {
+          "type": "button",
+          "label": "GIVE SECURELY TO THE KINGDOM FUND",
+          "url": "https://kingdomheightspreparatoryschool.factsmgtadmin.com/give/"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "OUR VISION"
+        },
+        {
+          "type": "video",
+          "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/683b7e06-23d4-4b3e-a6dc-376387185a3f/playlist.m3u8",
+          "thumbnail": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/683b7e06-23d4-4b3e-a6dc-376387185a3f/thumbnail",
+          "durationSeconds": 171,
+          "aspectRatio": 1.7778
+        },
+        {
+          "type": "button",
+          "label": "GIVE SECURELY TO THE KINGDOM FUND",
+          "url": "https://kingdomheightspreparatoryschool.factsmgtadmin.com/give/"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Dream it.",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/87b455c4-0cf4-4e17-b7c5-119523cd810b/azink86_A_long_hallway_with_white_and_grey_tile_walls_lockers_o_811e9f96-b127-4f70-80f2-a641ceb5ba27.png?format=1500w"
+            },
+            {
+              "title": "Build it.",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f8d2812c-474b-4e93-b596-4b843332b833/azink86_An_empty_Scandinavian_style_classroom_with_desks_and_re_ba210291-8ad0-4972-947b-85746a1cc1e2.png?format=1500w"
+            },
+            {
+              "title": "Grow it.",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/089aa09e-60d9-42f1-a74a-402f39eced46/Screenshot+2025-03-02+at+2.05.49%E2%80%AFPM.png?format=1500w"
+            },
+            {
+              "title": "Imagine it.",
+              "text": "",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/59acb6b3-2521-4bcd-af0c-27edfbf66f73/Screenshot+2025-03-02+at+2.06.32%E2%80%AFPM.png?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Impact by the Numbers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Since our community boldly said YES to Kingdom Heights on August 11, 2024, we've already seen incredible progress:"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "$4.65 million"
+        },
+        {
+          "type": "paragraph",
+          "text": "need to raise by Aug 2026."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "$ 2,446,595"
+        },
+        {
+          "type": "paragraph",
+          "text": "given towards our launch goal."
+        },
+        {
+          "type": "button",
+          "label": "GIVE NOW",
+          "url": "https://kingdomheightspreparatoryschool.factsmgtadmin.com/give/"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Renovations are underway at the Historic Butler High School campus to become the new home for Kingdom Heights. The large campus includes baseball fields, football fields, basketball courts, and a state-of-the-art performing arts center."
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aa3dd61d-d894-4741-98f8-a493586f044c/hsv+campus.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "Classroom Enhancements",
+              "text": "Tables, chairs, teaching stations, wall boards, digital interactive displays, and cabinetry."
+            },
+            {
+              "title": "STEM Labs",
+              "text": "Modern science and engineering labs to support hands-on learning."
+            },
+            {
+              "title": "Music & Arts Studios",
+              "text": "Creative spaces for music, theater, dance, and media arts."
+            },
+            {
+              "title": "Fire Safety Upgrades",
+              "text": "Comprehensive updates to meet current safety codes."
+            },
+            {
+              "title": "Athletic Facilities",
+              "text": "New lighting, bleachers, and gym renovations."
+            },
+            {
+              "title": "Playgrounds",
+              "text": "Safe, fun spaces for both younger and older students."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Empowering the Next Generation of Christian Leaders in Huntsville, Alabama"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "\"People don’t have ideas... ideas have people.\""
+        },
+        {
+          "type": "paragraph",
+          "text": "At Kingdom Heights Preparatory School, we believe the time has come for an idea that transforms education, faith, and leadership in Huntsville, Alabama. While we may not be able to reform the entire education system, we are uniquely positioned to form and fortify the minds of the next generation of Christ-centered leaders , equipping them to impact every sphere of society—from space and technology to government, business, and the arts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our goal is to launch Kingdom Heights K-12 in the fall of 2025, but our start date is contingent on renovations to our new home—the former Butler High School facility. This historic campus is actively being transformed into a dynamic, inspiring learning environment that will shape future leaders in STEAM (Science, Technology, Engineering, Arts, and Mathematics), spiritual formation, and servant leadership."
+        },
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "We need your support to make this vision a reality ."
+        },
+        {
+          "type": "button",
+          "label": "GIVE SECURELY TO THE KINGDOM FUND",
+          "url": "https://kingdomheightspreparatoryschool.factsmgtadmin.com/give/"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/474abdae-b2ae-4a54-b4b0-c6a9ec9c7e7f/performing-arts-center-kingdom-heights-huntsville-al.jpg?format=1500w",
+          "url": "https://pushpay.com/g/therockfamily?fnd=CRc58dBGQzTq7ZtbzztugQ&fndv=Lock&utm_source=pushpay&utm_medium=email&utm_content=link1&utm_campaign=PledgeCreated"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Corporate Sponsorship: Partner with Kingdom Heights"
+        },
+        {
+          "type": "paragraph",
+          "text": "Are you a business leader in Huntsville, Alabama , passionate about education , STEAM , and community impact ? We invite you to become a corporate sponsor and join us in equipping future innovators , engineers , leaders , and creatives ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sponsorship Opportunities Include:"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Classroom Sponsorship - $25,000 (15 spaces available)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Transform the learning experience for our students by sponsoring a classroom for one year. Your $25,000 donation will fund essential resources, including desks, laptop, and interactive white board to create a cutting-edge learning environment where young minds thrive. In appreciation of your generosity, you will receive: Naming Rights : The classroom will bear your business name for one academic year. Prominent Signage : A custom sign featuring your company name will be displayed next to the classroom entrance. Donor Recognition : Your business will be highlighted on our prestigious Donor Wall Featured recognition on our website and social media VIP invitation to all formal hall ceremonies A special thank-you in our school newsletter This sponsorship not only equips our students with the tools they need to succeed but also showcases your commitment to education and faith-based values."
+                }
+              ]
+            },
+            {
+              "title": "Specialty Space Sponsorship - $50,000 (5 spaces available)",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Elevate your impact by sponsoring one of our large, innovative specialty spaces: the Media Lab, Maker’s Space, STEM Lab, or Career Readiness Lounge. Your $50,000 contribution will support these dynamic environments where students explore creativity, technology, and career-ready skills grounded in a Christian worldview. As a sponsor, you will enjoy: Naming Rights : The specialty space will bear your business name for one academic year. Prominent Signage : A custom sign featuring your company name will be displayed next to the classroom entrance. Donor Recognition : Your business will be highlighted on our prestigious Donor Wall Featured recognition on our website and social media VIP invitation to all Formal Hall ceremonies A special thank-you in our school newsletter By sponsoring a specialty space, you will empower students to boldly pursue their passions and prepare for a future of purpose-driven success, while aligning your brand with innovation and community leadership."
+                }
+              ]
+            },
+            {
+              "title": "Playground Sponsorship - $250,000",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "The playground at Kingdom Heights will be more than just a place to play; it will be a cornerstone of our students’ physical, social, and spiritual development. Your contribution will directly fund the construction of a state-of-the-art playground featuring safe equipment, inclusive design, and spaces for imaginative play. Every swing, slide, and smile will reflect your commitment to fostering a brighter future for our students. As the Playground sponsor, you will enjoy: Lifetime Naming Rights Prominent Signage : A custom sign featuring your company name will be displayed near the playground entrance. Donor Recognition : Your business will be highlighted on our prestigious Donor Wall Featured recognition on our website and social media VIP invitation to all Formal Hall Ceremonies A special thank-you in our school newsletter"
+                }
+              ]
+            },
+            {
+              "title": "Athletics Complex Sponsorship – $1,000,000",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Leave a lasting legacy by sponsoring our Athletics Complex with a $1,000,000 donation. Your investment will support the development and maintenance of our athletic football, soccer and baseball fields fostering teamwork, discipline, and physical excellence rooted in faith. As a visionary partner, your business will receive: Lifetime Naming Rights: The athletic football, soccer and baseball fields within the Athletics Complex will proudly carry your company’s name in perpetuity, etched into the heart of our school’s athletic program. Premier Recognition: Your business will be highlighted on our prestigious Donor Wall Featured recognition on our website and social media VIP invitation to all Formal Hall ceremonies A special thank-you in our school newsletter This once-in-a-lifetime sponsorship aligns your brand with the strength, character, and Christian values our athletics program instills in every student."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "label": "Corporate Sponsorship Packet",
+          "url": "https://www.khroyals.com/s/KH-Corporate-Sponsorship-Packet-9kwc.pdf"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/52821786-8ea0-4ff2-a521-fc0453ebb6a5/boy-cheering-kingdom-heights-banner-sponsorship-huntsville-al.jpg?format=1500w",
+          "url": "https://pushpay.com/g/therockfamily?fnd=CRc58dBGQzTq7ZtbzztugQ&fndv=Lock&utm_source=pushpay&utm_medium=email&utm_content=link1&utm_campaign=PledgeCreated"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Join Us in Making a Difference"
+        },
+        {
+          "type": "paragraph",
+          "text": "Your partnership with Boldly Christian K-12 Preparatory School is an investment in the lives of our students and the future of our community. Together, we can inspire excellence, foster faith, and create opportunities that last a lifetime. Contact our development office today to discuss how your business can leave a lasting legacy at our school!"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use the form below to let us know your interest and start the conversation."
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6d78dcc1-8d3a-4f8b-80bd-4902d5f30444/middle-school-student-private-christian-school-huntsville-al.jpg?format=1500w",
+          "url": "https://pushpay.com/g/therockfamily?fnd=CRc58dBGQzTq7ZtbzztugQ&fndv=Lock&utm_source=pushpay&utm_medium=email&utm_content=link1&utm_campaign=PledgeCreated"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "FAQs"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Is my gift tax-deductible?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Yes! All gifts to Kingdom Heights are fully tax-deductible. Give Here"
+                }
+              ]
+            },
+            {
+              "title": "How will the $4.65 million be used?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Funds will go toward Phase 1 renovations , including classrooms, labs, arts studios, athletic facilities, playgrounds, and safety upgrades. Give Here"
+                }
+              ]
+            },
+            {
+              "title": "Have more questions?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Reach out at info@khroyals.com or 256-210-1343."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Together, We Can Build the Future"
+        },
+        {
+          "type": "paragraph",
+          "text": "Every gift, no matter the size, is an investment in Kingdom leaders , innovators , and servant-hearted citizens . Together, we can launch Kingdom Heights and shape the future of Christian education in Huntsville, Alabama ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Join the movement. Make your pledge today. Give Now",
+          "links": [
+            {
+              "label": "Give Now",
+              "url": "https://kingdomheightspreparatoryschool.factsmgtadmin.com/give/"
+            }
+          ]
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3bd0a361-e08e-492a-977e-1b982a278b45/middle-school-students-friendship-private-school-huntsville-al.jpg?format=1500w",
+          "url": "https://pushpay.com/g/therockfamily?fnd=CRc58dBGQzTq7ZtbzztugQ&fndv=Lock&utm_source=pushpay&utm_medium=email&utm_content=link1&utm_campaign=PledgeCreated"
+        }
+      ]
+    }
+  ]
+}

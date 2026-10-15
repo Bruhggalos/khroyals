@@ -1,0 +1,732 @@
+{
+  "_meta": {
+    "source": "https://www.khroyals.com/",
+    "scrapedAt": "2026-10-15"
+  },
+  "page": {
+    "id": "home",
+    "title": "Home",
+    "sourceUrl": "https://www.khroyals.com/"
+  },
+  "sections": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "A boldly Christian school that will not compromise on"
+        },
+        {
+          "type": "rotatingText",
+          "level": 3,
+          "words": [
+            "biblical truth.",
+            "academic excellence.",
+            "critical thinking.",
+            "career readiness.",
+            "a spirit-led life."
+          ],
+          "intervalMs": 3500
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights (K2–12) develops students to thrive and lead in a rapidly changing world."
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://sis.factsmgt.com/admissions-parent/inquire?districtCode=KH-AL&memberId=18500&sessionId=OAOE_3_8553922_a5fe85eeb2a55032-1583AC3D-FC8F-BFFD-00303B093B65631C&path=%252Foa%252Finquiry.cfm&code=anonymouspath"
+        },
+        {
+          "type": "button",
+          "label": "TUITION & ADMISSIONS PROCESS",
+          "url": "https://www.khroyals.com/admissions"
+        }
+      ],
+      "background": {
+        "type": "video",
+        "hls": "https://video.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/50d796f8-1882-4cf5-8792-7ae25fcebf30/playlist.m3u8",
+        "thumbnail": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/07eff4ce-f445-4681-833d-7456550cad37/DSC00313.jpg?format=1500w",
+        "background": true
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "WHAT PARENTS ARE SAYING"
+        },
+        {
+          "type": "vimeo",
+          "id": "1203881697",
+          "aspectRatio": 0.5625
+        },
+        {
+          "type": "vimeo",
+          "id": "1203883903",
+          "aspectRatio": 0.5634
+        },
+        {
+          "type": "vimeo",
+          "id": "1203888066",
+          "aspectRatio": 0.5634
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://sis.factsmgt.com/admissions-parent/inquire?districtCode=KH-AL&memberId=18500&sessionId=OAOE_3_8553922_a5fe85eeb2a55032-1583AC3D-FC8F-BFFD-00303B093B65631C&path=%252Foa%252Finquiry.cfm&code=anonymouspath"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "COGNIA",
+              "text": "Cognia is a non-profit organization that provides accreditation, certification, and school improvement services for primary, secondary, and early learning institutions worldwide. It evaluates schools to ensure they meet rigorous educational standards and supports continuous institutional growth",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309905243-O8MKNO4KR8IISI6OUBRF/cognia-image-1024x400.png?format=1500w"
+            },
+            {
+              "title": "League of Christians Schools",
+              "text": "Since its inception in 1983, the League of Christian Schools (LCS) has been at the forefront of Christian education. Today, LCS stands as a beacon of excellence, committed to promoting biblical, academic, and professional standards in Christian education worldwide.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309723744-249WYZT7S68GP0U6GFAU/LCS-LOGO-2020-mobile-320x132-1.jpg?format=1500w"
+            },
+            {
+              "title": "The Rock Family Worship Center",
+              "text": "Discover the Rock Family in the Tennessee Valley. Explore events, ministries, sermons, and community engagement. Join us today!",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/73cb5b8f-ca56-4036-9ba8-6c14f5d05faf/Untitled+%281080+x+1080+px%29.png?format=1500w"
+            },
+            {
+              "title": "Best Place for Working Parents",
+              "text": "Since 2019, BPWP has had the mission to support healthier families, thriving communities, and a strong, sustainable workforce. Today, 75% of the workforce is made up of caregivers – and businesses are competing to attract and retain top talent that will enable their businesses’ success.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4f3a1bfc-b835-4e99-ab47-226e8a4e8123/BP4WP_Badge.png?format=1500w"
+            },
+            {
+              "title": "Alabama Independent School Association",
+              "text": "The Alabama Independent School Association (AISA) proudly serves as a voice and advocate for independent education across our state. We support our member schools through a wide range of services and benefits designed to strengthen their missions, empower their leadership, and enhance their impact. AISA partners with schools that are committed to excellence, community engagement, and the development of students in alignment with their unique values. As truly independent institutions, our member schools operate with the freedom to pursue distinctive educational missions that reflect the needs of their communities and the principles they hold dear.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309900695-PG3YQPNJRX0XHSW39UWP/AISA_LOGO2015.png?format=1500w"
+            },
+            {
+              "title": "Hillsdale College K-12 Curriculum",
+              "text": "Hillsdale College’s K-12 curriculum is content-rich, balanced, and strong, and with emphasis upon the four core disciplines of math, science, literature, and history, with attention to music, art, physical education, and foreign languages.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309911017-IQUQREPO0GV88YLJ2R55/K12-CurriculumSchool-Mark-5-24_blue+%281%29.png?format=1500w"
+            },
+            {
+              "title": "Association of Christian Schools International",
+              "text": "The Association of Christian Schools International (ACSI) was founded in 1978 when several regional U.S. school associations joined, becoming a united voice to advance excellence in Christian education. The leaders’ vision was to inspire, challenge, and resource educators and schools. First headquartered in La Habra, California, ACSI moved to an expanded facility in Colorado Springs, Colorado, in 1994. Today, ACSI serves 25,000 schools in 108 countries.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309892342-L1E207EC8N9VCLZGDDCD/acsi-logo-footer.png?format=1500w"
+            },
+            {
+              "title": "Alabama High School Athletic Association",
+              "text": "The Alabama High School Athletic Association , founded in 1921, is a private agency organized by its member schools to control and promote their athletic programs. The purpose of the AHSAA is to regulate, coordinate and promote the interscholastic athletic programs among its member schools, which include public, private and parochial institutions. Currently, there are 414 senior high members and 287 junior high and middle school members with more than 100,000 students participating in the program. Major aims of the AHSAA are to serve the needs of its member schools in conducting their interscholastic athletic programs and to assist member schools in reaching the educational objectives as established by their school systems.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1780329763822-OZB755SYSMS7TLHJZ82O/AHSAA+logo+31.jpg?format=1500w"
+            },
+            {
+              "title": "University of Alabama Huntsville (UAH)",
+              "text": "One of the nation's premier research universities, UAH offers hands-on curriculum that prepares our graduates to become tomorrow's leaders.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2a7558d1-cc9a-4d52-b245-2b5c7bda7672/UAH_Primary_2025UPDATE_RGB_01.png?format=1500w"
+            },
+            {
+              "title": "Troy University",
+              "text": "From award-winning academic opportunities to exciting Division I athletics events, Troy University provides students around the globe with a top-notch education",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/ec49fdf9-ecb4-4bbc-a0da-ef4e6b17b72a/Troy_University_logo.png?format=1500w"
+            },
+            {
+              "title": "Drake State Community and Technical College",
+              "text": "Become a part of the Drake State community, where students strive for more and staff go the extra mile to help them achieve their goals every step of the way.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/82190eec-26e2-4bde-9f16-40749e3ae88f/DrakeState_Vertical_FullColor_RGB.png?format=1500w"
+            },
+            {
+              "title": "Calhoun Community College",
+              "text": "With over 150 in-person, online, and hybrid programs, Calhoun Community College offers an opportunity for every type of student to launch their career.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/08f405ab-c2e5-4978-b86d-e2cd880bf23a/CalhounCC_CircleMark_Mascot.png?format=1500w"
+            },
+            {
+              "title": "Alabama A&M University",
+              "text": "Alabama A&M University is a public, historically black, land-grant university located in Normal, a neighborhood of Huntsville, Alabama, United States.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/0720f513-b9c9-4cbd-8d51-e204cebd5ae7/Alternative_Alabama_A%26M_logo.png?format=1500w"
+            },
+            {
+              "title": "University of Alabama",
+              "text": "At UA , Students are empowered to unlock their full potential with over 100 top-ranked majors and programs, accelerated advanced degree options and more.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782223749879-NOGA4TQA8QAIKNB8AT5I/University-of-Alabama-Logo.png?format=1500w"
+            },
+            {
+              "title": "The Dream Theatre",
+              "text": "A family-friendly performance venue where dreams come to life!",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/62e0e961-2c27-49a6-a75d-fff1993afdbc/solid.png?format=1500w"
+            },
+            {
+              "title": "Manna House",
+              "text": "Manna House is daily provision of food for individuals and families in Huntsville, AL.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/8621441e-1926-4cf2-8ef8-39b95b071caa/Manna-House-logo.jpg?format=1500w"
+            },
+            {
+              "title": "Best Robotics",
+              "text": "Best Robotics is empowering the Next Generation of STEM Leaders. Building a pipeline where education and the workforce intersect.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1764859193328-NN30PX47L12KAAAGC8P9/BR_LOGO_horizontal.png?format=1500w"
+            },
+            {
+              "title": "Food City",
+              "text": "Food City is a grocery story in Huntsville, AL.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1772562298373-KB83F0H86YT8IQ7Z40SN/FC+logo.png?format=1500w"
+            },
+            {
+              "title": "Griffin Aerospace",
+              "text": "At Griffon Aerospace , we pride ourselves in being that trusted, lion-hearted partner. Designing, building, and flying the most capable and intelligent aerial spacecrafts.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/3de405a2-2310-4c8e-9707-b55d233f5083/GA_Primary_FullColor.png?format=1500w"
+            },
+            {
+              "title": "Haley's Flooring",
+              "text": "Explore various flooring options, including luxurious hardwood, cozy carpet, resilient luxury vinyl, timeless laminate, and elegant tile.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/c9aecfc8-ee5d-42b0-a263-f4934ac5c6d1/haleysArtboard+1.png?format=1500w"
+            },
+            {
+              "title": "Alabama Credit Union",
+              "text": "Visit Alabama Credit Union for great rates on loans, savings accounts, and more!",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/0e0b4186-a378-4c14-a36c-6c097c384d8f/alabama-credit-unino.png?format=1500w"
+            },
+            {
+              "title": "The Library Of",
+              "text": "Creating visual stories for incredible brands.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/8174a9f5-6321-4047-8594-9ccb83c9e274/tloArtboard+1.png?format=1500w"
+            },
+            {
+              "title": "Brighteyed Brands",
+              "text": "Branding and Experiential Design",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4c2b06a8-bf00-4c47-b908-ac4ad7f024dd/brighteyedlogo.png?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "Kingdom Heights Preparatory School is a Hillsdale College Curriculum School."
+        },
+        {
+          "type": "button",
+          "label": "LEARN MORE",
+          "url": "https://k12.hillsdale.edu/Schools/Affiliation-levels/"
+        }
+      ],
+      "background": {
+        "type": "image",
+        "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/7fcc126d-12ed-426b-a577-8cda0d33d8fb/DJI_0019.jpg?format=1500w"
+      }
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Curriculum from Hillsdale College"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kingdom Heights Preparatory School is a Hillsdale College Curriculum School, a distinction that offers our school access to a tried and true K-12 Curriculum from the Hillsdale College K-12 Education Office."
+        },
+        {
+          "type": "youtube",
+          "id": "PSHOx_36dAo",
+          "aspectRatio": 1.7699
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/392a2660-1da1-49f5-844d-0ad39b701388/3948259cb0b17a2abf54d74a05852797.jpeg?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Why Parents Choose Kingdom Heights :"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "✔︎ I want my child's faith to be their own.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Faith cannot be inherited. It must become personal . At Kingdom Heights, students move beyond simply learning Bible stories to developing a genuine relationship with Jesus. Through daily discipleship, worship, prayer, mentorship, and meaningful opportunities to serve, students learn to follow Christ for themselves. Result: A faith that remains strong long after graduation."
+                }
+              ]
+            },
+            {
+              "title": "✔︎ I don't want them getting lost in the crowd.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Every child deserves to be known . With small class sizes, dedicated teachers, and a culture of intentional discipleship, Kingdom Heights sees students as precious individuals and children of God. Our faculty know each student's strengths , challenges , gifts , and calling . Result: Students develop confidence, belonging, and the courage to become who God created them to be."
+                }
+              ]
+            },
+            {
+              "title": "✔︎ I want them to learn how to think not just what to think.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "The future belongs to those who can think clearly. Rather than simply memorizing information, students learn to ask good questions, reason through complex issues, communicate persuasively, and evaluate ideas through a biblical worldview. In a world increasingly shaped by AI and information overload, wisdom matters more than ever. Result: Graduates who can discern truth, solve problems, and lead with conviction."
+                }
+              ]
+            },
+            {
+              "title": "✔︎ I want them to discover who God created them to be.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Every child has unique gifts and a unique calling . Kingdom Heights helps students explore their God-given strengths through academics, leadership opportunities, athletics, fine arts, service, and spiritual formation. We believe education should help students discover not only what they can do, but who they are becoming. Result: Students graduate with purpose, confidence, and direction."
+                }
+              ]
+            },
+            {
+              "title": "✔︎ I want them to develop wisdom that technology cannot replace.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "AI can provide information. Wisdom teaches us how to live well. In one of America's fastest-growing centers for innovation, cybersecurity, engineering, and space exploration, students need more than technical skills. They need character , creativity , discernment , and leadership . Kingdom Heights develops the human qualities that remain valuable no matter how technology changes. Result: Students are prepared for the future, whatever may come."
+                }
+              ]
+            },
+            {
+              "title": "✔︎ I want to know my child is safe while they're at school.",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Peace of mind matters. Kingdom Heights has invested in comprehensive, state-of-the-art campus security measures, controlled access systems, advanced monitoring technology, emergency preparedness protocols, and trained personnel dedicated to student safety. Our unique campus is also designed for utmost safety. We believe families should have confidence that their children are learning in a secure environment . Result: Parents gain peace of mind while students focus on learning, growing, and thriving."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "label": "SCHEDULE A TOUR",
+          "url": "https://sis.factsmgt.com/admissions-parent/inquire?districtCode=KH-AL&memberId=18500&sessionId=OAOE_3_8553922_a5fe85eeb2a55032-1583AC3D-FC8F-BFFD-00303B093B65631C&path=%252Foa%252Finquiry.cfm&code=anonymouspath"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "marquee",
+          "text": "REGNUM DEI PRIMUM 🜲 GOD'S KINGDOM FIRST 🜲"
+        },
+        {
+          "type": "youtube",
+          "id": "bIZgsJHS1Fc",
+          "aspectRatio": 1.7699
+        },
+        {
+          "type": "button",
+          "label": "OUR STORY",
+          "url": "https://vimeo.com/1203968690?share=copy&fl=sv&fe=ci"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1ef0ae2f-097d-43a0-876d-a9bd9ea4e0d1/Untitled+design+%281%29.png?format=1500w"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "WHAT STUDENTS ARE SAYING"
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "70%"
+        },
+        {
+          "type": "paragraph",
+          "text": "of students say they are closer to Jesus because of Kingdom Heights."
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "73%"
+        },
+        {
+          "type": "paragraph",
+          "text": "say they feel safe about being honest, sharing doubts and struggles, and asking questions about faith."
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "87%"
+        },
+        {
+          "type": "paragraph",
+          "text": "say they feel more secure in their identity as a child of God."
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "77.2%"
+        },
+        {
+          "type": "paragraph",
+          "text": "say their teachers have helped them grow spiritually."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "SCHEDULE A TOUR",
+              "text": "Join us on a Tuesday at 9:00 AM to experience Kingdom Heights in action. Meet our team, explore our campus, and discover what makes our approach to Christian education different.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f87e7837-86cd-4371-b9ba-d37c9d9d0448/1.jpg?format=1500w"
+            },
+            {
+              "title": "APPLY ONLINE",
+              "text": "Complete our online application and submit the required documents. Our admissions team will guide you through each step of the process.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/4bebe3ec-ef47-4e58-8a38-cafc2703b82c/2.jpg?format=1500w"
+            },
+            {
+              "title": "STUDENT ASSESSMENT",
+              "text": "Students participate in an age-appropriate assessment to help us understand their academic readiness and identify how we can best support their growth.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/53641385-a985-4b73-a26a-dfae19b9cde0/3.jpg?format=1500w"
+            },
+            {
+              "title": "FAMILY INTERVIEW",
+              "text": "We believe education is a partnership. During the family interview, you will meet with school leaders to discuss your goals, ask questions, and ensure Kingdom Heights is the right fit for your family.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/6de1678e-dc27-4c9c-b6d6-c76ac7d10cee/4.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "EARLY LEARNING ACADEMY (K2-K4)",
+              "text": "Do you want your child to love learning from the very beginning? The early years shape how children view school, learning, and themselves. Our youngest students build confidence, curiosity, and foundational habits that prepare them for lifelong success.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/bf1390ca-5ee7-4b79-be96-f29f66270a0d/DSC06357-2.jpg?format=1500w",
+              "button": {
+                "label": "LEARN MORE",
+                "url": "https://www.khroyals.com/early-childhood-education"
+              }
+            },
+            {
+              "title": "FORMATION ACADEMY (K-5th Grade)",
+              "text": "Do you want your child grounded in truth before the world starts asking hard questions? The elementary years are when children develop the framework they'll use to make sense of life. We help students build that framework on the enduring truth of God's Word.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b9ddec63-4eec-4997-9ea1-0d14c062edf1/DSC06483-2.jpg?format=1500w",
+              "button": {
+                "label": "LEARN MORE",
+                "url": "https://www.khroyals.com/formation-academy"
+              }
+            },
+            {
+              "title": "PRESENCE ACADEMY (6th - 8th Grade",
+              "text": "What if your pre-teen learned to find their identity first as a son or daughter of God? At a time when identity is constantly being shaped by culture, students learn to pursue God for themselves and discover the security that comes from being chosen, known, and loved by Him.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/735134e3-3962-4434-be01-bce8dd68c9cb/DSC06631-5-3.jpg?format=1500w",
+              "button": {
+                "label": "LEARN MORE",
+                "url": "https://www.khroyals.com/presence-academy"
+              }
+            },
+            {
+              "title": "KINGDOM ACADEMY (9th-12th Grade)",
+              "text": "What if your teenager entered adulthood with calling and purpose, not just a plan? Kingdom Academy prepares students to lead with wisdom, serve with conviction, and carry the presence of God into every opportunity they encounter. Students graduate prepared for a bright future.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2b1c9cc9-6641-4296-b41b-b17b83d0f404/DSC06751-3.jpg?format=1500w",
+              "button": {
+                "label": "LEARN MORE",
+                "url": "https://www.khroyals.com/kingdom-academy"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "F.A.Q.s"
+        },
+        {
+          "type": "accordion",
+          "items": [
+            {
+              "title": "Are you still accepting students for the 2026-2027 school year?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Spots are filling quickly, and some grades are full. We are accepting students on a limited basis. LEARN MORE ."
+                }
+              ]
+            },
+            {
+              "title": "Do you offer K2-K4?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Yes! For more information about our Early Learning Academy, click here. At Kingdom Heights Preparatory School, our Early Learning Academy lays a strong foundation for lifelong learning and spiritual growth. Designed for children ages 2 to 4, our program nurtures the whole child - spiritually, intellectually, emotionally, socially, and physically - within a Christ-centered, joy-filled environment,"
+                }
+              ]
+            },
+            {
+              "title": "Is your campus secure?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Safety is our top priority. Our campus, located in the historic Butler High School , was originally built as a Cold War fallout shelter , making it exceptionally secure by design . Our Safety Measures Include: Armed security team and School Security Officer . Secure campus access , surveillance cameras, and magnetic-locked doors. Metal detector entry for all staff, faculty, students, and visitors. Emergency protocols for all staff and students. Bag-free entry for visitors. Protected learning spaces for every Academy."
+                }
+              ]
+            },
+            {
+              "title": "Do you have scholarships?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Kingdom Heights Preparatory School is proud to be a CHOOSE Act-approved school . The Alabama CHOOSE Act provides up to $7,000 per year in tuition support for qualifying families, making private Christian education more accessible than ever. This historic opportunity empowers families to choose the best educational fit for their children without financial barriers. To see if your family qualifies and to apply, visit: CHOOSE Act Application ."
+                }
+              ]
+            },
+            {
+              "title": "How can I become a sponsor?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "There are numerous opportunities for business and individual sponsorships, both physically and digitally, across the campus and sports facilities. Learn more here ."
+                }
+              ]
+            },
+            {
+              "title": "Can I apply for employment?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Check out job board here for current openings."
+                }
+              ]
+            },
+            {
+              "title": "Do you accept students with learning exceptionalities?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "We strive to support students with exceptional learning needs . While we aim for an inclusive environment , Kingdom Heights may not have the specialized resources required for some unique educational challenges. We do accept IEP’s and 504 plans during our application process and are eager to work with families to meet specific needs."
+                }
+              ]
+            },
+            {
+              "title": "What are school hours?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "K2-K3 Before Care: 7:00 am - 7:40 am Extended Care: 3:15 pm - 5:30 pm K5- 12 School Hours: 8:00 am - 3:00 pm Drop off: 7:40 am - 7:55 am Pick-up: 3:00 pm - 3:15 pm Extended Care: 3:15 pm - 5:30 pm"
+                }
+              ]
+            },
+            {
+              "title": "What is tuition?",
+              "blocks": [
+                {
+                  "type": "paragraph",
+                  "text": "Our tuition sheet and calculator are HERE ."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "label": "CONTACT US",
+          "url": "https://www.khroyals.com/contact-us"
+        },
+        {
+          "type": "image",
+          "src": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/81d09bdd-9b41-4bb0-aa4e-5bd88b267d59/DSC06573-3.jpg?format=1500w",
+          "url": "https://www.khroyals.com/plan-a-visit"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "cards",
+          "items": [
+            {
+              "title": "ACADEMICALLY PREPARED",
+              "text": "Fully Accredited through COGNIA and the League of Christian Schools",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/392a2660-1da1-49f5-844d-0ad39b701388/3948259cb0b17a2abf54d74a05852797.jpeg?format=1500w"
+            },
+            {
+              "title": "GROWTH ON AND OFF THE FIELD",
+              "text": "Character is formed through teamwork, leadership, and responsibility",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/f7be31d4-2ec9-496e-908a-02155281c265/DSC02228-2.jpg?format=1500w"
+            },
+            {
+              "title": "SPACIOUS, BEAUTIFUL LEARNING ENVIRONMENT",
+              "text": "Our expansive campus inside the beautifully renovated historic Butler High School gives students room to grow",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/838c1d61-daad-4a10-97e2-509bbfb66950/C_C00110.jpg?format=1500w"
+            },
+            {
+              "title": "CREATIVE & HANDS ON",
+              "text": "Learning comes alive through movement, creativity, and exploration.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/9cb55587-6c78-4789-8f13-338e75571740/DSC09871.jpg?format=1500w"
+            },
+            {
+              "title": "CLASSICAL AND RIGORIOUS",
+              "text": "We are North Alabama’s only school that is a Hillsdale curriculum school.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/5986f965-aa23-4af0-adaf-d37ba17b9bea/DSC06182.jpg?format=1500w"
+            },
+            {
+              "title": "PEACE OF MIND",
+              "text": "Students experience joyful play in a safe, secure environment",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/65988ce7-b6f7-4350-ac00-1e4b50274d68/DSC05742.jpg?format=1500w"
+            },
+            {
+              "title": "LEARNING BEYOND THE DESK",
+              "text": "During Royal Hour, students grow in critical thinking through creative outlets like podcasting, chess, and cooking with a professional chef.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/aea8eca2-397f-4af3-87c4-4cff1d5a6759/DSC00029.jpg?format=1500w"
+            },
+            {
+              "title": "FRIENDSHIP & BELONGING",
+              "text": "Students build real friendships and a sense of belonging.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1a4e913c-5e56-4eea-96db-6f70559b381d/DSC00445-2.jpg?format=1500w"
+            },
+            {
+              "title": "KNOWN AND CHALLENGED",
+              "text": "Credentialed teachers deliver a clear, standards-based education.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/608e6271-ac9a-48bd-9807-effdd0cc544e/DSC09917-3.jpg?format=1500w"
+            },
+            {
+              "title": "SAFE AND SOUND",
+              "text": "Student safety is a top priority.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/e107eed8-db99-418d-ab45-2586efe97efd/DSC01038.jpg?format=1500w"
+            },
+            {
+              "title": "STEM, CYBER, AND TECH",
+              "text": "We prepare students to lead in Huntsville’s space, cyber, and technology fields.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/9b1b10fe-64e9-46ff-bbb2-076e415ec3e0/DSC00487.jpg?format=1500w"
+            },
+            {
+              "title": "ARTISTIC EXPRESSION",
+              "text": "Students thrive in fine arts through music, acting, and playwriting.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/bf59d4f6-b40c-4758-a35b-8a452c323ad6/DSC01251.jpg?format=1500w"
+            },
+            {
+              "title": "BUILT FOR WORKING FAMILIES",
+              "text": "We support busy families with dependable wrap-around care.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/45925c28-ed31-4212-9755-1f9b6b0df547/DSC09690.jpg?format=1500w"
+            },
+            {
+              "title": "EARLY LEARNING PROGRAM",
+              "text": "Our K2–K4 program launches a classical Christian education as early as age two.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/206493e6-b205-4631-ae8e-c43cec50eacf/DSC09859-3.jpg?format=1500w"
+            },
+            {
+              "title": "CELEBRATED AND EMPOWERED",
+              "text": "Students are celebrated here, and their gifts are intentionally cultivated.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/a85b774f-9241-4c95-9f7c-3ce88b614b2e/DSC09976-3.jpg?format=1500w"
+            },
+            {
+              "title": "SPIRIT-FILLED WORSHIP",
+              "text": "Weekly chapel invites students into a beautiful, good, and faithful life with Christ.",
+              "image": "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/b954a871-9d6b-4f17-b060-c40c37524bfd/DSC05860.jpg?format=1500w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "DUAL ACCREDITATION"
+        },
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309644072-PGHUSAGW56ALCCUGZ5FS/cognia-image-1024x400.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309723744-249WYZT7S68GP0U6GFAU/LCS-LOGO-2020-mobile-320x132-1.jpg?format=1500w"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "MEMBERSHIPS"
+        },
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309562156-MHXGT8ARGXLTDNFF4CK6/AISA_LOGO2015.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309596432-UR7VN2V68QE9481ICVQJ/K12-CurriculumSchool-Mark-5-24_blue+%281%29.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1753309695390-1WDPZ35GR8IWG1QLE3IM/acsi-logo-footer.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1780329949514-48NHRYQI2BTADD88PZ20/Untitled+design.png?format=1500w"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "PARTNERING EDUCATIONAL INSTITUTIONS"
+        },
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/2a7558d1-cc9a-4d52-b245-2b5c7bda7672/UAH_Primary_2025UPDATE_RGB_01.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/ec49fdf9-ecb4-4bbc-a0da-ef4e6b17b72a/Troy_University_logo.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/82190eec-26e2-4bde-9f16-40749e3ae88f/DrakeState_Vertical_FullColor_RGB.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/08f405ab-c2e5-4978-b86d-e2cd880bf23a/CalhounCC_CircleMark_Mascot.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/0720f513-b9c9-4cbd-8d51-e204cebd5ae7/Alternative_Alabama_A%26M_logo.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1782223749879-NOGA4TQA8QAIKNB8AT5I/University-of-Alabama-Logo.png?format=1500w"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 4,
+          "text": "COMMUNITY PARTNERSHIPS:"
+        },
+        {
+          "type": "gallery",
+          "images": [
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/73cb5b8f-ca56-4036-9ba8-6c14f5d05faf/Untitled+%281080+x+1080+px%29.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/62e0e961-2c27-49a6-a75d-fff1993afdbc/solid.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/8621441e-1926-4cf2-8ef8-39b95b071caa/Manna-House-logo.jpg?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1764859193328-NN30PX47L12KAAAGC8P9/BR_LOGO_horizontal.png?format=1500w",
+            "https://images.squarespace-cdn.com/content/v1/67b50a3a4b763b233e2c099a/1772562298373-KB83F0H86YT8IQ7Z40SN/FC+logo.png?format=1500w"
+          ]
+        }
+      ]
+    }
+  ]
+}

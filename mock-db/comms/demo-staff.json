@@ -1,27 +1,8 @@
 {
   "_meta": {
     "mock": true,
-    "source": "https://www.khroyals.com/",
-    "generatedAt": "2026-10-14"
+    "note": "Fictional demo staff used only to seed Royals Connect test accounts."
   },
-  "page": {
-    "id": "staff",
-    "title": "Staff Directory",
-    "route": "/staff"
-  },
-  "departments": [
-    "Administration",
-    "Counseling",
-    "English",
-    "Mathematics",
-    "Science",
-    "Social Studies",
-    "Fine Arts",
-    "Athletics",
-    "Special Education",
-    "Front Office",
-    "Health Services"
-  ],
   "staff": [
     {
       "id": "staff-001",
