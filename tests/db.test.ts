@@ -720,3 +720,43 @@ test('profile settings: your own photo, name and push choices', async () => {
   assert.equal(await wants(school.id, night), true, 'announcements ignore quiet hours');
   await db.exec(`delete from notifications where id in ('${group.id}', '${school.id}', '${market.id}'); delete from user_settings;`);
 });
+
+test('android auto: reply passes let one person reply in one group, with the usual checks', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const vb = id('g-vb');
+  await asSuper();
+  await db.exec(`insert into push_tokens values ('ExponentPushToken[auto-s05]', ${id('u-s05')}, 'android') on conflict (token) do nothing;
+                 update memberships set notification = 'all' where group_id = ${vb} and user_id = ${id('u-s05')}`);
+  await as('u-vbcoach');
+  const post = await one(`select id from create_post(${vb}, 'message', 'Bus leaves at 3')`);
+  await asSuper();
+  const n = await one(`select * from notifications where post_id = '${post.id}'`);
+  assert.equal(n.data.sender.length > 0 && n.data.groupName.length > 0, true, 'sender and group in the push data');
+  const passes = await rows(`select * from push_reply_tokens('${n.id}')`);
+  const s05 = await uid('u-s05');
+  const mine = passes.find((p) => p.user_id === s05);
+  assert.ok(mine && mine.token.length >= 64);
+
+  await db.exec(`set role anon`);
+  await rejects(`select push_reply_tokens('${n.id}')`, /permission denied/);
+  await rejects(`select * from app.push_reply_tokens`, /permission denied/);
+  await rejects(`select reply_from_push('nope', 'hi')`, /expired/);
+  const out = await one(`select reply_from_push('${mine.token}', 'On my way!') as r`);
+  await asSuper();
+  const reply = await one(`select * from posts where id = '${out.r.postId ?? ''}' or id in (select post_id from comments where id::text = '${out.r.commentId ?? ''}')`);
+  assert.ok(reply, 'the reply was posted');
+  const by = await one(`select coalesce((select author_id from posts where id::text = '${out.r.postId ?? ''}'), (select author_id from comments where id::text = '${out.r.commentId ?? ''}')) as a`);
+  assert.equal(by.a, mine.user_id, 'posted as the pass owner');
+
+  // Permission checks still apply: a silenced member can't reply.
+  await db.exec(`update memberships set muted_until = now() + interval '1 day' where group_id = ${vb} and user_id = '${mine.user_id}'`);
+  await db.exec(`set role anon`);
+  await rejects(`select reply_from_push('${mine.token}', 'Again')`, /./);
+  await asSuper();
+  await db.exec(`update memberships set muted_until = null where group_id = ${vb} and user_id = '${mine.user_id}';
+                 update app.push_reply_tokens set expires_at = now() - interval '1 minute'`);
+  await db.exec(`set role anon`);
+  await rejects(`select reply_from_push('${mine.token}', 'Late')`, /expired/);
+  await asSuper();
+  assert.equal((await one(`select current_setting('request.jwt.claim.sub', true) as s`)).s, '', 'no leftover identity');
+});

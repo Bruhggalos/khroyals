@@ -136,6 +136,10 @@ one), name, and push settings — group posts, Marketplace, Volunteering, quiet
 hours, and a level per group. School-wide announcements always push. Settings only
 filter pushes (`app.wants_push`); the in-app inbox still lists everything.
 
+**Android Auto:** group messages are read aloud on the car screen with voice
+reply (MessagingStyle notifications from `plugins/withAndroidAuto.js`; replies go
+through `reply_from_push` with a per-recipient, 24-hour reply pass).
+
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).

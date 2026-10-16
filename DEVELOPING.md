@@ -162,6 +162,23 @@ templates to show `{{ .Token }}`. Raise the email rate limit under Authenticatio
 Rate Limits. Emailed links still work as a fallback (`app/+native-intent.tsx`,
 `app/auth.tsx`).
 
+### Android Auto
+
+Group messages show on the car screen: Android Auto reads them aloud and the
+driver can reply by voice (`plugins/withAndroidAuto.js` adds the native code;
+see the comment at its top). It needs working push notifications (section 7).
+
+- **Sideloaded APKs:** Android Auto hides apps that didn't come from the Play
+  Store. On the phone: Android Auto settings → scroll down → tap **Version**
+  10 times → ⋮ → **Developer settings** → turn on **Unknown sources**.
+- **Try it without a car:** install *Desktop Head Unit* (Android SDK Manager →
+  SDK Tools → Android Auto Desktop Head Unit Emulator), start the head unit server
+  from Android Auto's developer settings, then `adb forward tcp:5277 tcp:5277`
+  and run `desktop-head-unit`.
+- Replies use a reply pass in each push (`reply_from_push`, 24 hours, one group,
+  normal permission checks), because native code can't use the app's sign-in.
+- Publishing to the Play Store with Android Auto needs Google's messaging-app review.
+
 ## 6. Refresh the school website content
 
 ```bash

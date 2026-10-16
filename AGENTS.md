@@ -66,6 +66,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   rewrites the template AppDelegate during prebuild; `ios/` is generated, so never
   edit it by hand. If an Expo upgrade makes the plugin throw, check whether the
   new template already uses `ExpoAppSceneDelegate` and drop the plugin if so.
+- **Android Auto** (`plugins/withAndroidAuto.js`) replaces expo-notifications'
+  Firebase service with `CarMessagingService`: pushes with a `replyToken` (group
+  posts) become MessagingStyle notifications; everything else is forwarded to Expo.
+  Keep that forwarding when touching it, and check the CI APK build (it's the only
+  place the Kotlin compiles).
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
 - Supabase free plan: built-in email sends only a few messages/hour and email
