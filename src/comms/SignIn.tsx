@@ -111,7 +111,7 @@ export function SignIn({ onDone }: { onDone: () => void }) {
                 {wait > 0 ? `Resend code in ${wait}s` : 'Resend code'}
               </Text>
             </View>
-            <P muted>Codes expire after 10 minutes. Not in your inbox? Check spam.</P>
+            <P muted>Codes expire after 10 minutes. Not in your inbox? Check spam. If the email has a Sign in button instead of a code, tap it on this device.</P>
           </>
         )}
       </Card>
