@@ -14,8 +14,7 @@ export default function AuthLanding() {
   useEffect(() => {
     const href = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : null;
     completeSignInFromUrl(href)
-      .then(() => session())
-      .then(() => router.replace('/connect'))
+      .then(async (result) => { await session(); router.replace(result === 'recovery' ? '/set-password' : '/connect'); })
       .catch((e) => setError(e.message));
   }, []);
   if (!error) return <Loading />;

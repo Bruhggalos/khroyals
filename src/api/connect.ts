@@ -104,9 +104,31 @@ export async function signIn(email: string, password: string) {
   await run(sb().auth.signInWithPassword({ email: email.trim(), password }) as any);
   return session();
 }
+/**
+ * Create an account with email + password. Returns the signed-in person, or
+ * null when the project requires confirming the email first (the confirmation
+ * link reopens the app and signs in). New people wait for admin approval.
+ */
 export async function signUp(email: string, password: string, firstName: string, lastName: string) {
-  const data: any = await run(sb().auth.signUp({ email: email.trim(), password, options: { data: { first_name: firstName, last_name: lastName } } }) as any);
-  return data.session ? session() : null; // null → confirm email first
+  const data: any = await run(sb().auth.signUp({
+    email: email.trim(), password,
+    options: { emailRedirectTo: authRedirectUrl(), data: { first_name: firstName.trim(), last_name: lastName.trim() } },
+  }) as any);
+  // Supabase hides whether an email is already registered: an existing address comes back with no identities.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    throw new Error('An account with this email already exists. Sign in, or use "Forgot password".');
+  }
+  return data.session ? session() : null;
+}
+
+/** Email a link that opens the app's "set a new password" screen. */
+export async function sendPasswordReset(email: string) {
+  await run(sb().auth.resetPasswordForEmail(email.trim(), { redirectTo: authRedirectUrl() }) as any);
+}
+
+/** Set or change the signed-in person's password. */
+export async function updatePassword(password: string) {
+  await run(sb().auth.updateUser({ password }) as any);
 }
 export async function signOut() { if (live) await sb().auth.signOut(); current = null; }
 export const onAuthChange = (cb: () => void) => {
@@ -292,8 +314,12 @@ export function authRedirectUrl() {
   return Platform.OS === 'web' && typeof window !== 'undefined' ? `${window.location.origin}${base}/auth` : Linking.createURL('auth');
 }
 
-/** Finish signing in from a sign-in link (tokens in the URL fragment or query). Returns true if it did. */
-export async function completeSignInFromUrl(url: string | null): Promise<boolean> {
+/**
+ * Finish signing in from an emailed link (tokens in the URL fragment or query).
+ * Returns 'recovery' for password-reset links (show "set a new password"),
+ * true for other sign-ins, false if the URL carried no sign-in.
+ */
+export async function completeSignInFromUrl(url: string | null): Promise<boolean | 'recovery'> {
   if (!live || !url || !/access_token|refresh_token|[?&]code=|error_description/.test(url)) return false;
   const params = new URLSearchParams((url.split('#')[1] ?? '') + '&' + (url.split('?')[1]?.split('#')[0] ?? ''));
   const err = params.get('error_description');
@@ -303,7 +329,7 @@ export async function completeSignInFromUrl(url: string | null): Promise<boolean
   else if (code) await run(sb().auth.exchangeCodeForSession(code) as any);
   else return false;
   await session();
-  return true;
+  return params.get('type') === 'recovery' ? 'recovery' : true;
 }
 export async function verifyEmailCode(email: string, code: string) {
   await run(sb().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' }) as any);

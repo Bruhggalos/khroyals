@@ -18,9 +18,11 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
   on the phone and allow "Install unknown apps" for your browser or Files app.
   Installing a newer APK over the old one keeps you signed in.
 - **Any device:** open the web app link above.
-- **Sign in:** on the **Connect** tab, either enter your email and tap the link we
-  email you (open it **on the same device**), or tap a demo account
-  (Teacher, Coach, Student, Silenced student, Parent).
+- **Sign up / sign in:** on the **Connect** tab — **Create account** (name, email,
+  password; an admin approves new accounts in the Admin portal → People), **Sign in**
+  with email + password, *Forgot password?* (emails a reset link), *Email me a
+  sign-in link* (passwordless), or tap a demo account (Teacher, Coach, Student,
+  Silenced student, Parent). Open emailed links **on the same device**.
 
 ## 2. Set up a dev machine
 
@@ -123,10 +125,13 @@ a fresh project: `node scripts/supabase_setup.mjs --director=email` after they'v
 signed in once. Demo accounts deliberately have **no** admin powers (their password
 is public in `app.json`).
 
-**Email sign-in:** on Supabase's free plan with its built-in email, emails contain
-a sign-in link (handled by `app/+native-intent.tsx` on phones and `app/auth.tsx` on
-the web) and only a few emails per hour are sent. Adding custom SMTP (e.g. Resend)
-lifts the limit and lets the setup script switch the email to a 6-digit code.
+**Accounts & email:** people sign up with email + password (min 8 characters).
+Sign-up doesn't send a confirmation email (`mailer_autoconfirm`), because Supabase's
+built-in email allows only **2 emails/hour** for the whole project; admin approval
+still gates access. Emailed links (password reset, passwordless sign-in) are handled
+by `app/+native-intent.tsx` on phones and `app/auth.tsx` on the web; reset links open
+`app/set-password.tsx`. Adding custom SMTP (e.g. Resend) lifts the limit; then run the
+setup script with `REQUIRE_EMAIL_CONFIRMATION=1` to require confirming the email.
 
 ## 6. Refresh the school website content
 

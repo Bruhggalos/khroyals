@@ -79,8 +79,11 @@ export default function Connect() {
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
       {live ? (
         <View style={[s.row, { justifyContent: 'space-between' }]}>
-          <P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P>
-          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(signOut).then(load)}>Sign out</Text>
+          <View style={{ flex: 1 }}><P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P></View>
+          <View style={[s.row, { gap: 14 }]}>
+            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => router.push('/set-password')}>Password</Text>
+            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(signOut).then(load)}>Sign out</Text>
+          </View>
         </View>
       ) : (
         <>

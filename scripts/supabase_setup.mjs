@@ -128,6 +128,11 @@ async function configureAuthEmail() {
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       site_url: 'khroyals://auth',
+      password_min_length: 8,
+      // Sign-up without a confirmation email: Supabase's built-in email allows only
+      // 2 emails/hour, and new accounts still need admin approval. Set to false once
+      // the project uses its own email service (custom SMTP) to require confirmation.
+      mailer_autoconfirm: process.env.REQUIRE_EMAIL_CONFIRMATION !== '1',
       uri_allow_list: ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**', 'https://bruhggalos.github.io/khroyals/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(','),
     }),
   });
