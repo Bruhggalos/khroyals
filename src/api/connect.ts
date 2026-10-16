@@ -42,11 +42,22 @@ async function run<T>(p: PromiseLike<{ data: T; error: { message: string } | nul
 }
 
 const directory = new Map<string, Person>();
+
+// Profile photos: the bucket is private, so storage paths become signed URLs.
+const avatarSigned = new Map<string, { url: string; until: number }>();
+const avatarUrl = (path: string | null | undefined) => (!path ? '' : /^https?:/.test(path) ? path : avatarSigned.get(path)?.url ?? '');
+async function signAvatars(paths: (string | null | undefined)[]) {
+  const need = [...new Set(paths.filter((x): x is string =>
+    !!x && !/^https?:/.test(x) && (avatarSigned.get(x)?.until ?? 0) < Date.now()))];
+  if (!need.length) return;
+  const { data } = await sb().storage.from('avatars').createSignedUrls(need, 24 * 3600);
+  for (const d of data ?? []) if (d.path && d.signedUrl) avatarSigned.set(d.path, { url: d.signedUrl, until: Date.now() + 20 * 3600_000 });
+}
 let current: Person | null = null;
 
 const toPerson = (p: any): Person => ({
   id: p.id, firstName: p.first_name ?? '', lastName: p.last_name ?? '', schoolRole: p.school_role as SchoolRole,
-  avatar: p.avatar_url ?? `https://i.pravatar.cc/120?u=${p.id}`, grade: p.grade ?? undefined,
+  avatar: avatarUrl(p.avatar_url), grade: p.grade ?? undefined,
   email: p.email, pending: p.school_role == null, carlineDuty: !!p.carline_duty, volunteerLead: !!p.volunteer_lead,
 });
 
@@ -89,6 +100,7 @@ export async function session(): Promise<Person | null> {
   const uid = data.session?.user.id;
   if (!uid) { current = null; return null; }
   const people = await run(sb().from('profiles').select('*'));
+  await signAvatars(people.map((p: any) => p.avatar_url)).catch(() => {});
   directory.clear();
   people.forEach((p: any) => directory.set(p.id, toPerson(p)));
   current = directory.get(uid) ?? toPerson({ id: uid });
@@ -641,4 +653,60 @@ export async function registerPushToken(token: string, platform: string) {
 }
 export async function unregisterPushToken(token: string) {
   await run(sb().rpc('unregister_push_token', { p_token: token }));
+}
+
+// ---------------------------------------------------------------- my profile
+
+export type MySettings = { pushGroups: boolean; pushMarketplace: boolean; pushVolunteer: boolean; quietStart: string | null; quietEnd: string | null };
+export type GroupPref = { groupId: string; name: string; icon: string; pref: 'all' | 'mentions' | 'none' };
+
+export async function updateMyName(first: string, last: string) {
+  await run(sb().rpc('update_my_profile', { p_first: first, p_last: last }));
+  await session();
+}
+/** Upload a JPEG (base64) as your profile photo, replacing the old one. */
+export async function uploadMyAvatar(base64: string) {
+  const old = current?.id ? (await run(sb().from('profiles').select('avatar_url').eq('id', current.id).single()) as any).avatar_url : null;
+  const path = `${current!.id}/${Date.now()}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('avatars').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  await run(sb().rpc('set_my_avatar', { p_path: path }));
+  if (old && !/^https?:/.test(old)) await sb().storage.from('avatars').remove([old]);
+  await session();
+}
+export async function removeMyAvatar() {
+  const old = (await run(sb().from('profiles').select('avatar_url').eq('id', current!.id).single()) as any).avatar_url;
+  await run(sb().rpc('set_my_avatar', { p_path: null }));
+  if (old && !/^https?:/.test(old)) await sb().storage.from('avatars').remove([old]);
+  await session();
+}
+/** Staff with people.roles: take down someone's photo. */
+export async function adminClearAvatar(userId: string) {
+  await run(sb().rpc('admin_clear_avatar', { p_user: userId }));
+  await session();
+}
+
+const DEFAULT_SETTINGS: MySettings = { pushGroups: true, pushMarketplace: true, pushVolunteer: true, quietStart: null, quietEnd: null };
+const toSettings = (r: any): MySettings => (r ? {
+  pushGroups: r.push_groups, pushMarketplace: r.push_marketplace, pushVolunteer: r.push_volunteer,
+  quietStart: r.quiet_start?.slice(0, 5) ?? null, quietEnd: r.quiet_end?.slice(0, 5) ?? null,
+} : DEFAULT_SETTINGS);
+export async function mySettings(): Promise<MySettings> {
+  if (!live) return DEFAULT_SETTINGS;
+  return toSettings(await run(sb().from('user_settings').select('*').maybeSingle()));
+}
+export async function updateMySettings(st: MySettings): Promise<MySettings> {
+  return toSettings(await run(sb().rpc('update_my_settings', {
+    p_push_groups: st.pushGroups, p_push_marketplace: st.pushMarketplace, p_push_volunteer: st.pushVolunteer,
+    p_quiet_start: st.quietStart, p_quiet_end: st.quietEnd,
+  })));
+}
+/** Your notification level in each of your groups (the group's default when you haven't chosen). */
+export async function myGroupPrefs(): Promise<GroupPref[]> {
+  if (!live || !current) return [];
+  const rows: any[] = await run(sb().from('memberships').select('group_id, notification, groups(name, icon, settings)').eq('user_id', current.id));
+  return rows.filter((r) => r.groups).map((r) => ({
+    groupId: r.group_id, name: r.groups.name, icon: r.groups.icon,
+    pref: (r.notification ?? r.groups.settings?.notificationDefault ?? 'all') === 'digest' ? 'mentions' : (r.notification ?? r.groups.settings?.notificationDefault ?? 'all'),
+  })).sort((a, b) => a.name.localeCompare(b.name));
 }

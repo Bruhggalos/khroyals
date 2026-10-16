@@ -29,12 +29,23 @@ function NotificationsButton() {
   );
 }
 
+/** Round person button next to the bell; opens My profile (photo, name, notification settings). */
+function ProfileButton() {
+  return (
+    <Pressable onPress={() => router.push('/profile')} hitSlop={8}
+      accessibilityRole="button" accessibilityLabel="My profile"
+      style={({ pressed }) => [hs.bell, { marginRight: 10 }, pressed && { opacity: 0.6 }]}>
+      <Ionicons name="person-outline" size={20} color="#fff" />
+    </Pressable>
+  );
+}
+
 export default function TabsLayout() {
   return (
     <Tabs screenOptions={{
       headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff',
       headerTitleAlign: 'left',
-      headerRight: () => <NotificationsButton />,
+      headerRight: () => <View style={{ flexDirection: 'row' }}><ProfileButton /><NotificationsButton /></View>,
       tabBarActiveTintColor: C.primary,
     }}>
       <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: 'Kingdom Heights', tabBarIcon: icon('🏠') }} />

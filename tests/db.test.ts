@@ -668,3 +668,55 @@ test('people list: paged, searchable, filterable', async () => {
   const eng = (await one(`select ${id('u-eng')} as u`)).u;
   assert.equal(staff.find((p) => p.id === eng)?.carline_duty, true, 'duty flags come with each person');
 });
+
+test('profile settings: your own photo, name and push choices', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [rosa, wei] = [await uid('u-p01'), await uid('u-p02')];
+  const put = (who: string, path: string) => `insert into storage.objects (bucket_id, name, owner) values ('avatars', '${path}', '${who}')`;
+
+  // Photos: upload only into your own folder, point your profile at it, everyone approved can see it.
+  await as('u-p01');
+  await db.exec(put(rosa, `${rosa}/me.jpg`));
+  await rejects(put(rosa, `${wei}/me.jpg`), /row-level security/);
+  await one(`select set_my_avatar('${rosa}/me.jpg')`);
+  await rejects(`select set_my_avatar('${wei}/me.jpg')`, /isn't yours/);
+  await as('u-s01');
+  assert.equal((await one(`select avatar_url from profiles where id = '${rosa}'`)).avatar_url, `${rosa}/me.jpg`);
+  assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'avatars'`)).length, 1);
+  await rejects(`select admin_clear_avatar('${rosa}')`, /permission/);
+  await as('u-admin', true);
+  await one(`select admin_clear_avatar('${rosa}')`);
+  assert.equal((await one(`select avatar_url from profiles where id = '${rosa}'`)).avatar_url, null);
+
+  // Names: your own only, never blank.
+  await as('u-p01');
+  await rejects(`select update_my_profile(' ', 'Reyes')`, /first and last name/);
+  await one(`select update_my_profile('Rosie', 'Reyes')`);
+  assert.equal((await one(`select first_name from profiles where id = '${rosa}'`)).first_name, 'Rosie');
+  await rejects(`update profiles set first_name = 'X' where id = '${wei}'`, /permission denied/);
+
+  // Push settings: private, and they decide which notifications reach the phone.
+  await one(`select * from update_my_settings(false, true, true)`);
+  await rejects(`select * from update_my_settings(true, true, true, '21:00', null)`, /both/);
+  await as('u-p02');
+  assert.equal((await rows(`select * from user_settings`)).length, 0, "can't see other people's settings");
+  await rejects(`insert into user_settings (user_id) values ('${wei}')`, /permission denied/);
+
+  await asSuper();
+  const wants = async (n: string, at = 'now()') => (await one(`select app.wants_push(n, '${rosa}', ${at}) as w from notifications n where id = '${n}'`)).w;
+  const group = await one(`insert into notifications (audience, group_id, title, body) values ('group', ${id('g-vb')}, 'VB', 'Practice') returning id`);
+  const school = await one(`insert into notifications (audience, title, body, urgent) values ('everyone', 'Closed', 'Snow day', true) returning id`);
+  const market = await one(`insert into notifications (audience, user_id, title, body, data, urgent) values ('user', '${rosa}', 'Offer', 'x', '{"listingId": "1"}', true) returning id`);
+  assert.equal(await wants(group.id), false, 'group pushes turned off');
+  assert.equal(await wants(school.id), true, 'school announcements always push');
+  assert.equal(await wants(market.id), true);
+  await as('u-p01');
+  await one(`select * from update_my_settings(true, false, true, '21:00', '07:00')`);
+  await asSuper();
+  assert.equal(await wants(market.id), false, 'marketplace pushes turned off');
+  const night = `'2026-10-16 23:30:00-05'::timestamptz`, noon = `'2026-10-16 12:00:00-05'::timestamptz`;
+  assert.equal(await wants(group.id, night), false, 'quiet hours (overnight window)');
+  assert.equal(await wants(group.id, noon), true);
+  assert.equal(await wants(school.id, night), true, 'announcements ignore quiet hours');
+  await db.exec(`delete from notifications where id in ('${group.id}', '${school.id}', '${market.id}'); delete from user_settings;`);
+});

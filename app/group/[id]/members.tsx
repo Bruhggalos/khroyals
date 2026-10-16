@@ -1,10 +1,10 @@
 /** Moderators manage people in a group: roles, mute, posting on/off, remove, add. */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getGroup, getUser, listMembers, listUsers, setMembership, type GroupView, type Member, type Person } from '../../../src/api/connect';
 import type { GroupRole } from '../../../src/comms/types';
-import { C, Card, Chip, Field, Loading, P, s } from '../../../src/ui';
+import { Avatar, C, Card, Chip, Field, Loading, P, s } from '../../../src/ui';
 
 const ROLES: GroupRole[] = ['owner', 'moderator', 'member', 'subscriber'];
 const ORDER = (r: GroupRole) => ROLES.indexOf(r);
@@ -49,7 +49,7 @@ export default function Members() {
         return (
           <Card key={m.userId} onPress={() => setOpen(open === m.userId ? null : m.userId)}>
             <View style={[s.row]}>
-              {u && <Image source={{ uri: u.avatar }} style={{ width: 32, height: 32, borderRadius: 16 }} />}
+              {u && <Avatar person={u} size={32} />}
               <View style={{ flex: 1 }}>
                 <Text style={{ fontWeight: '700', color: C.ink }}>{u ? `${u.firstName} ${u.lastName}` : 'Unknown'}</Text>
                 <P muted>{u?.schoolRole} · {m.source === 'rule' ? 'from roster' : 'added manually'}</P>

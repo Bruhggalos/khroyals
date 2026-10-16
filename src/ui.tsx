@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import site from '../content/site/site.json';
 
 export const C = {
@@ -57,6 +57,18 @@ export const Button = ({ label, onPress, kind = 'primary', disabled }: { label: 
 export const PLACEHOLDER = '#8A93A6';
 
 /** A labelled text box: the label sits above the input so it never disappears while typing. */
+/** Profile photo, or the person's initials on a colored circle when they haven't added one. */
+export function Avatar({ person, size = 32 }: { person?: { firstName?: string; lastName?: string; avatar?: string } | null; size?: number }) {
+  const box = { width: size, height: size, borderRadius: size / 2 };
+  if (person?.avatar) return <Image source={{ uri: person.avatar }} style={box} accessibilityIgnoresInvertColors />;
+  const initials = `${person?.firstName?.[0] ?? ''}${person?.lastName?.[0] ?? ''}`.toUpperCase() || '?';
+  return (
+    <View style={[box, { backgroundColor: C.primary + '22', alignItems: 'center', justifyContent: 'center' }]}>
+      <Text style={{ color: C.primary, fontWeight: '800', fontSize: size * 0.38 }}>{initials}</Text>
+    </View>
+  );
+}
+
 /** A text box without a visible label (chat composers): the placeholder doubles as its accessible name. */
 export function Input({ style, ...input }: TextInputProps) {
   return <TextInput placeholderTextColor={PLACEHOLDER} accessibilityLabel={input.placeholder} {...input} style={[s.input, style]} />;

@@ -8,14 +8,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import {
-  adminDeleteRole, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
+  adminClearAvatar, adminDeleteRole, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
   adminSetCarlineDuty, adminSetDirector, adminSetVolunteerLead, adminUpdateProfile, getUser, listAudit, listMyGroups, listNotifications, me, permissionCatalog,
   sendNotification,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo,
 } from '../../src/api/connect';
 import { MfaGate } from '../../src/comms/MfaGate';
 import type { Group, SchoolRole } from '../../src/comms/types';
-import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
+import { Avatar, Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const PAGE = 20;
 const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'parent', 'student'];
@@ -78,6 +78,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
   return (
     <Card onPress={() => setOpen(!open)}>
       <View style={s.row}>
+        <Avatar person={getUser(p.id) ?? p} size={36} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: C.ink }}>{fullName(p)}</Text>
           <P muted>{p.email}{p.grade != null ? ` · grade ${p.grade}` : ''}</P>
@@ -99,6 +100,10 @@ function PersonCard({ p, links, access, roles, onChange }: {
             </View>
           )}
           {p.adminTier === 'director' && <P muted>Directors are managed under Admins & roles.</P>}
+          {can('people.roles') && !!getUser(p.id)?.avatar && p.id !== me()?.id && (
+            <Text style={{ color: C.danger }} onPress={() => confirm('Remove photo?', `${fullName(p)}'s profile photo will be removed.`,
+              () => adminClearAvatar(p.id).then(onChange).catch(fail))}>Remove profile photo</Text>
+          )}
           {!p.pending && ['admin', 'teacher', 'staff'].includes(p.schoolRole) && can('people.family') && (
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {pill(p.carlineDuty ? '🚗 On car line duty' : '🚗 Put on car line duty', !!p.carlineDuty,

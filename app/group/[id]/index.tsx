@@ -6,7 +6,7 @@ import {
   type GroupView,
 } from '../../../src/api/connect';
 import type { Comment, Post } from '../../../src/comms/types';
-import { Button, C, Card, Chip, Input, Loading, P, s, useBottomInset } from '../../../src/ui';
+import { Avatar, Button, C, Card, Chip, Input, Loading, P, s, useBottomInset } from '../../../src/ui';
 
 const QUICK_REACTIONS = ['👍', '❤️', '🎉', '🙏'];
 
@@ -14,7 +14,7 @@ function Author({ id, anon }: { id: string | null; anon?: boolean }) {
   const u = id ? getUser(id) : null;
   return (
     <View style={s.row}>
-      {u && !anon ? <Image source={{ uri: u.avatar }} style={{ width: 28, height: 28, borderRadius: 14 }} /> : <Text>🕶️</Text>}
+      {u && !anon ? <Avatar person={u} size={28} /> : <Text>🕶️</Text>}
       <Text style={{ fontWeight: '600', color: C.ink }}>{u && !anon ? `${u.firstName} ${u.lastName}` : 'Anonymous'}</Text>
       {u && !anon && <Text style={{ color: C.muted, fontSize: 12 }}>{u.schoolRole}</Text>}
     </View>

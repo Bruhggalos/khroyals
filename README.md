@@ -130,6 +130,12 @@ from an authenticator app (free TOTP, enforced in the database; switch with
 screen: same on web (`npx expo export --platform web`, host the `dist/` folder),
 Android and iPhone.
 
+**My profile** (person button in the top bar, or your name on Connect): profile
+photo (private `avatars` bucket, signed URLs; staff with *people.roles* can remove
+one), name, and push settings — group posts, Marketplace, Volunteering, quiet
+hours, and a level per group. School-wide announcements always push. Settings only
+filter pushes (`app.wants_push`); the in-app inbox still lists everything.
+
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).
