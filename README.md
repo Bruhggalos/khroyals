@@ -136,9 +136,9 @@ one), name, and push settings — group posts, Marketplace, Volunteering, quiet
 hours, and a level per group. School-wide announcements always push. Settings only
 filter pushes (`app.wants_push`); the in-app inbox still lists everything.
 
-**Android Auto:** group messages are read aloud on the car screen with voice
-reply (MessagingStyle notifications from `plugins/withAndroidAuto.js`; replies go
-through `reply_from_push` with a per-recipient, 24-hour reply pass).
+**Android Auto:** the car line on the car's screen — each child's status and an
+"I'm here" button (`modules/car-line`, using a per-phone car pass that can only do
+that). CarPlay waits on Apple's Driving Task entitlement.
 
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a

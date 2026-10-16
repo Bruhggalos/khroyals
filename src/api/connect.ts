@@ -710,3 +710,13 @@ export async function myGroupPrefs(): Promise<GroupPref[]> {
     pref: (r.notification ?? r.groups.settings?.notificationDefault ?? 'all') === 'digest' ? 'mentions' : (r.notification ?? r.groups.settings?.notificationDefault ?? 'all'),
   })).sort((a, b) => a.name.localeCompare(b.name));
 }
+
+// ---------------------------------------------------------------- car screen (Android Auto)
+
+/** A car pass for this phone: lets the car screen show and check in only this parent's children. */
+export async function createCarPass(): Promise<string> {
+  return run(sb().rpc('create_car_pass')) as Promise<string>;
+}
+export async function revokeCarPass(token: string) {
+  await run(sb().rpc('revoke_car_pass', { p_token: token }));
+}

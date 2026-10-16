@@ -39,8 +39,7 @@
         }
       ],
       "./plugins/withSceneLifecycle",
-      "./plugins/withGradleMemory",
-      "./plugins/withAndroidAuto"
+      "./plugins/withGradleMemory"
     ],
     "experiments": {
       "typedRoutes": false,

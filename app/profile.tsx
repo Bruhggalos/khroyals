@@ -11,6 +11,7 @@ import {
   live, myGroupPrefs, mySettings, removeMyAvatar, session, setNotificationPref, signOut, updateMyName, updateMySettings,
   uploadMyAvatar, type GroupPref, type MySettings, type Person,
 } from '../src/api/connect';
+import { forgetCarPass } from '../src/carline/carPass';
 import { disableAutoCheckIn } from '../src/carline/autoCheckIn';
 import { disablePush, enablePush } from '../src/comms/push';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
@@ -196,7 +197,7 @@ export default function Profile() {
         </Card>
       )}
 
-      <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(() => router.replace('/connect'))} />
+      <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(() => router.replace('/connect'))} />
     </ScrollView>
   );
 }

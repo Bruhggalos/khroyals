@@ -31,15 +31,7 @@ async function deliver(n: Note) {
     await db.from('notifications').update({ status: 'failed', error: error.message }).eq('id', n.id);
     return 0;
   }
-  const owner = new Map<string, string>((targets ?? []).map((t: { token: string; user_id: string }) => [t.token, t.user_id]));
-  const tokens = [...owner.keys()];
-  // Group posts: each recipient's reply pass, so they can answer from the
-  // notification or Android Auto without opening the app.
-  const passes = new Map<string, string>();
-  if (n.data?.postId) {
-    const { data: rt } = await db.rpc('push_reply_tokens', { p_notification: n.id });
-    for (const r of (rt ?? []) as { user_id: string; token: string }[]) passes.set(r.user_id, r.token);
-  }
+  const tokens = [...new Set((targets ?? []).map((t: { token: string }) => t.token))];
   let sent = 0;
   const dead: string[] = [];
   for (let i = 0; i < tokens.length; i += 100) {
@@ -48,8 +40,7 @@ async function deliver(n: Note) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(batch.map((to) => ({
-        to, title: n.title, body: n.body, sound: 'default', channelId: 'default',
-        data: { ...n.data, notificationId: n.id, ...(passes.has(owner.get(to)!) ? { replyToken: passes.get(owner.get(to)!) } : {}) },
+        to, title: n.title, body: n.body, data: { ...n.data, notificationId: n.id }, sound: 'default', channelId: 'default',
       }))),
     });
     const out = await res.json().catch(() => ({}));

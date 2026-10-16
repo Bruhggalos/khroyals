@@ -5,6 +5,7 @@ import {
   joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session, setMockUser, signOut,
   type Person,
 } from '../../src/api/connect';
+import { forgetCarPass } from '../../src/carline/carPass';
 import { disableAutoCheckIn } from '../../src/carline/autoCheckIn';
 import { disablePush } from '../../src/comms/push';
 import { MODE_LABELS } from '../../src/comms/presets';
@@ -69,7 +70,7 @@ export default function Connect() {
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Waiting for approval</Text>
           <P>Thanks, {person.firstName || person.email}. A Kingdom Heights administrator will confirm your account and add you to your groups.</P>
-          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)} />
+          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(load)} />
         </Card>
       </View>
     );
@@ -88,7 +89,7 @@ export default function Connect() {
               <P muted>{person.schoolRole} · My profile & notifications ›</P>
             </View>
           </Pressable>
-          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)}>Sign out</Text>
+          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(load)}>Sign out</Text>
         </View>
       ) : (
         <>

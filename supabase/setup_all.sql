@@ -2679,97 +2679,110 @@ grant execute on function public.set_my_avatar(text), public.admin_clear_avatar(
 
 insert into app.applied_migrations (name) values ('20261016000011_profile_settings.sql') on conflict do nothing;
 
--- ===== 20261016000012_android_auto_replies.sql =====
--- Replies from Android Auto (and the phone's notification shade).
+-- ===== 20261016000012_car_screen_passes.sql =====
+-- Car line on the car's screen (Android Auto; CarPlay can use the same calls).
 --
--- Android Auto reads group messages aloud and lets the driver answer by voice,
--- but only for notifications with a working Reply action that doesn't open the
--- app. The app's native code can't use the person's sign-in, so each group
--- push carries a reply pass: a random token, stored hashed, that lets that one
--- person reply in that one group for 24 hours, with all the usual permission
--- checks (app.can) applied as that person.
---   Chat groups: the reply is a new message.
---   Other groups: the reply is a comment on the post that was notified.
+-- The car screen runs as native code that can't use the app's sign-in, so a
+-- parent's phone gets a car pass when they sign in: a random token, stored
+-- hashed, that can do exactly two things for that parent — show today's car
+-- line status for their own children, and check them in. Nothing else. Passes
+-- last 90 days from last use and are revoked on sign-out.
 
-create table app.push_reply_tokens (
-  token_hash text primary key,
-  user_id    uuid not null references public.profiles (id) on delete cascade,
-  group_id   uuid not null references public.groups (id) on delete cascade,
-  post_id    uuid references public.posts (id) on delete cascade,
-  expires_at timestamptz not null default now() + interval '24 hours'
+create table app.car_passes (
+  token_hash   text primary key,
+  user_id      uuid not null references public.profiles (id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz not null default now()
 );
-create index on app.push_reply_tokens (expires_at);
-revoke all on app.push_reply_tokens from public, anon, authenticated;
+create index on app.car_passes (user_id);
+revoke all on app.car_passes from public, anon, authenticated;
 
-create function app.token_hash(t text) returns text
-language sql immutable as $$ select encode(sha256(convert_to(t, 'UTF8')), 'hex') $$;
+create function app.car_token_hash(t text) returns text
+language sql immutable as $$ select encode(sha256(convert_to(coalesce(t, ''), 'UTF8')), 'hex') $$;
 
-/** send-push (service role): a reply pass for each recipient of a group post notification. */
-create function public.push_reply_tokens(p_notification uuid) returns table (user_id uuid, token text)
+/** Signed-in parent: a car pass for this phone (returned once; only its hash is kept). */
+create function public.create_car_pass() returns text
 language plpgsql security definer set search_path = public as $$
-declare n notifications%rowtype; u uuid; t text;
+declare t text;
 begin
-  delete from app.push_reply_tokens where expires_at < now();
-  select * into n from notifications where id = p_notification;
-  if not found or n.audience <> 'group' or n.post_id is null then return; end if;
-  for u in select distinct pt.user_id from app.push_targets(p_notification) pt loop
-    t := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
-    insert into app.push_reply_tokens (token_hash, user_id, group_id, post_id)
-    values (app.token_hash(t), u, n.group_id, n.post_id);
-    user_id := u; token := t;
-    return next;
-  end loop;
-end $$;
-
-/** Anyone holding a reply pass: reply as its owner, in its group only. */
-create function public.reply_from_push(p_token text, p_text text) returns jsonb
-language plpgsql security definer set search_path = public as $$
-declare r app.push_reply_tokens%rowtype; mode text; new_id uuid;
-begin
-  select * into r from app.push_reply_tokens where token_hash = app.token_hash(coalesce(p_token, '')) and expires_at > now();
-  if not found then raise exception 'This reply link has expired. Open the app to reply.' using errcode = '42501'; end if;
-  if coalesce(trim(p_text), '') = '' then raise exception 'Write something first.'; end if;
-  if length(p_text) > 1000 then raise exception 'That reply is too long.'; end if;
-  -- Act as the pass's owner for the rest of this call, so every normal check applies.
-  perform set_config('request.jwt.claim.sub', r.user_id::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', r.user_id, 'role', 'authenticated', 'aal', 'aal1')::text, true);
-  select settings->>'mode' into mode from groups where id = r.group_id;
-  if mode = 'chat' or r.post_id is null then
-    select (public.create_post(r.group_id, 'message', trim(p_text))).id into new_id;
-    return jsonb_build_object('postId', new_id);
+  if app.school_role() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if not exists (select 1 from guardians where guardian_id = auth.uid()) then
+    raise exception 'The car screen is for parents with children linked to their account.' using errcode = '42501';
   end if;
-  select (public.add_comment(r.post_id, trim(p_text))).id into new_id;
-  return jsonb_build_object('commentId', new_id);
+  delete from app.car_passes where last_used_at < now() - interval '90 days';
+  -- Keep a handful of devices per parent.
+  delete from app.car_passes where token_hash in (
+    select token_hash from app.car_passes where user_id = auth.uid() order by last_used_at desc offset 4);
+  t := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into app.car_passes (token_hash, user_id) values (app.car_token_hash(t), auth.uid());
+  return t;
 end $$;
 
--- The phone shows group messages as a conversation, so the push carries the
--- sender and group separately (title/body stay as before for other devices).
-create or replace function app.notify_post() returns trigger
+/** Sign-out: the pass stops working. */
+create function public.revoke_car_pass(p_token text) returns void
+language sql security definer set search_path = public as $$
+  delete from app.car_passes where token_hash = app.car_token_hash(p_token)
+$$;
+
+/** Check a pass and act as its parent for the rest of this call. */
+create function app.use_car_pass(p_token text) returns uuid
 language plpgsql security definer set search_path = public as $$
-declare g groups%rowtype; who text;
+declare u uuid;
 begin
-  if new.status <> 'published' or (tg_op = 'UPDATE' and old.status = 'published') then return new; end if;
-  select * into g from groups where id = new.group_id;
-  select nullif(trim(first_name || ' ' || last_name), '') into who from profiles where id = new.author_id;
-  insert into notifications (audience, group_id, post_id, title, body, data, urgent, created_by)
-  values ('group', new.group_id, new.id,
-          g.icon || ' ' || g.name,
-          coalesce(who || ': ', '') || left(coalesce(nullif(new.title, ''), new.body), 160),
-          jsonb_build_object('groupId', new.group_id, 'postId', new.id, 'groupName', g.name,
-                             'sender', coalesce(who, 'Anonymous'),
-                             'text', left(concat_ws(' — ', nullif(new.title, ''), nullif(new.body, '')), 400)),
-          new.kind = 'announcement',
-          new.author_id);
-  return new;
+  update app.car_passes set last_used_at = now()
+  where token_hash = app.car_token_hash(p_token) and last_used_at > now() - interval '90 days'
+  returning user_id into u;
+  if u is null or app.school_role(u) is null then
+    raise exception 'Open KH Royals on your phone and sign in again.' using errcode = '42501';
+  end if;
+  perform set_config('request.jwt.claim.sub', u::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated', 'aal', 'aal1')::text, true);
+  return u;
 end $$;
 
-revoke all on function app.token_hash(text) from public, anon, authenticated;
-revoke all on function public.push_reply_tokens(uuid) from public, anon, authenticated;
-grant execute on function public.push_reply_tokens(uuid) to service_role;
-revoke all on function public.reply_from_push(text, text) from public;
-grant execute on function public.reply_from_push(text, text) to anon, authenticated, service_role;
+/** Today's car line for the pass holder's children: {line, children: [{name, status, position}]}. */
+create function public.car_carline_status(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare u uuid := app.use_car_pass(p_token);
+begin
+  return jsonb_build_object(
+    'line', app.carline_window(),
+    'children', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'name', trim(p.first_name),
+               'status', coalesce(c.status, 'none'),
+               'position', case when c.status = 'waiting' then (
+                 select count(*) from carline_pickups w
+                 where w.day = app.school_today() and w.status = 'waiting' and w.arrived_at <= c.arrived_at) end)
+             order by p.first_name)
+      from guardians g join profiles p on p.id = g.student_id
+      left join lateral (
+        select * from carline_pickups x
+        where x.student_id = g.student_id and x.day = app.school_today() and x.status in ('waiting', 'picked_up')
+        order by (x.status = 'waiting') desc, x.arrived_at desc limit 1) c on true
+      where g.guardian_id = u), '[]'::jsonb));
+end $$;
 
-insert into app.applied_migrations (name) values ('20261016000012_android_auto_replies.sql') on conflict do nothing;
+/** "I'm here": check in the pass holder's children, then return the new status. */
+create function public.car_carline_check_in(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.use_car_pass(p_token);
+  if app.carline_window()->>'state' = 'closed' then
+    raise exception 'The car line is closed right now.';
+  end if;
+  perform public.carline_check_in(null);
+  return public.car_carline_status(p_token);
+end $$;
+
+revoke all on function app.car_token_hash(text), app.use_car_pass(text) from public, anon, authenticated;
+revoke all on function public.create_car_pass() from public, anon;
+grant execute on function public.create_car_pass() to authenticated, service_role;
+revoke all on function public.revoke_car_pass(text), public.car_carline_status(text), public.car_carline_check_in(text) from public;
+grant execute on function public.revoke_car_pass(text), public.car_carline_status(text), public.car_carline_check_in(text)
+  to anon, authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261016000012_car_screen_passes.sql') on conflict do nothing;
 
 -- ===== seed =====
 -- Generated by scripts/gen_seed.py — demo data for Royals Connect + the 2026–27 school calendar.

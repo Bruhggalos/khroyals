@@ -721,42 +721,35 @@ test('profile settings: your own photo, name and push choices', async () => {
   await db.exec(`delete from notifications where id in ('${group.id}', '${school.id}', '${market.id}'); delete from user_settings;`);
 });
 
-test('android auto: reply passes let one person reply in one group, with the usual checks', async () => {
-  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
-  const vb = id('g-vb');
-  await asSuper();
-  await db.exec(`insert into push_tokens values ('ExponentPushToken[auto-s05]', ${id('u-s05')}, 'android') on conflict (token) do nothing;
-                 update memberships set notification = 'all' where group_id = ${vb} and user_id = ${id('u-s05')}`);
-  await as('u-vbcoach');
-  const post = await one(`select id from create_post(${vb}, 'message', 'Bus leaves at 3')`);
-  await asSuper();
-  const n = await one(`select * from notifications where post_id = '${post.id}'`);
-  assert.equal(n.data.sender.length > 0 && n.data.groupName.length > 0, true, 'sender and group in the push data');
-  const passes = await rows(`select * from push_reply_tokens('${n.id}')`);
-  const s05 = await uid('u-s05');
-  const mine = passes.find((p) => p.user_id === s05);
-  assert.ok(mine && mine.token.length >= 64);
+test('car screen: a parent\'s car pass shows and checks in only their own children', async () => {
+  // (The auto check-in test above opened the line all day, every day.)
+  await as('u-s01');
+  await rejects(`select create_car_pass()`, /for parents/);
+  await as('u-p04');
+  const pass = (await one(`select create_car_pass() as t`)).t as string;
+  assert.ok(pass.length >= 64);
 
-  await db.exec(`set role anon`);
-  await rejects(`select push_reply_tokens('${n.id}')`, /permission denied/);
-  await rejects(`select * from app.push_reply_tokens`, /permission denied/);
-  await rejects(`select reply_from_push('nope', 'hi')`, /expired/);
-  const out = await one(`select reply_from_push('${mine.token}', 'On my way!') as r`);
   await asSuper();
-  const reply = await one(`select * from posts where id = '${out.r.postId ?? ''}' or id in (select post_id from comments where id::text = '${out.r.commentId ?? ''}')`);
-  assert.ok(reply, 'the reply was posted');
-  const by = await one(`select coalesce((select author_id from posts where id::text = '${out.r.postId ?? ''}'), (select author_id from comments where id::text = '${out.r.commentId ?? ''}')) as a`);
-  assert.equal(by.a, mine.user_id, 'posted as the pass owner');
+  await db.exec(`set role anon`);
+  await rejects(`select create_car_pass()`, /permission denied/);
+  await rejects(`select car_carline_status('not-a-pass')`, /sign in again/);
+  const before = (await one(`select car_carline_status('${pass}') as s`)).s;
+  assert.equal(before.line.state, 'open');
+  assert.ok(before.children.length >= 1, 'their children');
+  assert.ok(before.children.every((c: any) => c.status === 'none'));
+  const after = (await one(`select car_carline_check_in('${pass}') as s`)).s;
+  assert.ok(after.children.every((c: any) => c.status === 'waiting' && c.position >= 1), 'checked in, with a place in line');
 
-  // Permission checks still apply: a silenced member can't reply.
-  await db.exec(`update memberships set muted_until = now() + interval '1 day' where group_id = ${vb} and user_id = '${mine.user_id}'`);
-  await db.exec(`set role anon`);
-  await rejects(`select reply_from_push('${mine.token}', 'Again')`, /./);
+  // The pass can't be used for anything else, and its owner was the one who checked in.
+  await rejects(`select * from carline_today()`, /permission denied/);
   await asSuper();
-  await db.exec(`update memberships set muted_until = null where group_id = ${vb} and user_id = '${mine.user_id}';
-                 update app.push_reply_tokens set expires_at = now() - interval '1 minute'`);
-  await db.exec(`set role anon`);
-  await rejects(`select reply_from_push('${mine.token}', 'Late')`, /expired/);
-  await asSuper();
+  const parent = (await one(`select ${id('u-p04')} as u`)).u;
+  const rows_ = await rows(`select guardian_id from carline_pickups where day = app.school_today() and guardian_id = '${parent}'`);
+  assert.equal(rows_.length, after.children.length);
   assert.equal((await one(`select current_setting('request.jwt.claim.sub', true) as s`)).s, '', 'no leftover identity');
+
+  // Sign-out revokes it; so does losing access.
+  await db.exec(`set role anon`);
+  await one(`select revoke_car_pass('${pass}')`);
+  await rejects(`select car_carline_status('${pass}')`, /sign in again/);
 });

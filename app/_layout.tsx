@@ -3,14 +3,15 @@ import { Platform, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { live, onAuthChange, session } from '../src/api/connect';
+import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
 import { C } from '../src/ui';
 
-/** Register this device for push whenever an approved person is signed in. */
+/** Register this device for push (and the car screen) whenever an approved person is signed in. */
 function usePush() {
   useEffect(() => {
     if (!live) return;
-    const register = () => session().then((p) => { if (p && !p.pending) enablePush(); }).catch(() => {});
+    const register = () => session().then((p) => { if (p && !p.pending) { enablePush(); syncCarPass(p); } }).catch(() => {});
     register();
     const offAuth = onAuthChange(register);
     const offTaps = handleNotificationTaps();

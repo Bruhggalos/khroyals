@@ -13,6 +13,9 @@ import appJson from '../../app.json';
 const extra = ((appJson as any).expo?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string };
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra.supabaseUrl;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY || extra.supabaseKey;
+/** For native code that calls the database itself (the Android Auto car line screen). */
+export const supabaseUrl = url ?? null;
+export const supabaseKey = key ?? null;
 
 export const supabase: SupabaseClient | null = url && key
   ? createClient(url, key, {
