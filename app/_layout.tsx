@@ -21,7 +21,11 @@ function usePush() {
 export default function Root() {
   usePush();
   const stack = (
-    <Stack screenOptions={{ headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' } }}>
+    <Stack screenOptions={{
+      headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' },
+      // Back arrow only; otherwise iOS labels it with the tab group's route name, "(tabs)".
+      headerBackButtonDisplayMode: 'minimal',
+    }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
     </Stack>
   );

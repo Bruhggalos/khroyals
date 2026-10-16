@@ -270,3 +270,31 @@ test('push: new posts queue a notification for members, not the author or non-me
   const parents = await rows(`select distinct user_id from app.push_targets('${blast.id}')`);
   assert.equal(parents.length, 1, 'only the parent with a registered device');
 });
+
+test('inbox: my_notifications lists only what was sent to me', async () => {
+  // Uses the volleyball post and the parent "Snow day" blast from the push test.
+  const inbox = async (who: string, mfa = false) => {
+    await as(who, mfa);
+    return (await rows(`select body from my_notifications()`)).map((n) => n.body).join('\n');
+  };
+  const vb = id('g-vb');
+  assert.match(await inbox('u-p02'), /School is closed/, 'parents get the parent blast');
+  assert.doesNotMatch(await inbox('u-p02'), /Practice moved/, 'non-members miss group posts');
+  assert.doesNotMatch(await inbox('u-s05'), /Practice moved/, 'a muted group stays out of the inbox');
+  await asSuper();
+  await db.exec(`update memberships set notification = 'all' where group_id = ${vb} and user_id = ${id('u-s05')}`);
+  assert.match(await inbox('u-s05'), /Practice moved/, 'teammates get the group post');
+  assert.doesNotMatch(await inbox('u-s05'), /School is closed/, 'students miss the parent blast');
+
+  // The table shows authors their own posts and push.send admins everything; the inbox doesn't.
+  await as('u-vbcoach');
+  assert.ok((await rows(`select 1 from notifications where body like '%Practice moved%'`)).length > 0);
+  assert.doesNotMatch(await inbox('u-vbcoach'), /Practice moved/, 'no notification for your own post');
+  assert.doesNotMatch(await inbox('u-admin', true), /School is closed/, 'senders see it in the portal history, not their inbox');
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select * from my_notifications()`, /permission denied/);
+  await asSuper();
+  await db.exec(`update memberships set notification = 'none' where group_id = ${vb} and user_id = ${id('u-s05')}`);
+});

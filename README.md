@@ -124,7 +124,8 @@ members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).
 Devices register after sign-in once the build has an Expo project id
 (`eas init` → `extra.eas.projectId`) and, on Android, Firebase credentials
-(`google-services.json`).
+(`google-services.json`). Every notification also lands in the person's in-app
+inbox: the bell in the top bar (`app/notifications.tsx`, `my_notifications()`).
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo

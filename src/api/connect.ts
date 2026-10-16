@@ -386,11 +386,18 @@ export async function transferDirector(userId: string) {
 // ---------------------------------------------------------------- notifications
 
 export type Notice = { id: string; title: string; body: string; data: any; createdAt: string; status: string; sentCount: number; audience: string };
+const toNotice = (n: any): Notice => ({
+  id: n.id, title: n.title, body: n.body, data: n.data, createdAt: n.created_at, status: n.status, sentCount: n.sent_count, audience: n.audience,
+});
+/** Every notification this person may see (admin portal history). */
 export async function listNotifications(limit = 50): Promise<Notice[]> {
   if (!live || !current) return [];
-  return (await run(sb().from('notifications').select('*').order('created_at', { ascending: false }).limit(limit))).map((n: any) => ({
-    id: n.id, title: n.title, body: n.body, data: n.data, createdAt: n.created_at, status: n.status, sentCount: n.sent_count, audience: n.audience,
-  }));
+  return (await run(sb().from('notifications').select('*').order('created_at', { ascending: false }).limit(limit))).map(toNotice);
+}
+/** The signed-in person's inbox: only notifications sent to them, newest first. */
+export async function myNotifications(limit = 50): Promise<Notice[]> {
+  if (!live || !current) return [];
+  return (await run(sb().rpc('my_notifications', { p_limit: limit }))).map(toNotice);
 }
 export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[] } = {}) {
   await run(sb().rpc('send_notification', { p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null }));
