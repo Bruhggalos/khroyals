@@ -83,6 +83,24 @@ switches it over during prebuild. `ios/` is generated and gitignored, so don't e
 it by hand. After changing `app.json` plugins, regenerate it with
 `npx expo prebuild --platform ios --clean`.
 
+**Install on your own iPhone (release build).** Sign into Xcode with your Apple
+Developer account, plug in the phone and turn on *Settings → Privacy & Security →
+Developer Mode*. Build under a test app ID so the real `com.khroyals.app` stays free
+for whoever publishes the app (`app.config.js` reads the two variables; your Team ID
+is in Xcode → Settings → Accounts):
+
+```bash
+APPLE_TEAM_ID=YOURTEAMID IOS_BUNDLE_ID=com.khroyals.app.dev npx expo prebuild --platform ios --clean
+cd ios && xcodebuild -workspace KHRoyals.xcworkspace -scheme KHRoyals -configuration Release \
+  -destination id=YOUR_DEVICE_UDID -derivedDataPath build -allowProvisioningUpdates -allowProvisioningDeviceRegistration build
+xcrun devicectl device install app --device YOUR_DEVICE_UDID build/Build/Products/Release-iphoneos/KHRoyals.app
+```
+
+`xcrun devicectl list devices` shows the UDID. Use `xcodebuild` rather than
+`npx expo run:ios --device` for this: only `-allowProvisioningUpdates` lets Xcode
+create the signing profile and register the phone. Release builds run without the
+Mac, and the web app's `/khroyals` prefix is kept out of them (see `app.config.js`).
+
 ### Web
 
 ```bash

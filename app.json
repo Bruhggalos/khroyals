@@ -38,7 +38,8 @@
           "microphonePermission": false
         }
       ],
-      "./plugins/withSceneLifecycle"
+      "./plugins/withSceneLifecycle",
+      "./plugins/withGradleMemory"
     ],
     "experiments": {
       "typedRoutes": false,
