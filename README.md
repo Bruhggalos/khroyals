@@ -140,6 +140,16 @@ filter pushes (`app.wants_push`); the in-app inbox still lists everything.
 "I'm here" button (`modules/car-line`, using a per-phone car pass that can only do
 that). CarPlay waits on Apple's Driving Task entitlement.
 
+**Stats.** The app records who saw each post (`record_post_views`, once per person
+plus repeat counts) and who opened each notification. Authors and group moderators
+(admins with *groups.manage* too) get **📊 Stats** on a post (`post_stats`: % of the
+group who saw it, views, reactions, replies, poll votes, followers, push opens, views
+by day, who saw it) and a **Group stats** screen (`group_post_stats`); the portal's
+notification history shows opens. **Following:** authors and repliers follow a post
+automatically; anyone can follow/unfollow (🔔), and new replies notify followers
+(`app.notify_reply`). My profile toggles: school announcements (urgent ones always
+push), group posts, replies, Marketplace, Volunteering, quiet hours, per-group level.
+
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).

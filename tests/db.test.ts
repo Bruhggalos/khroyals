@@ -753,3 +753,82 @@ test('car screen: a parent\'s car pass shows and checks in only their own childr
   await one(`select revoke_car_pass('${pass}')`);
   await rejects(`select car_carline_status('${pass}')`, /sign in again/);
 });
+
+test('post stats: views are counted once per person and only the author and moderators see them', async () => {
+  const vb = id('g-vb');
+  await as('u-vbcoach');
+  const post = await one(`select id from create_post(${vb}, 'announcement', 'Uniforms are in the gym office', 'Uniform pickup')`);
+  // Teammates see it (twice in a row counts once); the author's own views don't count.
+  for (const who of ['u-s05', 'u-s05', 'u-vbcoach']) {
+    await as(who);
+    await one(`select record_post_views(array['${post.id}'::uuid])`);
+  }
+  await as('u-s05');
+  await one(`select toggle_reaction('${post.id}', '👍')`).catch(() => null);
+  await rejects(`select post_stats('${post.id}')`, /author and the group's moderators/);
+  await rejects(`select * from post_views`, /permission denied/);
+  // Someone outside the group can't record a view of it.
+  await as('u-p02');
+  await one(`select record_post_views(array['${post.id}'::uuid])`);
+
+  await as('u-vbcoach');
+  const st = (await one(`select post_stats('${post.id}') as s`)).s;
+  assert.equal(st.viewers, 1, 'one person saw it');
+  assert.equal(st.views, 1);
+  assert.ok(st.audience >= st.viewers, 'out of the group');
+  assert.equal(st.seenBy.length, 1);
+  assert.equal(st.followers, 1, 'the author follows their post');
+  const list = await rows(`select * from group_post_stats(${vb})`);
+  assert.equal(Number(list.find((r) => r.post_id === post.id)?.viewers), 1);
+  await as('u-admin', true);
+  assert.equal((await one(`select post_stats('${post.id}') as s`)).s.viewers, 1, 'admins who manage groups see it too');
+});
+
+test('replies notify followers, who can unfollow; settings decide what pushes', async () => {
+  const vb = id('g-vb');
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [coach, s05] = [await uid('u-vbcoach'), await uid('u-s05')];
+  await as('u-vbcoach');
+  const post = await one(`select id from create_post(${vb}, 'message', 'Who can bring water Friday?')`);
+  await as('u-s05');
+  await one(`select add_comment('${post.id}', 'I can!')`);
+  await asSuper();
+  const toCoach = await rows(`select * from notifications where post_id = '${post.id}' and audience = 'user'`);
+  assert.deepEqual(toCoach.map((n) => n.user_id), [coach], 'the author hears about the reply; the replier does not');
+  assert.equal(toCoach[0].data.reply, true);
+  await as('u-vbcoach');
+  assert.equal((await rows(`select * from my_notifications() where post_id = '${post.id}' and audience = 'user'`)).length, 1);
+
+  // The replier now follows too; the coach's answer reaches them, until they unfollow.
+  await one(`select add_comment('${post.id}', 'Thanks!')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from notifications where post_id = '${post.id}' and user_id = '${s05}'`)).length, 1);
+  await as('u-s05');
+  await one(`select set_post_follow('${post.id}', false)`);
+  await as('u-vbcoach');
+  await one(`select add_comment('${post.id}', 'See you Friday')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from notifications where post_id = '${post.id}' and user_id = '${s05}'`)).length, 1, 'unfollowed');
+
+  // Opening a notification is counted for its sender.
+  await as('u-vbcoach');
+  const mine = (await rows(`select id from my_notifications() where post_id = '${post.id}'`)).map((n) => n.id);
+  await one(`select mark_notifications_opened(array[${mine.map((x) => `'${x}'::uuid`).join(',')}])`);
+  assert.equal((await rows(`select * from notification_opens`)).length, mine.length);
+
+  // Push choices: replies and non-urgent school notifications can be turned off; urgent ones can't.
+  await as('u-p01');
+  await one(`select * from update_my_settings(true, true, true, null, null, false, false)`);
+  await as('u-admin', true);
+  const normal = await one(`select * from send_notification('Spirit week', 'Wear blue Friday.', 'roles', null, array['parent'])`);
+  const urgent = await one(`select * from send_notification('Closed', 'Snow day tomorrow.', 'roles', null, array['parent'], true)`);
+  const counts = await rows(`select * from notification_open_counts(array['${normal.id}'::uuid])`);
+  assert.equal(Number(counts[0].opened), 0);
+  await asSuper();
+  const rosa = await uid('u-p01');
+  const wants = async (n: string) => (await one(`select app.wants_push(n, '${rosa}') as w from notifications n where id = '${n}'`)).w;
+  assert.equal(await wants(normal.id), false, 'school notifications turned off');
+  assert.equal(await wants(urgent.id), true, 'urgent ones still come through');
+  assert.equal(await wants(toCoach[0].id), false, 'replies turned off');
+  await db.exec(`delete from user_settings`);
+});

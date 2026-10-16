@@ -166,14 +166,17 @@ export default function Profile() {
       <Card>
         <H>Notifications</H>
         <P muted>Choose what reaches your phone. Everything still shows under the bell in the app.</P>
-        <Toggle label="School announcements" hint="Closures and urgent news always come through." value disabled />
+        <Toggle label="School announcements" hint="News from the school office. Urgent ones (closures, safety) always come through." value={settings.pushSchool}
+          onChange={(v) => saveSettings({ ...settings, pushSchool: v })} />
         <Toggle label="Group posts" hint="Fine-tune each group below." value={settings.pushGroups}
           onChange={(v) => saveSettings({ ...settings, pushGroups: v })} />
+        <Toggle label="Replies" hint="Replies on posts you follow. You follow your own posts and ones you reply to; tap 🔔 on any post to change." value={settings.pushReplies}
+          onChange={(v) => saveSettings({ ...settings, pushReplies: v })} />
         {adult && <Toggle label="Marketplace" hint="Dibs, offers and sales on your items." value={settings.pushMarketplace}
           onChange={(v) => saveSettings({ ...settings, pushMarketplace: v })} />}
         {adult && <Toggle label="Volunteering" hint="Sign-ups and changes to opportunities." value={settings.pushVolunteer}
           onChange={(v) => saveSettings({ ...settings, pushVolunteer: v })} />}
-        <Toggle label="Quiet hours" hint="No notifications overnight (school announcements still come through)." value={quiet.on}
+        <Toggle label="Quiet hours" hint="No notifications overnight (urgent school announcements still come through)." value={quiet.on}
           onChange={(on) => { const q = { ...quiet, on }; setQuiet(q); saveQuiet(q); }} />
         {quiet.on && (
           <>

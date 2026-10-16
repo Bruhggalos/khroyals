@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import { myNotifications, session, type Notice, type Person } from '../src/api/connect';
+import { markNotificationsOpened, myNotifications, openedNotifications, session, type Notice, type Person } from '../src/api/connect';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
 
 /** "5 min ago", "3 h ago", "2 d ago", then the date. */
@@ -18,13 +18,19 @@ function timeAgo(iso: string) {
 export default function Notifications() {
   const [person, setPerson] = useState<Person | null | undefined>(undefined);
   const [items, setItems] = useState<Notice[]>([]);
+  const [opened, setOpened] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const p = await session();
-      setItems(p && !p.pending ? await myNotifications() : []);
+      const list = p && !p.pending ? await myNotifications() : [];
+      setItems(list);
+      // Show what's new this visit, then count everything listed as opened (senders see the totals).
+      const ids = list.map((n) => n.id);
+      setOpened(await openedNotifications(ids).catch(() => new Set<string>()));
+      markNotificationsOpened(ids).catch(() => {});
       setPerson(p);
       setError(null);
     } catch (e: any) {
@@ -69,8 +75,10 @@ export default function Notifications() {
         const href = listingId ? `/market/${listingId}` : opportunityId ? `/volunteer/${opportunityId}`
           : groupId ? `/group/${groupId}` : null;
         return (
-          <Card onPress={href ? () => router.push(href) : undefined}>
+          <Card onPress={href ? () => router.push(href) : undefined}
+            style={opened.has(n.id) ? undefined : { borderColor: C.primary, borderLeftWidth: 4 }}>
             <View style={[s.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+              {!opened.has(n.id) && <View accessibilityLabel="New" style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.primary, marginTop: 6 }} />}
               <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{n.title}</Text>
               <Text style={{ fontSize: 13, color: C.muted }}>{timeAgo(n.createdAt)}</Text>
             </View>

@@ -1,14 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, Text, View, type ViewToken } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
-  addComment, createPost, getComments, getGroup, getUser, live, me, moderatePost, subscribeGroup, toggleReaction, votePoll,
-  type GroupView,
+  addComment, createPost, getComments, getGroup, getUser, live, me, moderatePost, myFollows, recordPostViews, setPostFollow,
+  subscribeGroup, toggleReaction, votePoll, type GroupView,
 } from '../../../src/api/connect';
 import type { Comment, Post } from '../../../src/comms/types';
 import { Avatar, Button, C, Card, Chip, Input, Loading, P, s, useBottomInset } from '../../../src/ui';
 
 const QUICK_REACTIONS = ['👍', '❤️', '🎉', '🙏'];
+
+const HeaderIcon = ({ name, label, onPress }: { name: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) => (
+  <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label}>
+    <Ionicons name={name} size={22} color="#fff" />
+  </Pressable>
+);
 
 function Author({ id, anon }: { id: string | null; anon?: boolean }) {
   const u = id ? getUser(id) : null;
@@ -21,7 +28,9 @@ function Author({ id, anon }: { id: string | null; anon?: boolean }) {
   );
 }
 
-function PostCard({ p, view, onChange }: { p: Post & { anonymous?: boolean }; view: GroupView; onChange: () => void }) {
+function PostCard({ p, view, onChange, following, onFollow }: {
+  p: Post & { anonymous?: boolean }; view: GroupView; onChange: () => void; following: boolean; onFollow: (follow: boolean) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [reply, setReply] = useState('');
   const [comments, setComments] = useState<Comment[] | null>(null);
@@ -75,6 +84,18 @@ function PostCard({ p, view, onChange }: { p: Post & { anonymous?: boolean }; vi
           {open ? 'Hide replies' : 'Replies'}{comments ? ` (${comments.length})` : ''}
         </Text>
       </View>
+      {live && p.status === 'published' && (
+        <View style={[s.row, { flexWrap: 'wrap', gap: 16 }]}>
+          <Text style={{ color: following ? C.primary : C.muted, fontWeight: '600' }} accessibilityRole="button"
+            onPress={() => onFollow(!following)}>
+            {following ? '🔔 Following replies' : '🔕 Follow replies'}
+          </Text>
+          {(mod || (!!myId && p.authorId === myId)) && (
+            <Text style={{ color: C.primary, fontWeight: '600' }} accessibilityRole="button"
+              onPress={() => router.push(`/post-stats/${p.id}`)}>📊 Stats</Text>
+          )}
+        </View>
+      )}
       {mod && (
         <View style={[s.row, { flexWrap: 'wrap' }]}>
           {p.status === 'pending' && <Text style={{ color: '#047857', fontWeight: '700' }} onPress={() => act('approve')}>Approve</Text>}
@@ -113,8 +134,19 @@ export default function GroupScreen() {
   const [poll, setPoll] = useState<string[] | null>(null);
   const bottomInset = useBottomInset();
 
-  const reload = useCallback(() => getGroup(id).then(setView).catch((e) => Alert.alert('Could not open group', e.message)), [id]);
+  const [follows, setFollows] = useState<Set<string>>(new Set());
+  const reload = useCallback(() => getGroup(id).then((v) => {
+    setView(v);
+    myFollows(v.posts.map((p) => p.id)).then(setFollows).catch(() => {});
+  }).catch((e) => Alert.alert('Could not open group', e.message)), [id]);
   useEffect(() => { reload(); return subscribeGroup(id, reload); }, [id, reload]);
+  // Count a view when a post is mostly on screen (for its author's stats).
+  const onViewable = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) =>
+    recordPostViews(viewableItems.map((v) => (v.item as Post).id))).current;
+  const follow = (postId: string, on: boolean) => {
+    setFollows((f) => { const n = new Set(f); if (on) n.add(postId); else n.delete(postId); return n; });
+    setPostFollow(postId, on).catch((e) => { Alert.alert('Not allowed', e.message); reload(); });
+  };
   if (!view) return <Loading />;
 
   const { group, abilities, posts, myRole } = view;
@@ -140,14 +172,16 @@ export default function GroupScreen() {
       <Stack.Screen options={{
         title: group.name,
         headerRight: () => (
-          <View style={[s.row, { gap: 14 }]}>
-            {live && abilities.moderate && <Pressable onPress={() => router.push(`/group/${id}/members`)}><Text style={{ color: '#fff', fontWeight: '700' }}>Members</Text></Pressable>}
-            {abilities.editSettings && <Pressable onPress={() => router.push(`/group/${id}/settings`)}><Text style={{ color: '#fff', fontWeight: '700' }}>Settings</Text></Pressable>}
+          <View style={[s.row, { gap: 18 }]}>
+            {live && abilities.moderate && <HeaderIcon name="stats-chart-outline" label="Group stats" onPress={() => router.push(`/group/${id}/stats`)} />}
+            {live && abilities.moderate && <HeaderIcon name="people-outline" label="Members" onPress={() => router.push(`/group/${id}/members`)} />}
+            {abilities.editSettings && <HeaderIcon name="settings-outline" label="Group settings" onPress={() => router.push(`/group/${id}/settings`)} />}
           </View>
         ),
       }} />
       <FlatList
         data={posts} keyExtractor={(p) => p.id} contentContainerStyle={s.pad}
+        onViewableItemsChanged={onViewable} viewabilityConfig={{ itemVisiblePercentThreshold: 60, minimumViewTime: 800 }}
         ListHeaderComponent={
           <View style={{ gap: 6 }}>
             {!!group.description && <P muted>{group.description}</P>}
@@ -158,7 +192,9 @@ export default function GroupScreen() {
             </View>
           </View>}
         ListEmptyComponent={<P muted>Nothing here yet.</P>}
-        renderItem={({ item }) => <PostCard p={item} view={view} onChange={reload} />}
+        renderItem={({ item }) => (
+          <PostCard p={item} view={view} onChange={reload} following={follows.has(item.id)} onFollow={(on) => follow(item.id, on)} />
+        )}
       />
       <View style={{ padding: 12, paddingBottom: 12 + bottomInset, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: '#fff', gap: 8 }}>
         {composer.allowed ? (

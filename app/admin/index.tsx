@@ -5,11 +5,11 @@
  * verification (MfaGate).
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import {
   adminClearAvatar, adminDeleteRole, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
-  adminSetCarlineDuty, adminSetDirector, adminSetVolunteerLead, adminUpdateProfile, getUser, listAudit, listMyGroups, listNotifications, me, permissionCatalog,
+  adminSetCarlineDuty, adminSetDirector, adminSetVolunteerLead, adminUpdateProfile, getUser, listAudit, listMyGroups, listNotifications, me, notificationOpenCounts, permissionCatalog,
   sendNotification,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo,
 } from '../../src/api/connect';
@@ -361,12 +361,17 @@ function Notifications({ access }: { access: Access }) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupId, setGroupId] = useState<string>();
   const [history, setHistory] = useState<Notice[] | null>(null);
-  const load = useCallback(() => listNotifications(30).then(setHistory), []);
+  const [opens, setOpens] = useState<Record<string, number>>({});
+  const [urgent, setUrgent] = useState(false);
+  const load = useCallback(() => listNotifications(30).then((h) => {
+    setHistory(h);
+    notificationOpenCounts(h.map((n) => n.id)).then(setOpens).catch(() => {});
+  }), []);
   useEffect(() => { load(); listMyGroups().then(setGroups); }, [load]);
   const canSend = access.permissions.includes('push.send');
 
   const send = () => confirm('Send notification?', `"${title}" goes to ${audience === 'everyone' ? 'everyone' : audience === 'roles' ? roles.join(', ') : groups.find((g) => g.id === groupId)?.name}.`,
-    () => sendNotification(title, body, audience, { roles, groupId }).then(() => { setTitle(''); setBody(''); load(); }).catch(fail));
+    () => sendNotification(title, body, audience, { roles, groupId, urgent }).then(() => { setTitle(''); setBody(''); setUrgent(false); load(); }).catch(fail));
 
   return (
     <View style={{ gap: 12 }}>
@@ -388,6 +393,15 @@ function Notifications({ access }: { access: Access }) {
           )}
           <Field label="Title" placeholder="e.g. Weather closure" value={title} onChangeText={setTitle} maxLength={80} />
           <Field label="Message" multiline value={body} onChangeText={setBody} maxLength={400} style={{ minHeight: 80 }} />
+          {audience !== 'group' && (
+            <View style={[s.row, { justifyContent: 'space-between' }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '600', color: C.ink }}>Urgent</Text>
+                <P muted>Reaches everyone, even people who turned off school notifications or are in quiet hours. Use for closures and safety.</P>
+              </View>
+              <Switch value={urgent} onValueChange={setUrgent} trackColor={{ true: C.danger }} accessibilityLabel="Urgent" />
+            </View>
+          )}
           <Button label="Send" onPress={send} disabled={!title.trim() || !body.trim() || (audience === 'group' && !groupId) || (audience === 'roles' && !roles.length)} />
           <P muted>Goes to everyone in the audience who has the app with notifications on, and appears in their notification list.</P>
         </Card>
@@ -398,6 +412,7 @@ function Notifications({ access }: { access: Access }) {
           <Text style={{ fontWeight: '700', color: C.ink }}>{n.title}</Text>
           <P>{n.body}</P>
           <P muted>{new Date(n.createdAt).toLocaleString()} · {n.audience} · {n.status}{n.status === 'sent' ? ` to ${n.sentCount} device${n.sentCount === 1 ? '' : 's'}` : ''}</P>
+          {opens[n.id] !== undefined && <P muted>👁 Opened by {opens[n.id]} {opens[n.id] === 1 ? 'person' : 'people'}</P>}
         </Card>
       ))}
     </View>

@@ -635,15 +635,19 @@ const toNotice = (n: any): Notice => ({
 /** Every notification this person may see (admin portal history). */
 export async function listNotifications(limit = 50): Promise<Notice[]> {
   if (!live || !current) return [];
-  return (await run(sb().from('notifications').select('*').order('created_at', { ascending: false }).limit(limit))).map(toNotice);
+  // School-wide and group notifications (personal ones like reply alerts stay out of the portal history).
+  return (await run(sb().from('notifications').select('*').neq('audience', 'user')
+    .order('created_at', { ascending: false }).limit(limit))).map(toNotice);
 }
 /** The signed-in person's inbox: only notifications sent to them, newest first. */
 export async function myNotifications(limit = 50): Promise<Notice[]> {
   if (!live || !current) return [];
   return (await run(sb().rpc('my_notifications', { p_limit: limit }))).map(toNotice);
 }
-export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[] } = {}) {
-  await run(sb().rpc('send_notification', { p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null }));
+export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[]; urgent?: boolean } = {}) {
+  await run(sb().rpc('send_notification', {
+    p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null, p_urgent: !!opts.urgent,
+  }));
 }
 export async function setNotificationPref(groupId: string, pref: 'all' | 'mentions' | 'none') {
   await run(sb().rpc('set_notification_pref', { p_group: groupId, p_pref: pref }));
@@ -657,7 +661,10 @@ export async function unregisterPushToken(token: string) {
 
 // ---------------------------------------------------------------- my profile
 
-export type MySettings = { pushGroups: boolean; pushMarketplace: boolean; pushVolunteer: boolean; quietStart: string | null; quietEnd: string | null };
+export type MySettings = {
+  pushSchool: boolean; pushGroups: boolean; pushReplies: boolean; pushMarketplace: boolean; pushVolunteer: boolean;
+  quietStart: string | null; quietEnd: string | null;
+};
 export type GroupPref = { groupId: string; name: string; icon: string; pref: 'all' | 'mentions' | 'none' };
 
 export async function updateMyName(first: string, last: string) {
@@ -686,9 +693,12 @@ export async function adminClearAvatar(userId: string) {
   await session();
 }
 
-const DEFAULT_SETTINGS: MySettings = { pushGroups: true, pushMarketplace: true, pushVolunteer: true, quietStart: null, quietEnd: null };
+const DEFAULT_SETTINGS: MySettings = {
+  pushSchool: true, pushGroups: true, pushReplies: true, pushMarketplace: true, pushVolunteer: true, quietStart: null, quietEnd: null,
+};
 const toSettings = (r: any): MySettings => (r ? {
-  pushGroups: r.push_groups, pushMarketplace: r.push_marketplace, pushVolunteer: r.push_volunteer,
+  pushSchool: r.push_school ?? true, pushGroups: r.push_groups, pushReplies: r.push_replies ?? true,
+  pushMarketplace: r.push_marketplace, pushVolunteer: r.push_volunteer,
   quietStart: r.quiet_start?.slice(0, 5) ?? null, quietEnd: r.quiet_end?.slice(0, 5) ?? null,
 } : DEFAULT_SETTINGS);
 export async function mySettings(): Promise<MySettings> {
@@ -698,7 +708,7 @@ export async function mySettings(): Promise<MySettings> {
 export async function updateMySettings(st: MySettings): Promise<MySettings> {
   return toSettings(await run(sb().rpc('update_my_settings', {
     p_push_groups: st.pushGroups, p_push_marketplace: st.pushMarketplace, p_push_volunteer: st.pushVolunteer,
-    p_quiet_start: st.quietStart, p_quiet_end: st.quietEnd,
+    p_quiet_start: st.quietStart, p_quiet_end: st.quietEnd, p_push_school: st.pushSchool, p_push_replies: st.pushReplies,
   })));
 }
 /** Your notification level in each of your groups (the group's default when you haven't chosen). */
@@ -719,4 +729,67 @@ export async function createCarPass(): Promise<string> {
 }
 export async function revokeCarPass(token: string) {
   await run(sb().rpc('revoke_car_pass', { p_token: token }));
+}
+
+// ---------------------------------------------------------------- stats & following
+
+const seen = new Set<string>();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+/** Note that these posts were on screen; sent in small batches. */
+export function recordPostViews(postIds: string[]) {
+  if (!live || !current) return;
+  postIds.forEach((id) => seen.add(id));
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    const ids = [...seen];
+    seen.clear(); flushTimer = null;
+    sb().rpc('record_post_views', { p_posts: ids }).then(() => {}, () => {});
+  }, 1500);
+}
+
+export type PostStats = {
+  postId: string; groupId: string; title: string; createdAt: string;
+  audience: number; viewers: number; views: number; reactions: Record<string, number>;
+  replies: number; repliers: number; pollVotes: number; score: number; followers: number;
+  notificationOpens: number; pushDevices: number;
+  byDay: { day: string; viewers: number }[];
+  seenBy: { name: string; role: string; at: string }[];
+};
+export async function postStats(postId: string): Promise<PostStats> {
+  return run(sb().rpc('post_stats', { p_post: postId })) as Promise<PostStats>;
+}
+export type GroupPostStat = { postId: string; title: string; kind: string; createdAt: string; author: string; viewers: number; audience: number; reactions: number; replies: number };
+export async function groupPostStats(groupId: string): Promise<GroupPostStat[]> {
+  const rows: any[] = await run(sb().rpc('group_post_stats', { p_group: groupId, p_limit: 100 }));
+  return rows.map((r) => ({
+    postId: r.post_id, title: r.title, kind: r.kind, createdAt: r.created_at, author: r.author,
+    viewers: Number(r.viewers), audience: Number(r.audience), reactions: Number(r.reactions), replies: Number(r.replies),
+  }));
+}
+
+/** Which of these posts the person follows for replies. */
+export async function myFollows(postIds: string[]): Promise<Set<string>> {
+  if (!live || !current || !postIds.length) return new Set();
+  const rows: any[] = await run(sb().from('post_follows').select('post_id, following').eq('user_id', current.id).in('post_id', postIds));
+  return new Set(rows.filter((r) => r.following).map((r) => r.post_id));
+}
+export async function setPostFollow(postId: string, follow: boolean) {
+  await run(sb().rpc('set_post_follow', { p_post: postId, p_follow: follow }));
+}
+
+export async function markNotificationsOpened(ids: string[]) {
+  if (!live || !current || !ids.length) return;
+  await sb().rpc('mark_notifications_opened', { p_ids: ids });
+}
+/** Notification ids this person has already opened. */
+export async function openedNotifications(ids: string[]): Promise<Set<string>> {
+  if (!live || !current || !ids.length) return new Set();
+  const rows: any[] = await run(sb().from('notification_opens').select('notification_id').in('notification_id', ids));
+  return new Set(rows.map((r) => r.notification_id));
+}
+/** For senders: how many people opened each notification. */
+export async function notificationOpenCounts(ids: string[]): Promise<Record<string, number>> {
+  if (!live || !ids.length) return {};
+  const rows: any[] = await run(sb().rpc('notification_open_counts', { p_ids: ids }));
+  return Object.fromEntries(rows.map((r) => [r.id, Number(r.opened)]));
 }

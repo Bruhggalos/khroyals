@@ -13,7 +13,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { registerPushToken, unregisterPushToken } from '../api/connect';
+import { markNotificationsOpened, registerPushToken, session, unregisterPushToken } from '../api/connect';
 import { handleCarlineResponse } from '../carline/autoCheckIn';
 import appJson from '../../app.json';
 
@@ -58,6 +58,8 @@ export function handleNotificationTaps(): () => void {
     Notifications.clearLastNotificationResponse();  // so the next launch doesn't replay it
     if (handleCarlineResponse(r)) return;
     const data: any = r.notification.request.content.data;
+    // Count the open for the sender (the app may have just started, so load the session first).
+    if (data?.notificationId) session().then(() => markNotificationsOpened([data.notificationId])).catch(() => {});
     if (data?.listingId) router.push(`/market/${data.listingId}`);
     else if (data?.opportunityId) router.push(`/volunteer/${data.opportunityId}`);
     else if (data?.groupId) router.push(`/group/${data.groupId}`);
