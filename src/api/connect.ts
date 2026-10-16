@@ -23,7 +23,7 @@ export type Abilities = {
   moderate: boolean; editSettings: boolean; createEvents: boolean;
 };
 export type GroupView = { group: Group; myRole: GroupRole | null; posts: Post[]; abilities: Abilities };
-export type Person = User & { email?: string | null; pending?: boolean };
+export type Person = User & { email?: string | null; pending?: boolean; carlineDuty?: boolean };
 export type GroupEvent = {
   id: string; groupId: string | null; groupName?: string; groupIcon?: string;
   title: string; description?: string | null; date: string; endDate: string | null;
@@ -47,7 +47,7 @@ let current: Person | null = null;
 const toPerson = (p: any): Person => ({
   id: p.id, firstName: p.first_name ?? '', lastName: p.last_name ?? '', schoolRole: p.school_role as SchoolRole,
   avatar: p.avatar_url ?? `https://i.pravatar.cc/120?u=${p.id}`, grade: p.grade ?? undefined,
-  email: p.email, pending: p.school_role == null,
+  email: p.email, pending: p.school_role == null, carlineDuty: !!p.carline_duty,
 });
 
 const toGroup = (g: any): Group => ({
@@ -261,6 +261,47 @@ export async function createEvent(e: NewEvent) {
 
 export async function deleteEvent(id: string) { await run(sb().from('events').delete().eq('id', id)); }
 
+// ---------------------------------------------------------------- car line
+
+export type Pickup = {
+  id: string; studentId: string; guardianId: string | null; status: 'waiting' | 'picked_up' | 'cancelled';
+  arrivedAt: string; pickedUpAt: string | null; pickedUpBy: string | null;
+};
+const toPickup = (r: any): Pickup => ({
+  id: r.id, studentId: r.student_id, guardianId: r.guardian_id, status: r.status,
+  arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by,
+});
+
+/** Staff the office has put on car line duty (the database checks the same rule). */
+export const onCarlineDuty = (p: Person | null) => !!p?.carlineDuty && ['admin', 'teacher', 'staff'].includes(p.schoolRole);
+
+/** Students linked to the signed-in parent, from the directory loaded by session(). */
+export async function myChildren(): Promise<Person[]> {
+  if (!live || !current) return [];
+  const links = await run(sb().from('guardians').select('student_id').eq('guardian_id', current.id));
+  return (links as any[]).map((l) => directory.get(l.student_id)).filter(Boolean) as Person[];
+}
+/** Today's car line: your children's check-ins, or everyone's for staff on duty. */
+export async function carlineToday(): Promise<Pickup[]> {
+  if (!live || !current) return [];
+  return (await run(sb().rpc('carline_today'))).map(toPickup);
+}
+export async function carlineCheckIn(studentIds: string[]) {
+  await run(sb().rpc('carline_check_in', { p_students: studentIds }));
+}
+export async function carlineCancel(pickupId: string) { await run(sb().rpc('carline_cancel', { p_pickup: pickupId })); }
+export async function carlineConfirm(pickupId: string) { await run(sb().rpc('carline_confirm', { p_pickup: pickupId })); }
+export async function carlineReopen(pickupId: string) { await run(sb().rpc('carline_reopen', { p_pickup: pickupId })); }
+
+/** Live car line changes (row-level security limits them to what this person may see). */
+export function subscribeCarline(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel('carline')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'carline_pickups' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
 // ---------------------------------------------------------------- admin
 
 export async function adminListPeople(): Promise<Person[]> {
@@ -271,6 +312,9 @@ export async function adminUpdateProfile(userId: string, role: SchoolRole | null
 }
 export async function adminLinkGuardian(guardianId: string, studentId: string, link = true) {
   await run(sb().rpc('admin_link_guardian', { p_guardian: guardianId, p_student: studentId, p_link: link }));
+}
+export async function adminSetCarlineDuty(userId: string, on: boolean) {
+  await run(sb().rpc('admin_set_carline_duty', { p_user: userId, p_on: on }));
 }
 export async function adminGuardianLinks(): Promise<{ guardianId: string; studentId: string }[]> {
   return (await run(sb().from('guardians').select('*'))).map((g: any) => ({ guardianId: g.guardian_id, studentId: g.student_id }));

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack } from 'expo-router';
 import {
-  adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminUpdateProfile, listAudit,
+  adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminSetCarlineDuty, adminUpdateProfile, listAudit,
   listMyGroups, listNotifications, me, permissionCatalog, sendNotification, transferDirector,
   type Access, type AdminPerson, type Notice, type PermissionInfo,
 } from '../../src/api/connect';
@@ -64,6 +64,7 @@ function PersonCard({ p, people, links, access, onChange }: {
           <P muted>{p.email}{p.grade != null ? ` · grade ${p.grade}` : ''}</P>
         </View>
         {p.adminTier && <Chip label={TIER_LABEL[p.adminTier]} color={C.accent} />}
+        {p.carlineDuty && <Chip label="Car line" color="#15803D" />}
         {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={p.schoolRole} />}
       </View>
       {(children.length > 0 || parents.length > 0) && (
@@ -75,6 +76,12 @@ function PersonCard({ p, people, links, access, onChange }: {
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {roleOptions.map((r) => pill(r, p.schoolRole === r && !p.pending, () => setRole(r)))}
               {!p.pending && p.id !== me()?.id && pill('revoke access', false, () => confirm('Revoke access?', `${p.firstName} will lose access to Royals Connect.`, () => setRole(null)), C.danger)}
+            </View>
+          )}
+          {!p.pending && ['admin', 'teacher', 'staff'].includes(p.schoolRole) && can('people.family') && (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>
+              {pill(p.carlineDuty ? '🚗 On car line duty' : '🚗 Put on car line duty', !!p.carlineDuty,
+                () => adminSetCarlineDuty(p.id, !p.carlineDuty).then(onChange).catch(fail), '#15803D')}
             </View>
           )}
           {p.schoolRole === 'student' && can('people.family') && (

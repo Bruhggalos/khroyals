@@ -298,3 +298,64 @@ test('inbox: my_notifications lists only what was sent to me', async () => {
   await asSuper();
   await db.exec(`update memberships set notification = 'none' where group_id = ${vb} and user_id = ${id('u-s05')}`);
 });
+
+test('car line: parents check in their own children; staff on duty see the line and confirm pickups', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, eng] = [await uid('u-s01'), await uid('u-eng')];
+  const today = async (who: string) => { await as(who); return rows(`select * from carline_today()`); };
+
+  // Rosa Reyes (u-p01) is Ava's (u-s01) parent.
+  await as('u-p01');
+  const [checkin] = await rows(`select * from carline_check_in()`);
+  assert.equal(checkin.student_id, ava);
+  assert.equal(checkin.status, 'waiting');
+  assert.equal((await rows(`select * from carline_check_in(array[${id('u-s01')}])`)).length, 1, 'checking in twice keeps one place in line');
+  await rejects(`select * from carline_check_in(array[${id('u-s02')}])`, /own children/);
+  await rejects(`insert into carline_pickups (student_id) values (${id('u-s02')})`, /permission denied/);
+
+  // Other parents and staff who aren't on duty see nothing; the demo Teacher (u-eng) is on duty.
+  assert.equal((await today('u-p02')).length, 0);
+  assert.equal((await today('u-sci')).length, 0);
+  await as('u-sci');
+  await rejects(`select carline_confirm('${checkin.id}')`, /car line duty/);
+  assert.deepEqual((await today('u-eng')).map((r) => r.student_id), [ava]);
+  await as('u-eng');
+  const done = await one(`select * from carline_confirm('${checkin.id}')`);
+  assert.equal(done.status, 'picked_up');
+  assert.equal(done.picked_up_by, eng);
+  await rejects(`select carline_confirm('${checkin.id}')`, /isn't waiting/);
+  assert.equal((await today('u-p01'))[0].status, 'picked_up', 'the parent sees the pickup');
+
+  // Staff can undo a mis-tap; parents can cancel, but only for their own children.
+  await as('u-eng');
+  assert.equal((await one(`select * from carline_reopen('${checkin.id}')`)).status, 'waiting');
+  await as('u-p02');
+  await rejects(`select carline_cancel('${checkin.id}')`, /can't be cancelled/);
+  await as('u-p01');
+  await one(`select carline_cancel('${checkin.id}')`);
+  assert.equal((await today('u-eng')).filter((r) => r.status === 'waiting').length, 0);
+
+  // The line starts fresh each day.
+  await asSuper();
+  await db.exec(`insert into carline_pickups (student_id, day) values (${id('u-s01')}, app.school_today() - 1)`);
+  assert.equal((await today('u-p01')).length, 1, "only today's check-in");
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select * from carline_today()`, /permission denied/);
+});
+
+test('car line duty: office staff assign it, and only to staff', async () => {
+  await as('u-s01');
+  await rejects(`select admin_set_carline_duty(${id('u-sci')}, true)`, /permission/);
+  await as('u-admin', true);
+  await rejects(`select admin_set_carline_duty(${id('u-p02')}, true)`, /Only staff/);
+  await one(`select admin_set_carline_duty(${id('u-sci')}, true)`);
+  assert.equal((await one(`select carline_duty from admin_list_people() where id = ${id('u-sci')}`)).carline_duty, true);
+  await as('u-sci');
+  assert.ok((await rows(`select * from carline_today()`)).length > 0, 'now sees the line');
+  await as('u-admin', true);
+  await one(`select admin_set_carline_duty(${id('u-sci')}, false)`);
+  await as('u-sci');
+  assert.equal((await rows(`select * from carline_today()`)).length, 0);
+});

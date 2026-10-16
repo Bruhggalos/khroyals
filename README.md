@@ -67,6 +67,7 @@ plugins/         Expo config plugins (withSceneLifecycle: iOS 27 UIScene life cy
 src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() later
 src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI
+src/carline/          Car Line parent and duty views
 app/                  expo-router screens (tabs: Home · News · Calendar · Connect · More)
 tests/                permission engine tests
 ```
@@ -126,6 +127,14 @@ Devices register after sign-in once the build has an Expo project id
 (`eas init` → `extra.eas.projectId`) and, on Android, Firebase credentials
 (`google-services.json`). Every notification also lands in the person's in-app
 inbox: the bell in the top bar (`app/notifications.tsx`, `my_notifications()`).
+
+**Car line** (Apps → Car Line). Parents tap *I'm in the car line* for the children
+they're picking up; staff on car line duty see arrivals live and tap *Picked up*
+(with Undo for mis-taps). Office staff with *Families & rosters* put staff on duty
+in Admin portal → People. Duty isn't an admin permission, so it needs no
+authenticator code. Check-ins are kept as the day's pickup record
+(`carline_pickups`), and the line starts fresh each day (Central time). The seed puts
+the demo Teacher on duty so the staff side can be tried.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo

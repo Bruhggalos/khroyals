@@ -52,6 +52,10 @@ for u in users:
     w(f"update public.profiles set first_name = {q(u['firstName'])}, last_name = {q(u['lastName'])}, "
       f"school_role = {q('staff' if u['schoolRole'] == 'admin' else u['schoolRole'])}, grade = {q(u.get('grade'))}, avatar_url = {q(u.get('avatar'))} "
       f"where id = {sid(u['id'])};")
+# The demo Teacher works the car line, so the duty screen can be tried. Like the
+# demo accounts themselves, remove this before real families use the app.
+for uid in ('u-eng',):
+    w(f"update public.profiles set carline_duty = true where id = {sid(uid)};")
 
 w('\n-- Rosters')
 for kind, key, lead in (('section', 'sections', 'teacherId'), ('team', 'teams', 'coachId'), ('club', 'clubs', 'sponsorId')):

@@ -28,6 +28,7 @@ update public.profiles set first_name = 'Luis', last_name = 'Ortiz', school_role
 update public.profiles set first_name = 'Tara', last_name = 'Ward', school_role = 'parent', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-p06' where id = app.seed_id('u-p06');
 update public.profiles set first_name = 'Priya', last_name = 'Shah', school_role = 'parent', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-p07' where id = app.seed_id('u-p07');
 update public.profiles set first_name = 'Mark', last_name = 'Diaz', school_role = 'parent', grade = null, avatar_url = 'https://i.pravatar.cc/120?u=u-p08' where id = app.seed_id('u-p08');
+update public.profiles set carline_duty = true where id = app.seed_id('u-eng');
 
 -- Rosters
 insert into public.rosters values ('eng10-p3', 'section', 'English 10 – Period 3', app.seed_id('u-eng')) on conflict (id) do nothing;
