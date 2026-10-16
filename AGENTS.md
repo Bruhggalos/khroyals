@@ -55,6 +55,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - Native modules (expo-video, react-native-webview, expo-notifications) mean
   **Expo Go isn't enough**; test with `npx expo run:android`, `npx expo run:ios`
   or the CI APK.
+- **The app entry is `index.js`**, not `expo-router/entry`: background tasks (the
+  car line geofence) must be defined before expo-router starts. Keep new
+  `TaskManager.defineTask` calls in modules it imports.
 - **iOS 27 requires the UIScene life cycle.** `plugins/withSceneLifecycle.js`
   rewrites the template AppDelegate during prebuild; `ios/` is generated, so never
   edit it by hand. If an Expo upgrade makes the plugin throw, check whether the

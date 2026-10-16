@@ -266,11 +266,18 @@ export async function deleteEvent(id: string) { await run(sb().from('events').de
 export type Pickup = {
   id: string; studentId: string; guardianId: string | null; status: 'waiting' | 'picked_up' | 'cancelled';
   arrivedAt: string; pickedUpAt: string | null; pickedUpBy: string | null;
+  /** 'arrival' = checked in automatically when the parent's phone reached the car line. */
+  via: 'app' | 'arrival';
 };
 const toPickup = (r: any): Pickup => ({
   id: r.id, studentId: r.student_id, guardianId: r.guardian_id, status: r.status,
-  arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by,
+  arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by, via: r.via ?? 'app',
 });
+export type CarlineConfig = { latitude: number; longitude: number; radius: number; start: string; end: string };
+export type Arrival =
+  | { state: 'open'; checkedIn: string[]; names: string[] }
+  | { state: 'early'; opensAt: string }
+  | { state: 'closed' };
 
 /** Staff the office has put on car line duty (the database checks the same rule). */
 export const onCarlineDuty = (p: Person | null) => !!p?.carlineDuty && ['admin', 'teacher', 'staff'].includes(p.schoolRole);
@@ -292,6 +299,10 @@ export async function carlineCheckIn(studentIds: string[]) {
 export async function carlineCancel(pickupId: string) { await run(sb().rpc('carline_cancel', { p_pickup: pickupId })); }
 export async function carlineConfirm(pickupId: string) { await run(sb().rpc('carline_confirm', { p_pickup: pickupId })); }
 export async function carlineReopen(pickupId: string) { await run(sb().rpc('carline_reopen', { p_pickup: pickupId })); }
+/** Where and when automatic check-in runs. */
+export async function carlineConfig(): Promise<CarlineConfig> { return run(sb().rpc('carline_config')) as Promise<CarlineConfig>; }
+/** The phone reached the car line: the server checks in the children if the line is open. */
+export async function carlineArrived(): Promise<Arrival> { return run(sb().rpc('carline_arrived')) as Promise<Arrival>; }
 
 /** Live car line changes (row-level security limits them to what this person may see). */
 export function subscribeCarline(onChange: () => void): () => void {

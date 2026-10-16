@@ -5,6 +5,7 @@ import {
   joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session, setMockUser, signOut,
   type Person,
 } from '../../src/api/connect';
+import { disableAutoCheckIn } from '../../src/carline/autoCheckIn';
 import { disablePush } from '../../src/comms/push';
 import { MODE_LABELS } from '../../src/comms/presets';
 import { canCreateGroup } from '../../src/comms/permissions';
@@ -68,7 +69,7 @@ export default function Connect() {
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Waiting for approval</Text>
           <P>Thanks, {person.firstName || person.email}. A Kingdom Heights administrator will confirm your account and add you to your groups.</P>
-          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(signOut).then(load)} />
+          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)} />
         </Card>
       </View>
     );
@@ -82,7 +83,7 @@ export default function Connect() {
           <View style={{ flex: 1 }}><P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P></View>
           <View style={[s.row, { gap: 14 }]}>
             <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => router.push('/set-password')}>Password</Text>
-            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(signOut).then(load)}>Sign out</Text>
+            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)}>Sign out</Text>
           </View>
         </View>
       ) : (

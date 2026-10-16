@@ -137,6 +137,17 @@ authenticator code. Check-ins are kept as the day's pickup record
 (`carline_pickups`), and the line starts fresh each day (Central time). The seed puts
 the demo Teacher on duty so the staff side can be tried.
 
+Parents can also turn on **Check in automatically** (phones only): a geofence
+around the car line (`src/carline/autoCheckIn.ts`) wakes the app on arrival, and
+`carline_arrived()` checks the children in if it's pickup time on a school day,
+followed by a "You're checked in" notification with *Cancel check-in*. Arriving up
+to 45 minutes early schedules a reminder for opening time instead. The zone and
+hours live in `app.settings` (`carline_latitude`, `carline_longitude`,
+`carline_radius_m`, `carline_start`, `carline_end`, `carline_days`,
+`carline_first_day`, `carline_last_day`); No School, Teacher In-Service and
+E-Learning days on the school calendar are skipped. The zone starts at the school's
+street address; move it to the car line entrance.
+
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo
 logins on the sign-in screen. Remove it (and the accounts) before real families use the app.

@@ -14,6 +14,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { registerPushToken, unregisterPushToken } from '../api/connect';
+import { handleCarlineResponse } from '../carline/autoCheckIn';
 import appJson from '../../app.json';
 
 Notifications.setNotificationHandler({
@@ -50,11 +51,17 @@ export async function disablePush() {
   token = null;
 }
 
-/** Open the group a tapped notification belongs to. Returns an unsubscribe function. */
+/** Act on a tapped notification (car line, or open its group). Returns an unsubscribe function. */
 export function handleNotificationTaps(): () => void {
   if (Platform.OS === 'web') return () => {};
-  const open = (data: any) => { if (data?.groupId) router.push(`/group/${data.groupId}`); };
-  Notifications.getLastNotificationResponseAsync().then((r) => r && open(r.notification.request.content.data));
-  const sub = Notifications.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
+  const open = (r: Notifications.NotificationResponse) => {
+    Notifications.clearLastNotificationResponse();  // so the next launch doesn't replay it
+    if (handleCarlineResponse(r)) return;
+    const data: any = r.notification.request.content.data;
+    if (data?.groupId) router.push(`/group/${data.groupId}`);
+  };
+  const last = Notifications.getLastNotificationResponse();
+  if (last) open(last);
+  const sub = Notifications.addNotificationResponseReceivedListener(open);
   return () => sub.remove();
 }

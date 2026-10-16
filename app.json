@@ -21,6 +21,15 @@
       "expo-router",
       "expo-video",
       "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "If you turn on automatic car line check-in, KH Royals uses your location in the background only to notice when you arrive at the school car line. Your location isn't shared with the school.",
+          "locationAlwaysPermission": "If you turn on automatic car line check-in, KH Royals uses your location in the background only to notice when you arrive at the school car line. Your location isn't shared with the school.",
+          "locationWhenInUsePermission": "KH Royals uses your location to notice when you arrive at the school car line.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
       "./plugins/withSceneLifecycle"
     ],
     "experiments": {

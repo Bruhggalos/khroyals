@@ -4,6 +4,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { carlineCancel, carlineCheckIn, type Person, type Pickup } from '../api/connect';
 import { C, Card, H, P, s } from '../ui';
+import { AutoCheckInCard } from './AutoCheckInCard';
 import { clock, gradeLabel } from './format';
 
 export function ParentView({ kids, pickups, onChange }: { kids: Person[]; pickups: Pickup[]; onChange: () => void }) {
@@ -45,7 +46,7 @@ export function ParentView({ kids, pickups, onChange }: { kids: Person[]; pickup
               <Text style={{ fontSize: 17, fontWeight: '700', color: C.ink }}>{k.firstName} {k.lastName}</Text>
               <P muted>
                 {[gradeLabel(k.grade),
-                  p?.status === 'waiting' && `In line since ${clock(p.arrivedAt)}`,
+                  p?.status === 'waiting' && `In line since ${clock(p.arrivedAt)}${p.via === 'arrival' ? ' (automatic)' : ''}`,
                   p?.status === 'picked_up' && p.pickedUpAt && `Picked up at ${clock(p.pickedUpAt)}`].filter(Boolean).join(' · ')}
               </P>
             </View>
@@ -66,6 +67,7 @@ export function ParentView({ kids, pickups, onChange }: { kids: Person[]; pickup
         </Pressable>
       )}
       {ready.length > 0 && chosen.length === 0 && <P muted>Choose at least one child.</P>}
+      <AutoCheckInCard />
     </View>
   );
 }

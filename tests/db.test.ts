@@ -359,3 +359,43 @@ test('car line duty: office staff assign it, and only to staff', async () => {
   await as('u-sci');
   assert.equal((await rows(`select * from carline_today()`)).length, 0);
 });
+
+test('car line auto check-in: only during pickup hours on school days', async () => {
+  await asSuper();
+  const at = async (t: string) => (await one(`select app.carline_window(${CHI(t)}) as w`)).w;
+  assert.equal((await at('2026-10-14 15:00')).state, 'open', 'a Wednesday at 3:00');
+  const early = await at('2026-10-14 14:30');
+  assert.equal(early.state, 'early');
+  assert.equal(new Date(early.opensAt).getTime(), new Date('2026-10-14T14:45:00-05:00').getTime(), 'opens at 2:45 Central');
+  assert.equal((await at('2026-10-14 15:31')).state, 'closed');
+  assert.equal((await at('2026-10-17 15:00')).state, 'closed', 'Saturday');
+  assert.equal((await at('2026-11-11 15:00')).state, 'closed', "Veteran's Day (No School)");
+  assert.equal((await at('2026-07-15 15:00')).state, 'closed', 'summer');
+
+  // Open the line all day, every day, so the rest doesn't depend on when the tests run.
+  await db.exec(`update app.settings set value = '00:00' where key = 'carline_start';
+                 update app.settings set value = '24:00' where key = 'carline_end';
+                 update app.settings set value = '1,2,3,4,5,6,7' where key = 'carline_days';
+                 update app.settings set value = null where key in ('carline_first_day', 'carline_last_day');
+                 update events set category = 'Academic' where group_id is null
+                   and category in ('No School', 'Teacher In-Service', 'E-Learning')
+                   and app.school_today() between starts_on and coalesce(ends_on, starts_on);`);
+
+  // Wei Chen (u-p02) is Liam's (u-s02) parent and hasn't used the car line today.
+  await as('u-p02');
+  assert.equal((await one(`select carline_config() as c`)).c.radius, 150);
+  const first = (await one(`select carline_arrived() as r`)).r;
+  assert.equal(first.state, 'open');
+  assert.deepEqual(first.names, ['Liam']);
+  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'arriving again adds nobody');
+  assert.equal((await rows(`select via from carline_today()`))[0].via, 'arrival');
+  await as('u-eng');
+  await one(`select carline_confirm('${first.checkedIn[0]}')`);
+  await as('u-p02');
+  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'not again once picked up');
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select carline_arrived()`, /permission denied/);
+  await rejects(`select carline_config()`, /permission denied/);
+});

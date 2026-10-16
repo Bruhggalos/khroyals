@@ -40,7 +40,7 @@ export function DutyView({ pickups, onChange }: { pickups: Pickup[]; onChange: (
             <View style={{ gap: 2 }}>
               <Text style={{ fontSize: 20, fontWeight: '800', color: C.ink }}>{fullName(p.studentId)}</Text>
               <P muted>{[gradeLabel(child?.grade), `Parent: ${fullName(p.guardianId)}`].filter(Boolean).join(' · ')}</P>
-              <P muted>Arrived {clock(p.arrivedAt)} · {mins < 1 ? 'just now' : `${mins} min`}</P>
+              <P muted>Arrived {clock(p.arrivedAt)}{p.via === 'arrival' ? ' (automatic)' : ''} · {mins < 1 ? 'just now' : `${mins} min`}</P>
             </View>
             <Pressable disabled={busy === p.id} onPress={() => run(p.id, () => carlineConfirm(p.id))} accessibilityRole="button"
               style={({ pressed }) => [s.btn, { backgroundColor: GREEN, paddingVertical: 14, flexDirection: 'row', justifyContent: 'center', gap: 8 },
