@@ -399,3 +399,122 @@ test('car line auto check-in: only during pickup hours on school days', async ()
   await rejects(`select carline_arrived()`, /permission denied/);
   await rejects(`select carline_config()`, /permission denied/);
 });
+
+test('marketplace: dibs and offers line up; the seller counters, picks a buyer and confirms', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [rosa, wei, dana] = [await uid('u-p01'), await uid('u-p02'), await uid('u-p03')];
+  const mine = async (listing: string) => rows(`select body from my_notifications() where data->>'listingId' = '${listing}'`);
+
+  const accept = `select market_accept_terms((market_terms()->>'version')::int)`;
+  await as('u-s01');
+  await rejects(`select * from market_post('Bike', '', 5000, 1, 'good')`, /parents and staff/);
+  await rejects(accept, /parents and staff/);
+
+  // Everyone accepts the terms first.
+  await as('u-p01');
+  assert.equal((await one(`select market_terms() as t`)).t.accepted, false);
+  assert.match((await one(`select market_terms() as t`)).t.text, /uniforms and other school-related items/);
+  await rejects(`select * from market_post('Polos', '', 1500, 3, 'good')`, /Accept the Marketplace terms/);
+  await rejects(`select market_accept_terms(99)`, /terms have changed/);
+  await one(accept);
+  assert.equal((await one(`select market_terms() as t`)).t.accepted, true);
+
+  // Rosa (u-p01) sells three polos.
+  const post = await one(`select * from market_post('Polo shirts, size M', 'Navy', 1500, 3, 'like_new', '${rosa}/polos.jpg')`);
+  assert.equal(post.status, 'open');
+  await rejects(`select * from market_post('x', '', 100, 1, 'good', '${wei}/x.jpg')`, /isn't yours/);
+  await rejects(`insert into market_listings (seller_id, title, price_cents, condition) values ('${rosa}', 'x', 1, 'good')`, /permission denied/);
+  await rejects(`select * from market_dibs('${post.id}')`, /your own post/);
+  await as('u-s01');
+  assert.equal((await rows(`select 1 from market_listings`)).length, 0, 'students see no posts');
+
+  // Wei (u-p02) calls dibs first, then Dana (u-p03) offers $10. Nobody sees posts before accepting the terms.
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from market_listings`)).length, 0);
+  await rejects(`select * from market_dibs('${post.id}')`, /Accept the Marketplace terms/);
+  await one(accept);
+  for (const p of ['u-p03', 'u-p04']) { await as(p); await one(accept); }
+  await as('u-p02');
+  const dibs = await one(`select * from market_dibs('${post.id}')`);
+  assert.equal(dibs.status, 'agreed');
+  assert.equal(dibs.agreed_cents, 1500);
+  await rejects(`select * from market_dibs('${post.id}')`, /already in line/);
+  await as('u-p03');
+  const offer = await one(`select * from market_offer('${post.id}', 1000, 'Would you take $10?')`);
+  assert.equal(offer.status, 'offered');
+  assert.equal((await rows(`select 1 from market_responses`)).length, 1, 'buyers only see their own line');
+
+  // Rosa sees both lines in the order they came in, and was told about each.
+  await as('u-p01');
+  assert.deepEqual((await rows(`select kind from market_responses where listing_id = '${post.id}' order by created_at`)).map((r) => r.kind), ['dibs', 'offer']);
+  const told = (await mine(post.id)).map((n) => n.body).join('\n');
+  assert.match(told, /Wei C\. called dibs at \$15\.00/);
+  assert.match(told, /Dana B\. offered \$10\.00/);
+  await as('u-p02');
+  await rejects(`select * from market_answer_offer('${offer.id}', true)`, /Only the seller/);
+  await as('u-p01');
+  await rejects(`select * from market_select('${offer.id}')`, /Agree on a price/);
+  assert.equal((await one(`select * from market_answer_offer('${offer.id}', false, 1200)`)).status, 'countered');
+  await as('u-p03');
+  assert.match((await mine(post.id))[0].body, /countered at \$12\.00/);
+  assert.equal((await one(`select * from market_answer_counter('${offer.id}', true)`)).agreed_cents, 1200);
+
+  // Rosa picks Dana's line and confirms: the sale is pending and the line is closed.
+  await as('u-p01');
+  const sale = await one(`select * from market_select('${offer.id}')`);
+  assert.equal(sale.status, 'pending');
+  assert.equal(sale.buyer_id, dana);
+  assert.equal(sale.sale_cents, 1200);
+  await as('u-p04');
+  await rejects(`select * from market_dibs('${post.id}')`, /isn't available/);
+  await rejects(`select market_cancel_sale('${post.id}')`, /no pending sale of yours/);
+
+  // Dana backs out, so the post reopens; someone else joins and leaves the line.
+  await as('u-p03');
+  await one(`select market_cancel_sale('${post.id}')`);
+  await as('u-p04');
+  const late = await one(`select * from market_dibs('${post.id}')`);
+  await one(`select market_withdraw('${late.id}')`);
+  await rejects(`select market_withdraw('${late.id}')`, /Nothing to withdraw/);
+
+  // Rosa goes with Wei's dibs and marks it sold; only the two of them still see it.
+  await as('u-p01');
+  await one(`select * from market_select('${dibs.id}')`);
+  await as('u-p02');
+  assert.match((await mine(post.id))[0].body, /chose you at \$15\.00/);
+  await rejects(`select market_complete('${post.id}')`, /no pending sale/);
+  await as('u-p01');
+  await one(`select market_complete('${post.id}')`);
+  await as('u-p04');
+  assert.equal((await rows(`select 1 from market_listings where id = '${post.id}'`)).length, 0, 'sold posts drop out');
+  await as('u-p02');
+  assert.equal((await one(`select status from market_listings where id = '${post.id}'`)).status, 'sold');
+
+  // Sellers take down their own posts; admins can take down anyone's.
+  const extra = await one(`select * from market_post('Lunchbox', '', 300, 1, 'fair')`);
+  await as('u-p01');
+  await rejects(`select market_remove('${extra.id}')`, /Only the seller/);
+  await as('u-admin', true);
+  await one(`select market_remove('${extra.id}')`);
+  await as('u-p02');
+  assert.equal((await one(`select status from market_listings where id = '${extra.id}'`)).status, 'removed');
+  assert.match((await mine(extra.id))[0].body, /removed your Marketplace post because it isn't a uniform or school-related item/);
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select * from market_listings`, /permission denied/);
+});
+
+test('marketplace photos: parents and staff upload only into their own folder', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [rosa, wei, ava] = [await uid('u-p01'), await uid('u-p02'), await uid('u-s01')];
+  const put = (who: string, path: string) => `insert into storage.objects (bucket_id, name, owner) values ('marketplace', '${path}', '${who}')`;
+  await as('u-p01');
+  await db.exec(put(rosa, `${rosa}/polos.jpg`));
+  await rejects(put(rosa, `${wei}/sneaky.jpg`), /row-level security/);
+  await as('u-s01');
+  await rejects(put(ava, `${ava}/bike.jpg`), /row-level security/);
+  assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'marketplace'`)).length, 0, "students can't see photos");
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'marketplace'`)).length, 1);
+});

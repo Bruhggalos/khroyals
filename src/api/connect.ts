@@ -313,6 +313,107 @@ export function subscribeCarline(onChange: () => void): () => void {
   return () => { sb().removeChannel(ch); };
 }
 
+// ---------------------------------------------------------------- marketplace
+
+export type Condition = 'new' | 'like_new' | 'good' | 'fair';
+export type Listing = {
+  id: string; sellerId: string; title: string; description: string; priceCents: number; quantity: number;
+  condition: Condition; photoPath: string | null; status: 'open' | 'pending' | 'sold' | 'removed';
+  buyerId: string | null; saleCents: number | null; createdAt: string;
+};
+/** One buyer's place in line: a Dibs, or an Offer and the seller's counter. */
+export type MarketLine = {
+  id: string; listingId: string; buyerId: string; kind: 'dibs' | 'offer'; offerCents: number | null;
+  counterCents: number | null; message: string | null; agreedCents: number | null; createdAt: string;
+  status: 'agreed' | 'offered' | 'countered' | 'declined' | 'withdrawn' | 'selected';
+};
+export type MarketTerms = { version: number; text: string; accepted: boolean; eligible: boolean };
+const toListing = (r: any): Listing => ({
+  id: r.id, sellerId: r.seller_id, title: r.title, description: r.description, priceCents: r.price_cents,
+  quantity: r.quantity, condition: r.condition, photoPath: r.photo_path, status: r.status, buyerId: r.buyer_id,
+  saleCents: r.sale_cents, createdAt: r.created_at,
+});
+const toLine = (r: any): MarketLine => ({
+  id: r.id, listingId: r.listing_id, buyerId: r.buyer_id, kind: r.kind, offerCents: r.offer_cents,
+  counterCents: r.counter_cents, message: r.message, agreedCents: r.agreed_cents, createdAt: r.created_at, status: r.status,
+});
+const rpc = (fn: string, args: Record<string, unknown> = {}) => run(sb().rpc(fn, args));
+
+export async function marketTerms(): Promise<MarketTerms> { return rpc('market_terms') as Promise<MarketTerms>; }
+export async function acceptMarketTerms(version: number) { await rpc('market_accept_terms', { p_version: version }); }
+
+/** Posts this person can see (open ones, plus their own and ones they're buying), newest first, and the lines they can see. */
+export async function listMarket(): Promise<{ listings: Listing[]; lines: MarketLine[] }> {
+  if (!live || !current) return { listings: [], lines: [] };
+  const [l, r] = await Promise.all([
+    run(sb().from('market_listings').select('*').neq('status', 'removed').order('created_at', { ascending: false })),
+    run(sb().from('market_responses').select('*').order('created_at')),
+  ]);
+  return { listings: (l as any[]).map(toListing), lines: (r as any[]).map(toLine) };
+}
+export async function getListing(id: string): Promise<{ listing: Listing | null; lines: MarketLine[] }> {
+  const [l, r] = await Promise.all([
+    run(sb().from('market_listings').select('*').eq('id', id).maybeSingle()),
+    run(sb().from('market_responses').select('*').eq('listing_id', id).order('created_at')),
+  ]);
+  return { listing: l ? toListing(l) : null, lines: (r as any[]).map(toLine) };
+}
+
+const photoUrls = new Map<string, { url: string; until: number }>();
+/** Signed URLs for marketplace photos (the bucket is private), cached for most of their hour. */
+export async function marketPhotoUrls(paths: string[]): Promise<Record<string, string>> {
+  const need = [...new Set(paths)].filter((p) => (photoUrls.get(p)?.until ?? 0) < Date.now());
+  if (need.length) {
+    const { data } = await sb().storage.from('marketplace').createSignedUrls(need, 3600);
+    for (const d of data ?? []) if (d.path && d.signedUrl) photoUrls.set(d.path, { url: d.signedUrl, until: Date.now() + 50 * 60_000 });
+  }
+  return Object.fromEntries(paths.flatMap((p) => (photoUrls.has(p) ? [[p, photoUrls.get(p)!.url]] : [])));
+}
+/** Upload a JPEG (base64) into the seller's own folder; returns its path for marketPost. */
+export async function uploadMarketPhoto(base64: string): Promise<string> {
+  const path = `${current!.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('marketplace').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  return path;
+}
+
+export async function marketPost(p: {
+  title: string; description: string; priceCents: number; quantity: number; condition: Condition; photoPath: string | null;
+}): Promise<Listing> {
+  return toListing(await rpc('market_post', {
+    p_title: p.title, p_description: p.description, p_price_cents: p.priceCents, p_quantity: p.quantity,
+    p_condition: p.condition, p_photo_path: p.photoPath,
+  }));
+}
+export async function marketRemove(id: string, reason?: string) { await rpc('market_remove', { p_listing: id, p_reason: reason ?? null }); }
+export async function marketDibs(id: string) { await rpc('market_dibs', { p_listing: id }); }
+export async function marketOffer(id: string, cents: number, message: string) {
+  await rpc('market_offer', { p_listing: id, p_cents: cents, p_message: message });
+}
+/** Seller: accept an offer, or counter it with another price. */
+export async function marketAnswerOffer(lineId: string, accept: boolean, counterCents?: number) {
+  await rpc('market_answer_offer', { p_response: lineId, p_accept: accept, p_counter_cents: counterCents ?? null });
+}
+/** Buyer: accept or decline the seller's counter. */
+export async function marketAnswerCounter(lineId: string, accept: boolean) {
+  await rpc('market_answer_counter', { p_response: lineId, p_accept: accept });
+}
+export async function marketWithdraw(lineId: string) { await rpc('market_withdraw', { p_response: lineId }); }
+/** Seller: confirm this buyer; the sale is pending until the handoff. */
+export async function marketSelect(lineId: string) { await rpc('market_select', { p_response: lineId }); }
+export async function marketComplete(id: string) { await rpc('market_complete', { p_listing: id }); }
+export async function marketCancelSale(id: string) { await rpc('market_cancel_sale', { p_listing: id }); }
+
+/** Live marketplace changes (row-level security limits them to what this person may see). */
+export function subscribeMarket(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`market-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'market_listings' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'market_responses' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
 // ---------------------------------------------------------------- admin
 
 export async function adminListPeople(): Promise<Person[]> {

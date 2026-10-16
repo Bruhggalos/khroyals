@@ -67,7 +67,8 @@ plugins/         Expo config plugins (withSceneLifecycle: iOS 27 UIScene life cy
 src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() later
 src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI
-src/carline/          Car Line parent and duty views
+src/carline/          Car Line parent and duty views, automatic check-in
+src/market/           Marketplace terms gate and helpers
 app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
                       the shield button opens Apps: Car Line, Student, Calendar)
 tests/                permission engine tests
@@ -147,6 +148,19 @@ hours live in `app.settings` (`carline_latitude`, `carline_longitude`,
 `carline_first_day`, `carline_last_day`); No School, Teacher In-Service and
 E-Learning days on the school calendar are skipped. The zone starts at the school's
 street address; move it to the car line entrance.
+
+**Marketplace** (Apps → Marketplace). Parents and staff buy and sell uniforms and
+school-related items after accepting the Marketplace terms (text and version in
+`app.settings`: `market_terms`, `market_terms_version`; bump the version to ask
+everyone again). A post has an optional photo (private `marketplace` bucket, one
+folder per seller), price, quantity (the whole bundle goes to one buyer) and
+condition. Buyers call **Dibs** (take it as posted) or make an **Offer**; the
+seller accepts or counters once, and the buyer accepts or declines. The seller
+sees everyone in line in the order they responded, selects a buyer whose price is
+agreed, and confirms; then both get a deal card to hand the item off at school.
+Every step notifies the other side through the inbox (`notifications.audience =
+'user'`). Admins with *Manage all groups* can remove any post, and the seller is
+told why. Students can't use it.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo

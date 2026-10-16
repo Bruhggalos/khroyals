@@ -58,7 +58,8 @@ export function handleNotificationTaps(): () => void {
     Notifications.clearLastNotificationResponse();  // so the next launch doesn't replay it
     if (handleCarlineResponse(r)) return;
     const data: any = r.notification.request.content.data;
-    if (data?.groupId) router.push(`/group/${data.groupId}`);
+    if (data?.listingId) router.push(`/market/${data.listingId}`);
+    else if (data?.groupId) router.push(`/group/${data.groupId}`);
   };
   const last = Notifications.getLastNotificationResponse();
   if (last) open(last);

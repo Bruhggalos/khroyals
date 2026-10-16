@@ -12,6 +12,7 @@ const APPS: App[] = [
   { label: 'Car Line', icon: 'car', color: '#0E7490', href: '/carline' },
   { label: 'Student', icon: 'school', color: C.primary, href: '/student' },
   { label: 'Calendar', icon: 'calendar', color: C.accent, href: '/calendar' },
+  { label: 'Marketplace', icon: 'storefront', color: '#7C3AED', href: '/market' },
 ];
 
 export default function Apps() {

@@ -64,8 +64,10 @@ export default function Notifications() {
       ListEmptyComponent={<Card><H>No notifications yet</H><P muted>New posts in your groups and messages from the school will show up here.</P></Card>}
       renderItem={({ item: n }) => {
         const groupId = n.data?.groupId as string | undefined;
+        const listingId = n.data?.listingId as string | undefined;
+        const href = listingId ? `/market/${listingId}` : groupId ? `/group/${groupId}` : null;
         return (
-          <Card onPress={groupId ? () => router.push(`/group/${groupId}`) : undefined}>
+          <Card onPress={href ? () => router.push(href) : undefined}>
             <View style={[s.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
               <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{n.title}</Text>
               <Text style={{ fontSize: 13, color: C.muted }}>{timeAgo(n.createdAt)}</Text>
