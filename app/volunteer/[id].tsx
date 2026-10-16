@@ -5,7 +5,7 @@
  * volunteer is sent.
  */
 import { useCallback, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -14,7 +14,7 @@ import {
 } from '../../src/api/connect';
 import { countLabel, isPast, nameOf, whenLabel } from '../../src/volunteer/format';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
-import { Button, C, Card, Chip, H, Loading, P, ask, s } from '../../src/ui';
+import { Button, C, Card, Chip, Field, H, Input, Loading, P, s, ask, useBottomInset } from '../../src/ui';
 
 const GREEN = '#15803D';
 
@@ -29,6 +29,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const [deleting, setDeleting] = useState<string | null>(null);   // the reason, while the leader is deleting
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const bottomInset = useBottomInset();
   const scroll = useRef<ScrollView>(null);
 
   const load = useCallback(() => getOpportunity(id).then(setData).catch(() => setData({ opportunity: null, signups: [], messages: [] })), [id]);
@@ -57,7 +58,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
-      <ScrollView ref={scroll} style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scroll} style={s.screen} contentContainerStyle={[s.pad, { paddingBottom: 16 + bottomInset }]} keyboardShouldPersistTaps="handled">
         <Stack.Screen options={{ title: o.title }} />
         <Card style={{ gap: 8 }}>
           <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{o.title}</Text>
@@ -105,7 +106,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
             <Card style={{ gap: 8 }}>
               <H>Delete this opportunity</H>
               <P muted>Every volunteer is sent your reason.</P>
-              <TextInput style={[s.input, { minHeight: 70, textAlignVertical: 'top' }]} multiline placeholder="Why? (e.g. Rained out, moved to Friday)"
+              <Field label="Reason" style={{ minHeight: 70, textAlignVertical: 'top' }} multiline placeholder="e.g. Rained out, moved to Friday"
                 value={deleting} onChangeText={setDeleting} />
               <View style={s.row}>
                 <View style={{ flex: 1 }}>
@@ -152,7 +153,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
             {data.messages.map((m) => <Bubble key={m.id} m={m} lead={m.authorId === o.leadId} mine={m.authorId === me.id} />)}
             {o.status === 'open' && (
               <View style={s.row}>
-                <TextInput style={[s.input, { flex: 1 }]} placeholder={leading ? 'Message your volunteers…' : 'Message the group…'}
+                <Input style={{ flex: 1 }} placeholder={leading ? 'Message your volunteers…' : 'Message the group…'}
                   value={draft} onChangeText={setDraft} maxLength={1000} multiline />
                 <Pressable onPress={send} disabled={busy || !draft.trim()} accessibilityRole="button" accessibilityLabel="Send"
                   style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',

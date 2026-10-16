@@ -1,7 +1,7 @@
-import { Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import type { Audience, GroupMode, GroupPermissions, GroupSettings, JoinPolicy, Visibility } from './types';
 import { MODE_LABELS, PERMISSION_PRESETS } from './presets';
-import { C, Card, H, P, s } from '../ui';
+import { C, Card, Field, H, P, s } from '../ui';
 
 const AUDIENCES: Audience[] = ['nobody', 'owners', 'moderators', 'members', 'subscribers'];
 const PERM_LABELS: Record<keyof GroupPermissions, string> = {
@@ -39,7 +39,7 @@ export function SettingsForm({ value, onChange }: { value: GroupSettings; onChan
     <View style={{ gap: 12 }}>
       <Card style={{ borderColor: value.locked ? C.danger : C.line }}>
         <Toggle label="🔒 Lock group" hint="Instantly makes everything read-only for non-moderators." value={value.locked} onChange={(locked) => set({ locked })} />
-        {value.locked && <TextInput style={s.input} placeholder="Reason shown to members" value={value.lockReason ?? ''} onChangeText={(lockReason) => set({ lockReason })} />}
+        {value.locked && <Field label="Reason shown to members" placeholder="e.g. Paused for the holidays" value={value.lockReason ?? ''} onChangeText={(lockReason) => set({ lockReason })} />}
       </Card>
 
       <Card>

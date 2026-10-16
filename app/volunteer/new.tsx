@@ -1,11 +1,11 @@
 /** A Volunteer Leader posts an opportunity. */
 import { useState } from 'react';
-import { Alert, ScrollView, TextInput, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { isVolunteerLead, volunteerPost } from '../../src/api/connect';
 import { todayIso } from '../../src/volunteer/format';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
-import { Button, Card, P, s } from '../../src/ui';
+import { Button, Card, Field, P, s } from '../../src/ui';
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 const isTime = (v: string) => /^\d{1,2}:\d{2}$/.test(v);
@@ -55,21 +55,21 @@ function Form() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
       <Card>
-        <TextInput style={s.input} placeholder="What's the opportunity? (e.g. Book fair helpers)" value={title} onChangeText={setTitle} maxLength={100} />
-        <TextInput style={[s.input, { minHeight: 110, textAlignVertical: 'top' }]} multiline maxLength={2000}
+        <Field label="What's the opportunity?" placeholder="e.g. Book fair helpers" value={title} onChangeText={setTitle} maxLength={100} />
+        <Field label="Details" style={{ minHeight: 110, textAlignVertical: 'top' }} multiline maxLength={2000}
           placeholder="What volunteers will do, what to bring, who to ask…" value={description} onChangeText={setDescription} />
       </Card>
       <Card>
         <View style={s.row}>
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="Date YYYY-MM-DD" value={date} onChangeText={setDate} />
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="End date (optional)" value={endDate} onChangeText={setEndDate} />
+          <Field label="Date" placeholder="YYYY-MM-DD" value={date} onChangeText={setDate} style={{ flex: 1 }} />
+          <Field label="End date (optional)" placeholder="YYYY-MM-DD" value={endDate} onChangeText={setEndDate} style={{ flex: 1 }} />
         </View>
         <View style={s.row}>
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="Start 15:00 (optional)" value={start} onChangeText={setStart} />
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="End 17:00" value={end} onChangeText={setEnd} />
+          <Field label="Start time (optional)" placeholder="15:00" value={start} onChangeText={setStart} style={{ flex: 1 }} />
+          <Field label="End time" placeholder="17:00" value={end} onChangeText={setEnd} style={{ flex: 1 }} />
         </View>
-        <TextInput style={s.input} placeholder="Where (optional)" value={location} onChangeText={setLocation} maxLength={120} />
-        <TextInput style={s.input} placeholder="Volunteers needed (optional, no limit if empty)" keyboardType="number-pad" value={spots} onChangeText={setSpots} />
+        <Field label="Where (optional)" placeholder="e.g. Library" value={location} onChangeText={setLocation} maxLength={120} />
+        <Field label="Volunteers needed (optional)" placeholder="No limit if empty" keyboardType="number-pad" value={spots} onChangeText={setSpots} />
       </Card>
       <Button label={busy ? 'Posting…' : 'Post opportunity'} disabled={busy} onPress={post} />
     </ScrollView>

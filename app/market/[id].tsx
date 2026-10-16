@@ -5,7 +5,7 @@
  * confirms; then both get a deal card to arrange the handoff at school.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -15,7 +15,7 @@ import {
 } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
 import { ask, conditionLabel, inLine, money, nameOf, parseMoney, when } from '../../src/market/format';
-import { Button, C, Card, Chip, H, Loading, P, s } from '../../src/ui';
+import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const GREEN = '#15803D';
 
@@ -148,7 +148,7 @@ function SellerLine({ l, lines, busy, act }: { l: Listing; lines: MarketLine[]; 
             {!!x.message && <P muted>“{x.message}”</P>}
             {x.status === 'offered' && (counter?.lineId === x.id ? (
               <View style={s.row}>
-                <TextInput style={[s.input, { flex: 1, padding: 10 }]} placeholder="Your price ($)" keyboardType="decimal-pad" autoFocus
+                <Field label="Your price ($)" placeholder="0.00" style={{ flex: 1, padding: 10 }} keyboardType="decimal-pad" autoFocus
                   value={counter.text} onChangeText={(text) => setCounter({ lineId: x.id, text })} />
                 <Button label="Send" disabled={busy} onPress={() => sendCounter(x)} />
               </View>
@@ -220,9 +220,9 @@ function BuyerPanel({ l, me, lines, busy, act }: { l: Listing; me: Person; lines
           'Dibs', () => act(() => marketDibs(l.id)))} />
       {offer ? (
         <Card style={{ gap: 8 }}>
-          <TextInput style={s.input} placeholder="Your offer ($)" keyboardType="decimal-pad" autoFocus
+          <Field label="Your offer ($)" placeholder="0.00" keyboardType="decimal-pad" autoFocus
             value={offer.price} onChangeText={(price) => setOffer({ ...offer, price })} />
-          <TextInput style={s.input} placeholder="Note to the seller (optional)" maxLength={300}
+          <Field label="Note to the seller (optional)" placeholder="e.g. Can pick up Friday" maxLength={300}
             value={offer.note} onChangeText={(note) => setOffer({ ...offer, note })} />
           <View style={s.row}>
             <View style={{ flex: 1 }}><Button label="Send offer" disabled={busy} onPress={send} /></View>

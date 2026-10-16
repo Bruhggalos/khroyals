@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Platform, Pressable, Switch, Text, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   addComment, createPost, getComments, getGroup, getUser, live, me, moderatePost, subscribeGroup, toggleReaction, votePoll,
   type GroupView,
 } from '../../../src/api/connect';
 import type { Comment, Post } from '../../../src/comms/types';
-import { Button, C, Card, Chip, Loading, P, s } from '../../../src/ui';
+import { Button, C, Card, Chip, Input, Loading, P, s, useBottomInset } from '../../../src/ui';
 
 const QUICK_REACTIONS = ['👍', '❤️', '🎉', '🙏'];
 
@@ -94,7 +94,7 @@ function PostCard({ p, view, onChange }: { p: Post & { anonymous?: boolean }; vi
           ))}
           {view.abilities.comment.allowed && !p.commentsLocked ? (
             <View style={s.row}>
-              <TextInput value={reply} onChangeText={setReply} placeholder="Reply…" style={[s.input, { flex: 1, padding: 8 }]} />
+              <Input value={reply} onChangeText={setReply} placeholder="Reply…" style={{ flex: 1, padding: 8 }} />
               <Button label="Send" onPress={send} disabled={!reply.trim()} />
             </View>
           ) : <P muted>{p.commentsLocked ? 'Replies are closed.' : view.abilities.comment.reason}</P>}
@@ -111,6 +111,7 @@ export default function GroupScreen() {
   const [title, setTitle] = useState('');
   const [anon, setAnon] = useState(false);
   const [poll, setPoll] = useState<string[] | null>(null);
+  const bottomInset = useBottomInset();
 
   const reload = useCallback(() => getGroup(id).then(setView).catch((e) => Alert.alert('Could not open group', e.message)), [id]);
   useEffect(() => { reload(); return subscribeGroup(id, reload); }, [id, reload]);
@@ -159,14 +160,14 @@ export default function GroupScreen() {
         ListEmptyComponent={<P muted>Nothing here yet.</P>}
         renderItem={({ item }) => <PostCard p={item} view={view} onChange={reload} />}
       />
-      <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: '#fff', gap: 8 }}>
+      <View style={{ padding: 12, paddingBottom: 12 + bottomInset, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: '#fff', gap: 8 }}>
         {composer.allowed ? (
           <>
-            {(!isChat || poll) && <TextInput value={title} onChangeText={setTitle} placeholder={poll ? 'Poll question' : asQuestion ? 'Question title' : 'Title'} style={s.input} />}
+            {(!isChat || poll) && <Input value={title} onChangeText={setTitle} placeholder={poll ? 'Poll question' : asQuestion ? 'Question title' : 'Title'} />}
             {poll && (
               <View style={{ gap: 6 }}>
                 {poll.map((o, i) => (
-                  <TextInput key={i} value={o} placeholder={`Option ${i + 1}`} style={s.input}
+                  <Input key={i} value={o} placeholder={`Option ${i + 1}`}
                     onChangeText={(t) => setPoll(poll.map((x, j) => (j === i ? t : x)))} />
                 ))}
                 <View style={s.row}>
@@ -176,7 +177,7 @@ export default function GroupScreen() {
               </View>
             )}
             <View style={s.row}>
-              <TextInput value={text} onChangeText={setText} multiline placeholder={asQuestion ? 'Ask a question…' : isChat ? 'Message' : 'Write a post…'} style={[s.input, { flex: 1 }]} />
+              <Input value={text} onChangeText={setText} multiline placeholder={asQuestion ? 'Ask a question…' : isChat ? 'Message' : 'Write a post…'} style={{ flex: 1 }} />
               <Button label={asQuestion ? 'Ask' : 'Post'} onPress={submit}
                 disabled={poll ? !title.trim() || pollOptions.length < 2 : !text.trim()} />
             </View>

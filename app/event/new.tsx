@@ -1,9 +1,9 @@
 /** Add an event to the school calendar (admins) or a group calendar (group moderators). */
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { createEvent, editableCalendars } from '../../src/api/connect';
-import { Button, C, Card, H, Loading, P, s } from '../../src/ui';
+import { Button, C, Card, Field, H, Loading, P, s } from '../../src/ui';
 
 const CATEGORIES = ['Event', 'No School', 'Academic', 'Special Student Day', 'Teacher In-Service', 'E-Learning', 'Athletics', 'Fine Arts'];
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -42,16 +42,16 @@ export default function NewEvent() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{cals.map((c, i) => pill(c.name, i === cal, () => setCal(i)))}</View>
       </Card>
       <Card>
-        <TextInput style={s.input} placeholder="Title" value={title} onChangeText={setTitle} />
+        <Field label="Title" placeholder="e.g. Spring concert" value={title} onChangeText={setTitle} />
         <View style={s.row}>
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="Date YYYY-MM-DD" value={date} onChangeText={setDate} />
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="End date (optional)" value={endDate} onChangeText={setEndDate} />
+          <Field label="Date" placeholder="YYYY-MM-DD" value={date} onChangeText={setDate} style={{ flex: 1 }} />
+          <Field label="End date (optional)" placeholder="YYYY-MM-DD" value={endDate} onChangeText={setEndDate} style={{ flex: 1 }} />
         </View>
         <View style={s.row}>
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="Start 15:30 (optional)" value={start} onChangeText={setStart} />
-          <TextInput style={[s.input, { flex: 1 }]} placeholder="End 17:00" value={end} onChangeText={setEnd} />
+          <Field label="Start time (optional)" placeholder="15:30" value={start} onChangeText={setStart} style={{ flex: 1 }} />
+          <Field label="End time" placeholder="17:00" value={end} onChangeText={setEnd} style={{ flex: 1 }} />
         </View>
-        <TextInput style={s.input} placeholder="Location (optional)" value={location} onChangeText={setLocation} />
+        <Field label="Location (optional)" placeholder="e.g. Gym" value={location} onChangeText={setLocation} />
         <P muted>Leave the start time empty for an all-day event.</P>
       </Card>
       {cals[cal].groupId === null && (

@@ -1,10 +1,10 @@
 /** Moderators manage people in a group: roles, mute, posting on/off, remove, add. */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getGroup, getUser, listMembers, listUsers, setMembership, type GroupView, type Member, type Person } from '../../../src/api/connect';
 import type { GroupRole } from '../../../src/comms/types';
-import { C, Card, Chip, Loading, P, s } from '../../../src/ui';
+import { C, Card, Chip, Field, Loading, P, s } from '../../../src/ui';
 
 const ROLES: GroupRole[] = ['owner', 'moderator', 'member', 'subscriber'];
 const ORDER = (r: GroupRole) => ROLES.indexOf(r);
@@ -36,7 +36,7 @@ export default function Members() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
       <Stack.Screen options={{ title: `${view.group.name} · Members` }} />
-      <TextInput style={s.input} placeholder="Add someone: search by name" value={q} onChangeText={setQ} />
+      <Field label="Add someone" placeholder="Search by name" value={q} onChangeText={setQ} />
       {matches.map((p) => (
         <Card key={p.id} onPress={() => { setQ(''); change(p.id, { role: view.group.settings.mode === 'broadcast' ? 'subscriber' : 'member' }); }}>
           <Text style={{ color: C.ink }}>+ {p.firstName} {p.lastName} <Text style={{ color: C.muted }}>· {p.schoolRole}</Text></Text>

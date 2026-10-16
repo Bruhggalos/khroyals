@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput } from 'react-native';
+import { Alert, ScrollView, Text } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { createGroup } from '../../src/api/connect';
 import { defaultSettings } from '../../src/comms/presets';
 import { SettingsForm } from '../../src/comms/SettingsForm';
 import type { AssignmentRule, Group, SchoolRole } from '../../src/comms/types';
-import { Button, C, Card, H, P, s } from '../../src/ui';
+import { Button, C, Card, Field, H, P, s } from '../../src/ui';
 
 const ROLES: SchoolRole[] = ['student', 'parent', 'teacher', 'staff'];
 
@@ -34,9 +34,9 @@ export default function NewGroup() {
       <Stack.Screen options={{ title: 'New group' }} />
       <Card>
         <H>Basics</H>
-        <TextInput style={s.input} placeholder="Group name" value={name} onChangeText={setName} />
-        <TextInput style={s.input} placeholder="Description" value={description} onChangeText={setDescription} />
-        <TextInput style={s.input} placeholder="Emoji icon" value={icon} onChangeText={setIcon} maxLength={2} />
+        <Field label="Group name" placeholder="e.g. 9th Grade Parents" value={name} onChangeText={setName} />
+        <Field label="Description" placeholder="What the group is for" value={description} onChangeText={setDescription} />
+        <Field label="Emoji icon" placeholder="📣" value={icon} onChangeText={setIcon} maxLength={2} />
       </Card>
       <Card>
         <H>Auto-assign people</H>
@@ -49,7 +49,7 @@ export default function NewGroup() {
             </Text>
           ))}
         </Text>
-        <TextInput style={s.input} placeholder="Grades, e.g. 9,10 (optional)" value={grades} onChangeText={setGrades} keyboardType="numbers-and-punctuation" />
+        <Field label="Grades (optional)" placeholder="e.g. 9,10" value={grades} onChangeText={setGrades} keyboardType="numbers-and-punctuation" />
       </Card>
       <SettingsForm value={settings} onChange={setSettings} />
       <Button label="Create group" onPress={create} disabled={!name.trim()} />
