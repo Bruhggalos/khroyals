@@ -5,6 +5,9 @@ One Expo / React Native codebase that ships to **iOS, Android and web** for
 every page, news post, video and the school calendar — is imported from the
 real [khroyals.com](https://www.khroyals.com/).
 
+> **Building it or putting it on a phone?** See [DEVELOPING.md](DEVELOPING.md).
+> AI coding agents: read [AGENTS.md](AGENTS.md).
+
 ## Run it
 
 ```bash
