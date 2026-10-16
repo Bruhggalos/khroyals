@@ -128,7 +128,8 @@ test('API: posting follows the rules (approval queue, denial reasons)', async ()
 
 test('API: slow mode and comments', async () => {
   await asSuper();
-  await db.exec(`update groups set settings = jsonb_set(settings, '{slowModeSeconds}', '60') where id = ${id('g-eng-p3')}`);
+  // Posts at the real clock time, so turn off this group's quiet hours (tested separately with fixed times).
+  await db.exec(`update groups set settings = jsonb_set(jsonb_set(settings, '{slowModeSeconds}', '60'), '{quietHours}', 'null') where id = ${id('g-eng-p3')}`);
   await as('u-s01');
   await one(`select create_post(${id('g-eng-p3')}, 'thread', 'First thought', 'Q')`);
   await rejects(`select create_post(${id('g-eng-p3')}, 'thread', 'Second thought', 'Q')`, /Slow mode/);
