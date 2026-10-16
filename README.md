@@ -69,6 +69,7 @@ src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI
 src/carline/          Car Line parent and duty views, automatic check-in
 src/market/           Marketplace terms gate and helpers
+src/volunteer/        Volunteer gate and helpers
 app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
                       the shield button opens Apps: Car Line, Student, Calendar)
 tests/                permission engine tests
@@ -161,6 +162,16 @@ agreed, and confirms; then both get a deal card to hand the item off at school.
 Every step notifies the other side through the inbox (`notifications.audience =
 'user'`). Admins with *Manage all groups* can remove any post, and the seller is
 told why. Students can't use it.
+
+**Volunteer** (Apps → Volunteer). Volunteer Leaders (parents or staff the office
+chooses in Admin portal → People) post opportunities with a description, date,
+optional times, place and an optional number of spots. Parents and staff tap
+**Say Yes!** until it's full; the opportunity joins their *My sign-ups* list and
+they can **Remove me** (the leader is told). A people icon shows everyone the count
+and who signed up. Each opportunity has a chat for its volunteers and leader; the
+leader's messages are highlighted. A leader deletes an opportunity with a reason
+that every volunteer is sent. Students can't take part. The seed makes the demo
+Teacher a Volunteer Leader.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo

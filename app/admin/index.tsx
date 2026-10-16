@@ -8,7 +8,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack } from 'expo-router';
 import {
-  adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminSetCarlineDuty, adminUpdateProfile, listAudit,
+  adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminSetCarlineDuty, adminSetVolunteerLead,
+  adminUpdateProfile, listAudit,
   listMyGroups, listNotifications, me, permissionCatalog, sendNotification, transferDirector,
   type Access, type AdminPerson, type Notice, type PermissionInfo,
 } from '../../src/api/connect';
@@ -65,6 +66,7 @@ function PersonCard({ p, people, links, access, onChange }: {
         </View>
         {p.adminTier && <Chip label={TIER_LABEL[p.adminTier]} color={C.accent} />}
         {p.carlineDuty && <Chip label="Car line" color="#15803D" />}
+        {p.volunteerLead && <Chip label="Volunteer lead" color="#DB2777" />}
         {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={p.schoolRole} />}
       </View>
       {(children.length > 0 || parents.length > 0) && (
@@ -82,6 +84,12 @@ function PersonCard({ p, people, links, access, onChange }: {
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {pill(p.carlineDuty ? '🚗 On car line duty' : '🚗 Put on car line duty', !!p.carlineDuty,
                 () => adminSetCarlineDuty(p.id, !p.carlineDuty).then(onChange).catch(fail), '#15803D')}
+            </View>
+          )}
+          {!p.pending && p.schoolRole !== 'student' && can('people.family') && (
+            <View style={[s.row, { flexWrap: 'wrap' }]}>
+              {pill(p.volunteerLead ? '🙋 Volunteer Leader' : '🙋 Make Volunteer Leader', !!p.volunteerLead,
+                () => adminSetVolunteerLead(p.id, !p.volunteerLead).then(onChange).catch(fail), '#DB2777')}
             </View>
           )}
           {p.schoolRole === 'student' && can('people.family') && (

@@ -23,7 +23,7 @@ export type Abilities = {
   moderate: boolean; editSettings: boolean; createEvents: boolean;
 };
 export type GroupView = { group: Group; myRole: GroupRole | null; posts: Post[]; abilities: Abilities };
-export type Person = User & { email?: string | null; pending?: boolean; carlineDuty?: boolean };
+export type Person = User & { email?: string | null; pending?: boolean; carlineDuty?: boolean; volunteerLead?: boolean };
 export type GroupEvent = {
   id: string; groupId: string | null; groupName?: string; groupIcon?: string;
   title: string; description?: string | null; date: string; endDate: string | null;
@@ -47,7 +47,7 @@ let current: Person | null = null;
 const toPerson = (p: any): Person => ({
   id: p.id, firstName: p.first_name ?? '', lastName: p.last_name ?? '', schoolRole: p.school_role as SchoolRole,
   avatar: p.avatar_url ?? `https://i.pravatar.cc/120?u=${p.id}`, grade: p.grade ?? undefined,
-  email: p.email, pending: p.school_role == null, carlineDuty: !!p.carline_duty,
+  email: p.email, pending: p.school_role == null, carlineDuty: !!p.carline_duty, volunteerLead: !!p.volunteer_lead,
 });
 
 const toGroup = (g: any): Group => ({
@@ -410,6 +410,73 @@ export function subscribeMarket(onChange: () => void): () => void {
   const ch: RealtimeChannel = sb().channel(`market-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'market_listings' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'market_responses' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
+// ---------------------------------------------------------------- volunteers
+
+export type Opportunity = {
+  id: string; leadId: string; title: string; description: string; startsOn: string; endsOn: string | null;
+  startTime: string | null; endTime: string | null; location: string | null; spots: number | null;
+  status: 'open' | 'deleted'; deleteReason: string | null; createdAt: string;
+};
+export type Signup = { opportunityId: string; userId: string; createdAt: string };
+export type VolunteerMessage = { id: string; opportunityId: string; authorId: string | null; body: string; createdAt: string };
+const toOpportunity = (r: any): Opportunity => ({
+  id: r.id, leadId: r.lead_id, title: r.title, description: r.description, startsOn: r.starts_on, endsOn: r.ends_on,
+  startTime: r.start_time?.slice(0, 5) ?? null, endTime: r.end_time?.slice(0, 5) ?? null, location: r.location,
+  spots: r.spots, status: r.status, deleteReason: r.delete_reason, createdAt: r.created_at,
+});
+const toSignup = (r: any): Signup => ({ opportunityId: r.opportunity_id, userId: r.user_id, createdAt: r.created_at });
+const toMessage = (r: any): VolunteerMessage => ({ id: r.id, opportunityId: r.opportunity_id, authorId: r.author_id, body: r.body, createdAt: r.created_at });
+
+/** Parents and staff volunteer; the office picks Volunteer Leaders (the database checks the same). */
+export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent', 'teacher', 'staff', 'admin'].includes(p.schoolRole);
+export const isVolunteerLead = (p: Person | null) => canVolunteer(p) && !!p?.volunteerLead;
+
+/** Opportunities this person can see (open ones, plus deleted ones they were part of) and everyone's sign-ups. */
+export async function listVolunteer(): Promise<{ opportunities: Opportunity[]; signups: Signup[] }> {
+  if (!live || !current) return { opportunities: [], signups: [] };
+  const [o, s] = await Promise.all([
+    run(sb().from('volunteer_opportunities').select('*').order('starts_on').order('start_time')),
+    run(sb().from('volunteer_signups').select('*').order('created_at')),
+  ]);
+  return { opportunities: (o as any[]).map(toOpportunity), signups: (s as any[]).map(toSignup) };
+}
+export async function getOpportunity(id: string): Promise<{ opportunity: Opportunity | null; signups: Signup[]; messages: VolunteerMessage[] }> {
+  const [o, s, m] = await Promise.all([
+    run(sb().from('volunteer_opportunities').select('*').eq('id', id).maybeSingle()),
+    run(sb().from('volunteer_signups').select('*').eq('opportunity_id', id).order('created_at')),
+    run(sb().from('volunteer_messages').select('*').eq('opportunity_id', id).order('created_at')),
+  ]);
+  return { opportunity: o ? toOpportunity(o) : null, signups: (s as any[]).map(toSignup), messages: (m as any[]).map(toMessage) };
+}
+export async function volunteerPost(o: {
+  title: string; description: string; startsOn: string; endsOn: string | null; startTime: string | null;
+  endTime: string | null; location: string | null; spots: number | null;
+}): Promise<Opportunity> {
+  return toOpportunity(await rpc('volunteer_post', {
+    p_title: o.title, p_description: o.description, p_starts_on: o.startsOn, p_ends_on: o.endsOn,
+    p_start_time: o.startTime, p_end_time: o.endTime, p_location: o.location, p_spots: o.spots,
+  }));
+}
+export async function volunteerSayYes(id: string) { await rpc('volunteer_say_yes', { p_opportunity: id }); }
+export async function volunteerWithdraw(id: string) { await rpc('volunteer_withdraw', { p_opportunity: id }); }
+/** The leader deletes it; the reason goes to every volunteer. */
+export async function volunteerDelete(id: string, reason: string) { await rpc('volunteer_delete', { p_opportunity: id, p_reason: reason }); }
+export async function volunteerSend(id: string, body: string) { await rpc('volunteer_send', { p_opportunity: id, p_body: body }); }
+export async function adminSetVolunteerLead(userId: string, on: boolean) {
+  await rpc('admin_set_volunteer_lead', { p_user: userId, p_on: on });
+}
+
+/** Live changes to opportunities, sign-ups and chats (row-level security limits them to what this person may see). */
+export function subscribeVolunteer(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`volunteer-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteer_opportunities' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteer_signups' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteer_messages' }, onChange)
     .subscribe();
   return () => { sb().removeChannel(ch); };
 }

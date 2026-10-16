@@ -518,3 +518,85 @@ test('marketplace photos: parents and staff upload only into their own folder', 
   await as('u-p02');
   assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'marketplace'`)).length, 1);
 });
+
+test('volunteers: leaders post, parents and staff say yes until it fills, chat, drop out and get told about deletions', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [rosa, luis] = [await uid('u-p01'), await uid('u-p05')];
+  const told = async (who: string, opp: string) => {
+    await as(who);
+    return (await rows(`select body from my_notifications() where data->>'opportunityId' = '${opp}'`)).map((n) => n.body).join('\n');
+  };
+  const post = `select * from volunteer_post('Book fair helpers', 'Set up tables and run the register.', app.school_today() + 7, null, '15:00', '17:00', 'Library', 2)`;
+
+  // Only Volunteer Leaders post; the office makes parents or staff leaders (the seed made the demo Teacher one).
+  await as('u-p05');
+  await rejects(post, /Only Volunteer Leaders/);
+  await as('u-admin', true);
+  await rejects(`select admin_set_volunteer_lead(${id('u-s01')}, true)`, /parents or staff/);
+  await one(`select admin_set_volunteer_lead(${id('u-p05')}, true)`);
+  assert.equal((await one(`select volunteer_lead from admin_list_people() where id = ${id('u-eng')}`)).volunteer_lead, true);
+
+  // Luis (u-p05) posts an opportunity with two spots.
+  await as('u-p05');
+  const opp = await one(post);
+  await rejects(`select volunteer_say_yes('${opp.id}')`, /leading this one/);
+  await as('u-s01');
+  assert.equal((await rows(`select 1 from volunteer_opportunities`)).length, 0, 'students see nothing');
+  await rejects(`select volunteer_say_yes('${opp.id}')`, /parents and staff/);
+
+  // Rosa and Wei say yes; then it's full.
+  await as('u-p01');
+  await one(`select volunteer_say_yes('${opp.id}')`);
+  await rejects(`select volunteer_say_yes('${opp.id}')`, /already said yes/);
+  await as('u-p02');
+  await one(`select volunteer_say_yes('${opp.id}')`);
+  await as('u-p03');
+  await rejects(`select volunteer_say_yes('${opp.id}')`, /All spots are filled/);
+  assert.match(await told('u-p05', opp.id), /2 of 2 spots filled/);
+
+  // Everyone sees who signed up; only the volunteers and the leader see or write the chat.
+  await as('u-p03');
+  assert.equal((await rows(`select 1 from volunteer_signups where opportunity_id = '${opp.id}'`)).length, 2);
+  await rejects(`select * from volunteer_send('${opp.id}', 'Can I help?')`, /Say Yes! to join/);
+  await as('u-p01');
+  await one(`select * from volunteer_send('${opp.id}', 'I can bring a cash box.')`);
+  await as('u-p05');
+  await one(`select * from volunteer_send('${opp.id}', 'Thanks! Doors open at 2:45.')`);
+  await as('u-p02');
+  assert.deepEqual((await rows(`select author_id from volunteer_messages where opportunity_id = '${opp.id}' order by created_at`)).map((m) => m.author_id), [rosa, luis]);
+  await as('u-p03');
+  assert.equal((await rows(`select 1 from volunteer_messages`)).length, 0, 'not in the chat');
+  await rejects(`insert into volunteer_signups values ('${opp.id}', ${id('u-p03')})`, /permission denied/);
+
+  // Wei drops out (the leader is told), which frees a spot for Dana.
+  await as('u-p02');
+  await one(`select volunteer_withdraw('${opp.id}')`);
+  await rejects(`select volunteer_withdraw('${opp.id}')`, /not signed up/);
+  assert.match(await told('u-p05', opp.id), /Wei C\. removed themselves from Book fair helpers/);
+  await as('u-p03');
+  await one(`select volunteer_say_yes('${opp.id}')`);
+
+  // Only the leader deletes, with a reason that reaches every volunteer.
+  await as('u-p01');
+  await rejects(`select volunteer_delete('${opp.id}', 'nah')`, /Only the leader/);
+  await as('u-p05');
+  await rejects(`select volunteer_delete('${opp.id}', '  ')`, /Say why/);
+  await one(`select volunteer_delete('${opp.id}', 'The book fair moved to spring.')`);
+  assert.match(await told('u-p01', opp.id), /cancelled this volunteer opportunity: The book fair moved to spring\./);
+  assert.match(await told('u-p03', opp.id), /moved to spring/);
+  await as('u-p01');
+  assert.equal((await one(`select delete_reason from volunteer_opportunities where id = '${opp.id}'`)).delete_reason, 'The book fair moved to spring.');
+  await rejects(`select * from volunteer_send('${opp.id}', 'Oh no')`, /was deleted/);
+  await as('u-p04');
+  assert.equal((await rows(`select 1 from volunteer_opportunities where id = '${opp.id}'`)).length, 0, 'gone for everyone else');
+
+  // Past opportunities don't take sign-ups.
+  await asSuper();
+  const past = await one(`insert into volunteer_opportunities (lead_id, title, starts_on) values ('${luis}', 'Field day', app.school_today() - 3) returning id`);
+  await as('u-p01');
+  await rejects(`select volunteer_say_yes('${past.id}')`, /is over/);
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select * from volunteer_opportunities`, /permission denied/);
+});

@@ -56,6 +56,9 @@ for u in users:
 # demo accounts themselves, remove this before real families use the app.
 for uid in ('u-eng',):
     w(f"update public.profiles set carline_duty = true where id = {sid(uid)};")
+# ...and leads volunteer opportunities, so the leader side can be tried too.
+for uid in ('u-eng',):
+    w(f"update public.profiles set volunteer_lead = true where id = {sid(uid)};")
 
 w('\n-- Rosters')
 for kind, key, lead in (('section', 'sections', 'teacherId'), ('team', 'teams', 'coachId'), ('club', 'clubs', 'sponsorId')):

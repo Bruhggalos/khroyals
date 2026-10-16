@@ -1,4 +1,3 @@
-import { Alert, Platform } from 'react-native';
 import { getUser, type Condition, type MarketLine } from '../api/connect';
 
 export const money = (cents: number) => (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -28,8 +27,4 @@ export const when = (iso: string) => {
   return today ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-/** Yes/no question; window.confirm on the web. */
-export function ask(title: string, message: string, yes: string, onYes: () => void) {
-  if (Platform.OS === 'web') { if (globalThis.confirm?.(`${title}\n\n${message}`)) onYes(); return; }
-  Alert.alert(title, message, [{ text: 'Not now', style: 'cancel' }, { text: yes, onPress: onYes }]);
-}
+export { ask } from '../ui';

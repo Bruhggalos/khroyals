@@ -38,7 +38,8 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   only for real accounts; the director is `patguettler@gmail.com`.
 - **Car line duty** isn't an admin power (no MFA), but it shows every child's
   pickup status. The seed gives it to the demo Teacher for testing; it must go
-  with the demo accounts before real families use the app.
+  with the demo accounts before real families use the app. The same goes for
+  **Volunteer Leader**, which the seed also gives the demo Teacher.
 - **Don't edit an applied migration.** Add a new timestamped file. Regenerate
   `supabase/seed.sql` + `supabase/setup_all.sql` with `python3 scripts/gen_seed.py`.
 - `tests/db.test.ts` runs every migration + the seed in PGlite with stubs

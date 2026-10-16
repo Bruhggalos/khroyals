@@ -59,6 +59,7 @@ export function handleNotificationTaps(): () => void {
     if (handleCarlineResponse(r)) return;
     const data: any = r.notification.request.content.data;
     if (data?.listingId) router.push(`/market/${data.listingId}`);
+    else if (data?.opportunityId) router.push(`/volunteer/${data.opportunityId}`);
     else if (data?.groupId) router.push(`/group/${data.groupId}`);
   };
   const last = Notifications.getLastNotificationResponse();

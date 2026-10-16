@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import site from '../content/site/site.json';
 
 export const C = {
@@ -25,6 +25,12 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, n]);
   return { data, error, reload: () => setN((x) => x + 1) };
+}
+
+/** Yes/no question before something that's hard to undo; window.confirm on the web. */
+export function ask(title: string, message: string, yes: string, onYes: () => void) {
+  if (Platform.OS === 'web') { if (globalThis.confirm?.(`${title}\n\n${message}`)) onYes(); return; }
+  Alert.alert(title, message, [{ text: 'Not now', style: 'cancel' }, { text: yes, onPress: onYes }]);
 }
 
 export const Loading = () => <View style={s.center}><ActivityIndicator color={C.primary} /></View>;
