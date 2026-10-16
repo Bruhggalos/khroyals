@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { Alert, Linking, SectionList, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
-import { getCalendar } from '../../src/api/mockApi';
-import { deleteEvent, editableCalendars, listEvents, live, session, type GroupEvent } from '../../src/api/connect';
-import { dateRange } from '../../src/site/calendar';
-import { Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
+import { Stack, router, useFocusEffect } from 'expo-router';
+import { getCalendar } from '../src/api/mockApi';
+import { deleteEvent, editableCalendars, listEvents, live, session, type GroupEvent } from '../src/api/connect';
+import { dateRange } from '../src/site/calendar';
+import { Button, C, Card, Chip, Loading, P, s } from '../src/ui';
 
 const CATEGORY_COLOR: Record<string, string> = {
   'No School': C.accent,
@@ -40,7 +40,8 @@ export default function Calendar() {
     }
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
-  if (!events) return <Loading />;
+  const header = <Stack.Screen options={{ title: 'Calendar' }} />;
+  if (!events) return <>{header}<Loading /></>;
 
   const byMonth = new Map<string, GroupEvent[]>();
   [...events].sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? '').localeCompare(b.startTime ?? '')).forEach((e) => {
@@ -53,6 +54,7 @@ export default function Calendar() {
   ]);
 
   return (
+    <>{header}
     <SectionList style={s.screen} contentContainerStyle={s.pad}
       sections={[...byMonth].map(([title, data]) => ({ title, data }))}
       keyExtractor={(e) => e.id}
@@ -85,5 +87,6 @@ export default function Calendar() {
           </View>
         </Card>
       )} />
+    </>
   );
 }

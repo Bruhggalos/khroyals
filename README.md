@@ -68,7 +68,8 @@ src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() late
 src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI
 src/carline/          Car Line parent and duty views
-app/                  expo-router screens (tabs: Home · News · Calendar · Connect · More)
+app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
+                      the shield button opens Apps: Car Line, Student, Calendar)
 tests/                permission engine tests
 ```
 
