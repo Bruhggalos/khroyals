@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { NewsCarousel } from '../../src/site/NewsCarousel';
 import { C, P, s } from '../../src/ui';
 
 type App = { label: string; icon: ComponentProps<typeof Ionicons>['name']; color: string; href: Href };
@@ -15,7 +16,10 @@ const APPS: App[] = [
 
 export default function Apps() {
   return (
-    <ScrollView style={s.screen} contentContainerStyle={[s.pad, { paddingTop: 24 }]}>
+    <View style={s.screen}>
+      {/* Headlines stay put under the banner; the apps scroll below them. */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}><NewsCarousel /></View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.pad, { paddingTop: 12 }]}>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {APPS.map((a) => (
           <Pressable key={a.label} onPress={() => router.push(a.href)} accessibilityRole="button" accessibilityLabel={a.label}
@@ -28,6 +32,7 @@ export default function Apps() {
         ))}
       </View>
       <P muted>More school apps will show up here.</P>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
