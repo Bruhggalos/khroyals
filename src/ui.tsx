@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import site from '../content/site/site.json';
 
 export const C = {
@@ -51,6 +51,24 @@ export const Button = ({ label, onPress, kind = 'primary', disabled }: { label: 
     style={[s.btn, kind === 'ghost' && { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.line }, disabled && { opacity: 0.4 }]}>
     <Text style={[s.btnT, kind === 'ghost' && { color: C.primary }]}>{label}</Text>
   </Pressable>;
+
+/** Readable placeholder colour on every platform (Android dark mode hides the default). */
+export const PLACEHOLDER = '#8A93A6';
+
+/** A labelled text box: the label sits above the input so it never disappears while typing. */
+export function Field({ label, hint, error, style, ...input }: TextInputProps & { label: string; hint?: string; error?: string | null }) {
+  // Layout props (flex/width) size the label+box together; the rest style the box.
+  const { flex, minWidth, width, ...boxStyle } = (StyleSheet.flatten(style) ?? {}) as any;
+  return (
+    <View style={{ gap: 4, flex, minWidth, width }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>{label}</Text>
+      <TextInput placeholderTextColor={PLACEHOLDER} accessibilityLabel={label} {...input}
+        style={[s.input, error ? { borderColor: C.danger } : null, boxStyle]} />
+      {error ? <Text style={{ fontSize: 12, color: C.danger }}>{error}</Text>
+        : hint ? <Text style={{ fontSize: 12, color: C.muted }}>{hint}</Text> : null}
+    </View>
+  );
+}
 
 export const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },

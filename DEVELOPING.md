@@ -18,11 +18,10 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
   on the phone and allow "Install unknown apps" for your browser or Files app.
   Installing a newer APK over the old one keeps you signed in.
 - **Any device:** open the web app link above.
-- **Sign up / sign in:** on the **Connect** tab — **Create account** (name, email,
-  password; an admin approves new accounts in the Admin portal → People), **Sign in**
-  with email + password, *Forgot password?* (emails a reset link), *Email me a
-  sign-in link* (passwordless), or tap a demo account (Teacher, Coach, Student,
-  Silenced student, Parent). Open emailed links **on the same device**.
+- **Sign up / log in:** on the **Connect** tab — **Log in**: email → we email a
+  6-digit code → enter it. No account yet? It switches to **Create account** (name +
+  email → code); an admin approves new accounts in Admin portal → People. No
+  passwords, so nothing to reset. Free Supabase email sends only ~2 emails/hour.
 
 ## 2. Set up a dev machine
 
@@ -135,29 +134,33 @@ The schema lives in `supabase/migrations/` and is tested locally by `tests/db.te
    export SUPABASE_URL=https://twmeenkvoedoryhterpf.supabase.co
    export SUPABASE_SERVICE_ROLE_KEY=...   # Project Settings → API keys (secret)
    export SUPABASE_ACCESS_TOKEN=sbp_...   # personal access token
-   export DEMO_PASSWORD=...               # value of expo.extra.demoPassword in app.json
-   node scripts/supabase_setup.mjs --no-seed     # applies only new migrations, redeploys send-push
+   node scripts/supabase_setup.mjs        # applies only new migrations, redeploys send-push
+   # (a throwaway project can get demo accounts + groups with --demo and DEMO_PASSWORD=…)
    ```
    (Behind a corporate/agent proxy, prefix with `NODE_USE_ENV_PROXY=1`.)
-5. Check it end to end:
+5. On a `--demo` project, check it end to end:
    ```bash
    SUPABASE_URL=... SUPABASE_PUBLISHABLE_KEY=... DEMO_PASSWORD=... node scripts/smoke_supabase.mjs
    ```
    The smoke test posts a few rows marked `[smoke test]`; delete them afterwards.
 
-**Admins:** the director is `patguettler@gmail.com`. Make someone else director
-from the app (Admin portal → Admins & permissions → *Make … the director*), or for
-a fresh project: `node scripts/supabase_setup.mjs --director=email` after they've
-signed in once. Demo accounts deliberately have **no** admin powers (their password
-is public in `app.json`).
+**Admins:** `patguettler@gmail.com` is a director. Directors manage everything in
+Admin portal → **Admins & roles**: add/remove directors (several allowed, never
+zero — add the replacement before stepping down), create roles with chosen
+permissions, and assign roles or single permissions to staff. For a fresh project
+(or if every director left), run `node scripts/supabase_setup.mjs --director=email`
+after that person has logged in once. Demo accounts never get admin powers.
 
-**Accounts & email:** people sign up with email + password (min 8 characters).
-Sign-up doesn't send a confirmation email (`mailer_autoconfirm`), because Supabase's
-built-in email allows only **2 emails/hour** for the whole project; admin approval
-still gates access. Emailed links (password reset, passwordless sign-in) are handled
-by `app/+native-intent.tsx` on phones and `app/auth.tsx` on the web; reset links open
-`app/set-password.tsx`. Adding custom SMTP (e.g. Resend) lifts the limit; then run the
-setup script with `REQUIRE_EMAIL_CONFIRMATION=1` to require confirming the email.
+**Accounts & email:** sign-in is an emailed 6-digit code (`signInWithOtp` →
+`verifyOtp`, code length 6, valid 10 minutes). On Supabase's built-in email
+(free plan) the template can't be changed, so the email shows a *sign-in button*
+instead of the code, and only **2 emails/hour** go out for the whole project.
+**Fix:** Dashboard → Authentication → Emails → **SMTP Settings** → enable custom
+SMTP (e.g. Gmail: `smtp.gmail.com`, port 465, your address, a Google *App
+Password*), then re-run `node scripts/supabase_setup.mjs` — it switches the
+templates to show `{{ .Token }}`. Raise the email rate limit under Authentication →
+Rate Limits. Emailed links still work as a fallback (`app/+native-intent.tsx`,
+`app/auth.tsx`).
 
 ## 6. Refresh the school website content
 
@@ -173,4 +176,4 @@ npm run typecheck && npm test
   → `extra.eas.projectId` in `app.json`) and a Firebase project (`google-services.json`
   + FCM key uploaded to Expo). Until then pushes are queued and shown in the admin
   portal's history but not delivered.
-- **iOS builds**, **custom email (SMTP)**, **editing site pages/news from the admin portal**.
+- **iOS builds**, **custom email (SMTP, needed for codes in the email)**, **editing site pages/news from the admin portal**.

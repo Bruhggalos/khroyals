@@ -200,7 +200,7 @@ test('admin console: approve sign-ups and manage roles', async () => {
 test('admin tiers: one director; admin powers need an authenticator-verified session', async () => {
   await asSuper();
   assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'director');
-  await rejects(`update profiles set admin_tier = 'director' where id = ${id('u-ap')}`, /profiles_one_director|duplicate/);
+  await rejects(`update profiles set admin_tier = null where id = ${id('u-admin')}`, /at least one director/);
 
   await as('u-admin');  // signed in with email only
   await rejects(`select * from admin_list_people()`, /MFA_REQUIRED/);
@@ -220,6 +220,7 @@ test('admin tiers: director grants tiers and permissions; others cannot', async 
   await as('u-admin', true);
   await one(`select admin_set_access(${id('u-libr')}, 'office')`);
   await rejects(`select admin_set_access(${id('u-s01')}, 'office')`, /staff accounts/);
+  await rejects(`select admin_set_access(${id('u-eng')}, 'director')`, /Make director/);
   await rejects(`select admin_set_access(${id('u-eng')}, null, array['admins.manage'])`, /can't be granted/);
   await one(`select admin_set_access(${id('u-eng')}, null, array['calendar.school'])`);  // a teacher runs the school calendar
 
@@ -599,4 +600,71 @@ test('volunteers: leaders post, parents and staff say yes until it fills, chat, 
   await asSuper();
   await db.exec(`set role anon`);
   await rejects(`select * from volunteer_opportunities`, /permission denied/);
+});
+
+test('directors: several allowed, never zero, and roles can change hands', async () => {
+  await as('u-admin', true);
+  await one(`select admin_set_director(${id('u-ap')}, true)`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from profiles where admin_tier = 'director'`)).length, 2, 'two directors');
+  await as('u-admin', true);
+  await one(`select admin_set_director(${id('u-admin')}, false)`);  // step down while another director remains
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'administrator');
+  await as('u-ap', true);
+  await rejects(`select admin_set_director(${id('u-ap')}, false)`, /at least one director/);
+  await rejects(`select admin_update_profile(${id('u-ap')}, null)`, /Transfer the director|at least one director/);
+  await asSuper();
+  await rejects(`delete from auth.users where id = ${id('u-ap')}`, /at least one director/);  // a departing last director's account can't vanish
+  await rejects(`select admin_set_director(${id('u-s01')}, true)`, /permission|staff/);
+  await as('u-ap', true);
+  await rejects(`select admin_set_director(${id('u-s01')}, true)`, /staff accounts/);
+  await one(`select transfer_director(${id('u-admin')})`);  // hand back for the other tests
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'director');
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-ap')}`)).admin_tier, 'administrator');
+});
+
+test('roles: directors create roles, assign them, and deleting removes the access', async () => {
+  await as('u-ap', true);  // administrator
+  await rejects(`select admin_save_role(null, 'Athletics', '', array['calendar.school'])`, /permission/);
+  await as('u-admin', true);
+  await rejects(`select admin_save_role(null, 'Bad', '', array['admins.manage'])`, /can't be given/);
+  await rejects(`select admin_save_role('director', 'Director', '', array['push.send'])`, /can't be changed/);
+  const r = await one(`select * from admin_save_role(null, 'Athletics Director', 'Runs sports', array['calendar.school', 'push.send'])`);
+  assert.equal(r.id, 'athletics-director');
+  await rejects(`select admin_save_role(null, 'Athletics Director', '', '{}')`, /already exists/);
+  await one(`select admin_set_access(${id('u-vbcoach')}, 'athletics-director')`);
+  await as('u-vbcoach', true);
+  const access = (await one(`select my_access() as a`)).a;
+  assert.equal(access.roleName, 'Athletics Director');
+  assert.ok(access.permissions.includes('push.send'));
+  await one(`insert into events (title, starts_on) values ('Homecoming game', '2026-10-30') returning id`);
+  await rejects(`select * from admin_list_people()`, /permission/);
+  await as('u-admin', true);
+  await one(`select admin_save_role('athletics-director', 'Athletics Director', 'Runs sports', array['push.send'])`);
+  await as('u-vbcoach', true);
+  await rejects(`insert into events (title, starts_on) values ('Another', '2026-10-31')`, /row-level security/);
+  await as('u-admin', true);
+  await one(`select admin_delete_role('athletics-director')`);
+  await rejects(`select admin_delete_role('director')`, /can't be deleted/);
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-vbcoach')}`)).admin_tier, null);
+});
+
+test('people list: paged, searchable, filterable', async () => {
+  await as('u-admin', true);
+  const page1 = await rows(`select * from admin_list_people(null, 'all', 10, 0)`);
+  const page3 = await rows(`select * from admin_list_people(null, 'all', 10, 20)`);
+  assert.equal(page1.length, 10);
+  assert.ok(Number(page1[0].total) >= 25);
+  assert.equal(page3.length, Math.min(10, Number(page1[0].total) - 20));
+  assert.ok(!page1.some((p) => page3.some((q) => q.id === p.id)), 'pages don\'t overlap');
+  const parents = await rows(`select * from admin_list_people(null, 'parents', 50, 0)`);
+  assert.ok(parents.length >= 8 && parents.every((p) => p.school_role === 'parent'));
+  const found = await rows(`select * from admin_list_people('reyes', 'all', 25, 0)`);
+  assert.ok(found.length >= 1 && found.every((p) => /reyes/i.test(`${p.first_name} ${p.last_name} ${p.email}`)));
+  const staff = await rows(`select * from admin_list_people(null, 'staff', 100, 0)`);
+  const eng = (await one(`select ${id('u-eng')} as u`)).u;
+  assert.equal(staff.find((p) => p.id === eng)?.carline_duty, true, 'duty flags come with each person');
 });

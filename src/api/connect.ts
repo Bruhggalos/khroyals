@@ -100,36 +100,6 @@ export const me = (): Person | null => (live ? current : mock.me());
 export const getUser = (id: string): Person | undefined => (live ? directory.get(id) : mock.getUser(id));
 export const listUsers = async (): Promise<Person[]> => (live ? [...directory.values()] : mock.listUsers());
 
-export async function signIn(email: string, password: string) {
-  await run(sb().auth.signInWithPassword({ email: email.trim(), password }) as any);
-  return session();
-}
-/**
- * Create an account with email + password. Returns the signed-in person, or
- * null when the project requires confirming the email first (the confirmation
- * link reopens the app and signs in). New people wait for admin approval.
- */
-export async function signUp(email: string, password: string, firstName: string, lastName: string) {
-  const data: any = await run(sb().auth.signUp({
-    email: email.trim(), password,
-    options: { emailRedirectTo: authRedirectUrl(), data: { first_name: firstName.trim(), last_name: lastName.trim() } },
-  }) as any);
-  // Supabase hides whether an email is already registered: an existing address comes back with no identities.
-  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    throw new Error('An account with this email already exists. Sign in, or use "Forgot password".');
-  }
-  return data.session ? session() : null;
-}
-
-/** Email a link that opens the app's "set a new password" screen. */
-export async function sendPasswordReset(email: string) {
-  await run(sb().auth.resetPasswordForEmail(email.trim(), { redirectTo: authRedirectUrl() }) as any);
-}
-
-/** Set or change the signed-in person's password. */
-export async function updatePassword(password: string) {
-  await run(sb().auth.updateUser({ password }) as any);
-}
 export async function signOut() { if (live) await sb().auth.signOut(); current = null; }
 export const onAuthChange = (cb: () => void) => {
   if (!live) return () => {};
@@ -483,9 +453,6 @@ export function subscribeVolunteer(onChange: () => void): () => void {
 
 // ---------------------------------------------------------------- admin
 
-export async function adminListPeople(): Promise<Person[]> {
-  return (await run(sb().rpc('admin_list_people'))).map(toPerson);
-}
 export async function adminUpdateProfile(userId: string, role: SchoolRole | null, grade?: number | null) {
   await run(sb().rpc('admin_update_profile', { p_user: userId, p_role: role, p_grade: grade ?? null }));
 }
@@ -495,8 +462,16 @@ export async function adminLinkGuardian(guardianId: string, studentId: string, l
 export async function adminSetCarlineDuty(userId: string, on: boolean) {
   await run(sb().rpc('admin_set_carline_duty', { p_user: userId, p_on: on }));
 }
-export async function adminGuardianLinks(): Promise<{ guardianId: string; studentId: string }[]> {
-  return (await run(sb().from('guardians').select('*'))).map((g: any) => ({ guardianId: g.guardian_id, studentId: g.student_id }));
+export type FamilyLink = { guardianId: string; studentId: string; guardianName: string; studentName: string; studentGrade: number | null };
+/** Every parent ↔ student link, with names (people may be on other pages of the list). */
+export async function adminFamilyLinks(): Promise<FamilyLink[]> {
+  const rows: any[] = await run(sb().from('guardians').select(
+    'guardian_id, student_id, guardian:profiles!guardians_guardian_id_fkey(first_name, last_name), student:profiles!guardians_student_id_fkey(first_name, last_name, grade)'));
+  return rows.map((g) => ({
+    guardianId: g.guardian_id, studentId: g.student_id,
+    guardianName: `${g.guardian?.first_name ?? ''} ${g.guardian?.last_name ?? ''}`.trim(),
+    studentName: `${g.student?.first_name ?? ''} ${g.student?.last_name ?? ''}`.trim(), studentGrade: g.student?.grade ?? null,
+  }));
 }
 export async function listAudit(limit = 100) {
   return run(sb().from('audit_log').select('*, groups(name)').order('at', { ascending: false }).limit(limit)) as Promise<any[]>;
@@ -516,19 +491,27 @@ export async function editableCalendars(): Promise<{ groupId: string | null; nam
 // ---------------------------------------------------------------- email codes + authenticator app (MFA)
 
 /** Email a 6-digit sign-in code (creates the account on first use; admins approve new people). */
+export class NoAccountError extends Error {}
+
 /**
- * Email a sign-in link (and a 6-digit code once the project uses its own email
- * service). The link reopens the app — or the web portal — and signs in.
+ * Email a one-time sign-in code. Signing in (`create` false) refuses unknown
+ * emails with NoAccountError so the app can offer sign-up instead; signing up
+ * (`create` true) creates the account (awaiting admin approval) and emails the
+ * code to confirm the address.
  */
-export async function sendEmailCode(email: string, firstName?: string, lastName?: string) {
-  await run(sb().auth.signInWithOtp({
-    email: email.trim(),
+export async function sendEmailCode(email: string, opts: { create: boolean; firstName?: string; lastName?: string }) {
+  const { error } = await sb().auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: opts.create,
       emailRedirectTo: authRedirectUrl(),
-      data: firstName ? { first_name: firstName, last_name: lastName ?? '' } : undefined,
+      data: opts.create ? { first_name: opts.firstName?.trim() ?? '', last_name: opts.lastName?.trim() ?? '' } : undefined,
     },
-  }) as any);
+  });
+  if (!error) return;
+  if (!opts.create && /signups? not allowed|user not found/i.test(error.message)) throw new NoAccountError('No account uses this email yet.');
+  if (/rate limit|too many/i.test(error.message)) throw new Error('Too many codes were sent recently. Wait a few minutes and try again.');
+  throw new Error(error.message);
 }
 
 /** Where sign-in links return to: this web page, or the app's khroyals://auth link. */
@@ -538,11 +521,10 @@ export function authRedirectUrl() {
 }
 
 /**
- * Finish signing in from an emailed link (tokens in the URL fragment or query).
- * Returns 'recovery' for password-reset links (show "set a new password"),
- * true for other sign-ins, false if the URL carried no sign-in.
+ * Finish signing in from an emailed link (tokens in the URL fragment or query),
+ * for emails that carry a button rather than a code. Returns whether it did.
  */
-export async function completeSignInFromUrl(url: string | null): Promise<boolean | 'recovery'> {
+export async function completeSignInFromUrl(url: string | null): Promise<boolean> {
   if (!live || !url || !/access_token|refresh_token|[?&]code=|error_description/.test(url)) return false;
   const params = new URLSearchParams((url.split('#')[1] ?? '') + '&' + (url.split('?')[1]?.split('#')[0] ?? ''));
   const err = params.get('error_description');
@@ -552,14 +534,16 @@ export async function completeSignInFromUrl(url: string | null): Promise<boolean
   else if (code) await run(sb().auth.exchangeCodeForSession(code) as any);
   else return false;
   await session();
-  return params.get('type') === 'recovery' ? 'recovery' : true;
+  return true;
 }
+/** Check the emailed one-time code and sign in. */
 export async function verifyEmailCode(email: string, code: string) {
-  await run(sb().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' }) as any);
+  const { error } = await sb().auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.replace(/\D/g, ''), type: 'email' });
+  if (error) throw new Error(/expired|invalid/i.test(error.message) ? 'That code is wrong or has expired. Check the latest email, or send a new code.' : error.message);
   return session();
 }
 
-export type Access = { tier: 'director' | 'administrator' | 'office' | null; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
+export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 export async function myAccess(): Promise<Access | null> {
   if (!live || !current) return null;
   return run(sb().rpc('my_access')) as Promise<Access>;
@@ -591,16 +575,40 @@ export async function mfaVerify(factorId: string, code: string) {
 // ---------------------------------------------------------------- admin tiers & permissions
 
 export type PermissionInfo = { key: string; label: string; description: string };
-export type AdminPerson = Person & { adminTier: Access['tier']; granted: string[] };
+export type AdminPerson = Person & { adminTier: string | null; granted: string[] };
+export type AdminRole = { id: string; name: string; description: string; permissions: string[]; isSystem: boolean };
+export type PeopleFilter = 'all' | 'pending' | 'staff' | 'parents' | 'students' | 'admins';
 
 export async function permissionCatalog(): Promise<PermissionInfo[]> {
   return run(sb().rpc('permission_catalog')) as Promise<PermissionInfo[]>;
 }
-export async function adminListPeopleWithAccess(): Promise<AdminPerson[]> {
-  return (await run(sb().rpc('admin_list_people'))).map((p: any) => ({ ...toPerson(p), adminTier: p.admin_tier, granted: p.permissions ?? [] }));
+
+/** One page of people for the admin portal, with the total number of matches. */
+export async function adminListPeople(opts: { search?: string; filter?: PeopleFilter; limit?: number; offset?: number } = {}) {
+  const rows: any[] = await run(sb().rpc('admin_list_people', {
+    p_search: opts.search?.trim() || null, p_filter: opts.filter ?? 'all', p_limit: opts.limit ?? 20, p_offset: opts.offset ?? 0,
+  }));
+  return {
+    total: rows.length ? Number(rows[0].total) : 0,
+    people: rows.map((p): AdminPerson => ({ ...toPerson(p), adminTier: p.admin_tier, granted: p.permissions ?? [] })),
+  };
 }
-export async function adminSetAccess(userId: string, tier: Access['tier'], permissions: string[]) {
-  await run(sb().rpc('admin_set_access', { p_user: userId, p_tier: tier, p_permissions: permissions }));
+
+export async function adminRoles(): Promise<AdminRole[]> {
+  return (await run(sb().from('admin_roles').select('*').order('is_system', { ascending: false }).order('name')))
+    .map((r: any) => ({ id: r.id, name: r.name, description: r.description, permissions: r.permissions ?? [], isSystem: r.is_system }));
+}
+export async function adminSaveRole(role: { id?: string | null; name: string; description: string; permissions: string[] }) {
+  await run(sb().rpc('admin_save_role', { p_id: role.id ?? null, p_name: role.name, p_description: role.description, p_permissions: role.permissions }));
+}
+export async function adminDeleteRole(id: string) { await run(sb().rpc('admin_delete_role', { p_id: id })); }
+/** Give someone a role (not director) and extra permissions. */
+export async function adminSetAccess(userId: string, roleId: string | null, permissions: string[]) {
+  await run(sb().rpc('admin_set_access', { p_user: userId, p_tier: roleId, p_permissions: permissions }));
+}
+/** Add or remove a director (there must always be at least one). */
+export async function adminSetDirector(userId: string, director: boolean) {
+  await run(sb().rpc('admin_set_director', { p_user: userId, p_director: director }));
 }
 export async function transferDirector(userId: string) {
   await run(sb().rpc('transfer_director', { p_user: userId }));

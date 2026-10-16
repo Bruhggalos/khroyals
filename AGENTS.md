@@ -33,12 +33,15 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - **Never commit secrets.** Only the Supabase URL and *publishable* key belong in
   the repo (`app.json → expo.extra`). Service-role keys, `sb_secret_…` keys and
   `sbp_…` access tokens go in environment variables. The repo is public.
-- **Demo accounts must never get admin powers** — their shared password is in
-  `app.json`. Admin tiers (director / administrator / office) and permissions are
-  only for real accounts; the director is `patguettler@gmail.com`.
+- **Sign-in is passwordless**: email → 6-digit code (`sendEmailCode` /
+  `verifyEmailCode`). Don't reintroduce passwords or demo logins in the app.
+- **Demo accounts (`--demo` only) must never get admin powers.** Admin roles
+  (`admin_roles`; director is built in) and permissions are only for real accounts.
+  There may be several directors but never zero (trigger `app.keep_a_director`);
+  `patguettler@gmail.com` is a director.
 - **Car line duty** isn't an admin power (no MFA), but it shows every child's
   pickup status. The seed gives it to the demo Teacher for testing; it must go
-  with the demo accounts before real families use the app. The same goes for
+  with the demo accounts (`--demo` projects only) before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.
 - **Don't edit an applied migration.** Add a new timestamped file. Regenerate
   `supabase/seed.sql` + `supabase/setup_all.sql` with `python3 scripts/gen_seed.py`.

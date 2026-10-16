@@ -4,12 +4,12 @@
  *
  *   SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
  *   SUPABASE_ACCESS_TOKEN=… SUPABASE_PROJECT_REF=… \
- *   DEMO_PASSWORD=… NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs [--no-seed] [--director=email]
+ *   NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs [--demo] [--director=email]
  *
  * 1. Applies supabase/migrations/*.sql that haven't run yet (needs a personal
  *    access token for the Management API — the service key can't change schema).
- * 2. Creates the demo accounts through the Auth admin API (service key).
- * 3. Loads supabase/seed.sql (demo groups, posts and the school calendar).
+ * 2. --demo only (DEMO_PASSWORD=…): creates the demo accounts through the Auth
+ *    admin API and loads supabase/seed.sql (demo groups, posts, calendar).
  * 4. (token) Makes sign-in emails show a 6-digit code, deploys the send-push
  *    Edge Function, and optionally names the director (--director=email; that
  *    person must have signed in once).
@@ -32,8 +32,8 @@ const URL = env('SUPABASE_URL').replace(/\/$/, '');
 const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY');
 const TOKEN = env('SUPABASE_ACCESS_TOKEN', false);
 const REF = env('SUPABASE_PROJECT_REF', false) ?? new globalThis.URL(URL).hostname.split('.')[0];
-const PASSWORD = env('DEMO_PASSWORD');
-const seed = !process.argv.includes('--no-seed');
+const seed = process.argv.includes('--demo');
+const PASSWORD = seed ? env('DEMO_PASSWORD') : null;
 
 /** Same mapping as app.seed_id(): md5('khroyals:' || id)::uuid */
 const seedId = (legacy) => {
@@ -128,7 +128,8 @@ async function configureAuthEmail() {
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       site_url: 'khroyals://auth',
-      password_min_length: 8,
+      mailer_otp_length: 6,
+      mailer_otp_exp: 600,   // codes last 10 minutes
       // Sign-up without a confirmation email: Supabase's built-in email allows only
       // 2 emails/hour, and new accounts still need admin approval. Set to false once
       // the project uses its own email service (custom SMTP) to require confirmation.

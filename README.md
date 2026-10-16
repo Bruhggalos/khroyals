@@ -103,23 +103,28 @@ enforces every rule**:
 npm test                         # includes tests/db.test.ts: migrations + seed + RLS in PGlite
 python3 scripts/gen_seed.py      # rebuild supabase/seed.sql and supabase/setup_all.sql
 # apply to a project (needs a personal access token for schema changes):
-SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… DEMO_PASSWORD=… \
-  NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs
+SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… \
+  NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs     # add --demo (+ DEMO_PASSWORD) for demo data
 SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smoke_supabase.mjs
 ```
 
 Without an access token, paste `supabase/setup_all.sql` into the dashboard's SQL editor.
 
-**Sign-up & sign-in.** People create an account with name, email and password
-(an admin approves it), sign in with email + password, reset a forgotten password
-by email, or sign in with an emailed link instead. Emailed links open the app
-(`khroyals://auth`) or the web portal (`/auth`). Supabase's built-in email sends only
-2 emails/hour, so sign-up skips the confirmation email for now (see DEVELOPING.md).
+**Sign-up & sign-in (no passwords).** *Log in*: enter your email, we email a
+6-digit one-time code, type it in. An email with no account moves you to *Create
+account* (name + email → code); an admin then approves the account. There is no
+password to forget — a lost-access user just logs in again with a fresh code.
+Codes last 10 minutes. The email shows the code only once the project has custom
+SMTP (see DEVELOPING.md); until then Supabase's default email has a sign-in
+button, which the app also accepts (`khroyals://auth`, web `/auth`).
 
-**Admins.** Admin tiers: one **Director** (all powers; only one who manages
-admins; can hand the role on), **Administrators** (everything but managing admins)
-and **Office** (approvals, families, school calendar, notifications, activity log);
-the director can also grant single permissions to anyone. Admin tools need a code
+**Admins.** **Directors** have every permission and manage admins and roles.
+There can be several, never zero (a database trigger blocks removing the last
+one), so changing personnel = add the new director, then the old one steps down.
+Directors create **roles** (bundles of permissions — *Administrator* and *Office*
+come built in and are editable) and assign them to staff, and can grant single
+extra permissions to anyone. The portal's people list is paged and searchable
+server-side (`admin_list_people`). Admin tools need a code
 from an authenticator app (free TOTP, enforced in the database; switch with
 `app.settings.require_admin_mfa`). The admin portal is the app's **Admin portal**
 screen: same on web (`npx expo export --platform web`, host the `dist/` folder),
@@ -175,9 +180,9 @@ leader's messages are highlighted. A leader deletes an opportunity with a reason
 that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
 
-**Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
-share the password in `expo.extra.demoPassword`, which also shows one-tap demo
-logins on the sign-in screen. Remove it (and the accounts) before real families use the app.
+**Demo data** (accounts like `u-eng@demo.khroyals.test` with groups and posts) is
+only created with `supabase_setup.mjs --demo`, for local or throwaway projects. The
+app has no demo logins.
 
 ## Royals Connect — how groups work
 

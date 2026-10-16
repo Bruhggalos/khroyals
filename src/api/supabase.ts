@@ -10,7 +10,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 // Read straight from app.json so web, Android and iOS builds all get it.
 import appJson from '../../app.json';
 
-const extra = ((appJson as any).expo?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string; demoPassword?: string };
+const extra = ((appJson as any).expo?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string };
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra.supabaseUrl;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY || extra.supabaseKey;
 
@@ -19,7 +19,3 @@ export const supabase: SupabaseClient | null = url && key
       auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     })
   : null;
-
-/** Shared password of the seeded demo accounts; enables one-tap test logins. */
-export const demoPassword = process.env.EXPO_PUBLIC_DEMO_PASSWORD || extra.demoPassword;
-export const demoEmail = (legacyId: string) => `${legacyId}@demo.khroyals.test`;
