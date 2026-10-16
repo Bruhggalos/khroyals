@@ -63,6 +63,7 @@ content/site/    real site content (see above)
 mock-db/comms/   Royals Connect demo data (npm run regen-comms); seeds Supabase
 supabase/        migrations, seed, local test stubs
 scripts/         import_site.py (website), gen_comms.py (Connect demo)
+plugins/         Expo config plugins (withSceneLifecycle: iOS 27 UIScene life cycle)
 src/api/mockApi.ts    the ONLY module screens call; swap bodies for fetch() later
 src/site/             block renderer, link routing, video players
 src/comms/            types, presets, permission engine, roster auto-assignment, settings UI

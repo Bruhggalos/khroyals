@@ -20,7 +20,8 @@
     "plugins": [
       "expo-router",
       "expo-video",
-      "expo-notifications"
+      "expo-notifications",
+      "./plugins/withSceneLifecycle"
     ],
     "experiments": {
       "typedRoutes": false,

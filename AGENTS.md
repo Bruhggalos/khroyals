@@ -50,7 +50,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   `npx expo install <pkg>` (not `npm install`) for anything native so versions
   match the Expo SDK.
 - Native modules (expo-video, react-native-webview, expo-notifications) mean
-  **Expo Go isn't enough**; test with `npx expo run:android` or the CI APK.
+  **Expo Go isn't enough**; test with `npx expo run:android`, `npx expo run:ios`
+  or the CI APK.
+- **iOS 27 requires the UIScene life cycle.** `plugins/withSceneLifecycle.js`
+  rewrites the template AppDelegate during prebuild; `ios/` is generated, so never
+  edit it by hand. If an Expo upgrade makes the plugin throw, check whether the
+  new template already uses `ExpoAppSceneDelegate` and drop the plugin if so.
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
 - Supabase free plan: built-in email sends only a few messages/hour and email

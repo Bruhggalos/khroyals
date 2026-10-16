@@ -70,10 +70,18 @@ cd android && ./gradlew assembleRelease
 
 ### iPhone
 
-Needs a **Mac with Xcode** (`npx expo run:ios` with the phone plugged in) and,
-to install on a real iPhone beyond 7-day test builds, an **Apple Developer account
-($99/yr)**. The cloud alternative is EAS Build (`npm i -g eas-cli && eas build -p ios`),
-which also needs an Expo account. There is no iOS pipeline yet.
+Needs a **Mac with Xcode** and CocoaPods (run with `LANG=en_US.UTF-8`).
+`npx expo run:ios` builds and opens the iOS Simulator (`--device <name>` picks one,
+or plug in an iPhone). To install on a real iPhone beyond 7-day test builds you need
+an **Apple Developer account ($99/yr)**. The cloud alternative is EAS Build
+(`npm i -g eas-cli && eas build -p ios`), which also needs an Expo account. There is
+no iOS pipeline yet.
+
+Apps built with Xcode 27 (iOS 27 SDK) quit at launch unless they use the UIScene
+life cycle, and Expo SDK 57's template doesn't. `plugins/withSceneLifecycle.js`
+switches it over during prebuild. `ios/` is generated and gitignored, so don't edit
+it by hand. After changing `app.json` plugins, regenerate it with
+`npx expo prebuild --platform ios --clean`.
 
 ### Web
 
