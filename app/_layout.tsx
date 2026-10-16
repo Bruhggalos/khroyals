@@ -28,6 +28,7 @@ export default function Root() {
       headerBackButtonDisplayMode: 'minimal',
     }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ title: 'My profile' }} />
     </Stack>
   );
   return (

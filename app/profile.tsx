@@ -46,16 +46,22 @@ export default function Profile() {
   const [busy, setBusy] = useState<string | null>(null);
   const [device, setDevice] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const p = await session();
     setPerson(p);
     if (!p) return;
     setFirst(p.firstName); setLast(p.lastName);
-    const st = await mySettings();
-    setSettings(st);
-    setQuiet({ on: !!st.quietStart, start: st.quietStart ?? '21:00', end: st.quietEnd ?? '07:00' });
-    setGroups(await myGroupPrefs());
+    // Photo and name still work if notification settings can't load; say what failed.
+    const [st, gp] = await Promise.allSettled([mySettings(), myGroupPrefs()]);
+    if (st.status === 'fulfilled') {
+      setSettings(st.value);
+      setQuiet({ on: !!st.value.quietStart, start: st.value.quietStart ?? '21:00', end: st.value.quietEnd ?? '07:00' });
+    } else {
+      setSettingsError(st.reason?.message ?? 'Notification settings are unavailable right now.');
+    }
+    if (gp.status === 'fulfilled') setGroups(gp.value);
   }, []);
   useEffect(() => { load().catch(fail).finally(() => setLoaded(true)); }, [load]);
 
@@ -68,7 +74,7 @@ export default function Profile() {
       </View>
     );
   }
-  if (!person || !settings) return <Loading />;
+  if (!person || (!settings && !settingsError)) return <Loading />;
 
   const adult = person.schoolRole !== 'student';
   const step = async (key: string, fn: () => Promise<unknown>) => {
@@ -105,6 +111,7 @@ export default function Profile() {
   const saveSettings = (next: MySettings) => step('settings', async () => setSettings(await updateMySettings(next)));
   const saveQuiet = (q = quiet) => {
     if (q.on && (!TIME.test(q.start) || !TIME.test(q.end))) return Alert.alert('Quiet hours', 'Use 24-hour times like 21:00 and 07:00.');
+    if (!settings) return;
     const pad = (t: string) => t.padStart(5, '0');
     saveSettings({ ...settings, quietStart: q.on ? pad(q.start) : null, quietEnd: q.on ? pad(q.end) : null });
   };
@@ -153,6 +160,9 @@ export default function Profile() {
           disabled={!!busy || !first.trim() || !last.trim() || (first.trim() === person.firstName && last.trim() === person.lastName)} />
       </Card>
 
+      {!settings ? (
+        <Card><H>Notifications</H><P muted>Notification settings couldn't load: {settingsError}</P></Card>
+      ) : (<>
       <Card>
         <H>Notifications</H>
         <P muted>Choose what reaches your phone. Everything still shows under the bell in the app.</P>
@@ -196,6 +206,7 @@ export default function Profile() {
           ))}
         </Card>
       )}
+      </>)}
 
       <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(() => router.replace('/connect'))} />
     </ScrollView>
