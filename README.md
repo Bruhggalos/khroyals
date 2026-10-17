@@ -74,8 +74,9 @@ src/market/           Marketplace terms gate and helpers
 src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
-app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
-                      the shield button opens Apps: Car Line, Student, Calendar)
+src/share/            QR codes drawn with plain views (qrcode-generator encodes)
+app/                  expo-router screens (tabs: Home · Share · Apps · Connect · More;
+                      the shield button opens Apps: Car Line, Student, Calendar, News, …)
 tests/                permission engine tests
 ```
 
@@ -142,6 +143,11 @@ says when they're off and links to Settings.
 register after sign-in once the build has an Expo project id (`eas init` →
 `extra.eas.projectId`) and that Expo project has an APNs key (iPhone) or Firebase
 credentials (Android); see DEVELOPING.md §8.
+
+**Share** (the second tab). A QR code for the school website (khroyals.com) that
+anyone can scan with a phone camera, plus *Share the link* (the phone's share sheet)
+and *Open the website*. The code is drawn with plain views (`src/share/QrCode.tsx`),
+so no native module is needed. **News** moved from its tab to Apps → News.
 
 **Car line** (Apps → Car Line). Parents tap *I'm in the car line* for the children
 they're picking up; staff on car line duty see arrivals live and tap *Picked up*

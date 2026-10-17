@@ -12,6 +12,7 @@ const APPS: App[] = [
   { label: 'Car Line', icon: 'car', color: '#0E7490', href: '/carline' },
   { label: 'Student', icon: 'school', color: C.primary, href: '/student' },
   { label: 'Calendar', icon: 'calendar', color: C.accent, href: '/calendar' },
+  { label: 'News', icon: 'newspaper', color: '#CA8A04', href: '/news' },
   { label: 'Marketplace', icon: 'storefront', color: '#7C3AED', href: '/market' },
   { label: 'Volunteer', icon: 'hand-left', color: '#DB2777', href: '/volunteer' },
   { label: 'Assistant', icon: 'chatbubbles', color: '#EA580C', href: '/assistant' },

@@ -38,7 +38,7 @@ export default function TabsLayout() {
       tabBarActiveTintColor: C.primary,
     }}>
       <Tabs.Screen name="index" options={{ title: 'Home', headerTitle: 'Kingdom Heights', tabBarIcon: icon('🏠') }} />
-      <Tabs.Screen name="news" options={{ title: 'News', tabBarIcon: icon('📰') }} />
+      <Tabs.Screen name="share" options={{ title: 'Share', tabBarIcon: icon('📲') }} />
       <Tabs.Screen name="apps" options={{ title: 'Apps', headerTitle: 'Boldly Christian', tabBarButton: (props) => <AppsTabButton {...props} /> }} />
       <Tabs.Screen name="connect" options={{ title: 'Connect', tabBarIcon: icon('💬') }} />
       <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: icon('☰') }} />
