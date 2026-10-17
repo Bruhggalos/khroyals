@@ -150,6 +150,19 @@ export default function Profile() {
         <P muted>Everyone at school who uses Royals Connect can see your photo.</P>
       </Card>
 
+      {adult && (
+        <Card onPress={() => router.push('/children')}>
+          <View style={s.row}>
+            <Text style={{ fontSize: 22 }}>👨‍👩‍👧</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: C.ink }}>My children</Text>
+              <P muted>Photos, birthdays, allergies, and adding a child</P>
+            </View>
+            <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+          </View>
+        </Card>
+      )}
+
       <Card>
         <H>Name</H>
         <View style={s.row}>

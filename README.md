@@ -150,6 +150,16 @@ automatically; anyone can follow/unfollow (🔔), and new replies notify followe
 (`app.notify_reply`). My profile toggles: school announcements (urgent ones always
 push), group posts, replies, Marketplace, Volunteering, quiet hours, per-group level.
 
+**Children.** Children are students without a login: profiles with `managed = true`
+(no auth account), linked to any approved adult through `guardians`, so the car line,
+family groups and grade-based groups work for them. The office adds them (Admin portal
+→ **Students**) or approves parents' requests (`request_child`, `request_child_edit` →
+`admin_decide_family_request`). Parents edit photo, bio, birthday, allergies and health
+notes themselves (**My children**); those details (`student_details`, child photos under
+`avatars/children/<id>/`) are visible only to the child's parents and staff. Grades come
+from the graduation year (`class_of`) and move up every July 1 (`app.refresh_grades`,
+daily via pg_cron). K2 = -3, K3 = -2, K4 = -1, Kindergarten = 0.
+
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).

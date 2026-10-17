@@ -5,7 +5,7 @@ export const fullName = (id: string | null) => {
   return p ? `${p.firstName} ${p.lastName}`.trim() : 'Unknown';
 };
 
-export const gradeLabel = (g?: number | null) => (g == null ? '' : g >= 1 ? `Grade ${g}` : 'K');
+export { gradeLabel } from '../comms/grades';
 
 export const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 

@@ -13,6 +13,9 @@ import {
   sendNotification,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo,
 } from '../../src/api/connect';
+import { StudentsPanel } from '../../src/admin/StudentsPanel';
+import { GradePicker } from '../../src/comms/GradePicker';
+import { gradeLabel } from '../../src/comms/grades';
 import { MfaGate } from '../../src/comms/MfaGate';
 import type { Group, SchoolRole } from '../../src/comms/types';
 import { Avatar, Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
@@ -59,7 +62,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
   p: AdminPerson; links: FamilyLink[]; access: Access; roles: AdminRole[]; onChange: () => void;
 }) {
   const [open, setOpen] = useState(!!p.pending);
-  const [grade, setGrade] = useState(p.grade != null ? String(p.grade) : '');
+  const [grade, setGrade] = useState<number | null>(p.grade ?? null);
   const [q, setQ] = useState('');
   const found = usePeople(q.trim(), 'students', 6, 0, 0, q.trim() !== '');
   const can = (x: string) => access.permissions.includes(x);
@@ -70,7 +73,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
     return can('people.roles');
   });
   const setRole = (r: SchoolRole | null) =>
-    adminUpdateProfile(p.id, r, r === 'student' && grade !== '' ? Number(grade) : p.grade ?? null).then(onChange).catch(fail);
+    adminUpdateProfile(p.id, r, r === 'student' && grade !== null ? grade : p.grade ?? null).then(onChange).catch(fail);
   const children = links.filter((l) => l.guardianId === p.id);
   const parents = links.filter((l) => l.studentId === p.id);
   const roleName = roles.find((r) => r.id === p.adminTier)?.name ?? p.adminTier;
@@ -81,7 +84,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
         <Avatar person={getUser(p.id) ?? p} size={36} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: C.ink }}>{fullName(p)}</Text>
-          <P muted>{p.email}{p.grade != null ? ` · grade ${p.grade}` : ''}</P>
+          <P muted>{p.email ?? 'No login'}{p.grade != null ? ` · ${gradeLabel(p.grade)}` : ''}</P>
         </View>
         {roleName && <Chip label={roleName} color={C.accent} />}
         {p.carlineDuty && <Chip label="Car line" color="#15803D" />}
@@ -118,11 +121,11 @@ function PersonCard({ p, links, access, roles, onChange }: {
           )}
           {p.schoolRole === 'student' && can('people.family') && (
             <View style={[s.row, { alignItems: 'flex-end' }]}>
-              <Field label="Grade" hint="K2 = -2, K = 0 … 12" keyboardType="numbers-and-punctuation" value={grade} onChangeText={setGrade} style={{ flex: 1 }} />
-              <Button label="Save grade" kind="ghost" onPress={() => setRole('student')} />
+              <View style={{ flex: 1 }}><GradePicker value={grade} onChange={setGrade} /></View>
+              <Button label="Save grade" kind="ghost" disabled={grade === p.grade} onPress={() => setRole('student')} />
             </View>
           )}
-          {p.schoolRole === 'parent' && can('people.family') && (
+          {!p.pending && p.schoolRole !== 'student' && can('people.family') && (
             <View style={{ gap: 6 }}>
               {children.map((c) => (
                 <Text key={c.studentId} style={{ color: C.ink }}>👪 {c.studentName}{'  '}
@@ -132,7 +135,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
               <Field label="Link a student" placeholder="Search by name" value={q} onChangeText={setQ} />
               {q.trim() !== '' && found?.people.filter((x) => !children.some((c) => c.studentId === x.id)).map((x) => (
                 <Text key={x.id} style={{ color: C.primary }} onPress={() => { setQ(''); adminLinkGuardian(p.id, x.id).then(onChange).catch(fail); }}>
-                  + {fullName(x)} (grade {x.grade ?? '?'})
+                  + {fullName(x)} ({x.grade != null ? gradeLabel(x.grade) : 'no grade'})
                 </Text>
               ))}
               <P muted>Linked parents join their student's family groups automatically.</P>
@@ -441,6 +444,7 @@ function Portal({ access }: { access: Access }) {
   const can = (x: string) => access.permissions.includes(x);
   const tabs = [
     can('people.view') && ['people', 'People'],
+    can('people.family') && ['students', 'Students'],
     can('admins.manage') && ['admins', 'Admins & roles'],
     ['notify', 'Notifications'],
     can('audit.view') && ['audit', 'Activity log'],
@@ -456,6 +460,7 @@ function Portal({ access }: { access: Access }) {
       <P muted>{access.isDirector ? 'Director' : access.roleName ?? 'Custom permissions'} · {me()?.email}</P>
       <View style={[s.row, { flexWrap: 'wrap' }]}>{tabs.map(([k, l]) => pill(l, tab === k, () => setTab(k)))}</View>
       {tab === 'people' && <People access={access} roles={roles} />}
+      {tab === 'students' && <StudentsPanel />}
       {tab === 'admins' && <Admins catalog={catalog} roles={roles} reloadRoles={loadRoles} />}
       {tab === 'notify' && <Notifications access={access} />}
       {tab === 'audit' && <Audit />}

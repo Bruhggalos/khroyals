@@ -881,3 +881,74 @@ test('marketplace: sellers delete posts at any stage, and people in line are tol
   assert.match(await told('u-p02', pending.id), /sale is off/);
   assert.doesNotMatch(await told('u-p02', sold.id), /No longer available|took this post down/, 'a finished sale needs no notice');
 });
+
+test('children: the office adds them, parents ask for more, grades move up each year', async () => {
+  // Grades follow the graduation year; the school year starts July 1.
+  await asSuper();
+  const g = async (classOf: number, day: string) => (await one(`select app.grade_for_class(${classOf}, '${day}') as g`)).g;
+  assert.equal(await g(2030, '2026-10-17'), 9, 'Class of 2030 is in 9th grade in 2026–27');
+  assert.equal(await g(2030, '2027-06-30'), 9, 'same school year until July');
+  assert.equal(await g(2030, '2027-07-01'), 10, 'moves up on July 1');
+  assert.equal((await one(`select app.grade_label(-3) as l`)).l, 'K2');
+
+  // The office adds a child with no login and links a parent (a teacher can be a parent too).
+  await as('u-p05');
+  await rejects(`select admin_create_student('Ella', 'Kim', 2)`, /permission/);
+  await as('u-admin', true);
+  const ella = (await one(`select admin_create_student('Ella', 'Kim', 2, '2018-04-02', ${id('u-p05')}) as id`)).id;
+  await one(`select admin_link_guardian(${id('u-eng')}, '${ella}')`);
+  await rejects(`select admin_link_guardian(${id('u-s01')}, '${ella}')`, /approved adults/);
+  await rejects(`select admin_link_guardian(${id('u-p05')}, ${id('u-p06')})`, /must be students/);
+  const row = await one(`select * from profiles where id = '${ella}'`);
+  assert.equal(row.managed, true);
+  assert.equal(row.school_role, 'student');
+  assert.equal(row.grade, 2);
+  assert.ok(row.class_of > 2030, 'class year stored');
+  assert.equal((await one(`select count(*)::int n from admin_list_students('ella kim')`)).n, 1);
+
+  // Parents see their child and edit photo, bio, birthday and allergies directly.
+  await as('u-p05');
+  const kid = (await one(`select my_children() as k`)).k.find((k: any) => k.id === ella);
+  assert.equal(kid.firstName, 'Ella');
+  assert.equal(kid.gradeLabel, '2nd');
+  assert.equal(kid.parents.length, 2);
+  await one(`select update_child_details('${ella}', '2018-04-02', 'Loves art', 'Peanuts', '')`);
+  await one(`select set_child_photo('${ella}', 'children/${ella}/me.jpg')`);
+  await rejects(`select set_child_photo('${ella}', 'children/${ella.replace(/^./, '0')}/x.jpg')`, /isn't in this child's folder/);
+  // Other parents can't see the details or change anything.
+  await as('u-p06');
+  assert.equal((await rows(`select * from student_details`)).length, 0);
+  await rejects(`select update_child_details('${ella}', null, '', '', '')`, /Only this child's parents/);
+  await rejects(`insert into storage.objects (bucket_id, name, owner) values ('avatars', 'children/${ella}/x.jpg', ${id('u-p06')})`, /row-level security/);
+  // Staff can read allergies.
+  await as('u-sci');
+  assert.equal((await one(`select allergies from student_details where student_id = '${ella}'`)).allergies, 'Peanuts');
+
+  // Parents ask; the office approves or declines, and they're told.
+  await as('u-p06');
+  await rejects(`select request_child_edit('${ella}', 'Ella', 'Kim', 3)`, /Only this child's parents/);
+  const add = await one(`select * from request_child('Max', 'Ortiz', -1, null, 'Starting in January')`);
+  await as('u-p05');
+  const edit = await one(`select * from request_child_edit('${ella}', 'Ella', 'Kim-Lee', 2)`);
+  await as('u-s01');
+  await rejects(`select request_child('X', 'Y', 1)`, /approved parents/);
+  await as('u-admin', true);
+  const queue = (await one(`select admin_family_requests() as q`)).q;
+  assert.deepEqual(queue.map((r: any) => r.kind).sort(), ['add_child', 'edit_child']);
+  const max = (await one(`select admin_decide_family_request('${add.id}', true) as id`)).id;
+  await one(`select admin_decide_family_request('${edit.id}', false, null, 'Please call the office.')`);
+  await rejects(`select admin_decide_family_request('${add.id}', true)`, /already handled/);
+  await as('u-p06');
+  const theirs = (await one(`select my_children() as k`)).k;
+  assert.ok(theirs.some((k: any) => k.id === max && k.gradeLabel === 'K4'));
+  assert.ok((await rows(`select body from my_notifications() where data ? 'children'`)).length >= 1);
+  await as('u-p05');
+  assert.match((await rows(`select body from my_notifications() where data ? 'children'`)).map((n) => n.body).join(), /call the office/);
+  assert.equal((await one(`select last_name from profiles where id = '${ella}'`)).last_name, 'Kim', 'declined edits change nothing');
+
+  // Children without a login can be removed; accounts can't be removed this way.
+  await as('u-admin', true);
+  await rejects(`select admin_delete_student(${id('u-s01')})`, /without their own login/);
+  await one(`select admin_delete_student('${max}')`);
+  assert.equal((await rows(`select 1 from profiles where id = '${max}'`)).length, 0);
+});

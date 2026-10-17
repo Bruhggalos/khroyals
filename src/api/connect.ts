@@ -802,3 +802,99 @@ export async function dismissNotifications(ids: string[]) {
 export async function clearMyNotifications(): Promise<number> {
   return run(sb().rpc('clear_my_notifications')) as Promise<number>;
 }
+
+// ---------------------------------------------------------------- children
+
+export type Child = {
+  id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
+  photoPath: string | null; photo: string; hasLogin: boolean;
+  birthday: string | null; bio: string; allergies: string; medicalNotes: string; parents: string[];
+};
+export type FamilyRequest = {
+  id: string; kind: 'add_child' | 'edit_child'; status: string; createdAt: string; studentId: string | null;
+  details: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string | null };
+  decisionNote?: string | null;
+};
+
+/** The signed-in person's children with their details (photo URLs signed for display). */
+export async function myChildProfiles(): Promise<Child[]> {
+  if (!live || !current) return [];
+  const rows: any[] = await run(sb().rpc('my_children'));
+  await signAvatars(rows.map((c) => c.photoPath)).catch(() => {});
+  return rows.map((c) => ({ ...c, photo: avatarUrl(c.photoPath) }));
+}
+export async function updateChildDetails(studentId: string, d: { birthday: string | null; bio: string; allergies: string; medicalNotes: string }) {
+  await run(sb().rpc('update_child_details', {
+    p_student: studentId, p_birthday: d.birthday || null, p_bio: d.bio, p_allergies: d.allergies, p_medical_notes: d.medicalNotes,
+  }));
+}
+/** Upload a JPEG (base64) as a child's photo (parents and the office). */
+export async function uploadChildPhoto(studentId: string, base64: string, oldPath?: string | null) {
+  const path = `children/${studentId}/${Date.now()}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('avatars').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  await run(sb().rpc('set_child_photo', { p_student: studentId, p_path: path }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
+export async function removeChildPhoto(studentId: string, oldPath?: string | null) {
+  await run(sb().rpc('set_child_photo', { p_student: studentId, p_path: null }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
+export async function requestChild(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string }) {
+  await run(sb().rpc('request_child', {
+    p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_note: c.note ?? null,
+  }));
+}
+export async function requestChildEdit(studentId: string, c: { firstName: string; lastName: string; grade: number; note?: string }) {
+  await run(sb().rpc('request_child_edit', { p_student: studentId, p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_note: c.note ?? null }));
+}
+export async function cancelFamilyRequest(id: string) { await run(sb().rpc('cancel_family_request', { p_request: id })); }
+const toRequest = (r: any): FamilyRequest => ({
+  id: r.id, kind: r.kind, status: r.status, createdAt: r.created_at, studentId: r.student_id, details: r.details, decisionNote: r.decision_note,
+});
+/** This person's requests that the office hasn't answered yet. */
+export async function myFamilyRequests(): Promise<FamilyRequest[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('family_requests').select('*').eq('requested_by', current.id).eq('status', 'pending')
+    .order('created_at'))).map(toRequest);
+}
+
+export type AdminStudent = {
+  id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
+  managed: boolean; photoPath: string | null; parents: { id: string; name: string }[];
+};
+export async function adminListStudents(opts: { search?: string; limit?: number; offset?: number } = {}) {
+  const rows: any[] = await run(sb().rpc('admin_list_students', {
+    p_search: opts.search?.trim() || null, p_limit: opts.limit ?? 20, p_offset: opts.offset ?? 0,
+  }));
+  return {
+    total: rows.length ? Number(rows[0].total) : 0,
+    students: rows.map((r): AdminStudent => ({
+      id: r.id, firstName: r.first_name, lastName: r.last_name, grade: r.grade, gradeLabel: r.grade_label, classOf: r.class_of,
+      managed: r.managed, photoPath: r.photo_path, parents: r.parents ?? [],
+    })),
+  };
+}
+export async function adminCreateStudent(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; guardianId?: string | null }) {
+  return run(sb().rpc('admin_create_student', {
+    p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_guardian: c.guardianId ?? null,
+  })) as Promise<string>;
+}
+export async function adminUpdateStudent(id: string, c: { firstName: string; lastName: string; grade: number }) {
+  await run(sb().rpc('admin_update_student', { p_student: id, p_first: c.firstName, p_last: c.lastName, p_grade: c.grade }));
+}
+export async function adminDeleteStudent(id: string) { await run(sb().rpc('admin_delete_student', { p_student: id })); }
+export type AdminFamilyRequest = {
+  id: string; kind: 'add_child' | 'edit_child'; createdAt: string; details: FamilyRequest['details'];
+  requestedBy: { id: string; name: string; role: string };
+  student: { id: string; firstName: string; lastName: string; grade: number | null } | null;
+};
+export async function adminFamilyRequests(): Promise<AdminFamilyRequest[]> {
+  return run(sb().rpc('admin_family_requests')) as Promise<AdminFamilyRequest[]>;
+}
+/** Approve (optionally linking to an existing student instead of creating one) or decline. */
+export async function adminDecideFamilyRequest(id: string, approve: boolean, opts: { existingStudentId?: string | null; note?: string } = {}) {
+  await run(sb().rpc('admin_decide_family_request', {
+    p_request: id, p_approve: approve, p_existing: opts.existingStudentId ?? null, p_note: opts.note ?? null,
+  }));
+}
