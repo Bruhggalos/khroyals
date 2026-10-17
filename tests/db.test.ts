@@ -832,3 +832,52 @@ test('replies notify followers, who can unfollow; settings decide what pushes', 
   assert.equal(await wants(toCoach[0].id), false, 'replies turned off');
   await db.exec(`delete from user_settings`);
 });
+
+test('inbox: delete one notification or clear them all (only for yourself)', async () => {
+  await as('u-admin', true);
+  const a = await one(`select * from send_notification('Picture day', 'Smile!', 'roles', null, array['parent'])`);
+  const b = await one(`select * from send_notification('Book fair', 'Next week.', 'roles', null, array['parent'])`);
+  const inbox = async (who: string) => { await as(who); return (await rows(`select id from my_notifications()`)).map((n) => n.id); };
+  assert.ok((await inbox('u-p05')).includes(a.id));
+  await as('u-p05');
+  await one(`select dismiss_notifications(array['${a.id}'::uuid])`);
+  assert.ok(!(await inbox('u-p05')).includes(a.id), 'deleted for them');
+  assert.ok((await inbox('u-p05')).includes(b.id));
+  assert.ok((await inbox('u-p06')).includes(a.id), 'still there for everyone else');
+  await as('u-p05');
+  assert.ok((await one(`select clear_my_notifications() as n`)).n >= 1);
+  assert.equal((await inbox('u-p05')).length, 0, 'cleared');
+  await rejects(`select * from notification_dismissals`, /permission denied/);
+  await as('u-admin', true);
+  assert.equal((await rows(`select 1 from notifications where id in ('${a.id}', '${b.id}')`)).length, 2, 'the sender\'s history keeps them');
+});
+
+test('marketplace: sellers delete posts at any stage, and people in line are told', async () => {
+  const told = async (who: string, listing: string) => {
+    await as(who);
+    return (await rows(`select body from my_notifications() where data->>'listingId' = '${listing}'`)).map((n) => n.body).join('\n');
+  };
+  // (Rosa, Wei and Dana accepted the terms in the marketplace test.)
+  await as('u-p01');
+  const open = await one(`select * from market_post('Backpack', '', 800, 1, 'good')`);
+  const pending = await one(`select * from market_post('Blazer', '', 2500, 1, 'good')`);
+  const sold = await one(`select * from market_post('Tie', '', 500, 1, 'new')`);
+  await as('u-p03');
+  await one(`select * from market_dibs('${open.id}')`);
+  await as('u-p02');
+  const line = await one(`select * from market_dibs('${pending.id}')`);
+  await one(`select * from market_dibs('${sold.id}')`);
+  await as('u-p01');
+  await one(`select market_select('${line.id}')`);
+  const soldLine = (await one(`select id from market_responses where listing_id = '${sold.id}'`)).id;
+  await one(`select market_select('${soldLine}')`);
+  await one(`select market_complete('${sold.id}')`);
+
+  for (const l of [open, pending, sold]) await one(`select market_remove('${l.id}')`);
+  assert.deepEqual((await rows(`select status from market_listings where id in ('${open.id}', '${pending.id}', '${sold.id}')`)).map((r) => r.status),
+    ['removed', 'removed', 'removed']);
+  await rejects(`select market_remove('${open.id}')`, /No such post/);
+  assert.match(await told('u-p03', open.id), /took this post down/);
+  assert.match(await told('u-p02', pending.id), /sale is off/);
+  assert.doesNotMatch(await told('u-p02', sold.id), /No longer available|took this post down/, 'a finished sale needs no notice');
+});

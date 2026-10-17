@@ -14,7 +14,7 @@ import {
   type Listing, type MarketLine, type Person,
 } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
-import { ask, conditionLabel, inLine, money, nameOf, parseMoney, when } from '../../src/market/format';
+import { ask, conditionLabel, deleteWarning, inLine, money, nameOf, parseMoney, when } from '../../src/market/format';
 import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const GREEN = '#15803D';
@@ -75,6 +75,12 @@ function ItemView({ id, me }: { id: string; me: Person }) {
           ? <SellerLine l={l} lines={data.lines} busy={busy} act={act} />
           : <BuyerPanel l={l} me={me} lines={data.lines} busy={busy} act={act} />}
 
+      {seller && (
+        <Text style={{ color: C.danger, fontWeight: '600', marginTop: 8 }} accessibilityRole="button"
+          onPress={() => ask('Delete this post?', deleteWarning(l), 'Delete', () => act(() => marketRemove(l.id), () => router.back()))}>
+          🗑 Delete this post
+        </Text>
+      )}
       {isAdmin && !seller && (
         <Text style={{ color: C.danger, fontWeight: '600', marginTop: 8 }}
           onPress={() => ask('Remove this post?', "It comes down because it isn't a uniform or school-related item, and the seller is told why.", 'Remove',
@@ -168,10 +174,6 @@ function SellerLine({ l, lines, busy, act }: { l: Listing; lines: MarketLine[]; 
             `Sell "${l.title}" to ${nameOf(chosen.buyerId)} for ${money(chosen.agreedCents!)}? The post closes to everyone else, and you two arrange the handoff at school.`,
             'Confirm', () => act(() => marketSelect(chosen.id), () => setPicked(null)))} />
       )}
-      <Text style={{ color: C.danger, fontWeight: '600', marginTop: 6 }}
-        onPress={() => ask('Take down this post?', 'It disappears from the Marketplace.', 'Take down', () => act(() => marketRemove(l.id), () => router.back()))}>
-        Take down this post
-      </Text>
     </View>
   );
 }

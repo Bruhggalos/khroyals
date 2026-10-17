@@ -793,3 +793,12 @@ export async function notificationOpenCounts(ids: string[]): Promise<Record<stri
   const rows: any[] = await run(sb().rpc('notification_open_counts', { p_ids: ids }));
   return Object.fromEntries(rows.map((r) => [r.id, Number(r.opened)]));
 }
+
+/** Delete notifications from your own inbox (others and the sender's history keep them). */
+export async function dismissNotifications(ids: string[]) {
+  if (!ids.length) return;
+  await run(sb().rpc('dismiss_notifications', { p_ids: ids }));
+}
+export async function clearMyNotifications(): Promise<number> {
+  return run(sb().rpc('clear_my_notifications')) as Promise<number>;
+}

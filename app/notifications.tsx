@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import { markNotificationsOpened, myNotifications, openedNotifications, session, type Notice, type Person } from '../src/api/connect';
+import { clearMyNotifications, dismissNotifications, markNotificationsOpened, myNotifications, openedNotifications, session, type Notice, type Person } from '../src/api/connect';
+import { SwipeToDelete } from '../src/comms/SwipeToDelete';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
 
 /** "5 min ago", "3 h ago", "2 d ago", then the date. */
@@ -40,7 +41,26 @@ export default function Notifications() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const refresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const header = <Stack.Screen options={{ title: 'Notifications' }} />;
+  const remove = (id: string) => {
+    setItems((list) => list.filter((n) => n.id !== id));
+    dismissNotifications([id]).catch((e) => { Alert.alert('Notifications', e.message); load(); });
+  };
+  const clearAll = () => {
+    const go = () => { setItems([]); clearMyNotifications().catch((e) => { Alert.alert('Notifications', e.message); load(); }); };
+    if (Platform.OS === 'web') { if (globalThis.confirm?.('Clear all notifications?')) go(); return; }
+    Alert.alert('Clear all notifications?', 'They\'re removed from your list. This can\'t be undone.', [
+      { text: 'Cancel', style: 'cancel' }, { text: 'Clear all', style: 'destructive', onPress: go },
+    ]);
+  };
+
+  const header = <Stack.Screen options={{
+    title: 'Notifications',
+    headerRight: items.length ? () => (
+      <Pressable onPress={clearAll} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear all notifications" style={{ marginRight: 8 }}>
+        <Text style={{ color: '#fff', fontWeight: '700' }}>Clear all</Text>
+      </Pressable>
+    ) : undefined,
+  }} />;
   if (error) return (
     <View style={[s.screen, s.pad]}>{header}
       <Card><H>Couldn't load notifications</H><P muted>{error}</P><Button label="Try again" onPress={load} /></Card>
@@ -66,7 +86,7 @@ export default function Notifications() {
     <FlatList
       style={s.screen} contentContainerStyle={s.pad} data={items} keyExtractor={(n) => n.id}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.primary} />}
-      ListHeaderComponent={header}
+      ListHeaderComponent={<>{header}{items.length > 0 && <P muted>Swipe a notification sideways (or tap ✕) to delete it.</P>}</>}
       ListEmptyComponent={<Card><H>No notifications yet</H><P muted>New posts in your groups and messages from the school will show up here.</P></Card>}
       renderItem={({ item: n }) => {
         const groupId = n.data?.groupId as string | undefined;
@@ -75,15 +95,20 @@ export default function Notifications() {
         const href = listingId ? `/market/${listingId}` : opportunityId ? `/volunteer/${opportunityId}`
           : groupId ? `/group/${groupId}` : null;
         return (
+          <SwipeToDelete onDelete={() => remove(n.id)}>
           <Card onPress={href ? () => router.push(href) : undefined}
             style={opened.has(n.id) ? undefined : { borderColor: C.primary, borderLeftWidth: 4 }}>
             <View style={[s.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
               {!opened.has(n.id) && <View accessibilityLabel="New" style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.primary, marginTop: 6 }} />}
               <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{n.title}</Text>
               <Text style={{ fontSize: 13, color: C.muted }}>{timeAgo(n.createdAt)}</Text>
+              <Pressable onPress={() => remove(n.id)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Delete notification: ${n.title}`}>
+                <Text style={{ fontSize: 16, color: C.muted, paddingLeft: 4 }}>✕</Text>
+              </Pressable>
             </View>
             <P>{n.body}</P>
           </Card>
+          </SwipeToDelete>
         );
       }}
     />
