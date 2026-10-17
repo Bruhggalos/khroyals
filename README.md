@@ -127,13 +127,21 @@ from an authenticator app (free TOTP, enforced in the database; switch with
 screen: same on web (`npx expo export --platform web`, host the `dist/` folder),
 Android and iPhone.
 
-**Push notifications** go through Expo's free push service: new posts notify group
-members (per-group preferences), and the portal sends to everyone, a role, or a
-group. `supabase/functions/send-push` delivers them (deployed by the setup script).
-Devices register after sign-in once the build has an Expo project id
-(`eas init` → `extra.eas.projectId`) and, on Android, Firebase credentials
-(`google-services.json`). Every notification also lands in the person's in-app
-inbox: the bell in the top bar (`app/notifications.tsx`, `my_notifications()`).
+**Notifications.** Everything sent to a person lands on the Notifications page
+(the bell in the top bar, `app/notifications.tsx`): the school's notifications
+(`public.notifications` via `my_notifications()`: group posts, announcements,
+Marketplace, Volunteer, Ask the School) merged with the ones the phone shows by
+itself (the car line's, kept on the phone by `src/comms/localInbox.ts`). Tapping
+one opens what it's about (`notificationHref()` in `src/comms/inbox.ts`). After
+sign-in the iPhone and Android apps ask permission to show notifications; the page
+says when they're off and links to Settings.
+
+**Push** goes through Expo's free push service: new posts notify group members
+(per-group preferences), and the portal sends to everyone, a role, or a group.
+`supabase/functions/send-push` delivers them (deployed by the setup script). Phones
+register after sign-in once the build has an Expo project id (`eas init` →
+`extra.eas.projectId`) and that Expo project has an APNs key (iPhone) or Firebase
+credentials (Android); see DEVELOPING.md §8.
 
 **Car line** (Apps → Car Line). Parents tap *I'm in the car line* for the children
 they're picking up; staff on car line duty see arrivals live and tap *Picked up*

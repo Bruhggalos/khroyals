@@ -1,12 +1,14 @@
 /**
- * Push notifications through Expo's free push service. After sign-in the
- * device asks permission, gets an Expo push token and registers it with the
- * backend; the send-push Edge Function delivers to it. Tapping a notification
- * opens its group.
+ * Push notifications through Expo's free push service. After sign-in the phone
+ * asks permission (iOS: "Allow notifications?"), gets an Expo push token and
+ * registers it with the backend; the send-push Edge Function delivers to it.
+ * Tapping a notification opens what it's about.
  *
- * Needs an Expo project id (app.json → extra.eas.projectId, from `eas init`)
- * and, for Android, Firebase credentials (google-services.json). Until those
- * exist registration is skipped and the app works without push.
+ * Delivery needs an Expo project id (app.json → extra.eas.projectId, from
+ * `eas init`) plus an APNs key (iPhone) or Firebase credentials (Android) in
+ * that Expo project. Until then the phone still asks permission, so the app's
+ * own notifications (car line) work, and the school's still reach the
+ * Notifications page; they just don't buzz the phone.
  */
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
@@ -15,6 +17,8 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { registerPushToken, unregisterPushToken } from '../api/connect';
 import { handleCarlineResponse } from '../carline/autoCheckIn';
+import { notificationHref } from './inbox';
+import { clearLocalNotifications } from './localInbox';
 import appJson from '../../app.json';
 
 Notifications.setNotificationHandler({
@@ -24,20 +28,25 @@ Notifications.setNotificationHandler({
 let token: string | null = null;
 
 export type PushState = 'on' | 'denied' | 'unsupported' | 'not-configured' | 'error';
+export type Permission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 
+const projectId = (): string | undefined => (Constants.expoConfig?.extra as any)?.eas?.projectId
+  ?? (Constants as any).easConfig?.projectId ?? (appJson as any).expo?.extra?.eas?.projectId;
+
+/** Ask to show notifications (once; iOS won't ask again after "Don't Allow"), then register for the school's pushes. */
 export async function enablePush(): Promise<{ state: PushState; detail?: string }> {
-  if (Platform.OS === 'web' || !Device.isDevice) return { state: 'unsupported', detail: 'Push needs the Android or iPhone app on a real device.' };
-  const projectId = (Constants.expoConfig?.extra as any)?.eas?.projectId ?? (Constants as any).easConfig?.projectId
-    ?? (appJson as any).expo?.extra?.eas?.projectId;
-  if (!projectId) return { state: 'not-configured', detail: 'Push isn\'t set up for this build yet (missing Expo project id).' };
+  if (Platform.OS === 'web') return { state: 'unsupported', detail: 'Notifications need the Android or iPhone app.' };
   try {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === 'android') {  // Android 13+ only asks once a channel exists
       await Notifications.setNotificationChannelAsync('default', { name: 'Royals Connect', importance: Notifications.AndroidImportance.HIGH });
     }
-    let { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') status = (await Notifications.requestPermissionsAsync()).status;
-    if (status !== 'granted') return { state: 'denied', detail: 'Notifications are turned off in your phone\'s settings.' };
-    token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    let perm = await Notifications.getPermissionsAsync();
+    if (perm.status !== 'granted' && perm.canAskAgain) perm = await Notifications.requestPermissionsAsync();
+    if (perm.status !== 'granted') return { state: 'denied', detail: 'Notifications are turned off for KH Royals in your phone\'s Settings.' };
+    if (!Device.isDevice) return { state: 'unsupported', detail: 'The school\'s pushes need a real phone; simulators only show the app\'s own notifications.' };
+    const id = projectId();
+    if (!id) return { state: 'not-configured', detail: 'Push isn\'t set up for this build yet (missing Expo project id).' };
+    token = (await Notifications.getExpoPushTokenAsync({ projectId: id })).data;
     await registerPushToken(token, Platform.OS);
     return { state: 'on' };
   } catch (e: any) {
@@ -45,23 +54,28 @@ export async function enablePush(): Promise<{ state: PushState; detail?: string 
   }
 }
 
-/** Stop pushes to this device (on sign-out). */
+/** For the Notifications page: may this phone show notifications, and can the school's pushes reach it? */
+export async function pushStatus(): Promise<{ permission: Permission; delivered: boolean }> {
+  if (Platform.OS === 'web') return { permission: 'unsupported', delivered: false };
+  const { status } = await Notifications.getPermissionsAsync();
+  return { permission: status as Permission, delivered: Device.isDevice && !!projectId() };
+}
+
+/** Stop notifications to this device (on sign-out), and forget its own ones. */
 export async function disablePush() {
   if (token) await unregisterPushToken(token).catch(() => {});
   token = null;
+  await clearLocalNotifications();
 }
 
-/** Act on a tapped notification (car line, or open its group). Returns an unsubscribe function. */
+/** Act on a tapped notification (car line Cancel, or open what it's about). Returns an unsubscribe function. */
 export function handleNotificationTaps(): () => void {
   if (Platform.OS === 'web') return () => {};
   const open = (r: Notifications.NotificationResponse) => {
     Notifications.clearLastNotificationResponse();  // so the next launch doesn't replay it
     if (handleCarlineResponse(r)) return;
-    const data: any = r.notification.request.content.data;
-    if (data?.listingId) router.push(`/market/${data.listingId}`);
-    else if (data?.opportunityId) router.push(`/volunteer/${data.opportunityId}`);
-    else if (data?.questionId) router.push(`/questions/${data.questionId}`);
-    else if (data?.groupId) router.push(`/group/${data.groupId}`);
+    const href = notificationHref(r.notification.request.content.data);
+    if (href) router.push(href);
   };
   const last = Notifications.getLastNotificationResponse();
   if (last) open(last);

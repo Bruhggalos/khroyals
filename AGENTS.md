@@ -43,6 +43,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   pickup status. The seed gives it to the demo Teacher for testing; it must go
   with the demo accounts before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.
+- **Every notification must reach the bell page.** The school's are rows in
+  `public.notifications` (`app.notify_user()` for one person). Ones the phone shows
+  by itself must use `notifyLocal()` (`src/comms/localInbox.ts`), never
+  `scheduleNotificationAsync` directly (`tests/inbox.test.ts` checks). Add tap
+  targets to `notificationHref()` in `src/comms/inbox.ts`.
 - **Don't edit an applied migration.** Add a new timestamped file. Regenerate
   `supabase/seed.sql` + `supabase/setup_all.sql` with `python3 scripts/gen_seed.py`.
 - `tests/db.test.ts` runs every migration + the seed in PGlite with stubs

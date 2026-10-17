@@ -6,15 +6,14 @@ import { live, onAuthChange, session } from '../src/api/connect';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
 import { C } from '../src/ui';
 
-/** Register this device for push whenever an approved person is signed in. */
+/** Open whatever a tapped notification is about; register this device for push whenever an approved person is signed in. */
 function usePush() {
+  useEffect(() => handleNotificationTaps(), []);
   useEffect(() => {
     if (!live) return;
     const register = () => session().then((p) => { if (p && !p.pending) enablePush(); }).catch(() => {});
     register();
-    const offAuth = onAuthChange(register);
-    const offTaps = handleNotificationTaps();
-    return () => { offAuth(); offTaps(); };
+    return onAuthChange(register);
   }, []);
 }
 

@@ -187,10 +187,34 @@ the model or daily limit in `app.settings` (`assistant_model`,
 `public.assistant_contacts`. `app.assistant_usage` shows questions and tokens per
 person per day. The prompt itself is in `supabase/functions/assistant/prompt.ts`.
 
-## 8. Not set up yet
+## 8. Push notifications
 
-- **Push to phones:** code and server are done; needs an Expo account (`eas init`
-  → `extra.eas.projectId` in `app.json`) and a Firebase project (`google-services.json`
-  + FCM key uploaded to Expo). Until then pushes are queued and shown in the admin
-  portal's history but not delivered.
+The app asks permission to show notifications after sign-in, and the school's
+notifications always reach the bell page. Making them buzz the phone needs an Expo
+project holding Apple and Google push credentials. One-time setup, by whoever owns
+the team's (free) Expo account:
+
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest init                    # adds extra.eas.projectId to app.json; commit it (not a secret)
+npx eas-cli@latest credentials -p ios      # Push Notifications → set up a push key (signs in to Apple)
+npx eas-cli@latest credentials -p android  # upload the Firebase (FCM V1) service account key
+```
+
+- **iPhone:** the iOS project already has the Push Notifications entitlement
+  (`aps-environment`, from the expo-notifications plugin), and Xcode's automatic
+  signing turns the capability on for the app ID. Expo stores push credentials per
+  bundle ID, so a developer test build (`IOS_BUNDLE_ID=com.khroyals.app.dev`) needs
+  `credentials -p ios` run with that variable set too; it can reuse the same key.
+- **Android:** also needs `google-services.json` from a Firebase project
+  (`android.googleServicesFile` in `app.json`).
+
+Then rebuild the app, sign in and allow notifications. Test by sending from Admin
+portal → Notifications, or with another account (Dibs on a Marketplace post). Until
+this is done, notifications are queued, shown in the admin portal's history and on
+the bell page, but not delivered to phones. On the simulator, see a push with
+`xcrun simctl push booted com.khroyals.app payload.apns` (data goes under `"body"`).
+
+## 9. Not set up yet
+
 - **iOS builds**, **custom email (SMTP)**, **editing site pages/news from the admin portal**.

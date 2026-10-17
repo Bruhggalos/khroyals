@@ -6,7 +6,8 @@
  * decides: pickup hours on school days) and the app posts "You're checked in"
  * with a Cancel button. Arriving shortly before the line opens schedules a
  * reminder for opening time instead, dropped again if they leave. The phone's
- * location stays on the phone; the server only hears "I've arrived".
+ * location stays on the phone; the server only hears "I've arrived". Both
+ * notifications also appear on the Notifications page (notifyLocal).
  *
  * Geofence events can start the app in the background, so the task has to be
  * defined as the bundle loads: index.js imports this file before expo-router.
@@ -17,6 +18,7 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { router } from 'expo-router';
 import { carlineArrived, carlineCancel, carlineConfig, type Arrival } from '../api/connect';
+import { cancelLocal, notifyLocal } from '../comms/localInbox';
 
 const TASK = 'carline-arrival';
 const CATEGORY = 'carline-checked-in';
@@ -35,25 +37,18 @@ const setUpCategory = () => Notifications.setNotificationCategoryAsync(CATEGORY,
 
 async function notifyArrival(r: Arrival) {
   if (r.state === 'open' && r.checkedIn.length > 0) {
-    await Notifications.cancelScheduledNotificationAsync(REMINDER).catch(() => {});
+    await cancelLocal(REMINDER);
     await setUpCategory();
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "You're checked in",
-        body: `The car line staff know you're here for ${list(r.names)}.`,
-        categoryIdentifier: CATEGORY,
-        data: { carline: 'checked-in', pickupIds: r.checkedIn },
-      },
-      trigger: null,
+    await notifyLocal({
+      title: "You're checked in",
+      body: `The car line staff know you're here for ${list(r.names)}.`,
+      categoryIdentifier: CATEGORY,
+      data: { carline: 'checked-in', pickupIds: r.checkedIn },
     });
   } else if (r.state === 'early') {
     const opens = new Date(r.opensAt);
     if (opens.getTime() - Date.now() > REMIND_WITHIN_MS) return;
-    await Notifications.scheduleNotificationAsync({
-      identifier: REMINDER,
-      content: { title: 'The car line is open', body: 'Tap to check in.', data: { carline: 'opens' } },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: opens },
-    });
+    await notifyLocal({ title: 'The car line is open', body: 'Tap to check in.', data: { carline: 'opens' } }, { id: REMINDER, at: opens });
   }
 }
 
@@ -62,7 +57,7 @@ if (autoCheckInSupported) {
     if (error || !data) return;
     try {
       if (data.eventType === Location.GeofencingEventType.Enter) await notifyArrival(await carlineArrived());
-      else await Notifications.cancelScheduledNotificationAsync(REMINDER);
+      else await cancelLocal(REMINDER);
     } catch {
       // Signed out or offline: nothing to do until the next arrival.
     }
@@ -101,7 +96,7 @@ export async function enableAutoCheckIn(): Promise<string | null> {
 export async function disableAutoCheckIn() {
   if (!autoCheckInSupported) return;
   if (await Location.hasStartedGeofencingAsync(TASK).catch(() => false)) await Location.stopGeofencingAsync(TASK);
-  await Notifications.cancelScheduledNotificationAsync(REMINDER).catch(() => {});
+  await cancelLocal(REMINDER);
 }
 
 /** Keep the zone in step with the school's settings (called when the Car Line screen opens). */
