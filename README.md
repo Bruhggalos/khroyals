@@ -75,8 +75,9 @@ src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
 src/share/            QR codes drawn with plain views (qrcode-generator encodes)
-app/                  expo-router screens (tabs: Home · Share · Apps · Connect · More;
-                      the shield button opens Apps: Car Line, Student, Calendar, News, …)
+app/                  expo-router screens (tabs: Info · Share · Home · Connect · More;
+                      Home is the shield button, labeled along its curve, which opens
+                      the Apps page: Car Line, Student, Calendar, News, …)
 tests/                permission engine tests
 ```
 
