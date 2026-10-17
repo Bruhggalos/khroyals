@@ -167,7 +167,27 @@ npm run import-site        # re-scrapes khroyals.com into content/site/
 npm run typecheck && npm test
 ```
 
-## 7. Not set up yet
+## 7. The Assistant
+
+The `assistant` Edge Function answers with Claude through an Anthropic API key
+(console.anthropic.com → API keys; usage is billed to that account). To switch it
+on, add `ANTHROPIC_API_KEY=…` to the environment when you run the setup script; it
+deploys the function and stores the key as a Supabase secret without printing it:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-… SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… DEMO_PASSWORD=… \
+  node scripts/supabase_setup.mjs --no-seed
+```
+
+(Or set the secret in the dashboard: Edge Functions → Secrets.) When the school
+publishes a new handbook, run `swift scripts/import_handbook.swift` (macOS), check
+`npm test`, commit `supabase/functions/assistant/handbook.ts` and redeploy. Change
+the model or daily limit in `app.settings` (`assistant_model`,
+`assistant_daily_limit`; 0 = no limit), and the staff list in
+`public.assistant_contacts`. `app.assistant_usage` shows questions and tokens per
+person per day. The prompt itself is in `supabase/functions/assistant/prompt.ts`.
+
+## 8. Not set up yet
 
 - **Push to phones:** code and server are done; needs an Expo account (`eas init`
   → `extra.eas.projectId` in `app.json`) and a Firebase project (`google-services.json`

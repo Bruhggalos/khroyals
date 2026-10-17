@@ -61,7 +61,7 @@ to it. The calendar's dates are transcribed in the importer from the official PD
 ```
 content/site/    real site content (see above)
 mock-db/comms/   Royals Connect demo data (npm run regen-comms); seeds Supabase
-supabase/        migrations, seed, local test stubs
+supabase/        migrations, seed, local test stubs, Edge Functions (send-push, assistant)
 scripts/         import_site.py (website), gen_comms.py (Connect demo)
 plugins/         Expo config plugins (withSceneLifecycle: iOS 27 UIScene life cycle;
                  withGradleMemory: 4 GB for the Android release build)
@@ -174,6 +174,18 @@ and who signed up. Each opportunity has a chat for its volunteers and leader; th
 leader's messages are highlighted. A leader deletes an opportunity with a reason
 that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
+
+**Assistant** (Apps → Assistant). Anyone with an approved account can ask about
+school policy, what's coming up, or who to contact. The `assistant` Edge Function
+calls Claude (model in `app.settings.assistant_model`, Claude Haiku 5.5 to start)
+with the Student / Parent Handbook (`supabase/functions/assistant/handbook.ts`,
+generated from the PDF and prompt-cached), the events that person can see over the
+next 60 days, and the staff directory in `public.assistant_contacts` (edit it in the
+dashboard; only published school email addresses). It's told to answer only from
+those, cite handbook pages and never invent contact details. Each person gets 25
+questions a day (`app.settings.assistant_daily_limit`), and token use per person per
+day is in `app.assistant_usage`. It needs the `ANTHROPIC_API_KEY` secret; until then
+it says it isn't switched on yet. The API key never goes in the app or the repo.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo

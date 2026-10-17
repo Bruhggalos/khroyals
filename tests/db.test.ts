@@ -600,3 +600,37 @@ test('volunteers: leaders post, parents and staff say yes until it fills, chat, 
   await db.exec(`set role anon`);
   await rejects(`select * from volunteer_opportunities`, /permission denied/);
 });
+
+test('assistant: approved people read the directory; the server counts questions against a daily limit', async () => {
+  const take = `select assistant_take_question(${id('u-p01')}) as q`;
+  const asServer = async () => { await asSuper(); await db.exec('set role service_role'); };
+
+  await as('u-p01');
+  const contacts = await rows(`select name, email from assistant_contacts order by sort`);
+  assert.ok(contacts.length >= 20);
+  assert.equal(contacts.find((c) => c.name === 'Attendance')?.email, 'attendance@khroyals.com');
+  assert.ok(!contacts.some((c) => c.email && !/^(info|attendance|admissions|oclary|lhunt)@khroyals\.com$/.test(c.email)),
+    'only published school addresses');
+  await rejects(take, /permission denied/);
+  await rejects(`insert into assistant_contacts (name, title) values ('x', 'y')`, /permission denied/);
+  await asSuper();
+  await db.exec('set role anon');
+  await rejects(`select * from assistant_contacts`, /permission denied/);
+
+  // Two questions a day: the third is refused and not counted; a failed answer is given back.
+  await asSuper();
+  await db.exec(`update app.settings set value = '2' where key = 'assistant_daily_limit'`);
+  await asServer();
+  const first = (await one(take)).q;
+  assert.equal(first.remaining, 1);
+  assert.equal(first.model, 'claude-haiku-5-5');
+  assert.equal((await one(take)).q.remaining, 0);
+  await rejects(take, /asked the 2 questions you can ask today/);
+  await one(`select assistant_finish(${id('u-p01')}, false)`);
+  assert.equal((await one(take)).q.remaining, 0, 'a question given back can be asked again');
+  await one(`select assistant_finish(${id('u-p01')}, true, 30000, 400, 29000, 0)`);
+  await asSuper();
+  const usage = await one(`select questions, input_tokens, cache_read_tokens from app.assistant_usage where user_id = ${id('u-p01')}`);
+  assert.deepEqual([usage.questions, Number(usage.input_tokens), Number(usage.cache_read_tokens)], [2, 30000, 29000]);
+  await db.exec(`update app.settings set value = '25' where key = 'assistant_daily_limit'`);
+});

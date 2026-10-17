@@ -32,7 +32,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 
 - **Never commit secrets.** Only the Supabase URL and *publishable* key belong in
   the repo (`app.json → expo.extra`). Service-role keys, `sb_secret_…` keys and
-  `sbp_…` access tokens go in environment variables. The repo is public.
+  `sbp_…` access tokens go in environment variables. The repo is public. The
+  Anthropic API key (`sk-ant-…`) lives only in the Supabase secret
+  `ANTHROPIC_API_KEY`; the app reaches Claude only through the `assistant`
+  Edge Function, never directly.
 - **Demo accounts must never get admin powers** — their shared password is in
   `app.json`. Admin tiers (director / administrator / office) and permissions are
   only for real accounts; the director is `patguettler@gmail.com`.

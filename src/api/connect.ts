@@ -481,6 +481,25 @@ export function subscribeVolunteer(onChange: () => void): () => void {
   return () => { sb().removeChannel(ch); };
 }
 
+// ---------------------------------------------------------------- assistant
+
+export type AssistantTurn = { role: 'user' | 'assistant'; content: string };
+/** Why the assistant didn't answer: signed_out, pending, not_configured, limit, busy, bad_request or failed. */
+export class AssistantError extends Error {
+  constructor(public code: string, message: string) { super(message); }
+}
+
+/** Ask the Kingdom Heights Assistant (the `assistant` Edge Function); send the whole conversation. */
+export async function askAssistant(messages: AssistantTurn[]): Promise<{ answer: string; remaining: number | null }> {
+  if (!live) throw new AssistantError('not_configured', 'The assistant needs the school server.');
+  const { data, error } = await sb().functions.invoke('assistant', { body: { messages } });
+  if (error) {
+    const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    throw new AssistantError(body?.error ?? 'failed', body?.message ?? "The assistant couldn't answer right now. Please try again.");
+  }
+  return data as { answer: string; remaining: number | null };
+}
+
 // ---------------------------------------------------------------- admin
 
 export async function adminListPeople(): Promise<Person[]> {
