@@ -167,9 +167,9 @@ npm run import-site        # re-scrapes khroyals.com into content/site/
 npm run typecheck && npm test
 ```
 
-## 7. The Assistant
+## 7. Ask Leo (the assistant)
 
-The `assistant` Edge Function answers with Claude through an Anthropic API key
+The `assistant` Edge Function behind Ask Leo answers with Claude through an Anthropic API key
 (console.anthropic.com → API keys; usage is billed to that account). To switch it
 on, add `ANTHROPIC_API_KEY=…` to the environment when you run the setup script; it
 deploys the function and stores the key as a Supabase secret without printing it:

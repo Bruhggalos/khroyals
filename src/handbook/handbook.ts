@@ -1,7 +1,7 @@
 /**
- * The Student / Parent Handbook for the in-app reader, from the same text the
- * Assistant answers from (supabase/functions/assistant/handbook.ts, generated
- * from the school's PDF). Page numbers are the PDF's, which the Assistant cites.
+ * The Student / Parent Handbook for the in-app reader, from the same text Ask
+ * Leo answers from (supabase/functions/assistant/handbook.ts, generated from the
+ * school's PDF). Page numbers are the PDF's, which Leo cites.
  */
 import { HANDBOOK, HANDBOOK_SOURCE } from '../../supabase/functions/assistant/handbook';
 

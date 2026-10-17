@@ -1,16 +1,15 @@
 /**
- * Kingdom Heights Assistant: ask about the handbook, upcoming events, or who to
- * contact. Answers come from Claude on the school's server (the `assistant`
- * Edge Function); the conversation stays on this screen.
+ * Ask Leo: the Kingdom Heights lion answers questions about the handbook,
+ * upcoming events, or who to contact. Answers come from Claude on the school's
+ * server (the `assistant` Edge Function); the conversation stays on this screen.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AssistantError, askAssistant, live, session, type AssistantTurn, type Person } from '../src/api/connect';
+import { LEO, LEO_FACE } from '../src/leo';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
-
-const ORANGE = '#EA580C';
 const SUGGESTIONS = [
   'How do I report an absence?',
   'What does the uniform policy say?',
@@ -22,18 +21,18 @@ export default function Assistant() {
   const [me, setMe] = useState<Person | null | undefined>();
   useEffect(() => { session().then(setMe).catch(() => setMe(null)); }, []);
 
-  const header = <Stack.Screen options={{ title: 'Assistant' }} />;
+  const header = <Stack.Screen options={{ title: 'Ask Leo' }} />;
   const box = (body: React.ReactNode) => <View style={[s.screen, s.pad]}>{header}{body}</View>;
-  if (!live) return box(<Card><H>The assistant needs the school server</H><P muted>This build is running on demo data.</P></Card>);
+  if (!live) return box(<Card><H>Leo needs the school server</H><P muted>This build is running on demo data.</P></Card>);
   if (me === undefined) return <>{header}<Loading /></>;
   if (!me) return box(
     <Card>
-      <H>Sign in to use the assistant</H>
-      <P muted>Ask about school policies, upcoming events, or who to contact.</P>
+      <H>Sign in to ask Leo</H>
+      <P muted>Leo, the Kingdom Heights lion, answers questions about school policies, upcoming events, and who to contact.</P>
       <Button label="Sign in" onPress={() => router.navigate('/connect')} />
     </Card>,
   );
-  if (me.pending) return box(<Card><H>Waiting for approval</H><P muted>The assistant opens once the school office approves your account.</P></Card>);
+  if (me.pending) return box(<Card><H>Waiting for approval</H><P muted>Leo can help once the school office approves your account.</P></Card>);
   return <>{header}<Chat me={me} /></>;
 }
 
@@ -55,7 +54,7 @@ function Chat({ me }: { me: Person }) {
       setTurns([...next, { role: 'assistant', content: answer }]);
       setRemaining(left);
     } catch (e) {
-      setProblem(e instanceof AssistantError ? e.message : "The assistant couldn't answer right now. Please try again.");
+      setProblem(e instanceof AssistantError ? e.message : "Leo couldn't answer right now. Please try again.");
       setTurns(turns);   // take the unanswered question back out, so it can be asked again
       setDraft(q);
     } finally {
@@ -69,12 +68,10 @@ function Chat({ me }: { me: Person }) {
         onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}>
         <Card style={{ gap: 8 }}>
           <View style={s.row}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name="chatbubbles" size={20} color="#fff" />
-            </View>
-            <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: C.ink }}>Hi{me.firstName ? `, ${me.firstName}` : ''}! How can I help?</Text>
+            <Face size={48} />
+            <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: C.ink }}>Hi{me.firstName ? `, ${me.firstName}` : ''}! I'm Leo. How can I help?</Text>
           </View>
-          <P muted>Ask about the Student / Parent Handbook, what's coming up, or who to contact. Answers come from AI and can be wrong, so check anything important with the front office.</P>
+          <P muted>Ask me about the Student / Parent Handbook, what's coming up, or who to contact. I'm an AI helper and can get things wrong, so check anything important with the front office.</P>
         </Card>
 
         {turns.length === 0 && (
@@ -91,8 +88,9 @@ function Chat({ me }: { me: Person }) {
         {turns.map((t, i) => <Bubble key={i} turn={t} />)}
         {busy && (
           <View style={[s.row, { alignSelf: 'flex-start' }]}>
-            <ActivityIndicator color={ORANGE} />
-            <Text style={{ color: C.muted }}>Looking that up…</Text>
+            <Face size={28} />
+            <ActivityIndicator color={LEO} />
+            <Text style={{ color: C.muted }}>Leo is looking that up…</Text>
           </View>
         )}
         {problem && <Card style={{ borderColor: C.danger }}><P>{problem}</P></Card>}
@@ -100,10 +98,10 @@ function Chat({ me }: { me: Person }) {
       </ScrollView>
 
       <View style={[s.row, { padding: 12, borderTopWidth: 1, borderColor: C.line, backgroundColor: C.card }]}>
-        <TextInput style={[s.input, { flex: 1 }]} placeholder="Ask a question…" value={draft} onChangeText={setDraft}
+        <TextInput style={[s.input, { flex: 1 }]} placeholder="Ask Leo a question…" value={draft} onChangeText={setDraft}
           maxLength={2000} multiline editable={!busy} onSubmitEditing={() => ask(draft)} />
-        <Pressable onPress={() => ask(draft)} disabled={busy || !draft.trim()} accessibilityRole="button" accessibilityLabel="Ask"
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: ORANGE, alignItems: 'center', justifyContent: 'center', opacity: busy || !draft.trim() ? 0.4 : 1 }}>
+        <Pressable onPress={() => ask(draft)} disabled={busy || !draft.trim()} accessibilityRole="button" accessibilityLabel="Ask Leo"
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: LEO, alignItems: 'center', justifyContent: 'center', opacity: busy || !draft.trim() ? 0.4 : 1 }}>
           <Ionicons name="arrow-up" size={22} color="#fff" />
         </Pressable>
       </View>
@@ -127,14 +125,27 @@ function Linked({ text, color }: { text: string; color: string }) {
   );
 }
 
-function Bubble({ turn }: { turn: AssistantTurn }) {
-  const mine = turn.role === 'user';
+/** Leo's lion head in a round badge. */
+function Face({ size }: { size: number }) {
   return (
-    <View style={{
-      alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '88%', borderRadius: 14, padding: 12,
-      backgroundColor: mine ? C.primary : C.card, borderWidth: mine ? 0 : 1, borderColor: C.line,
-    }}>
-      {mine ? <Text style={{ fontSize: 15, lineHeight: 22, color: '#fff' }}>{turn.content}</Text> : <Linked text={turn.content} color={C.ink} />}
+    <View accessible={false} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: LEO, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: size * 0.6, lineHeight: size * 0.75 }}>{LEO_FACE}</Text>
+    </View>
+  );
+}
+
+function Bubble({ turn }: { turn: AssistantTurn }) {
+  if (turn.role === 'user') return (
+    <View style={{ alignSelf: 'flex-end', maxWidth: '88%', borderRadius: 14, padding: 12, backgroundColor: C.primary }}>
+      <Text style={{ fontSize: 15, lineHeight: 22, color: '#fff' }}>{turn.content}</Text>
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', maxWidth: '92%' }}>
+      <Face size={28} />
+      <View style={{ flexShrink: 1, borderRadius: 14, padding: 12, backgroundColor: C.card, borderWidth: 1, borderColor: C.line }}>
+        <Linked text={turn.content} color={C.ink} />
+      </View>
     </View>
   );
 }

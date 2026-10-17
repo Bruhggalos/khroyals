@@ -1,7 +1,7 @@
 /**
- * Kingdom Heights Assistant: answers questions from the Student / Parent
- * Handbook, the upcoming events the person can see, and the staff directory,
- * using Claude.
+ * Ask Leo, the Kingdom Heights assistant: answers questions from the Student /
+ * Parent Handbook, the upcoming events the person can see, and the staff
+ * directory, using Claude.
  *
  * The app posts { messages: [{ role, content }, …] } with the person's session
  * (JWT verification on). Approved accounts only; each question counts against a
@@ -38,16 +38,16 @@ Deno.serve(async (req) => {
   });
   const { data: auth } = await db.auth.getUser(jwt);
   const user = auth?.user;
-  if (!user) return reply(401, { error: 'signed_out', message: 'Sign in to use the assistant.' });
+  if (!user) return reply(401, { error: 'signed_out', message: 'Sign in to ask Leo.' });
   const { data: me } = await db.from('profiles').select('first_name, school_role, grade').eq('id', user.id).maybeSingle();
-  if (!me?.school_role) return reply(403, { error: 'pending', message: 'The assistant opens once the school office approves your account.' });
+  if (!me?.school_role) return reply(403, { error: 'pending', message: 'Leo can help once the school office approves your account.' });
 
   const history = trimHistory((await req.json().catch(() => null))?.messages);
   if (!history) return reply(400, { error: 'bad_request', message: 'Type a question first.' });
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!apiKey) {
-    return reply(503, { error: 'not_configured', message: `The assistant isn't switched on yet. Until it is, you can reach ${FRONT_OFFICE}.` });
+    return reply(503, { error: 'not_configured', message: `Leo isn't switched on yet. Until then, you can reach ${FRONT_OFFICE}.` });
   }
 
   // Count the question against today's limit (rolled back if over it).
@@ -108,12 +108,12 @@ Deno.serve(async (req) => {
     await admin.rpc('assistant_finish', { p_user: user.id, p_answered: false });  // give the question back
     if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) {
       console.error('assistant: Anthropic key rejected');
-      return reply(503, { error: 'not_configured', message: `The assistant isn't working right now. You can reach ${FRONT_OFFICE}.` });
+      return reply(503, { error: 'not_configured', message: `Leo isn't working right now. You can reach ${FRONT_OFFICE}.` });
     }
     if (e instanceof Anthropic.RateLimitError || (e instanceof Anthropic.APIError && (e.status ?? 0) >= 500)) {
-      return reply(503, { error: 'busy', message: 'The assistant is busy right now. Please try again in a minute.' });
+      return reply(503, { error: 'busy', message: 'Leo is busy right now. Please try again in a minute.' });
     }
     console.error('assistant failed', e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : String(e));
-    return reply(502, { error: 'failed', message: "The assistant couldn't answer right now. Please try again." });
+    return reply(502, { error: 'failed', message: "Leo couldn't answer right now. Please try again." });
   }
 });

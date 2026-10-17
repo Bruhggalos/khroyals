@@ -1,6 +1,6 @@
 /**
- * supabase/functions/assistant/prompt.ts: what the Kingdom Heights Assistant is
- * told. The handbook part must be byte-identical between requests (so it caches);
+ * supabase/functions/assistant/prompt.ts: what Ask Leo (the Kingdom Heights
+ * assistant) is told. The handbook part must be byte-identical between requests (so it caches);
  * the daily part carries the date, who's asking, the directory and events.
  */
 import { test } from 'node:test';
@@ -23,6 +23,15 @@ test('the cached part is the same on every request and holds the handbook', () =
   assert.equal(a, stableSystem(HANDBOOK));
   assert.ok(a.includes('<handbook>') && a.includes(HANDBOOK));
   assert.doesNotMatch(a, /Today is/, 'nothing that changes daily');
+});
+
+test('the assistant is Leo, the Kingdom Heights lion: playful now and then, never in serious moments', () => {
+  const a = stableSystem(HANDBOOK);
+  assert.match(a, /^You are Leo, the friendly lion/);
+  assert.match(a, /"Ask Leo"/);
+  assert.match(a, /at most one playful touch/);
+  assert.match(a, /Drop the playfulness in serious moments \(emergencies/);
+  assert.match(a, /call 911 first/, 'the safety rules are still there');
 });
 
 test('the daily part: date, who is asking, contacts with the front office as fallback, upcoming events only', () => {

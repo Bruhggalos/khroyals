@@ -191,8 +191,12 @@ leader's messages are highlighted. A leader deletes an opportunity with a reason
 that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
 
-**Assistant** (Apps → Assistant). Anyone with an approved account can ask about
-school policy, what's coming up, or who to contact. The `assistant` Edge Function
+**Ask Leo** (Apps → Ask Leo, the lion head in the middle of the grid). Leo, a
+friendly lion, is the app's AI helper: anyone with an approved account can ask about
+school policy, what's coming up, or who to contact. Leo is warm and upbeat with a
+light lion touch now and then, and plain and calm in serious moments (the persona is
+in `supabase/functions/assistant/prompt.ts`; tile color and face in `src/leo.ts`).
+The `assistant` Edge Function
 calls Claude (model in `app.settings.assistant_model`, Claude Haiku 5.5 to start)
 with the Student / Parent Handbook (`supabase/functions/assistant/handbook.ts`,
 generated from the PDF and prompt-cached), the events that person can see over the
@@ -205,10 +209,10 @@ it says it isn't switched on yet. The API key never goes in the app or the repo.
 
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
 with search that highlights every match and jumps to its page; works signed out. It
-reads the same text the Assistant uses (`supabase/functions/assistant/handbook.ts`,
+reads the same text Leo uses (`supabase/functions/assistant/handbook.ts`,
 regenerated with `swift scripts/import_handbook.swift`), rebuilt into headings and
-paragraphs by `src/handbook/handbook.ts`. Page numbers are the PDF's, as the
-Assistant cites them.
+paragraphs by `src/handbook/handbook.ts`. Page numbers are the PDF's, as Leo cites
+them.
 
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the
