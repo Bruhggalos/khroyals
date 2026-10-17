@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
 import {
   adminCreateStudent, adminDecideFamilyRequest, adminDeleteStudent, adminFamilyRequests, adminLinkGuardian, adminListPeople,
-  adminListStudents, adminUpdateStudent, type AdminFamilyRequest, type AdminPerson, type AdminStudent,
+  adminListStudents, adminUpdateStudent, pickupNumbers, setPickupNumber, type AdminFamilyRequest, type AdminPerson, type AdminStudent,
 } from '../api/connect';
 import { GradePicker } from '../comms/GradePicker';
 import { gradeLabel } from '../comms/grades';
@@ -94,7 +94,8 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
   );
 }
 
-function StudentCard({ x, onChange }: { x: AdminStudent; onChange: () => void }) {
+function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string; onChange: () => void }) {
+  const [pickup, setPickup] = useState(number ?? '');
   const [open, setOpen] = useState(false);
   const [first, setFirst] = useState(x.firstName);
   const [last, setLast] = useState(x.lastName);
@@ -105,7 +106,7 @@ function StudentCard({ x, onChange }: { x: AdminStudent; onChange: () => void })
       <View style={s.row}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: C.ink }}>{name(x)}</Text>
-          <P muted>{gradeLabel(x.grade)}{x.classOf ? ` · Class of ${x.classOf}` : ''}</P>
+          <P muted>{gradeLabel(x.grade)}{x.classOf ? ` · Class of ${x.classOf}` : ''}{number ? ` · Pickup #${number}` : ''}</P>
           <P muted>{x.parents.length ? `Parents: ${x.parents.map((p) => p.name).join(', ')}` : 'No parents linked'}</P>
         </View>
         {x.managed ? <Chip label="No login" color={C.muted} /> : <Chip label="Has login" />}
@@ -119,6 +120,12 @@ function StudentCard({ x, onChange }: { x: AdminStudent; onChange: () => void })
           <GradePicker value={grade} onChange={setGrade} />
           <Button label="Save" disabled={!changed || !first.trim() || !last.trim() || grade === null}
             onPress={() => adminUpdateStudent(x.id, { firstName: first, lastName: last, grade: grade! }).then(onChange).catch(fail)} />
+          <View style={[s.row, { alignItems: 'flex-end' }]}>
+            <Field label="Pickup number" autoCapitalize="characters" maxLength={8} value={pickup} onChangeText={setPickup}
+              hint="Siblings can share a number." style={{ flex: 1 }} />
+            <Button label="Save" kind="ghost" disabled={!pickup.trim() || pickup.trim().toUpperCase() === number}
+              onPress={() => setPickupNumber(x.id, pickup).then(onChange).catch(fail)} />
+          </View>
           <H>Parents</H>
           {x.parents.map((p) => (
             <Text key={p.id} style={{ color: C.ink }}>👪 {p.name}{'  '}
@@ -156,7 +163,7 @@ function AddStudent({ onDone }: { onDone: () => void }) {
   return (
     <Card>
       <H>Add a student</H>
-      <P muted>For children without their own login. Grades move up automatically every July 1.</P>
+      <P muted>For children without their own login. Grades move up automatically every July 1, and each student gets a car line pickup number (you can change it).</P>
       <View style={s.row}>
         <Field label="First name" value={first} onChangeText={setFirst} style={{ flex: 1, minWidth: 0 }} />
         <Field label="Last name" value={last} onChangeText={setLast} style={{ flex: 1, minWidth: 0 }} />
@@ -178,9 +185,10 @@ export function StudentsPanel() {
   const [page, setPage] = useState<{ students: AdminStudent[]; total: number } | null>(null);
   const [adding, setAdding] = useState(false);
   const [reload, setReload] = useState(0);
+  const [numbers, setNumbers] = useState<Record<string, string>>({});
 
   const loadRequests = useCallback(() => adminFamilyRequests().then(setRequests).catch((e) => { fail(e); setRequests([]); }), []);
-  useEffect(() => { loadRequests(); }, [loadRequests, reload]);
+  useEffect(() => { loadRequests(); pickupNumbers().then(setNumbers).catch(() => {}); }, [loadRequests, reload]);
   useEffect(() => setOffset(0), [q]);
   useEffect(() => {
     let live = true;
@@ -204,7 +212,7 @@ export function StudentsPanel() {
       {!page ? <Loading /> : (
         <>
           <P muted>{page.total === 0 ? 'No students match.' : `${page.total} student${page.total === 1 ? '' : 's'}`}</P>
-          {page.students.map((x) => <StudentCard key={`${x.id}:${x.grade}:${x.parents.length}:${x.firstName}${x.lastName}`} x={x} onChange={changed} />)}
+          {page.students.map((x) => <StudentCard key={`${x.id}:${x.grade}:${x.parents.length}:${x.firstName}${x.lastName}:${numbers[x.id]}`} x={x} number={numbers[x.id]} onChange={changed} />)}
           {page.total > PAGE && (
             <View style={[s.row, { justifyContent: 'space-between' }]}>
               <Button label="‹ Previous" kind="ghost" disabled={offset === 0} onPress={() => setOffset(Math.max(0, offset - PAGE))} />

@@ -39,8 +39,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`admin_roles`; director is built in) and permissions are only for real accounts.
   There may be several directors but never zero (trigger `app.keep_a_director`);
   `patguettler@gmail.com` is a director.
-- **Car line duty** isn't an admin power (no MFA), but it shows every child's
-  pickup status. The seed gives it to the demo Teacher for testing; it must go
+- **Car line:** parents announce with their location (`carline_announce`; the server
+  checks the radius — never add a check-in path without it). All staff see the board
+  (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents
+  only). **Car line leads** (`carline_duty`) and people.family set the spot, radius,
+  hours and "open now" (`carline_set_config`, `carline_open_now`).
+- **Car line lead** isn't an admin power (no MFA), but it changes car line settings and pickup numbers. The seed gives it to the demo Teacher for testing; it must go
   with the demo accounts (`--demo` projects only) before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.
 - **Don't edit an applied migration.** Add a new timestamped file. Regenerate

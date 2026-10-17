@@ -255,7 +255,18 @@ const toPickup = (r: any): Pickup => ({
   id: r.id, studentId: r.student_id, guardianId: r.guardian_id, status: r.status,
   arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by, via: r.via ?? 'app',
 });
-export type CarlineConfig = { latitude: number; longitude: number; radius: number; start: string; end: string };
+export type CarlineConfig = {
+  latitude: number; longitude: number; radius: number; start: string; end: string;
+  line: { state: 'open' | 'early' | 'closed'; opensAt?: string; openedNow?: boolean };
+  /** Car line leads and the office can change these settings. */
+  canEdit: boolean;
+};
+export type Spot = { lat: number; lng: number; accuracy: number | null };
+/** One row of the staff board, in arrival order. */
+export type BoardRow = {
+  id: string; studentId: string; status: 'waiting' | 'picked_up'; via: 'app' | 'arrival'; arrivedAt: string; pickedUpAt: string | null;
+  distanceM: number | null; number: string | null; name: string; grade: number | null; parent: string; pickedUpBy: string;
+};
 export type Arrival =
   | { state: 'open'; checkedIn: string[]; names: string[] }
   | { state: 'early'; opensAt: string }
@@ -275,8 +286,9 @@ export async function carlineToday(): Promise<Pickup[]> {
   if (!live || !current) return [];
   return (await run(sb().rpc('carline_today'))).map(toPickup);
 }
-export async function carlineCheckIn(studentIds: string[]) {
-  await run(sb().rpc('carline_check_in', { p_students: studentIds }));
+/** "I'm here": announce these children, from where the parent is (the server checks the radius). */
+export async function carlineAnnounce(studentIds: string[], at: Spot) {
+  await run(sb().rpc('carline_announce', { p_students: studentIds, p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy }));
 }
 export async function carlineCancel(pickupId: string) { await run(sb().rpc('carline_cancel', { p_pickup: pickupId })); }
 export async function carlineConfirm(pickupId: string) { await run(sb().rpc('carline_confirm', { p_pickup: pickupId })); }
@@ -284,7 +296,27 @@ export async function carlineReopen(pickupId: string) { await run(sb().rpc('carl
 /** Where and when automatic check-in runs. */
 export async function carlineConfig(): Promise<CarlineConfig> { return run(sb().rpc('carline_config')) as Promise<CarlineConfig>; }
 /** The phone reached the car line: the server checks in the children if the line is open. */
-export async function carlineArrived(): Promise<Arrival> { return run(sb().rpc('carline_arrived')) as Promise<Arrival>; }
+export async function carlineArrived(at: Spot): Promise<Arrival> {
+  return run(sb().rpc('carline_arrived', { p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy })) as Promise<Arrival>;
+}
+/** Staff: today's line with pickup numbers. */
+export async function carlineBoard(): Promise<BoardRow[]> { return run(sb().rpc('carline_board')) as Promise<BoardRow[]>; }
+export async function carlineSetConfig(c: { latitude: number; longitude: number; radius: number; start: string; end: string }): Promise<CarlineConfig> {
+  return run(sb().rpc('carline_set_config', { p_lat: c.latitude, p_lng: c.longitude, p_radius: c.radius, p_start: c.start, p_end: c.end })) as Promise<CarlineConfig>;
+}
+/** Open the line for the rest of today (drills, demos, early dismissal), or close it again. */
+export async function carlineOpenNow(open: boolean): Promise<CarlineConfig> {
+  return run(sb().rpc('carline_open_now', { p_open: open })) as Promise<CarlineConfig>;
+}
+export async function setPickupNumber(studentId: string, number: string) {
+  await run(sb().rpc('set_pickup_number', { p_student: studentId, p_number: number }));
+}
+/** Pickup numbers this person may see (their children's, or everyone's for staff). */
+export async function pickupNumbers(): Promise<Record<string, string>> {
+  if (!live || !current) return {};
+  const rows: any[] = await run(sb().from('pickup_numbers').select('student_id, number'));
+  return Object.fromEntries(rows.map((r) => [r.student_id, r.number]));
+}
 
 /** Live car line changes (row-level security limits them to what this person may see). */
 export function subscribeCarline(onChange: () => void): () => void {
@@ -807,7 +839,7 @@ export async function clearMyNotifications(): Promise<number> {
 
 export type Child = {
   id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
-  photoPath: string | null; photo: string; hasLogin: boolean;
+  photoPath: string | null; photo: string; hasLogin: boolean; pickupNumber: string | null;
   birthday: string | null; bio: string; allergies: string; medicalNotes: string; parents: string[];
 };
 export type FamilyRequest = {

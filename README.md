@@ -160,6 +160,15 @@ notes themselves (**My children**); those details (`student_details`, child phot
 from the graduation year (`class_of`) and move up every July 1 (`app.refresh_grades`,
 daily via pg_cron). K2 = -3, K3 = -2, K4 = -1, Kindergarten = 0.
 
+**Car line (like PikMyKid).** Every student has a pickup number (auto-assigned,
+editable by the office/car line leads; siblings may share). Parents tap **I'm here**
+(or Android Auto, or automatic check-in) and the app sends their location; the server
+only accepts it within the radius of the pickup spot during pickup hours (or when staff
+opened the line today). Only a child's linked parents can announce them. All staff see
+the live board (number, name, grade, parent, distance) and mark pickups. Car line leads
+and the office set the spot ("Use my location"), radius (feet) and hours in **Car line
+settings**.
+
 **Push notifications** go through Expo's free push service: new posts notify group
 members (per-group preferences), and the portal sends to everyone, a role, or a
 group. `supabase/functions/send-push` delivers them (deployed by the setup script).

@@ -23,8 +23,9 @@ import kotlin.concurrent.thread
 /**
  * Android Auto: the car line on the car's screen. Parents see whether each
  * child is checked in, waiting (with their place in line) or picked up, and
- * tap "I'm here" to check in. It uses the car pass the phone app saved at
- * sign-in (CarPass), so it works without opening the phone.
+ * tap "I'm here" to check in (with the phone's location; the school checks
+ * the pickup radius). It uses the car pass the phone app saved at sign-in
+ * (CarPass), so it works without opening the phone.
  */
 class CarLineCarService : CarAppService() {
   override fun createHostValidator(): HostValidator =
@@ -102,7 +103,7 @@ class CarLineScreen(carContext: CarContext) : Screen(carContext), DefaultLifecyc
     val pane = Pane.Builder()
     error?.let { pane.addRow(Row.Builder().setTitle("⚠️ $it").build()) }
     s?.children?.forEach { c ->
-      pane.addRow(Row.Builder().setTitle(c.name).addText(describe(c)).build())
+      pane.addRow(Row.Builder().setTitle(if (c.number != null) "#${c.number}  ${c.name}" else c.name).addText(describe(c)).build())
     }
     if (s != null && s.children.isEmpty()) {
       pane.addRow(Row.Builder().setTitle("No children are linked to your account yet").build())
@@ -119,7 +120,11 @@ class CarLineScreen(carContext: CarContext) : Screen(carContext), DefaultLifecyc
             if (!busy) {
               busy = true
               invalidate()
-              fetch { CarPass.checkIn(it) }
+              fetch { pass ->
+                val at = CarLocation.current(carContext)
+                  ?: throw CarPass.CarLineException("Turn on location for KH Royals on your phone so the school knows you're here.")
+                CarPass.checkIn(pass, at.latitude, at.longitude, if (at.hasAccuracy()) at.accuracy else null)
+              }
             }
           }
           .build(),

@@ -12,7 +12,7 @@ object CarPass {
 
   data class Pass(val url: String, val key: String, val token: String)
 
-  data class Child(val name: String, val status: String, val position: Int?)
+  data class Child(val name: String, val number: String?, val status: String, val position: Int?)
 
   /** Today's car line for the parent's children; line is "open", "early" or "closed". */
   data class Status(val line: String, val children: List<Child>)
@@ -38,7 +38,10 @@ object CarPass {
 
   fun status(pass: Pass): Status = parse(call(pass, "car_carline_status"))
 
-  fun checkIn(pass: Pass): Status = parse(call(pass, "car_carline_check_in"))
+  /** "I'm here" from where the phone is; the server checks it's within the pickup radius. */
+  fun checkIn(pass: Pass, lat: Double, lng: Double, accuracy: Float?): Status =
+    parse(call(pass, "car_carline_check_in", JSONObject().put("p_lat", lat).put("p_lng", lng)
+      .put("p_accuracy", accuracy?.toDouble() ?: JSONObject.NULL)))
 
   private fun parse(body: String): Status {
     val o = JSONObject(body)
@@ -47,13 +50,14 @@ object CarPass {
       line = o.optJSONObject("line")?.optString("state") ?: "closed",
       children = (0 until kids.length()).map { i ->
         val c = kids.getJSONObject(i)
-        Child(c.optString("name"), c.optString("status", "none"), if (c.isNull("position")) null else c.optInt("position"))
+        Child(c.optString("name"), if (c.isNull("number")) null else c.optString("number"), c.optString("status", "none"),
+          if (c.isNull("position")) null else c.optInt("position"))
       },
     )
   }
 
   /** POST a database function with the pass; throws CarLineException with a readable reason. */
-  private fun call(pass: Pass, fn: String): String {
+  private fun call(pass: Pass, fn: String, params: JSONObject = JSONObject()): String {
     val conn = try {
       (URL("${pass.url}/rest/v1/rpc/$fn").openConnection() as HttpURLConnection).apply {
         requestMethod = "POST"
@@ -62,7 +66,7 @@ object CarPass {
         doOutput = true
         setRequestProperty("apikey", pass.key)
         setRequestProperty("Content-Type", "application/json")
-        outputStream.use { it.write(JSONObject().put("p_token", pass.token).toString().toByteArray()) }
+        outputStream.use { it.write(params.put("p_token", pass.token).toString().toByteArray()) }
       }
     } catch (e: Exception) {
       throw CarLineException("No connection. Try again in a moment.")

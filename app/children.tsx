@@ -69,6 +69,7 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>{c.firstName} {c.lastName}</Text>
           <P muted>{gradeLabel(c.grade)}{c.classOf ? ` · Class of ${c.classOf}` : ''}</P>
+          {!!c.pickupNumber && <Text style={{ color: C.primary, fontWeight: '800' }}>🚗 Pickup #{c.pickupNumber}</Text>}
           {c.parents.length > 1 && <P muted>Parents: {c.parents.join(', ')}</P>}
         </View>
       </View>

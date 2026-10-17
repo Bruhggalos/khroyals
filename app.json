@@ -24,9 +24,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "If you turn on automatic car line check-in, KH Royals uses your location in the background only to notice when you arrive at the school car line. Your location isn't shared with the school.",
-          "locationAlwaysPermission": "If you turn on automatic car line check-in, KH Royals uses your location in the background only to notice when you arrive at the school car line. Your location isn't shared with the school.",
-          "locationWhenInUsePermission": "KH Royals uses your location to notice when you arrive at the school car line.",
+          "locationAlwaysAndWhenInUsePermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Your location isn't stored or shared.",
+          "locationAlwaysPermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Your location isn't stored or shared.",
+          "locationWhenInUsePermission": "KH Royals uses your location when you tap I'm here at car line pickup, so the school knows you've arrived. Your location isn't stored or shared.",
           "isAndroidBackgroundLocationEnabled": true
         }
       ],

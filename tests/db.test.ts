@@ -16,6 +16,8 @@ const db = new PGlite();
 
 const id = (legacy: string) => `md5('khroyals:${legacy}')::uuid`;
 const CHI = (t: string) => `'${t} America/Chicago'::timestamptz`;
+/** The car line pickup spot (app.settings), as SQL arguments. */
+const AT = '34.7264, -86.6177';
 
 async function asSuper() {
   await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claims', '', false);`);
@@ -300,26 +302,43 @@ test('inbox: my_notifications lists only what was sent to me', async () => {
   await db.exec(`update memberships set notification = 'none' where group_id = ${vb} and user_id = ${id('u-s05')}`);
 });
 
-test('car line: parents check in their own children; staff on duty see the line and confirm pickups', async () => {
+test('car line: parents announce from the pickup spot; staff see the line and confirm pickups', async () => {
   const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
   const [ava, eng] = [await uid('u-s01'), await uid('u-eng')];
   const today = async (who: string) => { await as(who); return rows(`select * from carline_today()`); };
+  // Open the line for today so this doesn't depend on when the tests run.
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on'`);
 
-  // Rosa Reyes (u-p01) is Ava's (u-s01) parent.
+  // Rosa Reyes (u-p01) is Ava's (u-s01) parent. She has to be at school (the pickup spot is AT).
   await as('u-p01');
-  const [checkin] = await rows(`select * from carline_check_in()`);
+  await rejects(`select * from carline_announce(null, null, null)`, /Turn on location/);
+  await rejects(`select * from carline_announce(null, 34.80, -86.6177)`, /about 5\.1 miles from the pickup spot/);
+  await rejects(`select * from carline_check_in()`, /Update KH Royals/);
+  const [checkin] = await rows(`select * from carline_announce(null, ${AT})`);
   assert.equal(checkin.student_id, ava);
   assert.equal(checkin.status, 'waiting');
-  assert.equal((await rows(`select * from carline_check_in(array[${id('u-s01')}])`)).length, 1, 'checking in twice keeps one place in line');
-  await rejects(`select * from carline_check_in(array[${id('u-s02')}])`, /own children/);
+  assert.ok(checkin.distance_m <= 1);
+  assert.equal((await rows(`select * from carline_announce(array[${id('u-s01')}], ${AT})`)).length, 1, 'announcing twice keeps one place in line');
+  await rejects(`select * from carline_announce(array[${id('u-s02')}], ${AT})`, /own children/);
   await rejects(`insert into carline_pickups (student_id) values (${id('u-s02')})`, /permission denied/);
+  // 100 m away is inside the 150 m radius.
+  await as('u-p02');
+  assert.equal((await rows(`select * from carline_announce(null, 34.7273, -86.6177, 10)`)).length, 1);
+  await one(`select carline_cancel(id) from carline_pickups where guardian_id = ${id('u-p02')} and status = 'waiting'`);
+  await as('u-s01');
+  await rejects(`select * from carline_announce(null, ${AT})`, /Only parents/);
 
-  // Other parents and staff who aren't on duty see nothing; the demo Teacher (u-eng) is on duty.
-  assert.equal((await today('u-p02')).length, 0);
-  assert.equal((await today('u-sci')).length, 0);
+  // Other parents see only their own; every staff member sees the line and can confirm.
+  assert.equal((await today('u-p02')).filter((r) => r.status === 'waiting').length, 0);
+  assert.deepEqual((await today('u-sci')).filter((r) => r.status === 'waiting').map((r) => r.student_id), [ava]);
+  await as('u-s05');
+  await rejects(`select carline_confirm('${checkin.id}')`, /staff/);
   await as('u-sci');
-  await rejects(`select carline_confirm('${checkin.id}')`, /car line duty/);
-  assert.deepEqual((await today('u-eng')).map((r) => r.student_id), [ava]);
+  const board = (await one(`select carline_board() as b`)).b;
+  assert.equal(board.find((b: any) => b.id === checkin.id).name.startsWith('Ava'), true);
+  assert.match(board.find((b: any) => b.id === checkin.id).number, /^\d+$/, 'the board shows the pickup number');
+  assert.deepEqual((await today('u-eng')).filter((r) => r.status === 'waiting').map((r) => r.student_id), [ava]);
   await as('u-eng');
   const done = await one(`select * from carline_confirm('${checkin.id}')`);
   assert.equal(done.status, 'picked_up');
@@ -344,21 +363,55 @@ test('car line: parents check in their own children; staff on duty see the line 
   await asSuper();
   await db.exec(`set role anon`);
   await rejects(`select * from carline_today()`, /permission denied/);
+  await asSuper();
+  await db.exec(`update app.settings set value = null where key = 'carline_open_on'`);
 });
 
-test('car line duty: office staff assign it, and only to staff', async () => {
+test('car line leads: the office names them; they set the spot, radius, hours and numbers', async () => {
+  const set = `select carline_set_config(34.7300, -86.6200, 200, '14:30', '15:30')`;
   await as('u-s01');
   await rejects(`select admin_set_carline_duty(${id('u-sci')}, true)`, /permission/);
+  await as('u-sci');
+  await rejects(set, /car line leads and the office/);
+  await rejects(`select set_pickup_number(${id('u-s01')}, '7')`, /office or a car line lead/);
   await as('u-admin', true);
   await rejects(`select admin_set_carline_duty(${id('u-p02')}, true)`, /Only staff/);
   await one(`select admin_set_carline_duty(${id('u-sci')}, true)`);
   assert.equal((await one(`select carline_duty from admin_list_people() where id = ${id('u-sci')}`)).carline_duty, true);
   await as('u-sci');
-  assert.ok((await rows(`select * from carline_today()`)).length > 0, 'now sees the line');
+  const cfg = (await one(`${set} as c`)).c;
+  assert.equal(cfg.radius, 200);
+  assert.equal(cfg.canEdit, true);
+  await rejects(`select carline_set_config(34.73, -86.62, 5, '14:30', '15:30')`, /between 20 and 3,000/);
+  await rejects(`select carline_set_config(34.73, -86.62, 200, '16:00', '15:00')`, /pickup hours/);
+  assert.equal((await one(`select carline_open_now(true) as c`)).c.line.state, 'open');
+  assert.equal((await one(`select carline_open_now(false) as c`)).c.line.openedNow ?? false, false);
+  await one(`select set_pickup_number(${id('u-s01')}, '7a')`);
+  assert.equal((await one(`select number from pickup_numbers where student_id = ${id('u-s01')}`)).number, '7A');
+  await rejects(`select set_pickup_number(${id('u-s01')}, 'way too long!')`, /1–8 letters/);
+  // Put things back for the other tests.
+  await one(`select carline_set_config(34.7264, -86.6177, 150, '14:45', '15:30')`);
   await as('u-admin', true);
   await one(`select admin_set_carline_duty(${id('u-sci')}, false)`);
   await as('u-sci');
-  assert.equal((await rows(`select * from carline_today()`)).length, 0);
+  await rejects(set, /car line leads and the office/);
+});
+
+test('pickup numbers: every student gets one; only staff and their parents can see it', async () => {
+  await asSuper();
+  assert.equal((await one(`select count(*)::int n from profiles p where school_role = 'student'
+                           and not exists (select 1 from pickup_numbers n where n.student_id = p.id)`)).n, 0, 'all students numbered');
+  await as('u-p01');
+  const mine = await rows(`select * from pickup_numbers`);
+  assert.ok(mine.length >= 1);
+  assert.ok((await rows(`select 1 from pickup_numbers where student_id = ${id('u-s02')}`)).length === 0, "not other families' numbers");
+  await as('u-s01');
+  assert.equal((await rows(`select * from pickup_numbers`)).length, 0, 'students see none');
+  await as('u-sci');
+  assert.ok((await rows(`select * from pickup_numbers`)).length > 5, 'staff see all');
+  await as('u-admin', true);
+  const kid = (await one(`select admin_create_student('Noah', 'Park', 1) as id`)).id;
+  assert.ok((await one(`select number from pickup_numbers where student_id = '${kid}'`)).number, 'new students get a number');
 });
 
 test('car line auto check-in: only during pickup hours on school days', async () => {
@@ -385,19 +438,20 @@ test('car line auto check-in: only during pickup hours on school days', async ()
   // Wei Chen (u-p02) is Liam's (u-s02) parent and hasn't used the car line today.
   await as('u-p02');
   assert.equal((await one(`select carline_config() as c`)).c.radius, 150);
-  const first = (await one(`select carline_arrived() as r`)).r;
+  await rejects(`select carline_arrived(35.0, -86.6)`, /from the pickup spot/);
+  const first = (await one(`select carline_arrived(${AT}) as r`)).r;
   assert.equal(first.state, 'open');
   assert.deepEqual(first.names, ['Liam']);
-  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'arriving again adds nobody');
-  assert.equal((await rows(`select via from carline_today()`))[0].via, 'arrival');
+  assert.deepEqual((await one(`select carline_arrived(${AT}) as r`)).r.checkedIn, [], 'arriving again adds nobody');
+  assert.equal((await rows(`select via from carline_today() where status = 'waiting'`))[0].via, 'arrival');
   await as('u-eng');
   await one(`select carline_confirm('${first.checkedIn[0]}')`);
   await as('u-p02');
-  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'not again once picked up');
+  assert.deepEqual((await one(`select carline_arrived(${AT}) as r`)).r.checkedIn, [], 'not again once picked up');
 
   await asSuper();
   await db.exec(`set role anon`);
-  await rejects(`select carline_arrived()`, /permission denied/);
+  await rejects(`select carline_arrived(${AT})`, /permission denied/);
   await rejects(`select carline_config()`, /permission denied/);
 });
 
@@ -737,7 +791,8 @@ test('car screen: a parent\'s car pass shows and checks in only their own childr
   assert.equal(before.line.state, 'open');
   assert.ok(before.children.length >= 1, 'their children');
   assert.ok(before.children.every((c: any) => c.status === 'none'));
-  const after = (await one(`select car_carline_check_in('${pass}') as s`)).s;
+  await rejects(`select car_carline_check_in('${pass}', 35.0, -86.6)`, /from the pickup spot/);
+  const after = (await one(`select car_carline_check_in('${pass}', ${AT}) as s`)).s;
   assert.ok(after.children.every((c: any) => c.status === 'waiting' && c.position >= 1), 'checked in, with a place in line');
 
   // The pass can't be used for anything else, and its owner was the one who checked in.

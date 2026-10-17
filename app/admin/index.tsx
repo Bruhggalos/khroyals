@@ -87,7 +87,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
           <P muted>{p.email ?? 'No login'}{p.grade != null ? ` · ${gradeLabel(p.grade)}` : ''}</P>
         </View>
         {roleName && <Chip label={roleName} color={C.accent} />}
-        {p.carlineDuty && <Chip label="Car line" color="#15803D" />}
+        {p.carlineDuty && <Chip label="Car line lead" color="#15803D" />}
         {p.volunteerLead && <Chip label="Volunteer lead" color="#DB2777" />}
         {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={p.schoolRole} />}
       </View>
@@ -109,7 +109,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
           )}
           {!p.pending && ['admin', 'teacher', 'staff'].includes(p.schoolRole) && can('people.family') && (
             <View style={[s.row, { flexWrap: 'wrap' }]}>
-              {pill(p.carlineDuty ? '🚗 On car line duty' : '🚗 Put on car line duty', !!p.carlineDuty,
+              {pill(p.carlineDuty ? '🚗 Car line lead' : '🚗 Make car line lead', !!p.carlineDuty,
                 () => adminSetCarlineDuty(p.id, !p.carlineDuty).then(onChange).catch(fail), '#15803D')}
             </View>
           )}
