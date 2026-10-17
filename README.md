@@ -72,6 +72,7 @@ src/comms/            types, presets, permission engine, roster auto-assignment,
 src/carline/          Car Line parent and duty views, automatic check-in
 src/market/           Marketplace terms gate and helpers
 src/volunteer/        Volunteer gate and helpers
+src/handbook/         Handbook reader: pages, paragraphs, search
 app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
                       the shield button opens Apps: Car Line, Student, Calendar)
 tests/                permission engine tests
@@ -186,6 +187,13 @@ those, cite handbook pages and never invent contact details. Each person gets 25
 questions a day (`app.settings.assistant_daily_limit`), and token use per person per
 day is in `app.assistant_usage`. It needs the `ANTHROPIC_API_KEY` secret; until then
 it says it isn't switched on yet. The API key never goes in the app or the repo.
+
+**Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
+with search that highlights every match and jumps to its page; works signed out. It
+reads the same text the Assistant uses (`supabase/functions/assistant/handbook.ts`,
+regenerated with `swift scripts/import_handbook.swift`), rebuilt into headings and
+paragraphs by `src/handbook/handbook.ts`. Page numbers are the PDF's, as the
+Assistant cites them.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo
