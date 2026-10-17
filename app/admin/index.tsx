@@ -6,14 +6,15 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, TextInput, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import {
   adminGuardianLinks, adminLinkGuardian, adminListPeopleWithAccess, adminSetAccess, adminSetCarlineDuty, adminSetVolunteerLead,
-  adminUpdateProfile, listAudit,
-  listMyGroups, listNotifications, me, permissionCatalog, sendNotification, transferDirector,
-  type Access, type AdminPerson, type Notice, type PermissionInfo,
+  adminUpdateProfile, getUser, listAudit,
+  listMyGroups, listNotifications, listQuestions, me, permissionCatalog, sendNotification, subscribeQuestions, transferDirector,
+  type Access, type AdminPerson, type Notice, type PermissionInfo, type SchoolQuestion,
 } from '../../src/api/connect';
 import { MfaGate } from '../../src/comms/MfaGate';
+import { age, ageColor, waiting } from '../../src/questions/format';
 import type { Group, SchoolRole } from '../../src/comms/types';
 import { Button, C, Card, Chip, H, Loading, P, s } from '../../src/ui';
 
@@ -128,7 +129,7 @@ function AccessCard({ p, catalog, onChange }: { p: AdminPerson; catalog: Permiss
   const [granted, setGranted] = useState<string[]>(p.granted);
   const staff = ['admin', 'teacher', 'staff'].includes(p.schoolRole);
   const tierPerms = (t: Access['tier']) => (t === 'administrator' ? catalog.map((c) => c.key).filter((k) => k !== 'admins.manage')
-    : t === 'office' ? ['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send', 'audit.view'] : []);
+    : t === 'office' ? ['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send', 'questions.manage', 'audit.view'] : []);
   const save = () => adminSetAccess(p.id, tier, granted).then(onChange).catch(fail);
 
   if (p.adminTier === 'director') {
@@ -232,6 +233,56 @@ function Notifications({ access }: { access: Access }) {
   );
 }
 
+// ------------------------------------------------------------------ questions (routing)
+
+/** Questions sent to the school: oldest waiting first, so nothing sits too long. */
+function QuestionsPanel() {
+  const [qs, setQs] = useState<SchoolQuestion[] | null>(null);
+  const [filter, setFilter] = useState<'waiting' | 'answered' | 'closed'>('waiting');
+  const [, setTick] = useState(0);
+  const load = useCallback(() => listQuestions().then(setQs).catch(() => setQs([])), []);
+  useEffect(() => { load(); return subscribeQuestions(load); }, [load]);
+  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 60_000); return () => clearInterval(t); }, []);
+  if (!qs) return <Loading />;
+
+  const open = qs.filter(waiting).sort((a, b) => (a.waitingSince ?? '').localeCompare(b.waitingSince ?? ''));
+  const unassigned = open.filter((q) => !q.assigneeId).length;
+  const shown = filter === 'waiting' ? open : qs.filter((q) => q.status === filter);
+  const name = (id: string | null) => { const p = id ? getUser(id) : undefined; return p ? `${p.firstName} ${p.lastName}` : 'someone'; };
+
+  return (
+    <>
+      <Card>
+        <Text style={{ fontSize: 16, fontWeight: '800', color: C.ink }}>
+          {open.length} waiting · {unassigned} unassigned{open.length ? ` · oldest ${age(open[0].waitingSince)}` : ''}
+        </Text>
+        <P muted>Open a question to assign it to faculty or staff, or answer it yourself. Ages turn amber after a day and red after three.</P>
+      </Card>
+      <View style={[s.row, { flexWrap: 'wrap' }]}>
+        {(['waiting', 'answered', 'closed'] as const).map((f) => pill(f === 'waiting' ? `Waiting (${open.length})` : f === 'answered' ? 'Answered' : 'Closed', filter === f, () => setFilter(f)))}
+      </View>
+      {shown.length === 0 && <P muted>{filter === 'waiting' ? 'Nothing is waiting. 🎉' : 'None yet.'}</P>}
+      {shown.map((q) => (
+        <Card key={q.id} onPress={() => router.push(`/questions/${q.id}`)} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+          {waiting(q) && (
+            <View style={{ width: 54, alignItems: 'center' }}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: ageColor(q.waitingSince) }}>{age(q.waitingSince)}</Text>
+              <Text style={{ fontSize: 11, color: C.muted }}>waiting</Text>
+            </View>
+          )}
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ fontWeight: '700', color: C.ink }}>{q.subject}</Text>
+            <P muted>From {name(q.askerId)} · {q.topic}</P>
+            <Text style={{ color: q.assigneeId ? C.muted : '#B45309', fontWeight: q.assigneeId ? '400' : '700' }}>
+              {q.assigneeId ? `Assigned to ${name(q.assigneeId)}` : 'Unassigned'}
+            </Text>
+          </View>
+        </Card>
+      ))}
+    </>
+  );
+}
+
 // ------------------------------------------------------------------ portal
 
 function Portal({ access }: { access: Access }) {
@@ -240,6 +291,7 @@ function Portal({ access }: { access: Access }) {
     can('people.view') && ['people', 'People'],
     can('admins.manage') && ['admins', 'Admins & permissions'],
     ['notify', 'Notifications'],
+    can('questions.manage') && ['questions', 'Questions'],
     can('audit.view') && ['audit', 'Activity log'],
   ].filter(Boolean) as [string, string][];
   const [tab, setTab] = useState(tabs[0][0]);
@@ -288,6 +340,7 @@ function Portal({ access }: { access: Access }) {
         </>
       )}
       {tab === 'notify' && <Notifications access={access} />}
+      {tab === 'questions' && <QuestionsPanel />}
       {tab === 'audit' && (audit.length === 0 ? <P muted>No activity yet.</P> : audit.map((a) => (
         <Card key={a.id}>
           <Text style={{ fontWeight: '700', color: C.ink }}>{a.action}</Text>

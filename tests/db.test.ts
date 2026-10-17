@@ -634,3 +634,58 @@ test('assistant: approved people read the directory; the server counts questions
   assert.deepEqual([usage.questions, Number(usage.input_tokens), Number(usage.cache_read_tokens)], [2, 30000, 29000]);
   await db.exec(`update app.settings set value = '25' where key = 'assistant_daily_limit'`);
 });
+
+test('ask the school: private questions, routed by the office, answered by staff, with follow-ups', async () => {
+  const told = async (who: string, q: string, mfa = false) => {
+    await as(who, mfa);
+    return (await rows(`select title, body from my_notifications() where data->>'questionId' = '${q}'`)).map((n) => `${n.title} | ${n.body}`).join('\n');
+  };
+
+  // Rosa (u-p01) asks; routers (the director and administrators) are told.
+  await as('u-p01');
+  const q = await one(`select * from ask_school('Uniforms', 'Spirit shirts on Fridays?', 'Can students wear spirit shirts on Fridays?')`);
+  assert.equal(q.status, 'new');
+  assert.match(await told('u-admin', q.id), /New question: Spirit shirts on Fridays\? \| Rosa R\. · Uniforms/);
+
+  // Only the asker, the assignee and (verified) routers see it.
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from school_questions where id = '${q.id}'`)).length, 0);
+  await rejects(`select * from question_reply('${q.id}', 'me too')`, /Only the person who asked/);
+  await as('u-admin');
+  assert.equal((await rows(`select 1 from school_questions where id = '${q.id}'`)).length, 0, 'routing needs the authenticator code');
+  await rejects(`select * from question_assign('${q.id}', ${id('u-eng')})`, /MFA_REQUIRED/);
+  await as('u-admin', true);
+  assert.equal((await rows(`select 1 from school_question_messages where question_id = '${q.id}'`)).length, 1);
+  await rejects(`select * from question_assign('${q.id}', ${id('u-p02')})`, /faculty or staff/);
+  assert.equal((await one(`select * from question_assign('${q.id}', ${id('u-eng')})`)).status, 'assigned');
+  assert.match(await told('u-eng', q.id), /Question for you: Spirit shirts on Fridays\?/);
+
+  // The teacher answers; Rosa sees it and follows up, which starts the clock again.
+  await as('u-sci');
+  assert.equal((await rows(`select 1 from school_questions where id = '${q.id}'`)).length, 0, 'other teachers don\'t see it');
+  await as('u-eng');
+  await one(`select * from question_reply('${q.id}', 'Yes, every Friday.')`);
+  const answered = await one(`select status, waiting_since from school_questions where id = '${q.id}'`);
+  assert.deepEqual([answered.status, answered.waiting_since], ['answered', null]);
+  assert.match(await told('u-p01', q.id), /The school answered: Spirit shirts on Fridays\? \| Jennifer T\.: Yes, every Friday\./);
+  await as('u-p01');
+  await one(`select * from question_reply('${q.id}', 'Even on game days?')`);
+  const waiting = await one(`select status, waiting_since from school_questions where id = '${q.id}'`);
+  assert.equal(waiting.status, 'assigned');
+  assert.ok(waiting.waiting_since, 'waiting again');
+  assert.match(await told('u-eng', q.id), /Follow-up: Spirit shirts on Fridays\? \| Rosa R\.: Even on game days\?/);
+
+  // Closing: the asker can; someone unrelated can't. Writes only go through the functions.
+  await as('u-p02');
+  await rejects(`select question_close('${q.id}')`, /can't close/);
+  await as('u-p01');
+  await one(`select question_close('${q.id}')`);
+  assert.equal((await one(`select status from school_questions where id = '${q.id}'`)).status, 'closed');
+  await rejects(`insert into school_questions (asker_id, subject) values (${id('u-p01')}, 'x')`, /permission denied/);
+
+  await asSuper();
+  assert.ok((await rows(`select 1 from permission_catalog() where key = 'questions.manage'`)).length === 1);
+  assert.ok((await one(`select 'questions.manage' = any (app.tier_permissions('office')) as ok`)).ok);
+  await db.exec(`set role anon`);
+  await rejects(`select * from school_questions`, /permission denied/);
+});

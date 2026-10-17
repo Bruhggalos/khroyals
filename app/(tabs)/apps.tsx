@@ -16,6 +16,7 @@ const APPS: App[] = [
   { label: 'Volunteer', icon: 'hand-left', color: '#DB2777', href: '/volunteer' },
   { label: 'Assistant', icon: 'chatbubbles', color: '#EA580C', href: '/assistant' },
   { label: 'Handbook', icon: 'book', color: '#0369A1', href: '/handbook' },
+  { label: 'Ask the School', icon: 'help-circle', color: '#16A34A', href: '/questions' },
 ];
 
 export default function Apps() {

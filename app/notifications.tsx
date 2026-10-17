@@ -66,8 +66,9 @@ export default function Notifications() {
         const groupId = n.data?.groupId as string | undefined;
         const listingId = n.data?.listingId as string | undefined;
         const opportunityId = n.data?.opportunityId as string | undefined;
+        const questionId = n.data?.questionId as string | undefined;
         const href = listingId ? `/market/${listingId}` : opportunityId ? `/volunteer/${opportunityId}`
-          : groupId ? `/group/${groupId}` : null;
+          : questionId ? `/questions/${questionId}` : groupId ? `/group/${groupId}` : null;
         return (
           <Card onPress={href ? () => router.push(href) : undefined}>
             <View style={[s.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>

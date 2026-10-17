@@ -73,6 +73,7 @@ src/carline/          Car Line parent and duty views, automatic check-in
 src/market/           Marketplace terms gate and helpers
 src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
+src/questions/        Ask the School gate and helpers
 app/                  expo-router screens (tabs: Home · News · Apps · Connect · More;
                       the shield button opens Apps: Car Line, Student, Calendar)
 tests/                permission engine tests
@@ -194,6 +195,16 @@ reads the same text the Assistant uses (`supabase/functions/assistant/handbook.t
 regenerated with `swift scripts/import_handbook.swift`), rebuilt into headings and
 paragraphs by `src/handbook/handbook.ts`. Page numbers are the PDF's, as the
 Assistant cites them.
+
+**Ask the School** (Apps → Ask the School). Anyone with an approved account sends
+the school a question (topic, subject, message); it stays in *My questions* with the
+whole conversation, so they can come back for the answer and follow up. Routers (the
+*Route questions* permission, part of the Office, Administrator and Director tiers)
+work from Admin portal → Questions: oldest waiting first, with ages that turn amber
+after a day and red after three, and they assign each question to a faculty or staff
+member, who sees it under *Assigned to me* and answers it. Only the asker, the
+assignee and routers can see a question. Routers are told about new questions,
+assignees about assignments and follow-ups, and askers about answers.
 
 **Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
 share the password in `expo.extra.demoPassword`, which also shows one-tap demo
