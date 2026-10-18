@@ -4,7 +4,7 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { getCalendar } from '../src/api/mockApi';
 import { deleteEvent, editableCalendars, listEvents, live, session, type GroupEvent } from '../src/api/connect';
 import { isPastDay, splitPast } from '../src/calendar/past';
-import { PAST_STYLE, PastToggle } from '../src/calendar/PastToggle';
+import { PAST_STYLE, PastToggle, usePastToggle } from '../src/calendar/PastToggle';
 import { dateRange } from '../src/site/calendar';
 import { Button, C, Card, Chip, Loading, P, s } from '../src/ui';
 
@@ -27,7 +27,7 @@ export default function Calendar() {
   const [events, setEvents] = useState<GroupEvent[] | null>(null);
   const [canEdit, setCanEdit] = useState<Set<string>>(new Set());
   const [canAdd, setCanAdd] = useState(false);
-  const [showPast, setShowPast] = useState(false);
+  const past = usePastToggle();
 
   const load = useCallback(async () => {
     try {
@@ -51,7 +51,7 @@ export default function Calendar() {
   if (!events) return <>{header}<Loading /></>;
 
   const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? '').localeCompare(b.startTime ?? ''));
-  const { upcoming, past } = splitPast(sorted, (e) => isPastDay(e.endDate ?? e.date));
+  const split = splitPast(sorted, (e) => isPastDay(e.endDate ?? e.date));
   const months = (list: GroupEvent[], isPast: boolean) => {
     const byMonth = new Map<string, GroupEvent[]>();
     list.forEach((e) => {
@@ -60,7 +60,7 @@ export default function Calendar() {
     });
     return [...byMonth].map(([title, data]) => ({ title, data, isPast }));
   };
-  const sections = [...(showPast ? months(past, true) : []), ...months(upcoming, false)];
+  const sections = [...(past.shown ? months(split.past, true) : []), ...months(split.upcoming, false)];
   const remove = (e: GroupEvent) => Alert.alert('Delete event?', e.title, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: () => deleteEvent(e.id).then(load).catch((x) => Alert.alert('Not allowed', x.message)) },
@@ -79,7 +79,7 @@ export default function Calendar() {
             <P muted>Important dates from the official calendar{live ? ', plus events from your groups' : ''}. Tap to open the PDF.</P>
           </Card>
           {canAdd && <Button label="+ Add event" onPress={() => router.push('/event/new')} />}
-          <PastToggle count={past.length} shown={showPast} onToggle={() => setShowPast(!showPast)} />
+          <PastToggle count={split.past.length} shown={past.shown} onToggle={past.toggle} />
         </View>}
       renderSectionHeader={({ section }) => (
         <Text style={[{ fontWeight: '800', color: C.muted, marginTop: 8 }, section.isPast && PAST_STYLE]}>

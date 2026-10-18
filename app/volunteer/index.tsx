@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   isVolunteerLead, listVolunteer, subscribeVolunteer, type Opportunity, type Person, type Signup,
 } from '../../src/api/connect';
-import { PAST_STYLE, PastToggle } from '../../src/calendar/PastToggle';
+import { PAST_STYLE, PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
 import { countLabel, isPast, whenLabel } from '../../src/volunteer/format';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
@@ -21,7 +21,7 @@ export default function Volunteer() {
 function Opportunities({ me }: { me: Person }) {
   const [data, setData] = useState<{ opportunities: Opportunity[]; signups: Signup[] } | null>(null);
   const [tab, setTab] = useState<Tab>('open');
-  const [showPast, setShowPast] = useState(false);
+  const showPast = usePastToggle();
   const lead = isVolunteerLead(me);
 
   const load = useCallback(() => listVolunteer().then(setData).catch(() => setData({ opportunities: [], signups: [] })), []);
@@ -38,7 +38,7 @@ function Opportunities({ me }: { me: Person }) {
   };
   const lists = Object.fromEntries(Object.entries(all).map(([t, list]) => [t, list.filter((o) => !isPast(o))])) as Record<Tab, Opportunity[]>;
   const past = tab === 'open' ? [] : all[tab].filter(isPast);
-  const shown = showPast ? [...lists[tab], ...past] : lists[tab];
+  const shown = showPast.shown ? [...lists[tab], ...past] : lists[tab];
   const tabs: Tab[] = lead ? ['open', 'mine', 'leading'] : ['open', 'mine'];
   const empty: Record<Tab, string> = {
     open: 'No opportunities right now. Check back soon!',
@@ -53,7 +53,7 @@ function Opportunities({ me }: { me: Person }) {
           {lead && <Button label="+ New opportunity" onPress={() => router.push('/volunteer/new')} />}
           <View style={[s.row, { gap: 6, flexWrap: 'wrap' }]}>
             {tabs.map((t) => (
-              <Text key={t} onPress={() => { setTab(t); setShowPast(false); }}
+              <Text key={t} onPress={() => { setTab(t); showPast.hide(); }}
                 style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: C.line,
                   backgroundColor: tab === t ? C.primary : '#fff', color: tab === t ? '#fff' : C.ink, fontWeight: '600' }}>
                 {{ open: 'Opportunities', mine: 'My sign-ups', leading: 'Leading' }[t]} ({lists[t].length})
@@ -62,7 +62,7 @@ function Opportunities({ me }: { me: Person }) {
           </View>
         </View>}
       ListEmptyComponent={<Card><P muted>{empty[tab]}</P></Card>}
-      ListFooterComponent={<PastToggle count={past.length} shown={showPast} onToggle={() => setShowPast(!showPast)} noun="opportunities" />}
+      ListFooterComponent={<PastToggle count={past.length} shown={showPast.shown} onToggle={showPast.toggle} noun="opportunities" />}
       renderItem={({ item: o }) => {
         const n = count(o);
         const full = !!o.spots && n >= o.spots;

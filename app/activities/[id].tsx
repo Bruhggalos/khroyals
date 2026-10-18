@@ -13,7 +13,7 @@ import {
   type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
 import { isPastTime, splitPast } from '../../src/calendar/past';
-import { PAST_STYLE, PastToggle } from '../../src/calendar/PastToggle';
+import { PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
 import { categoryInfo, leaders } from '../../src/sports/categories';
 import { activeSeasons, dateRange, eligible, gradesLabel, schoolToday, seasonState, shortDay, signupState } from '../../src/sports/seasons';
 import { EventRow, StarButton, Tag } from '../../src/sports/ui';
@@ -36,7 +36,7 @@ export default function SportPage() {
   const [me, setMe] = useState<Person | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
   const [following, setFollowing] = useState(false);
-  const [showPast, setShowPast] = useState(false);
+  const past = usePastToggle();
   const [refreshing, setRefreshing] = useState(false);
 
   const today = schoolToday();
@@ -99,9 +99,9 @@ export default function SportPage() {
       ))}
 
       <Text style={{ fontSize: 13, fontWeight: '800', color: C.muted, letterSpacing: 0.5, marginTop: 8 }}>SCHEDULE</Text>
-      <PastToggle count={schedule.past.length} shown={showPast} onToggle={() => setShowPast(!showPast)} />
-      {[...(showPast ? schedule.past : []), ...schedule.upcoming].map((e) => (
-        <EventRow key={e.id} e={e} past={showPast && schedule.past.includes(e)}
+      <PastToggle count={schedule.past.length} shown={past.shown} onToggle={past.toggle} />
+      {[...(past.shown ? schedule.past : []), ...schedule.upcoming].map((e) => (
+        <EventRow key={e.id} e={e} past={past.shown && schedule.past.includes(e)}
           onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined} />
       ))}
       {schedule.upcoming.length === 0 && <Card><P muted>Nothing coming up on the schedule.</P></Card>}

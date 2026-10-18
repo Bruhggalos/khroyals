@@ -56,7 +56,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Sign-ups only count once approved (`sport_registrations.status = 'registered'`).
 - **Calendars hide the past.** Every list of dated events (the Calendar app, activity
   schedules, Volunteer) shows what's still to come; past events stay out of view behind
-  `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Use `splitPast` with
+  `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Track it with
+  `usePastToggle()`: it starts collapsed and collapses again whenever the screen is
+  left. Use `splitPast` with
   `isPastDay` / `isPastTime` from `src/calendar/past.ts`, which go by the school's date
   (Central time), not UTC.
 - **Every notification must reach the bell page.** The school's are rows in
