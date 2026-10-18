@@ -93,6 +93,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Expo module: CarLineCarService + a car pass in SharedPreferences). The Kotlin only
   compiles in the CI APK build, so check it after changes. Car passes may only ever
   reach `car_carline_status` / `car_carline_check_in`.
+- **Every screen has a way back.** `app/_layout.tsx` sets `unstable_settings.initialRouteName
+  = '(tabs)'`, so a screen opened straight from a link (khroyals://…, a web address, a
+  notification that starts the app) still has the tabs underneath and a back button. Keep it.
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
 - **CarPlay** (`modules/carplay`, `src/carplay`, `plugins/withCarPlay.js`): iPhone

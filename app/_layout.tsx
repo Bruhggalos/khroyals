@@ -7,6 +7,10 @@ import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
 import { C } from '../src/ui';
 
+// A screen opened straight from a link (khroyals://calendar, a web address, a notification
+// that starts the app) gets the tabs underneath it, so it always has a back button.
+export const unstable_settings = { initialRouteName: '(tabs)' };
+
 /** Open whatever a tapped notification is about; register this device for push (and the car screen) whenever an approved person is signed in. */
 function usePush() {
   useEffect(() => handleNotificationTaps(), []);
