@@ -321,7 +321,8 @@ export async function pickupNumbers(): Promise<Record<string, string>> {
 /** Live car line changes (row-level security limits them to what this person may see). */
 export function subscribeCarline(onChange: () => void): () => void {
   if (!live) return () => {};
-  const ch: RealtimeChannel = sb().channel('carline')
+  // A channel per subscriber: the phone's Car Line screen and CarPlay can listen at once.
+  const ch: RealtimeChannel = sb().channel(`carline-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'carline_pickups' }, onChange)
     .subscribe();
   return () => { sb().removeChannel(ch); };

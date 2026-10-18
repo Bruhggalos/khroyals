@@ -216,6 +216,68 @@ this is done, notifications are queued, shown in the admin portal's history and 
 the bell page, but not delivered to phones. On the simulator, see a push with
 `xcrun simctl push booted com.khroyals.app payload.apns` (data goes under `"body"`).
 
-## 8. Not set up yet
+## 8. CarPlay
+
+The iPhone app is a CarPlay **driving task** app: on the car's screen, a parent
+sees today's car line for their children, with pickup numbers, and taps *I'm here*
+(or checks in one child, or cancels a check-in). The car line notifications ("You're checked
+in", "The car line is open") show on CarPlay too. Parts:
+
+- `modules/carplay/`: a local Expo module (Swift). It owns the CarPlay scene and
+  draws a list (CPListTemplate) with alerts to confirm or report something.
+- `src/carplay/screen.ts` decides what the list shows, and `src/carplay/controller.ts`
+  loads it and handles taps with the same sign-in and car line functions as the phone
+  (`carline_announce` with the phone's location, so the server's radius check applies).
+  Sign-in happens on the phone; CarPlay only shows "Sign in on your iPhone". Unlike
+  Android Auto (`modules/car-line`), CarPlay runs in the app's own process, so it uses
+  the signed-in session rather than a car pass.
+- `plugins/withCarPlay.js` adds the CarPlay scene to Info.plist and a
+  `CarPlaySceneDelegate` to AppDelegate.swift. That delegate starts React Native
+  when CarPlay launches the app without its phone window.
+
+**Try it in the simulator** (works now, before Apple's approval: simulator builds
+use `plugins/carplay/Simulator.entitlements`):
+
+```bash
+npx expo run:ios
+```
+
+In the Simulator: *I/O → External Displays → CarPlay*, then open KH Royals on the
+CarPlay screen. Sign in on the simulated iPhone first.
+
+**Getting Apple's approval.** CarPlay apps need an entitlement Apple grants per team:
+
+1. The team's Account Holder or an Admin requests it at
+   https://developer.apple.com/carplay (*Request a CarPlay entitlement*), choosing
+   the **Driving Task** category. Describe the feature plainly: during school pickup
+   the parent, sitting in the car line, taps one button on the car's screen so the
+   staff on duty know they've arrived; it shows only their children's pickup status.
+   No video, no typing, no browsing.
+2. When Apple approves, enable **CarPlay Driving Task** for the app ID
+   (`com.khroyals.app`, and any test ID such as `com.khroyals.app.dev`) under
+   *Certificates, Identifiers & Profiles → Identifiers → (app ID) → Capabilities*
+   (it may be under *Additional Capabilities*). Then let Xcode refresh the
+   provisioning profiles.
+3. Build for iPhone with the entitlement turned on:
+
+   ```bash
+   CARPLAY_ENTITLEMENT=1 npx expo prebuild --platform ios --clean
+   ```
+
+   (add `APPLE_TEAM_ID` / `IOS_BUNDLE_ID` as in section 3 for a test build). Without
+   `CARPLAY_ENTITLEMENT=1` the iPhone app builds as before, with no CarPlay. Signing
+   fails if it's set before Apple approves, because the profile can't include the
+   entitlement.
+4. Test in a car, or with Apple's CarPlay Simulator for Mac (*Additional Tools for
+   Xcode*) and an iPhone connected by cable.
+5. In App Store Connect, tell App Review the app supports CarPlay, how to reach it,
+   and give them a demo parent account with linked children.
+
+Driving task apps may only use a few simple templates with shallow navigation, and
+nothing that needs reading at length; Apple's *CarPlay Developer Guide* lists the
+current limits. This app uses one list plus alerts. Check the guide before adding
+screens to `src/carplay/screen.ts`.
+
+## 9. Not set up yet
 
 - **iOS builds**, **custom email (SMTP, needed for codes in the email)**, **editing site pages/news from the admin portal**.

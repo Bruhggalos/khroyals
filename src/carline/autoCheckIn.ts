@@ -23,6 +23,7 @@ import { currentSpot } from './location';
 
 const TASK = 'carline-arrival';
 const CATEGORY = 'carline-checked-in';
+const OPENS = 'carline-opens-category';
 const CANCEL = 'carline-cancel';
 const REMINDER = 'carline-opens';
 /** Only remind people who arrive this close to opening time (not, say, at morning drop-off). */
@@ -32,8 +33,12 @@ export const autoCheckInSupported = Platform.OS === 'ios' || Platform.OS === 'an
 
 const list = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`);
 
-const setUpCategory = () => Notifications.setNotificationCategoryAsync(CATEGORY, [
-  { identifier: CANCEL, buttonTitle: 'Cancel check-in', options: { isDestructive: true, opensAppToForeground: true } },
+// Both car line notifications also show on CarPlay, where the driver is looking.
+const setUpCategory = () => Promise.all([
+  Notifications.setNotificationCategoryAsync(CATEGORY, [
+    { identifier: CANCEL, buttonTitle: 'Cancel check-in', options: { isDestructive: true, opensAppToForeground: true } },
+  ], { allowInCarPlay: true }),
+  Notifications.setNotificationCategoryAsync(OPENS, [], { allowInCarPlay: true }),
 ]);
 
 async function notifyArrival(r: Arrival) {
@@ -49,7 +54,8 @@ async function notifyArrival(r: Arrival) {
   } else if (r.state === 'early') {
     const opens = new Date(r.opensAt);
     if (opens.getTime() - Date.now() > REMIND_WITHIN_MS) return;
-    await notifyLocal({ title: 'The car line is open', body: 'Tap to check in.', data: { carline: 'opens' } }, { id: REMINDER, at: opens });
+    await setUpCategory();
+    await notifyLocal({ title: 'The car line is open', body: 'Tap to check in.', categoryIdentifier: OPENS, data: { carline: 'opens' } }, { id: REMINDER, at: opens });
   }
 }
 

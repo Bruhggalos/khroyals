@@ -39,6 +39,7 @@
         }
       ],
       "./plugins/withSceneLifecycle",
+      "./plugins/withCarPlay",
       "./plugins/withGradleMemory"
     ],
     "experiments": {

@@ -81,6 +81,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   reach `car_carline_status` / `car_carline_check_in`.
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
+- **CarPlay** (`modules/carplay`, `src/carplay`, `plugins/withCarPlay.js`): iPhone
+  builds get the `com.apple.developer.carplay-driving-task` entitlement only with
+  `CARPLAY_ENTITLEMENT=1`, once Apple has granted it (signing fails otherwise);
+  simulator builds always have it. Driving task apps may only use simple CarPlay
+  templates; keep the car screen to the list in `src/carplay/screen.ts`.
 - Supabase free plan: built-in email sends only a few messages/hour and email
   templates can't be changed. Don't spam sign-in emails while testing — use the
   demo accounts.

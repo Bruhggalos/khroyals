@@ -75,6 +75,8 @@ src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
 src/share/            QR codes drawn with plain views (qrcode-generator encodes)
+src/carplay/          what the CarPlay screen shows and does (car line check-in)
+modules/carplay/      local Expo module: the CarPlay scene and templates (Swift)
 app/                  expo-router screens (tabs: Info · Share · Home · Connect · More;
                       Home is the shield button, labeled along its curve, which opens
                       the Apps page: Car Line, Student, Calendar, News, …)
@@ -142,7 +144,7 @@ filter pushes (`app.wants_push`); the in-app inbox still lists everything.
 
 **Android Auto:** the car line on the car's screen — each child's status and an
 "I'm here" button (`modules/car-line`, using a per-phone car pass that can only do
-that). CarPlay waits on Apple's Driving Task entitlement.
+that). CarPlay does the same on iPhone (see **CarPlay** below).
 
 **Stats.** The app records who saw each post (`record_post_views`, once per person
 plus repeat counts) and who opened each notification. Authors and group moderators
@@ -190,6 +192,14 @@ says when they're off and links to Settings.
 register after sign-in once the build has an Expo project id (`eas init` →
 `extra.eas.projectId`) and that Expo project has an APNs key (iPhone) or Firebase
 credentials (Android); see DEVELOPING.md §7.
+
+**CarPlay** (iPhone). On the car's screen, KH Royals shows today's car line for the
+parent's children with their pickup numbers: *I'm here* checks everyone in (with the
+phone's location, which the server checks like the phone app's), each child's row
+checks in just them or (after a confirmation) cancels, and statuses update live as
+staff confirm pickups. Nothing is tappable while the line is closed. The car line notifications show on CarPlay too. It's a CarPlay *driving task*
+app: Apple has to grant the entitlement before iPhone builds include it; simulator
+builds have it already. Setup and Apple's approval steps: DEVELOPING.md §8.
 
 **Share** (the second tab). A QR code for the school website (khroyals.com) that
 anyone can scan with a phone camera, plus *Share the link* (the phone's share sheet)

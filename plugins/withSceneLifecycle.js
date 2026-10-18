@@ -39,11 +39,14 @@ function transformAppDelegate(src) {
     + SCENE_DELEGATE;
 }
 
-/** Declares a single window scene handled by SceneDelegate. */
+/** Declares the window scene, handled by SceneDelegate, keeping any other scenes (CarPlay's). */
 function addSceneManifest(plist) {
+  const manifest = plist.UIApplicationSceneManifest ?? {};
   plist.UIApplicationSceneManifest = {
+    ...manifest,
     UIApplicationSupportsMultipleScenes: false,
     UISceneConfigurations: {
+      ...manifest.UISceneConfigurations,
       UIWindowSceneSessionRoleApplication: [{
         UISceneConfigurationName: 'Default Configuration',
         UISceneDelegateClassName: '$(PRODUCT_MODULE_NAME).SceneDelegate',

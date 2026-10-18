@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements for iOS Simulator builds only (plugins/withCarPlay.js points
+  CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*] here). The simulator doesn't check
+  provisioning profiles, so CarPlay works in Xcode's CarPlay simulator before Apple
+  grants the entitlement. Keep the other keys in step with ios/KHRoyals/KHRoyals.entitlements.
+-->
+<plist version="1.0">
+  <dict>
+    <key>aps-environment</key>
+    <string>development</string>
+    <key>com.apple.developer.carplay-driving-task</key>
+    <true/>
+  </dict>
+</plist>
