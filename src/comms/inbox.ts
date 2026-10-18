@@ -50,6 +50,7 @@ export function notificationHref(data: Record<string, unknown> | null | undefine
   if (data.listingId) return `/market/${data.listingId}`;
   if (data.opportunityId) return `/volunteer/${data.opportunityId}`;
   if (data.questionId) return `/questions/${data.questionId}`;
+  if (data.sportId) return `/sports/${data.sportId}`;
   if (data.groupId) return `/group/${data.groupId}`;
   return null;
 }

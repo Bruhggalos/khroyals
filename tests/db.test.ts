@@ -1062,3 +1062,112 @@ test('children: the office adds them, parents ask for more, grades move up each 
   await one(`select admin_delete_student('${max}')`);
   assert.equal((await rows(`select 1 from profiles where id = '${max}'`)).length, 0);
 });
+
+test('sports: managers add sports, coaches run seasons and sign-ups, and everyone involved hears about the schedule', async () => {
+  const told = async (who: string, sport: string) => {
+    await as(who);
+    return (await rows(`select title, body from my_notifications() where data->>'sportId' = '${sport}' order by created_at`))
+      .map((n) => `${n.title} | ${n.body}`).join('\n');
+  };
+  const at = (days: number) => `date_trunc('day', now()) + interval '${days} days 16 hours'`;  // the same in every statement
+  await asSuper();
+  await db.exec(`update profiles set grade = 10 where id = ${id('u-s02')}`);  // Liam, whatever earlier tests set
+
+  // Sports managers (authenticator-verified) add sports and coaches; teachers can't.
+  await as('u-vbcoach');
+  await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /permission/);
+  await as('u-admin');
+  await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /MFA_REQUIRED/);
+  await as('u-admin', true);
+  const vb = await one(`select * from sport_save(null, 'Volleyball', '🏐', 'Grades 6–12')`);
+  await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /already a sport called Volleyball/);
+  await one(`select sport_set_coach('${vb.id}', ${id('u-vbcoach')}, true)`);
+  await rejects(`select sport_set_coach('${vb.id}', ${id('u-p01')}, true)`, /faculty and staff/);
+
+  // Rosa follows; then the coach (no authenticator code needed) opens a season and followers are told, once.
+  await as('u-p01');
+  await one(`select sport_follow('${vb.id}', true)`);
+  await as('u-vbcoach');
+  const season = await one(`select * from season_save(null, '${vb.id}', 'Fall 2026', app.school_today() - 10, app.school_today() + 40,
+    app.school_today() - 1, app.school_today() + 5, 6, 12, 'Practice Mon–Thu 3:30', 'https://www.khroyals.com/s/2026-Volleyball-Season.pdf')`);
+  assert.match(await told('u-p01', vb.id), /🏐 Volleyball: sign-ups are open \| Fall 2026 · sign up by /);
+  await asSuper();
+  assert.equal((await one(`select app.announce_sport_signups() as n`)).n, 0, 'announced only once');
+  await as('u-vbcoach');
+  const varsity = await one(`select * from season_save(null, '${vb.id}', 'Varsity', app.school_today(), app.school_today() + 40,
+    app.school_today(), app.school_today() + 5, 11, 12)`);
+  const closed = await one(`select * from season_save(null, '${vb.id}', 'Summer camp', app.school_today() - 90, app.school_today() - 60,
+    app.school_today() - 120, app.school_today() - 100)`);
+  await rejects(`select * from season_save(null, '${vb.id}', 'Bad', app.school_today(), app.school_today() - 1)`, /Check the dates/);
+
+  // Parents sign up their own children, within the grades and the window; the coach is told.
+  await as('u-p02');
+  await rejects(`select * from sport_register('${season.id}', ${id('u-s01')})`, /own children/);
+  await rejects(`select * from sport_register('${varsity.id}', ${id('u-s02')})`, /Varsity is for 11th–12th grade/);
+  await rejects(`select * from sport_register('${closed.id}', ${id('u-s02')})`, /aren't open/);
+  const liam = await one(`select * from sport_register('${season.id}', ${id('u-s02')}, 'Played club ball')`);
+  assert.equal(liam.status, 'pending');
+  await rejects(`select * from sport_register('${season.id}', ${id('u-s02')})`, /already signed up/);
+  assert.match(await told('u-vbcoach', vb.id), /🏐 Volleyball: new sign-up \| Liam Chen for Fall 2026 \(from Wei C\.\)/);
+
+  // Other families can't see it; another teacher can't decide; the coach approves and Wei is told.
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from sport_registrations where id = '${liam.id}'`)).length, 0);
+  await as('u-sci');
+  await rejects(`select * from sport_decide('${liam.id}', true)`, /permission/);
+  await as('u-vbcoach');
+  assert.equal((await one(`select * from sport_decide('${liam.id}', true, 'Welcome!')`)).status, 'registered');
+  assert.match(await told('u-p02', vb.id), /🏐 Volleyball: Liam is registered \| Fall 2026 · Welcome!/);
+
+  // Involved: Wei and Liam through the registration, Rosa by following; Priya isn't.
+  await as('u-p02');
+  assert.deepEqual(await rows(`select following, registered from my_sports()`), [{ following: false, registered: true }]);
+  await as('u-s02');
+  assert.deepEqual(await rows(`select following, registered from my_sports()`), [{ following: false, registered: true }]);
+  await as('u-p01');
+  assert.deepEqual(await rows(`select following, registered from my_sports()`), [{ following: true, registered: false }]);
+  await as('u-p07');
+  assert.equal((await rows(`select * from my_sports()`)).length, 0);
+
+  // A game added, moved and cancelled: everyone involved hears; the coach who changed it doesn't.
+  await as('u-vbcoach');
+  const game = await one(`select * from sport_event_save(null, '${season.id}', 'game', 'vs. Westminster', ${at(2)}, null, 'KH Gym', true)`);
+  await one(`select * from sport_event_save('${game.id}', null, 'game', 'vs. Westminster', ${at(2)}, null, 'KH Gym', true, 'Wear white')`);
+  await one(`select * from sport_event_save('${game.id}', null, 'game', 'vs. Westminster', ${at(3)}, null, 'KH Gym', true, 'Wear white')`);
+  await one(`select * from sport_event_cancel('${game.id}')`);
+  for (const who of ['u-p01', 'u-p02', 'u-s02']) {
+    const heard = await told(who, vb.id);
+    assert.match(heard, /🏐 Volleyball: new game \| vs\. Westminster · .+ · KH Gym/, who);
+    assert.match(heard, /🏐 Volleyball: game changed/, who);
+    assert.match(heard, /🏐 Volleyball: cancelled/, who);
+    assert.equal((heard.match(/game changed/g) ?? []).length, 1, 'a notes-only edit is quiet');
+  }
+  assert.doesNotMatch(await told('u-vbcoach', vb.id), /new game/);
+  assert.equal(await told('u-p07', vb.id), '');
+
+  // Their schedule lists it; Priya's is empty.
+  await as('u-p02');
+  assert.deepEqual(await rows(`select title, cancelled from my_sport_schedule()`), [{ title: 'vs. Westminster', cancelled: true }]);
+  await as('u-p07');
+  assert.equal((await rows(`select * from my_sport_schedule()`)).length, 0);
+
+  // Withdrawing a registered child tells the coach; unfollowing ends Rosa's involvement.
+  await as('u-p02');
+  await one(`select sport_withdraw('${liam.id}')`);
+  assert.match(await told('u-vbcoach', vb.id), /sign-up withdrawn \| Liam Chen · Fall 2026/);
+  await as('u-p01');
+  await one(`select sport_follow('${vb.id}', false)`);
+  assert.equal((await rows(`select * from my_sports()`)).length, 0);
+
+  // Everyone, signed out too, sees sports and schedules; sign-ups and follows stay private; writes only via functions.
+  await rejects(`insert into sport_follows (sport_id, user_id) values ('${vb.id}', ${id('u-p01')})`, /permission denied/);
+  await asSuper();
+  assert.ok('sports.manage' === (await one(`select key from permission_catalog() where key = 'sports.manage'`)).key);
+  assert.ok((await one(`select 'sports.manage' = any (app.tier_permissions('administrator')) as ok`)).ok);
+  assert.ok(!(await one(`select 'sports.manage' = any (app.tier_permissions('office')) as ok`)).ok);
+  await db.exec(`set role anon`);
+  assert.equal((await rows(`select 1 from sports`)).length, 1);
+  assert.equal((await rows(`select 1 from sport_events`)).length, 1);
+  await rejects(`select * from sport_registrations`, /permission denied/);
+  await rejects(`select * from sport_follows`, /permission denied/);
+});

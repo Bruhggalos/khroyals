@@ -14,6 +14,7 @@ import * as mock from './mockApi';
 import { supabase } from './supabase';
 import type { Decision } from '../comms/permissions';
 import type { Comment, Group, GroupRole, GroupSettings, Post, SchoolRole, User } from '../comms/types';
+import { sampleSports } from '../sports/sample';
 
 export const live = supabase !== null;
 
@@ -324,6 +325,138 @@ export function subscribeCarline(onChange: () => void): () => void {
   // A channel per subscriber: the phone's Car Line screen and CarPlay can listen at once.
   const ch: RealtimeChannel = sb().channel(`carline-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'carline_pickups' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
+// ---------------------------------------------------------------- sports
+
+export type Sport = { id: string; name: string; icon: string; description: string; coachIds: string[] };
+export type SportSeason = {
+  id: string; sportId: string; name: string; startsOn: string; endsOn: string;
+  signupOpens: string | null; signupCloses: string | null; minGrade: number | null; maxGrade: number | null;
+  details: string; infoUrl: string | null;
+};
+export type SportEventKind = 'game' | 'practice' | 'tryout' | 'tournament' | 'other';
+export type SportEvent = {
+  id: string; seasonId: string; kind: SportEventKind; title: string; startsAt: string; endsAt: string | null;
+  location: string | null; home: boolean | null; notes: string; cancelled: boolean;
+};
+export type SportRegistration = {
+  id: string; seasonId: string; studentId: string; requestedBy: string | null;
+  status: 'pending' | 'registered' | 'declined' | 'withdrawn'; note: string; decisionNote: string; createdAt: string;
+};
+export type MySport = { sportId: string; following: boolean; registered: boolean };
+
+const toSeason = (r: any): SportSeason => ({
+  id: r.id, sportId: r.sport_id, name: r.name, startsOn: r.starts_on, endsOn: r.ends_on, signupOpens: r.signup_opens,
+  signupCloses: r.signup_closes, minGrade: r.min_grade, maxGrade: r.max_grade, details: r.details, infoUrl: r.info_url,
+});
+const toSportEvent = (r: any): SportEvent => ({
+  id: r.id, seasonId: r.season_id, kind: r.kind, title: r.title, startsAt: r.starts_at, endsAt: r.ends_at,
+  location: r.location, home: r.home, notes: r.notes, cancelled: r.cancelled,
+});
+const toRegistration = (r: any): SportRegistration => ({
+  id: r.id, seasonId: r.season_id, studentId: r.student_id, requestedBy: r.requested_by, status: r.status,
+  note: r.note, decisionNote: r.decision_note, createdAt: r.created_at,
+});
+const noServer = () => { throw new Error('Sports needs the school server; this build is running on demo data.'); };
+
+/** Every sport with its coaches, and every season (anyone may read them, signed out too). */
+export async function listSports(): Promise<{ sports: Sport[]; seasons: SportSeason[] }> {
+  if (!live) { const { sports, seasons } = sampleSports(); return { sports, seasons }; }
+  const [sports, coaches, seasons] = await Promise.all([
+    run(sb().from('sports').select('*').order('name')),
+    run(sb().from('sport_coaches').select('sport_id, user_id')),
+    run(sb().from('sport_seasons').select('*').order('starts_on')),
+  ]);
+  return {
+    sports: (sports as any[]).map((x) => ({
+      id: x.id, name: x.name, icon: x.icon, description: x.description,
+      coachIds: (coaches as any[]).filter((c) => c.sport_id === x.id).map((c) => c.user_id),
+    })),
+    seasons: (seasons as any[]).map(toSeason),
+  };
+}
+/** A sport's schedule from a few hours ago on (games still being played count). */
+export async function sportSchedule(seasonIds: string[]): Promise<SportEvent[]> {
+  if (!seasonIds.length) return [];
+  if (!live) return sampleSports().events.filter((e) => seasonIds.includes(e.seasonId));
+  const since = new Date(Date.now() - 3 * 3600_000).toISOString();
+  const rows: any[] = await run(sb().from('sport_events').select('*').in('season_id', seasonIds).gte('starts_at', since).order('starts_at'));
+  return rows.map(toSportEvent);
+}
+/** The sports the signed-in person follows or has a registered child (or self) in. */
+export async function mySports(): Promise<MySport[]> {
+  if (!live || !current) return [];
+  return ((await run(sb().rpc('my_sports'))) as any[]).map((r) => ({ sportId: r.sport_id, following: r.following, registered: r.registered }));
+}
+/** What's coming up for those sports. */
+export async function mySportSchedule(days = 60): Promise<SportEvent[]> {
+  if (!live || !current) return [];
+  return ((await run(sb().rpc('my_sport_schedule', { p_days: days }))) as any[]).map(toSportEvent);
+}
+/** Sign-ups this person may see: their family's, or every sign-up for sports they manage. */
+export async function sportRegistrations(seasonIds: string[]): Promise<SportRegistration[]> {
+  if (!live || !current || !seasonIds.length) return [];
+  const rows: any[] = await run(sb().from('sport_registrations').select('*').in('season_id', seasonIds).order('created_at'));
+  return rows.map(toRegistration);
+}
+/** Manages this sport: a coach on its staff, or someone with the (verified) sports.manage permission. */
+export const canManageSport = (sport: Sport, access: Access | null, me: Person | null) =>
+  !!access?.permissions.includes('sports.manage')
+  || (!!me && ['admin', 'teacher', 'staff'].includes(me.schoolRole) && sport.coachIds.includes(me.id));
+
+export async function followSport(sportId: string, follow: boolean) {
+  if (!live) noServer();
+  await rpc('sport_follow', { p_sport: sportId, p_follow: follow });
+}
+export async function saveSport(s: { id?: string | null; name: string; icon: string; description: string }): Promise<{ id: string }> {
+  if (!live) noServer();
+  return rpc('sport_save', { p_id: s.id ?? null, p_name: s.name, p_icon: s.icon, p_description: s.description }) as Promise<{ id: string }>;
+}
+export async function deleteSport(id: string) { if (!live) noServer(); await rpc('sport_delete', { p_id: id }); }
+export async function setSportCoach(sportId: string, userId: string, on: boolean) {
+  if (!live) noServer();
+  await rpc('sport_set_coach', { p_sport: sportId, p_user: userId, p_on: on });
+}
+export async function saveSeason(s: Omit<SportSeason, 'id'> & { id?: string | null }) {
+  if (!live) noServer();
+  await rpc('season_save', {
+    p_id: s.id ?? null, p_sport: s.sportId, p_name: s.name, p_starts: s.startsOn, p_ends: s.endsOn,
+    p_signup_opens: s.signupOpens, p_signup_closes: s.signupCloses, p_min_grade: s.minGrade, p_max_grade: s.maxGrade,
+    p_details: s.details, p_info_url: s.infoUrl,
+  });
+}
+export async function deleteSeason(id: string) { if (!live) noServer(); await rpc('season_delete', { p_id: id }); }
+export async function saveSportEvent(e: Omit<SportEvent, 'id' | 'cancelled'> & { id?: string | null }) {
+  if (!live) noServer();
+  await rpc('sport_event_save', {
+    p_id: e.id ?? null, p_season: e.seasonId, p_kind: e.kind, p_title: e.title, p_starts: e.startsAt, p_ends: e.endsAt,
+    p_location: e.location, p_home: e.home, p_notes: e.notes,
+  });
+}
+export async function cancelSportEvent(id: string, cancelled: boolean) {
+  if (!live) noServer();
+  await rpc('sport_event_cancel', { p_id: id, p_cancelled: cancelled });
+}
+export async function deleteSportEvent(id: string) { if (!live) noServer(); await rpc('sport_event_delete', { p_id: id }); }
+export async function registerForSport(seasonId: string, studentId: string, note: string) {
+  if (!live) noServer();
+  await rpc('sport_register', { p_season: seasonId, p_student: studentId, p_note: note });
+}
+export async function withdrawSportRegistration(id: string) { if (!live) noServer(); await rpc('sport_withdraw', { p_registration: id }); }
+export async function decideSportRegistration(id: string, approve: boolean, note = '') {
+  if (!live) noServer();
+  await rpc('sport_decide', { p_registration: id, p_approve: approve, p_note: note });
+}
+
+/** Live schedule and sign-up changes. */
+export function subscribeSports(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`sports-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sport_events' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sport_registrations' }, onChange)
     .subscribe();
   return () => { sb().removeChannel(ch); };
 }

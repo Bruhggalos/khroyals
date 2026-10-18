@@ -47,6 +47,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - **Car line lead** isn't an admin power (no MFA), but it changes car line settings and pickup numbers. The seed gives it to the demo Teacher for testing; it must go
   with the demo accounts (`--demo` projects only) before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.
+- **Sports:** coaching a sport (`sport_coaches`, staff only) isn't an admin power; it
+  lets a coach run that sport's seasons, schedule and sign-ups (`app.can_manage_sport`).
+  Adding sports and coaches needs `sports.manage`. Sign-ups only count once approved
+  (`sport_registrations.status = 'registered'`).
 - **Every notification must reach the bell page.** The school's are rows in
   `public.notifications` (`app.notify_user()` for one person). Ones the phone shows
   by itself must use `notifyLocal()` (`src/comms/localInbox.ts`), never

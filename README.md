@@ -75,6 +75,7 @@ src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
 src/share/            QR codes drawn with plain views (qrcode-generator encodes)
+src/sports/           Sports: season and sign-up rules, sample data, shared pieces
 src/carplay/          what the CarPlay screen shows and does (car line check-in)
 modules/carplay/      local Expo module: the CarPlay scene and templates (Swift)
 app/                  expo-router screens (tabs: Info · Share · Home · Connect · More;
@@ -253,6 +254,21 @@ with search that highlights every match and jumps to its page; works signed out.
 text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated with
 `swift scripts/import_handbook.swift`) and rebuilt into headings and paragraphs by
 `src/handbook/handbook.ts`. Page numbers are the PDF's.
+
+**Sports** (Apps → Sports). Anyone (signed out too) sees what's **in season**, seasons
+**coming up** with dates, eligible grades, details, an info link and sign-up dates, and
+each sport's **schedule** (games, practices, tryouts; home/away; cancellations). People
+with an approved account tap a sport's ★ button to **follow** it, and parents **sign up**
+their children during a season's sign-up window; a coach approves, and only then is the
+child registered. **Your schedule** lists what's coming up for the sports you're involved
+in: followed, or a child (or you, as a student) registered. Managers: the *Manage
+sports* permission (Director and Administrator roles to start; add it to a role like
+"Athletic Director") adds sports and coaches; a sport's coaches (staff, no
+authenticator code needed) run its seasons, schedule and sign-ups. Notifications: schedule
+changes go to everyone involved, sign-up decisions to the parent, new sign-ups to the
+coaches (or the sports managers), and "sign-ups are open" to followers on the opening day
+(`app.announce_sport_signups`, daily via pg_cron). Without the school server the app shows
+sample sports (`src/sports/sample.ts`).
 
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the
