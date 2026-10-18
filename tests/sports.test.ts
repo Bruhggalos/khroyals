@@ -64,3 +64,21 @@ test('schedule times can be typed the way people write them', () => {
   assert.equal(timeLabel(16, 30), '4:30 PM');
   assert.equal(timeLabel(0, 5), '12:05 AM');
 });
+
+test('activity categories: who leads each, its kinds of schedule items, and the category pills', async () => {
+  const { CATEGORIES, categoryInfo, hasHomeAway, inCategory, KIND_LABELS, leaders } = await import('../src/sports/categories');
+  assert.deepEqual(CATEGORIES.map((c) => c.label), ['Sports', 'Theater', 'Music', 'Art', 'Clubs']);
+  assert.deepEqual(categoryInfo('theater').kinds, ['rehearsal', 'audition', 'performance', 'other']);
+  assert.equal(categoryInfo('nonsense').key, 'sports', 'unknown → sports');
+  assert.equal(leaders('sports', 2), 'Coaches');
+  assert.equal(leaders('theater', 1), 'Director');
+  assert.equal(leaders('clubs', 3), 'Leaders');
+  assert.ok(hasHomeAway('game') && !hasHomeAway('performance'));
+  assert.equal(KIND_LABELS.audition, 'Auditions');
+  const items = [{ id: 'vb', category: 'sports' }, { id: 'musical', category: 'theater' }];
+  assert.deepEqual(inCategory(items, 'theater').map((x) => x.id), ['musical']);
+  assert.equal(inCategory(items, 'all').length, 2);
+  // Every kind a category offers is one the database allows.
+  const allowed = new Set(Object.keys(KIND_LABELS));
+  for (const c of CATEGORIES) for (const k of c.kinds) assert.ok(allowed.has(k), `${c.key}: ${k}`);
+});

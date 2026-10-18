@@ -1,13 +1,12 @@
-/** Pieces the Sports screens share: the ★ Follow button, schedule rows and sport rows. */
+/** Pieces the Activities screens share: the ★ Follow button, schedule rows and activity rows. */
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Sport, SportEvent } from '../api/connect';
 import { C, Card, P, s } from '../ui';
+import { isHeadline, KIND_LABELS } from './categories';
 
 export const GOLD = '#CA8A04';
 export const ORANGE = '#EA580C';
-
-const KIND: Record<SportEvent['kind'], string> = { game: 'Game', practice: 'Practice', tryout: 'Tryouts', tournament: 'Tournament', other: 'Event' };
 
 /** "Sat, Oct 24 · 4:30 PM" on the phone's clock. */
 export function when(iso: string) {
@@ -15,11 +14,11 @@ export function when(iso: string) {
   return `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
 }
 
-/** A round button with a star in the middle: follow a sport to see its schedule and news. */
+/** A round button with a star in the middle: follow an activity to see its schedule and news. */
 export function StarButton({ following, onPress, disabled }: { following: boolean; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ selected: following, disabled }}
-      accessibilityLabel={following ? 'Following. Tap to unfollow' : 'Follow this sport'}
+      accessibilityLabel={following ? 'Following. Tap to unfollow' : 'Follow this activity'}
       style={({ pressed }) => ({ alignItems: 'center', gap: 4, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 })}>
       <View style={{
         width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
@@ -37,7 +36,7 @@ export const Tag = ({ label, color = C.primary }: { label: string; color?: strin
   <Text style={[s.chip, { backgroundColor: `${color}1A`, color, fontSize: 12, fontWeight: '700', overflow: 'hidden' }]}>{label}</Text>
 );
 
-/** One game, practice or tryout. */
+/** One game, practice, rehearsal, performance, meeting… */
 export function EventRow({ e, sport, onPress }: { e: SportEvent; sport?: Sport; onPress?: () => void }) {
   const d = new Date(e.startsAt);
   return (
@@ -52,7 +51,7 @@ export function EventRow({ e, sport, onPress }: { e: SportEvent; sport?: Sport; 
         </Text>
         <P muted>{[when(e.startsAt), e.location].filter(Boolean).join(' · ')}</P>
         <View style={[s.row, { gap: 6, flexWrap: 'wrap' }]}>
-          <Tag label={KIND[e.kind]} color={e.kind === 'game' || e.kind === 'tournament' ? ORANGE : C.primary} />
+          <Tag label={e.kind === 'other' ? 'Event' : KIND_LABELS[e.kind]} color={isHeadline(e.kind) ? ORANGE : C.primary} />
           {e.home != null && <Tag label={e.home ? 'Home' : 'Away'} color={C.muted} />}
           {e.cancelled && <Tag label="Cancelled" color={C.danger} />}
           {sport && <Text style={{ fontSize: 12, color: C.muted }}>{sport.name}</Text>}
@@ -63,7 +62,7 @@ export function EventRow({ e, sport, onPress }: { e: SportEvent; sport?: Sport; 
   );
 }
 
-/** A sport in a list, with what's on and why it's yours. */
+/** An activity in a list, with what's on and why it's yours. */
 export function SportRow({ sport, line, following, registered, onPress }: {
   sport: Sport; line: string; following?: boolean; registered?: boolean; onPress: () => void;
 }) {

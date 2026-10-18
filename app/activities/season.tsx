@@ -1,5 +1,5 @@
 /**
- * Add or edit a season (coaches and sports managers): dates, an online sign-up window,
+ * Add or edit a season (coaches/directors and activity managers): dates, an online sign-up window,
  * eligible grades, details and an info link. Followers are told when sign-ups open.
  */
 import { useEffect, useState } from 'react';
@@ -47,10 +47,10 @@ export default function EditSeason() {
       id: id ?? null, sportId: sport, name, startsOn: starts, endsOn: ends,
       signupOpens: signup ? opens : null, signupCloses: signup ? closes : null,
       minGrade, maxGrade, details, infoUrl: infoUrl.trim() || null,
-    }).then(() => router.back()).catch((e) => Alert.alert('Sports', e.message)).finally(() => setBusy(false));
+    }).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message)).finally(() => setBusy(false));
   };
   const remove = () => {
-    const go = () => deleteSeason(id!).then(() => router.back()).catch((e) => Alert.alert('Sports', e.message));
+    const go = () => deleteSeason(id!).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message));
     if (Platform.OS === 'web') { if (globalThis.confirm?.(`Delete ${name}?`)) go(); return; }
     Alert.alert(`Delete ${name}?`, 'Its schedule and sign-ups go too.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: go }]);
   };
@@ -64,7 +64,7 @@ export default function EditSeason() {
     <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: id ? 'Edit season' : 'New season' }} />
       <Card style={{ gap: 12 }}>
-        <Field label="Season" placeholder="Fall 2026, Varsity, Middle school…" value={name} onChangeText={setName} maxLength={80} />
+        <Field label="Season" placeholder="Fall 2026, Varsity, Spring production…" value={name} onChangeText={setName} maxLength={80} />
         <View style={[s.row, { alignItems: 'flex-start' }]}>
           <Field label="Starts" placeholder="2026-08-03" value={starts} onChangeText={setStarts} autoCapitalize="none" style={{ flex: 1 }} />
           <Field label="Ends" placeholder="2026-10-31" value={ends} onChangeText={setEnds} autoCapitalize="none" style={{ flex: 1 }} />
@@ -83,7 +83,7 @@ export default function EditSeason() {
             <Field label="Closes" placeholder="2026-07-31" value={closes} onChangeText={setCloses} autoCapitalize="none" style={{ flex: 1 }} />
           </View>
         )}
-        {signup && <P muted>Followers are told the day sign-ups open. You approve each sign-up from the sport's page.</P>}
+        {signup && <P muted>Followers are told the day sign-ups open. You approve each sign-up from the activity's page.</P>}
       </Card>
       <Card style={{ gap: 12 }}>
         <GradePicker label={`Youngest grade${minGrade == null ? ' (any)' : ''}`} value={minGrade} onChange={(g) => setMinGrade(g === minGrade ? null : g)} />
@@ -91,7 +91,7 @@ export default function EditSeason() {
         <P muted>Tap a selected grade again for "any".</P>
       </Card>
       <Card style={{ gap: 12 }}>
-        <Field label="Details" placeholder="Tryouts, practice times, fees, forms, physicals…" value={details} onChangeText={setDetails} multiline style={{ minHeight: 100 }} />
+        <Field label="Details" placeholder="Tryouts or auditions, practice or rehearsal times, fees, forms…" value={details} onChangeText={setDetails} multiline style={{ minHeight: 100 }} />
         <Field label="Information link (optional)" placeholder="https://www.khroyals.com/s/…pdf" value={infoUrl} onChangeText={setInfoUrl}
           autoCapitalize="none" keyboardType="url" />
       </Card>

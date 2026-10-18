@@ -1,7 +1,8 @@
 /**
- * One sport: follow it (★), its current and next season (details, grades, sign-up for your
- * children), and its schedule. Coaches and sports managers also approve sign-ups, edit the
- * schedule and seasons; sports managers edit the sport and its coaches.
+ * One activity (a sport, show, ensemble, club…): follow it (★), its current and next season
+ * (details, grades, sign-up for your children), and its schedule. Its coaches or directors and
+ * the activity managers also approve sign-ups and edit the schedule and seasons; activity
+ * managers edit the activity and who leads it.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
@@ -11,6 +12,7 @@ import {
   registerForSport, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, withdrawSportRegistration,
   type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
+import { categoryInfo, leaders } from '../../src/sports/categories';
 import { activeSeasons, dateRange, eligible, gradesLabel, schoolToday, seasonState, shortDay, signupState } from '../../src/sports/seasons';
 import { EventRow, StarButton, Tag } from '../../src/sports/ui';
 import { Button, C, Card, H, Loading, P, s } from '../../src/ui';
@@ -20,7 +22,7 @@ const confirm = (title: string, ok: string, go: () => void) => {
   if (Platform.OS === 'web') { if (globalThis.confirm?.(title)) go(); return; }
   Alert.alert(title, undefined, [{ text: 'Cancel', style: 'cancel' }, { text: ok, style: 'destructive', onPress: go }]);
 };
-const fail = (e: any) => Alert.alert('Sports', e?.message ?? String(e));
+const fail = (e: any) => Alert.alert('Activities', e?.message ?? String(e));
 
 export default function SportPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,14 +58,14 @@ export default function SportPage() {
   useEffect(() => subscribeSports(load), [load]);
   const refresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  if (sport === undefined) return <><Stack.Screen options={{ title: 'Sports' }} /><Loading /></>;
-  if (!sport) return <View style={[s.screen, s.pad]}><Stack.Screen options={{ title: 'Sports' }} /><Card><H>That sport is gone</H></Card></View>;
+  if (sport === undefined) return <><Stack.Screen options={{ title: 'Activities' }} /><Loading /></>;
+  if (!sport) return <View style={[s.screen, s.pad]}><Stack.Screen options={{ title: 'Activities' }} /><Card><H>That activity is gone</H></Card></View>;
 
   const approved = !!me && !me.pending;
   const manage = canManageSport(sport, access, me);
   const isManager = !!access?.permissions.includes('sports.manage');
   const toggleFollow = () => {
-    if (!approved) { Alert.alert('Follow', 'Sign in on the Connect tab to follow sports.'); return; }
+    if (!approved) { Alert.alert('Follow', 'Sign in on the Connect tab to follow activities.'); return; }
     setFollowing(!following);
     followSport(sport.id, !following).catch((e) => { setFollowing(following); fail(e); });
   };
@@ -77,24 +79,25 @@ export default function SportPage() {
         <Text style={{ fontSize: 46 }} accessible={false}>{sport.icon}</Text>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{sport.name}</Text>
+          <Tag label={`${categoryInfo(sport.category).emoji} ${categoryInfo(sport.category).label}`} color={C.muted} />
           {!!sport.description && <P muted>{sport.description}</P>}
-          {sport.coachIds.length > 0 && <P muted>Coach{sport.coachIds.length > 1 ? 'es' : ''}: {sport.coachIds.map(name).join(', ')}</P>}
+          {sport.coachIds.length > 0 && <P muted>{leaders(sport.category, sport.coachIds.length)}: {sport.coachIds.map(name).join(', ')}</P>}
         </View>
         <StarButton following={following} onPress={toggleFollow} />
       </Card>
-      <P muted>{following ? 'You\'ll see its schedule in Sports and hear about changes and sign-ups.' : 'Follow to see its schedule in Sports and hear about changes and sign-ups.'}</P>
+      <P muted>{following ? 'You\'ll see its schedule in Activities and hear about changes and sign-ups.' : 'Follow to see its schedule in Activities and hear about changes and sign-ups.'}</P>
 
       {seasons.length === 0 && <Card><P muted>No season is scheduled yet. Follow it to hear when sign-ups open.</P></Card>}
       {seasons.map((season) => (
         <SeasonCard key={season.id} season={season} today={today} kids={kids} regs={regs.filter((r) => r.seasonId === season.id)}
-          approved={approved} manage={manage} onChange={load} />
+          approved={approved} manage={manage} leader={categoryInfo(sport.category).leader.toLowerCase()} onChange={load} />
       ))}
 
       <Text style={{ fontSize: 13, fontWeight: '800', color: C.muted, letterSpacing: 0.5, marginTop: 8 }}>SCHEDULE</Text>
       {events.length === 0 && <Card><P muted>Nothing on the schedule yet.</P></Card>}
       {events.map((e) => (
         <EventRow key={e.id} e={e}
-          onPress={manage ? () => router.push({ pathname: '/sports/event', params: { sport: sport.id, id: e.id } }) : undefined} />
+          onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined} />
       ))}
 
       {manage && (
@@ -105,8 +108,8 @@ export default function SportPage() {
 }
 
 /** A season: dates, grades, details, info link and, for parents, each child's sign-up. */
-function SeasonCard({ season, today, kids, regs, approved, manage, onChange }: {
-  season: SportSeason; today: string; kids: Person[]; regs: SportRegistration[]; approved: boolean; manage: boolean; onChange: () => void;
+function SeasonCard({ season, today, kids, regs, approved, manage, leader, onChange }: {
+  season: SportSeason; today: string; kids: Person[]; regs: SportRegistration[]; approved: boolean; manage: boolean; leader: string; onChange: () => void;
 }) {
   const state = signupState(season, today);
   const grades = gradesLabel(season);
@@ -114,7 +117,7 @@ function SeasonCard({ season, today, kids, regs, approved, manage, onChange }: {
     <Card style={{ gap: 8 }}>
       <View style={[s.row, { justifyContent: 'space-between' }]}>
         <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink, flex: 1 }}>{season.name}</Text>
-        <Tag label={seasonState(season, today) === 'in-season' ? 'In season' : 'Coming up'} color={seasonState(season, today) === 'in-season' ? '#15803D' : C.primary} />
+        <Tag label={seasonState(season, today) === 'in-season' ? 'Happening now' : 'Coming up'} color={seasonState(season, today) === 'in-season' ? '#15803D' : C.primary} />
       </View>
       <P muted>{[dateRange(season.startsOn, season.endsOn), grades].filter(Boolean).join(' · ')}</P>
       {!!season.details && <P>{season.details}</P>}
@@ -128,19 +131,21 @@ function SeasonCard({ season, today, kids, regs, approved, manage, onChange }: {
         </Text>
       )}
       {approved && kids.map((k) => (
-        <ChildSignUp key={k.id} kid={k} season={season} reg={regs.find((r) => r.studentId === k.id)} open={state === 'open'} onChange={onChange} />
+        <ChildSignUp key={k.id} kid={k} season={season} reg={regs.find((r) => r.studentId === k.id)} open={state === 'open'} leader={leader} onChange={onChange} />
       ))}
       {state === 'open' && approved && kids.length === 0 && !manage && <P muted>Parents sign their children up here.</P>}
       {manage && (
         <Text style={{ color: C.primary, fontWeight: '700' }}
-          onPress={() => router.push({ pathname: '/sports/season', params: { sport: season.sportId, id: season.id } })}>Edit season</Text>
+          onPress={() => router.push({ pathname: '/activities/season', params: { sport: season.sportId, id: season.id } })}>Edit season</Text>
       )}
     </Card>
   );
 }
 
 /** One child's sign-up for a season: status, and Sign up or Withdraw. */
-function ChildSignUp({ kid, season, reg, open, onChange }: { kid: Person; season: SportSeason; reg?: SportRegistration; open: boolean; onChange: () => void }) {
+function ChildSignUp({ kid, season, reg, open, leader, onChange }: {
+  kid: Person; season: SportSeason; reg?: SportRegistration; open: boolean; leader: string; onChange: () => void;
+}) {
   const [writing, setWriting] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -151,7 +156,7 @@ function ChildSignUp({ kid, season, reg, open, onChange }: { kid: Person; season
     registerForSport(season.id, kid.id, note.trim()).then(() => { setWriting(false); setNote(''); onChange(); }).catch(fail).finally(() => setBusy(false));
   };
   const status = reg?.status === 'registered' ? '✓ Registered'
-    : reg?.status === 'pending' ? 'Waiting for the coach to approve'
+    : reg?.status === 'pending' ? `Waiting for the ${leader} to approve`
       : reg?.status === 'declined' ? `Not accepted${reg.decisionNote ? `: ${reg.decisionNote}` : ''}` : !can ? `Not eligible (${gradesLabel(season)})` : '';
   return (
     <View style={{ gap: 6, borderTopWidth: 1, borderColor: C.line, paddingTop: 8 }}>
@@ -171,7 +176,7 @@ function ChildSignUp({ kid, season, reg, open, onChange }: { kid: Person; season
       </View>
       {writing && (
         <>
-          <TextInput style={[s.input, { minHeight: 60 }]} multiline placeholder="Anything the coach should know? (optional)" value={note} onChangeText={setNote}
+          <TextInput style={[s.input, { minHeight: 60 }]} multiline placeholder={`Anything the ${leader} should know? (optional)`} value={note} onChangeText={setNote}
             accessibilityLabel={`Note for ${kid.firstName}'s sign-up`} />
           <View style={[s.row, { justifyContent: 'flex-end' }]}>
             <Button label="Cancel" kind="ghost" onPress={() => setWriting(false)} />
@@ -183,7 +188,7 @@ function ChildSignUp({ kid, season, reg, open, onChange }: { kid: Person; season
   );
 }
 
-/** Coaches and sports managers: sign-ups to decide, the schedule and seasons; managers also coaches and the sport. */
+/** Coaches/directors and activity managers: sign-ups to decide, the schedule and seasons; managers also who leads it and the activity. */
 function ManagePanel({ sport, seasons, regs, isManager, onChange }: {
   sport: Sport; seasons: SportSeason[]; regs: SportRegistration[]; isManager: boolean; onChange: () => void;
 }) {
@@ -216,20 +221,21 @@ function ManagePanel({ sport, seasons, regs, isManager, onChange }: {
         {registered.length > 0 && <P muted>Registered ({registered.length}): {registered.map((r) => name(r.studentId)).join(', ')}</P>}
       </Card>
 
-      <Button label="+ Add to the schedule" onPress={() => router.push({ pathname: '/sports/event', params: { sport: sport.id } })} />
-      <Button label="+ New season" kind="ghost" onPress={() => router.push({ pathname: '/sports/season', params: { sport: sport.id } })} />
+      <Button label="+ Add to the schedule" onPress={() => router.push({ pathname: '/activities/event', params: { sport: sport.id } })} />
+      <Button label="+ New season" kind="ghost" onPress={() => router.push({ pathname: '/activities/season', params: { sport: sport.id } })} />
 
       {isManager && (
         <Card style={{ gap: 8 }}>
-          <H>Coaches</H>
-          {sport.coachIds.length === 0 && <P muted>No coaches yet. Sign-ups go to the sports managers until there are.</P>}
+          <H>{leaders(sport.category, 2)}</H>
+          {sport.coachIds.length === 0 && <P muted>No {leaders(sport.category, 2).toLowerCase()} yet. Sign-ups go to the activity managers until there are.</P>}
           {sport.coachIds.map((cid) => (
             <View key={cid} style={[s.row, { justifyContent: 'space-between' }]}>
               <Text style={{ color: C.ink, fontWeight: '600' }}>{name(cid)}</Text>
               <Text style={{ color: C.danger, fontWeight: '700' }} onPress={() => setSportCoach(sport.id, cid, false).then(onChange).catch(fail)}>Remove</Text>
             </View>
           ))}
-          <TextInput style={s.input} placeholder="Add a coach: search faculty and staff" value={q} onChangeText={setQ} accessibilityLabel="Search faculty and staff" />
+          <TextInput style={s.input} placeholder={`Add a ${categoryInfo(sport.category).leader.toLowerCase()}: search faculty and staff`} value={q} onChangeText={setQ}
+            accessibilityLabel="Search faculty and staff" />
           {matches.map((p) => (
             <Text key={p.id} style={{ color: C.primary, fontWeight: '700', paddingVertical: 4 }}
               onPress={() => { setQ(''); setSportCoach(sport.id, p.id, true).then(onChange).catch(fail); }}>
@@ -238,7 +244,7 @@ function ManagePanel({ sport, seasons, regs, isManager, onChange }: {
           ))}
         </Card>
       )}
-      {isManager && <Button label="Edit sport" kind="ghost" onPress={() => router.push({ pathname: '/sports/edit', params: { id: sport.id } })} />}
+      {isManager && <Button label="Edit activity" kind="ghost" onPress={() => router.push({ pathname: '/activities/edit', params: { id: sport.id } })} />}
     </View>
   );
 }

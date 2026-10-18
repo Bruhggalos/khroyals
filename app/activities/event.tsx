@@ -1,6 +1,7 @@
 /**
- * Add or edit a game, practice, tryout or tournament (coaches and sports managers).
- * Everyone involved in the sport is told when it's added, moved or cancelled.
+ * Add or edit a schedule item (coaches/directors and activity managers): games and practices
+ * for sports, rehearsals, auditions and performances for theater and music, meetings and
+ * competitions for clubs. Everyone involved is told when it's added, moved or cancelled.
  */
 import { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, View } from 'react-native';
@@ -8,10 +9,10 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   cancelSportEvent, deleteSportEvent, listSports, saveSportEvent, sportSchedule, type SportEvent, type SportEventKind, type SportSeason,
 } from '../../src/api/connect';
+import { categoryInfo, hasHomeAway, KIND_LABELS, titleHint, type Category } from '../../src/sports/categories';
 import { activeSeasons, parseTime, schoolToday, timeLabel } from '../../src/sports/seasons';
 import { Button, C, Card, Field, Loading, P, s } from '../../src/ui';
 
-const KINDS: [SportEventKind, string][] = [['game', 'Game'], ['practice', 'Practice'], ['tryout', 'Tryouts'], ['tournament', 'Tournament'], ['other', 'Other']];
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 /** A date and a typed time on the phone's clock → ISO. */
 const toIso = (date: string, time: string) => {
@@ -26,6 +27,7 @@ const localTime = (iso: string) => { const d = new Date(iso); return timeLabel(d
 export default function EditSportEvent() {
   const { sport, id } = useLocalSearchParams<{ sport: string; id?: string }>();
   const [seasons, setSeasons] = useState<SportSeason[] | null>(null);
+  const [category, setCategory] = useState<Category>('sports');
   const [existing, setExisting] = useState<SportEvent | null>(null);
   const [season, setSeason] = useState<string | null>(null);
   const [kind, setKind] = useState<SportEventKind>('game');
@@ -39,7 +41,10 @@ export default function EditSportEvent() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    listSports().then(async ({ seasons: all }) => {
+    listSports().then(async ({ sports, seasons: all }) => {
+      const cat = categoryInfo(sports.find((x) => x.id === sport)?.category);
+      setCategory(cat.key);
+      if (!id) setKind((k) => (cat.kinds.includes(k) ? k : cat.kinds[0]));
       const active = activeSeasons(all, sport, schoolToday());
       setSeasons(active);
       setSeason((cur) => cur ?? active[0]?.id ?? null);
@@ -55,23 +60,23 @@ export default function EditSportEvent() {
   }, [sport, id]);
   if (!seasons) return <Loading />;
   if (!seasons.length) return (
-    <View style={[s.screen, s.pad]}><Stack.Screen options={{ title: 'Schedule' }} /><Card><P>Add a season first, from the sport's page.</P></Card></View>
+    <View style={[s.screen, s.pad]}><Stack.Screen options={{ title: 'Schedule' }} /><Card><P>Add a season first, from the activity's page.</P></Card></View>
   );
 
   const startsAt = toIso(date, start);
   const endsAt = end.trim() ? toIso(date, end) : null;
   const valid = !!season && !!title.trim() && !!startsAt && (!end.trim() || (!!endsAt && endsAt >= startsAt));
-  const withHome = kind === 'game' || kind === 'tournament';
+  const withHome = hasHomeAway(kind);
   const save = () => {
     setBusy(true);
     saveSportEvent({
       id: id ?? null, seasonId: season!, kind, title, startsAt: startsAt!, endsAt,
       location: location.trim() || null, home: withHome ? home : null, notes,
-    }).then(() => router.back()).catch((e) => Alert.alert('Sports', e.message)).finally(() => setBusy(false));
+    }).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message)).finally(() => setBusy(false));
   };
   const ask = (q: string, ok: string, go: () => void) => {
     if (Platform.OS === 'web') { if (globalThis.confirm?.(q)) go(); return; }
-    Alert.alert(q, 'Everyone following or registered is told.', [{ text: 'Back', style: 'cancel' }, { text: ok, style: 'destructive', onPress: go }]);
+    Alert.alert(q, 'Everyone following or signed up is told.', [{ text: 'Back', style: 'cancel' }, { text: ok, style: 'destructive', onPress: go }]);
   };
   const pill = (label: string, on: boolean, onPress: () => void) => (
     <Text key={label} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
@@ -89,28 +94,31 @@ export default function EditSportEvent() {
             <View style={[s.row, { flexWrap: 'wrap' }]}>{seasons.map((x) => pill(x.name, season === x.id, () => setSeason(x.id)))}</View>
           </View>
         )}
-        <View style={[s.row, { flexWrap: 'wrap' }]}>{KINDS.map(([k, l]) => pill(l, kind === k, () => setKind(k)))}</View>
-        <Field label="Title" placeholder={kind === 'game' ? 'vs. Westminster Christian' : kind === 'practice' ? 'Practice' : 'Title'}
+        <View style={[s.row, { flexWrap: 'wrap' }]}>
+          {categoryInfo(category).kinds.map((k) => pill(KIND_LABELS[k], kind === k, () => setKind(k)))}
+        </View>
+        <Field label="Title" placeholder={titleHint(kind)}
           value={title} onChangeText={setTitle} maxLength={120} />
         <Field label="Date" hint="YYYY-MM-DD" value={date} onChangeText={setDate} autoCapitalize="none" />
         <View style={[s.row, { alignItems: 'flex-start' }]}>
           <Field label="Starts" placeholder="4:30 PM" value={start} onChangeText={setStart} autoCapitalize="none" style={{ flex: 1 }} />
           <Field label="Ends (optional)" placeholder="6:00 PM" value={end} onChangeText={setEnd} autoCapitalize="none" style={{ flex: 1 }} />
         </View>
-        <Field label="Where" placeholder="KH Gym" value={location} onChangeText={setLocation} />
+        <Field label="Where" placeholder={category === 'theater' || category === 'music' ? 'Dream Theatre' : 'KH Gym'} value={location} onChangeText={setLocation} />
         {withHome && <View style={[s.row]}>{pill('Home', home === true, () => setHome(true))}{pill('Away', home === false, () => setHome(false))}</View>}
-        <Field label="Notes (optional)" placeholder="Bus leaves at 3:15, wear white…" value={notes} onChangeText={setNotes} multiline />
+        <Field label="Notes (optional)" placeholder={category === 'sports' ? 'Bus leaves at 3:15, wear white…' : 'What to bring, who should come…'}
+          value={notes} onChangeText={setNotes} multiline />
       </Card>
       <Button label={busy ? 'Saving…' : 'Save'} disabled={busy || !valid} onPress={save} />
       {!startsAt && start.trim() !== '' && <P muted>Times like 4:30 PM or 16:30.</P>}
       {existing && (
         <Button label={existing.cancelled ? 'Put it back on' : 'Cancel this'} kind="ghost"
           onPress={() => ask(existing.cancelled ? 'Put it back on the schedule?' : `Cancel ${existing.title}?`, existing.cancelled ? 'Put back' : 'Cancel it',
-            () => cancelSportEvent(existing.id, !existing.cancelled).then(() => router.back()).catch((e) => Alert.alert('Sports', e.message)))} />
+            () => cancelSportEvent(existing.id, !existing.cancelled).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message)))} />
       )}
       {existing && (
         <Button label="Delete" kind="ghost" onPress={() => ask(`Delete ${existing.title}?`, 'Delete',
-          () => deleteSportEvent(existing.id).then(() => router.back()).catch((e) => Alert.alert('Sports', e.message)))} />
+          () => deleteSportEvent(existing.id).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message)))} />
       )}
     </ScrollView>
   );

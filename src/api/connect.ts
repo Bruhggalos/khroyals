@@ -14,6 +14,7 @@ import * as mock from './mockApi';
 import { supabase } from './supabase';
 import type { Decision } from '../comms/permissions';
 import type { Comment, Group, GroupRole, GroupSettings, Post, SchoolRole, User } from '../comms/types';
+import type { Category, EventKind } from '../sports/categories';
 import { sampleSports } from '../sports/sample';
 
 export const live = supabase !== null;
@@ -329,15 +330,16 @@ export function subscribeCarline(onChange: () => void): () => void {
   return () => { sb().removeChannel(ch); };
 }
 
-// ---------------------------------------------------------------- sports
+// ---------------------------------------------------------------- activities (sports, theater, music, art, clubs)
+// Stored in the sports tables (named before theater was added); `category` says which kind.
 
-export type Sport = { id: string; name: string; icon: string; description: string; coachIds: string[] };
+export type Sport = { id: string; name: string; icon: string; description: string; category: Category; coachIds: string[] };
 export type SportSeason = {
   id: string; sportId: string; name: string; startsOn: string; endsOn: string;
   signupOpens: string | null; signupCloses: string | null; minGrade: number | null; maxGrade: number | null;
   details: string; infoUrl: string | null;
 };
-export type SportEventKind = 'game' | 'practice' | 'tryout' | 'tournament' | 'other';
+export type SportEventKind = EventKind;
 export type SportEvent = {
   id: string; seasonId: string; kind: SportEventKind; title: string; startsAt: string; endsAt: string | null;
   location: string | null; home: boolean | null; notes: string; cancelled: boolean;
@@ -360,9 +362,9 @@ const toRegistration = (r: any): SportRegistration => ({
   id: r.id, seasonId: r.season_id, studentId: r.student_id, requestedBy: r.requested_by, status: r.status,
   note: r.note, decisionNote: r.decision_note, createdAt: r.created_at,
 });
-const noServer = () => { throw new Error('Sports needs the school server; this build is running on demo data.'); };
+const noServer = () => { throw new Error('Activities need the school server; this build is running on demo data.'); };
 
-/** Every sport with its coaches, and every season (anyone may read them, signed out too). */
+/** Every activity with its coaches or directors, and every season (anyone may read them, signed out too). */
 export async function listSports(): Promise<{ sports: Sport[]; seasons: SportSeason[] }> {
   if (!live) { const { sports, seasons } = sampleSports(); return { sports, seasons }; }
   const [sports, coaches, seasons] = await Promise.all([
@@ -372,13 +374,13 @@ export async function listSports(): Promise<{ sports: Sport[]; seasons: SportSea
   ]);
   return {
     sports: (sports as any[]).map((x) => ({
-      id: x.id, name: x.name, icon: x.icon, description: x.description,
+      id: x.id, name: x.name, icon: x.icon, description: x.description, category: x.category ?? 'sports',
       coachIds: (coaches as any[]).filter((c) => c.sport_id === x.id).map((c) => c.user_id),
     })),
     seasons: (seasons as any[]).map(toSeason),
   };
 }
-/** A sport's schedule from a few hours ago on (games still being played count). */
+/** An activity's schedule from a few hours ago on (games still being played count). */
 export async function sportSchedule(seasonIds: string[]): Promise<SportEvent[]> {
   if (!seasonIds.length) return [];
   if (!live) return sampleSports().events.filter((e) => seasonIds.includes(e.seasonId));
@@ -411,9 +413,11 @@ export async function followSport(sportId: string, follow: boolean) {
   if (!live) noServer();
   await rpc('sport_follow', { p_sport: sportId, p_follow: follow });
 }
-export async function saveSport(s: { id?: string | null; name: string; icon: string; description: string }): Promise<{ id: string }> {
+export async function saveSport(s: { id?: string | null; name: string; icon: string; description: string; category: Category }): Promise<{ id: string }> {
   if (!live) noServer();
-  return rpc('sport_save', { p_id: s.id ?? null, p_name: s.name, p_icon: s.icon, p_description: s.description }) as Promise<{ id: string }>;
+  return rpc('sport_save', {
+    p_id: s.id ?? null, p_name: s.name, p_icon: s.icon, p_description: s.description, p_category: s.category,
+  }) as Promise<{ id: string }>;
 }
 export async function deleteSport(id: string) { if (!live) noServer(); await rpc('sport_delete', { p_id: id }); }
 export async function setSportCoach(sportId: string, userId: string, on: boolean) {

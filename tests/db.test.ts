@@ -1080,7 +1080,7 @@ test('sports: managers add sports, coaches run seasons and sign-ups, and everyon
   await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /MFA_REQUIRED/);
   await as('u-admin', true);
   const vb = await one(`select * from sport_save(null, 'Volleyball', '🏐', 'Grades 6–12')`);
-  await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /already a sport called Volleyball/);
+  await rejects(`select * from sport_save(null, 'Volleyball', '🏐', '')`, /already an activity called Volleyball/);
   await one(`select sport_set_coach('${vb.id}', ${id('u-vbcoach')}, true)`);
   await rejects(`select sport_set_coach('${vb.id}', ${id('u-p01')}, true)`, /faculty and staff/);
 
@@ -1098,7 +1098,7 @@ test('sports: managers add sports, coaches run seasons and sign-ups, and everyon
     app.school_today(), app.school_today() + 5, 11, 12)`);
   const closed = await one(`select * from season_save(null, '${vb.id}', 'Summer camp', app.school_today() - 90, app.school_today() - 60,
     app.school_today() - 120, app.school_today() - 100)`);
-  await rejects(`select * from season_save(null, '${vb.id}', 'Bad', app.school_today(), app.school_today() - 1)`, /Check the dates/);
+  await rejects(`select * from season_save(null, '${vb.id}', 'Bad', app.school_today(), app.school_today() - 1)`, /end on or after it starts/);
 
   // Parents sign up their own children, within the grades and the window; the coach is told.
   await as('u-p02');
@@ -1170,4 +1170,29 @@ test('sports: managers add sports, coaches run seasons and sign-ups, and everyon
   assert.equal((await rows(`select 1 from sport_events`)).length, 1);
   await rejects(`select * from sport_registrations`, /permission denied/);
   await rejects(`select * from sport_follows`, /permission denied/);
+});
+
+test('activities: sports, theater, music, art and clubs, each with its own kinds of schedule items', async () => {
+  await as('u-admin', true);
+  const musical = await one(`select * from sport_save(null, 'Spring Musical', '🎭', 'Auditions in January', 'theater')`);
+  assert.equal(musical.category, 'theater');
+  assert.equal((await one(`select * from sport_save(null, 'Robotics', '🤖', '')`)).category, 'sports', 'sports unless chosen');
+  await rejects(`select * from sport_save(null, 'Chess', '♟️', '', 'games')`, /Pick Sports, Theater, Music, Art or Clubs/);
+  const moved = await one(`select * from sport_save((select id from sports where name = 'Robotics'), 'Robotics', '🤖', 'Team 4021', 'clubs')`);
+  assert.equal(moved.category, 'clubs');
+
+  const season = await one(`select * from season_save(null, '${musical.id}', '2027 season', app.school_today(), app.school_today() + 90)`);
+  for (const kind of ['audition', 'rehearsal', 'performance']) {
+    const e = await one(`select * from sport_event_save(null, '${season.id}', '${kind}', 'Beauty and the Beast', now() + interval '5 days')`);
+    assert.equal(e.kind, kind);
+  }
+  await rejects(`select * from sport_event_save(null, '${season.id}', 'recital', 'Nope', now())`, /isn't a kind of schedule item/);
+  await rejects(`select * from sport_event_save(null, '${season.id}', 'rehearsal', 'Late', now(), now() - interval '1 hour')`, /end time must be after/);
+  await rejects(`select * from season_save(null, '${musical.id}', repeat('x', 81), app.school_today(), app.school_today())`, /up to 80 characters/);
+  await rejects(`select * from season_save(null, '${musical.id}', 'Odd', app.school_today(), app.school_today(), app.school_today(), null)`, /both an opening and a closing date/);
+
+  await asSuper();
+  assert.equal((await one(`select label from permission_catalog() where key = 'sports.manage'`)).label, 'Manage activities');
+  await db.exec(`set role anon`);
+  assert.ok((await rows(`select category from sports where category = 'theater'`)).length >= 1, 'anyone sees categories');
 });
