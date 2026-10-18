@@ -167,27 +167,7 @@ npm run import-site        # re-scrapes khroyals.com into content/site/
 npm run typecheck && npm test
 ```
 
-## 7. Ask Leo (the assistant)
-
-The `assistant` Edge Function behind Ask Leo answers with Claude through an Anthropic API key
-(console.anthropic.com → API keys; usage is billed to that account). To switch it
-on, add `ANTHROPIC_API_KEY=…` to the environment when you run the setup script; it
-deploys the function and stores the key as a Supabase secret without printing it:
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-… SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… DEMO_PASSWORD=… \
-  node scripts/supabase_setup.mjs --no-seed
-```
-
-(Or set the secret in the dashboard: Edge Functions → Secrets.) When the school
-publishes a new handbook, run `swift scripts/import_handbook.swift` (macOS), check
-`npm test`, commit `supabase/functions/assistant/handbook.ts` and redeploy. Change
-the model or daily limit in `app.settings` (`assistant_model`,
-`assistant_daily_limit`; 0 = no limit), and the staff list in
-`public.assistant_contacts`. `app.assistant_usage` shows questions and tokens per
-person per day. The prompt itself is in `supabase/functions/assistant/prompt.ts`.
-
-## 8. Push notifications
+## 7. Push notifications
 
 The app asks permission to show notifications after sign-in, and the school's
 notifications always reach the bell page. Making them buzz the phone needs an Expo
@@ -215,6 +195,6 @@ this is done, notifications are queued, shown in the admin portal's history and 
 the bell page, but not delivered to phones. On the simulator, see a push with
 `xcrun simctl push booted com.khroyals.app payload.apns` (data goes under `"body"`).
 
-## 9. Not set up yet
+## 8. Not set up yet
 
 - **iOS builds**, **custom email (SMTP)**, **editing site pages/news from the admin portal**.

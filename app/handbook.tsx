@@ -68,7 +68,7 @@ export default function Handbook() {
       {searching ? (
         <FlatList data={matches} keyExtractor={(m, i) => `${m.page}-${i}`} contentContainerStyle={s.pad}
           keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={<Card><P muted>Nothing in the handbook matches "{query.trim()}". Try a shorter word, or Ask Leo.</P></Card>}
+          ListEmptyComponent={<Card><P muted>Nothing in the handbook matches "{query.trim()}". Try a shorter word, or ask the school.</P></Card>}
           renderItem={({ item: m }) => (
             <Card onPress={() => open(m.page)}>
               <Text style={{ fontSize: 12, fontWeight: '800', color: BLUE }}>PAGE {m.page}</Text>

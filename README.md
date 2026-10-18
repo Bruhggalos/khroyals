@@ -61,7 +61,7 @@ to it. The calendar's dates are transcribed in the importer from the official PD
 ```
 content/site/    real site content (see above)
 mock-db/comms/   Royals Connect demo data (npm run regen-comms); seeds Supabase
-supabase/        migrations, seed, local test stubs, Edge Functions (send-push, assistant)
+supabase/        migrations, seed, local test stubs, Edge Functions (send-push)
 scripts/         import_site.py (website), gen_comms.py (Connect demo)
 plugins/         Expo config plugins (withSceneLifecycle: iOS 27 UIScene life cycle;
                  withGradleMemory: 4 GB for the Android release build)
@@ -143,7 +143,7 @@ says when they're off and links to Settings.
 `supabase/functions/send-push` delivers them (deployed by the setup script). Phones
 register after sign-in once the build has an Expo project id (`eas init` →
 `extra.eas.projectId`) and that Expo project has an APNs key (iPhone) or Firebase
-credentials (Android); see DEVELOPING.md §8.
+credentials (Android); see DEVELOPING.md §7.
 
 **Share** (the second tab). A QR code for the school website (khroyals.com) that
 anyone can scan with a phone camera, plus *Share the link* (the phone's share sheet)
@@ -192,28 +192,11 @@ leader's messages are highlighted. A leader deletes an opportunity with a reason
 that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
 
-**Ask Leo** (Apps → Ask Leo, the lion head in the middle of the grid). Leo, a
-friendly lion, is the app's AI helper: anyone with an approved account can ask about
-school policy, what's coming up, or who to contact. Leo is warm and upbeat with a
-light lion touch now and then, and plain and calm in serious moments (the persona is
-in `supabase/functions/assistant/prompt.ts`; tile color and face in `src/leo.ts`).
-The `assistant` Edge Function
-calls Claude (model in `app.settings.assistant_model`, Claude Haiku 5.5 to start)
-with the Student / Parent Handbook (`supabase/functions/assistant/handbook.ts`,
-generated from the PDF and prompt-cached), the events that person can see over the
-next 60 days, and the staff directory in `public.assistant_contacts` (edit it in the
-dashboard; only published school email addresses). It's told to answer only from
-those, cite handbook pages and never invent contact details. Each person gets 25
-questions a day (`app.settings.assistant_daily_limit`), and token use per person per
-day is in `app.assistant_usage`. It needs the `ANTHROPIC_API_KEY` secret; until then
-it says it isn't switched on yet. The API key never goes in the app or the repo.
-
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
-with search that highlights every match and jumps to its page; works signed out. It
-reads the same text Leo uses (`supabase/functions/assistant/handbook.ts`,
-regenerated with `swift scripts/import_handbook.swift`), rebuilt into headings and
-paragraphs by `src/handbook/handbook.ts`. Page numbers are the PDF's, as Leo cites
-them.
+with search that highlights every match and jumps to its page; works signed out. The
+text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated with
+`swift scripts/import_handbook.swift`) and rebuilt into headings and paragraphs by
+`src/handbook/handbook.ts`. Page numbers are the PDF's.
 
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the

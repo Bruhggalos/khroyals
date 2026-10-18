@@ -10,10 +10,9 @@
  *    access token for the Management API — the service key can't change schema).
  * 2. Creates the demo accounts through the Auth admin API (service key).
  * 3. Loads supabase/seed.sql (demo groups, posts and the school calendar).
- * 4. (token) Makes sign-in emails show a 6-digit code, deploys the send-push and
- *    assistant Edge Functions (and, with ANTHROPIC_API_KEY set, stores it as the
- *    assistant's secret), and optionally names the director (--director=email;
- *    that person must have signed in once).
+ * 4. (token) Makes sign-in emails show a 6-digit code, deploys the send-push
+ *    Edge Function, and optionally names the director (--director=email; that
+ *    person must have signed in once).
  *
  * Without SUPABASE_ACCESS_TOKEN, steps 1 and 3 print the SQL files to paste
  * into the dashboard's SQL editor instead.
@@ -110,23 +109,6 @@ async function deployPush() {
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }
 
-/**
- * Deploy the Kingdom Heights Assistant (signed-in callers only). With
- * ANTHROPIC_API_KEY set, also store it as the function's secret (never printed).
- */
-async function deployAssistant() {
-  await deployFunction('assistant', { verifyJwt: true });
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) { console.log('· ANTHROPIC_API_KEY not set: the assistant says it isn\'t switched on yet'); return; }
-  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify([{ name: 'ANTHROPIC_API_KEY', value: key }]),
-  });
-  if (!r.ok) throw new Error(`Saving the ANTHROPIC_API_KEY secret failed (${r.status})`);
-  console.log('✓ assistant API key saved as a Supabase secret');
-}
-
 /** Sign-in emails show the 6-digit code the app asks for (instead of only a magic link). */
 async function configureAuthEmail() {
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
@@ -174,7 +156,6 @@ if (seed) {
 if (TOKEN) {
   await configureAuthEmail();
   await deployPush();
-  await deployAssistant();
   const director = process.argv.find((a) => a.startsWith('--director='))?.split('=')[1];
   if (director) {
     await sql(`select app.bootstrap_director('${director.replace(/'/g, "''")}')`);

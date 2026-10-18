@@ -1,9 +1,9 @@
 /**
- * The Student / Parent Handbook for the in-app reader, from the same text Ask
- * Leo answers from (supabase/functions/assistant/handbook.ts, generated from the
- * school's PDF). Page numbers are the PDF's, which Leo cites.
+ * The Student / Parent Handbook for the in-app reader, from text extracted from the
+ * school's PDF (src/handbook/text.ts, made by scripts/import_handbook.swift).
+ * Page numbers are the PDF's.
  */
-import { HANDBOOK, HANDBOOK_SOURCE } from '../../supabase/functions/assistant/handbook';
+import { HANDBOOK, HANDBOOK_SOURCE } from './text';
 
 export { HANDBOOK_SOURCE };
 export type Block = { kind: 'heading' | 'text'; text: string };

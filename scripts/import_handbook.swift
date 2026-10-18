@@ -1,18 +1,17 @@
-// Turns the school's Student / Parent Handbook PDF into
-// supabase/functions/assistant/handbook.ts, the text the Assistant answers from.
-// macOS only (uses PDFKit):
+// Turns the school's Student / Parent Handbook PDF into src/handbook/text.ts,
+// the text the Handbook reader shows and searches. macOS only (uses PDFKit):
 //
 //   swift scripts/import_handbook.swift                # the handbook linked on khroyals.com
 //   swift scripts/import_handbook.swift path/or/url.pdf
 //
-// Then redeploy the assistant function (node scripts/supabase_setup.mjs --no-seed).
+// Then check `npm test` (tests/handbook.test.ts) and commit src/handbook/text.ts.
 import Foundation
 import PDFKit
 
 let defaultURL = "https://www.khroyals.com/s/KH-Student-Handbook-nj4p.pdf"
 let source = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : defaultURL
 let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-let output = root.appendingPathComponent("supabase/functions/assistant/handbook.ts")
+let output = root.appendingPathComponent("src/handbook/text.ts")
 
 let url = source.hasPrefix("http") ? URL(string: source)! : URL(fileURLWithPath: source)
 guard let data = try? Data(contentsOf: url), let pdf = PDFDocument(data: data) else {
@@ -20,7 +19,7 @@ guard let data = try? Data(contentsOf: url), let pdf = PDFDocument(data: data) e
   exit(1)
 }
 
-// One block per page, so answers can point to a page number.
+// One block per page, numbered like the PDF.
 var pages: [String] = []
 for i in 0..<pdf.pageCount {
   let raw = pdf.page(at: i)?.string ?? ""
