@@ -12,6 +12,8 @@ import {
   registerForSport, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, withdrawSportRegistration,
   type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
+import { isPastTime, splitPast } from '../../src/calendar/past';
+import { PAST_STYLE, PastToggle } from '../../src/calendar/PastToggle';
 import { categoryInfo, leaders } from '../../src/sports/categories';
 import { activeSeasons, dateRange, eligible, gradesLabel, schoolToday, seasonState, shortDay, signupState } from '../../src/sports/seasons';
 import { EventRow, StarButton, Tag } from '../../src/sports/ui';
@@ -34,6 +36,7 @@ export default function SportPage() {
   const [me, setMe] = useState<Person | null>(null);
   const [access, setAccess] = useState<Access | null>(null);
   const [following, setFollowing] = useState(false);
+  const [showPast, setShowPast] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const today = schoolToday();
@@ -45,7 +48,7 @@ export default function SportPage() {
       const ids = active.map((x) => x.id);
       const approved = !!p && !p.pending;
       const [ev, rg, ks, mine, a] = await Promise.all([
-        sportSchedule(ids), approved ? sportRegistrations(ids) : [], approved ? myChildren() : [],
+        sportSchedule(ids, { past: true }), approved ? sportRegistrations(ids) : [], approved ? myChildren() : [],
         approved ? mySports() : [], approved ? myAccess().catch(() => null) : null,
       ]);
       setSport(sp); setSeasons(active); setEvents(ev); setRegs(rg); setKids(ks); setMe(p); setAccess(a);
@@ -63,6 +66,8 @@ export default function SportPage() {
 
   const approved = !!me && !me.pending;
   const manage = canManageSport(sport, access, me);
+  // Like every calendar in the app: past items stay out of view until asked for, then look greyed out.
+  const schedule = splitPast(events, (e) => isPastTime(e.startsAt, e.endsAt));
   const isManager = !!access?.permissions.includes('sports.manage');
   const toggleFollow = () => {
     if (!approved) { Alert.alert('Follow', 'Sign in on the Connect tab to follow activities.'); return; }
@@ -94,11 +99,12 @@ export default function SportPage() {
       ))}
 
       <Text style={{ fontSize: 13, fontWeight: '800', color: C.muted, letterSpacing: 0.5, marginTop: 8 }}>SCHEDULE</Text>
-      {events.length === 0 && <Card><P muted>Nothing on the schedule yet.</P></Card>}
-      {events.map((e) => (
-        <EventRow key={e.id} e={e}
+      <PastToggle count={schedule.past.length} shown={showPast} onToggle={() => setShowPast(!showPast)} />
+      {[...(showPast ? schedule.past : []), ...schedule.upcoming].map((e) => (
+        <EventRow key={e.id} e={e} past={showPast && schedule.past.includes(e)}
           onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined} />
       ))}
+      {schedule.upcoming.length === 0 && <Card><P muted>Nothing coming up on the schedule.</P></Card>}
 
       {manage && (
         <ManagePanel sport={sport} seasons={seasons} regs={regs} isManager={isManager} onChange={load} />

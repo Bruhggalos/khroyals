@@ -49,7 +49,7 @@ export default function EditSportEvent() {
       setSeasons(active);
       setSeason((cur) => cur ?? active[0]?.id ?? null);
       if (id) {
-        const e = (await sportSchedule(all.filter((x) => x.sportId === sport).map((x) => x.id))).find((x) => x.id === id);
+        const e = (await sportSchedule(all.filter((x) => x.sportId === sport).map((x) => x.id), { past: true })).find((x) => x.id === id);
         if (e) {
           setExisting(e); setSeason(e.seasonId); setKind(e.kind); setTitle(e.title); setDate(localDate(e.startsAt));
           setStart(localTime(e.startsAt)); setEnd(e.endsAt ? localTime(e.endsAt) : ''); setLocation(e.location ?? '');

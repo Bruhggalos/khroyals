@@ -380,12 +380,13 @@ export async function listSports(): Promise<{ sports: Sport[]; seasons: SportSea
     seasons: (seasons as any[]).map(toSeason),
   };
 }
-/** An activity's schedule from a few hours ago on (games still being played count). */
-export async function sportSchedule(seasonIds: string[]): Promise<SportEvent[]> {
+/** An activity's schedule from a few hours ago on (games still being played count), or all of it with `past`. */
+export async function sportSchedule(seasonIds: string[], opts: { past?: boolean } = {}): Promise<SportEvent[]> {
   if (!seasonIds.length) return [];
   if (!live) return sampleSports().events.filter((e) => seasonIds.includes(e.seasonId));
-  const since = new Date(Date.now() - 3 * 3600_000).toISOString();
-  const rows: any[] = await run(sb().from('sport_events').select('*').in('season_id', seasonIds).gte('starts_at', since).order('starts_at'));
+  let query = sb().from('sport_events').select('*').in('season_id', seasonIds);
+  if (!opts.past) query = query.gte('starts_at', new Date(Date.now() - 3 * 3600_000).toISOString());
+  const rows: any[] = await run(query.order('starts_at'));
   return rows.map(toSportEvent);
 }
 /** The sports the signed-in person follows or has a registered child (or self) in. */

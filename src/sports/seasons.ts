@@ -10,16 +10,7 @@ export type SeasonInfo = {
   signupOpens: string | null; signupCloses: string | null; minGrade: number | null; maxGrade: number | null;
 };
 
-/** Today as YYYY-MM-DD on the school's clock (Central time), like app.school_today(). */
-export function schoolToday(now = new Date()): string {
-  try {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-  } catch {
-    // No time zone support: the phone's own date (families are on Central time anyway).
-    const d = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-    return d.toISOString().slice(0, 10);
-  }
-}
+export { schoolToday } from '../calendar/past';
 
 export const seasonState = (s: SeasonInfo, today: string): 'in-season' | 'upcoming' | 'over' =>
   s.endsOn < today ? 'over' : s.startsOn > today ? 'upcoming' : 'in-season';

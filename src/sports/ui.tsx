@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Sport, SportEvent } from '../api/connect';
 import { C, Card, P, s } from '../ui';
+import { PAST_STYLE } from '../calendar/PastToggle';
 import { isHeadline, KIND_LABELS } from './categories';
 
 export const GOLD = '#CA8A04';
@@ -37,10 +38,10 @@ export const Tag = ({ label, color = C.primary }: { label: string; color?: strin
 );
 
 /** One game, practice, rehearsal, performance, meeting… */
-export function EventRow({ e, sport, onPress }: { e: SportEvent; sport?: Sport; onPress?: () => void }) {
+export function EventRow({ e, sport, past, onPress }: { e: SportEvent; sport?: Sport; past?: boolean; onPress?: () => void }) {
   const d = new Date(e.startsAt);
   return (
-    <Card onPress={onPress} style={{ flexDirection: 'row', gap: 12, alignItems: 'center', opacity: e.cancelled ? 0.6 : 1 }}>
+    <Card onPress={onPress} style={{ flexDirection: 'row', gap: 12, alignItems: 'center', opacity: past ? PAST_STYLE.opacity : e.cancelled ? 0.6 : 1 }}>
       <View style={{ width: 48, alignItems: 'center' }}>
         <Text style={{ fontSize: 12, fontWeight: '700', color: ORANGE }}>{d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}</Text>
         <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{d.getDate()}</Text>

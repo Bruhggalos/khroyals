@@ -54,6 +54,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   it lets them run that activity's seasons, schedule and sign-ups
   (`app.can_manage_sport`). Adding activities and their coaches needs `sports.manage`.
   Sign-ups only count once approved (`sport_registrations.status = 'registered'`).
+- **Calendars hide the past.** Every list of dated events (the Calendar app, activity
+  schedules, Volunteer) shows what's still to come; past events stay out of view behind
+  `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Use `splitPast` with
+  `isPastDay` / `isPastTime` from `src/calendar/past.ts`, which go by the school's date
+  (Central time), not UTC.
 - **Every notification must reach the bell page.** The school's are rows in
   `public.notifications` (`app.notify_user()` for one person). Ones the phone shows
   by itself must use `notifyLocal()` (`src/comms/localInbox.ts`), never

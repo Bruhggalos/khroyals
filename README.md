@@ -75,6 +75,7 @@ src/volunteer/        Volunteer gate and helpers
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
 src/share/            QR codes drawn with plain views (qrcode-generator encodes)
+src/calendar/         past events: the school's date, "Show past events", greyed-out style
 src/sports/           Activities: categories, season and sign-up rules, sample data, shared pieces
 src/carplay/          what the CarPlay screen shows and does (car line check-in)
 modules/carplay/      local Expo module: the CarPlay scene and templates (Swift)

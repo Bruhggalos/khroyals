@@ -1,3 +1,4 @@
+import { isPastDay, schoolToday } from '../calendar/past';
 import type { CalendarEvent } from './types';
 
 const d = (iso: string) => new Date(iso + 'T12:00:00');
@@ -10,11 +11,10 @@ export function dateRange(e: Pick<CalendarEvent, 'date' | 'endDate'>) {
   return `${md(e.date)} – ${sameMonth ? d(e.endDate).getDate() : md(e.endDate)}`;
 }
 
-/** Events that haven't finished yet, soonest first. */
-export function upcoming(events: CalendarEvent[], limit: number, today = new Date()) {
-  const t = today.toISOString().slice(0, 10);
+/** Events that haven't finished yet (today counts, on the school's clock), soonest first. */
+export function upcoming(events: CalendarEvent[], limit: number, today = schoolToday()) {
   return [...events]
-    .filter((e) => (e.endDate ?? e.date) >= t)
+    .filter((e) => !isPastDay(e.endDate ?? e.date, today))
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, limit);
 }
