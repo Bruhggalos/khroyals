@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
   joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session, setMockUser, signOut,
   type Person,
 } from '../../src/api/connect';
+import { forgetCarPass } from '../../src/carline/carPass';
 import { disableAutoCheckIn } from '../../src/carline/autoCheckIn';
 import { disablePush } from '../../src/comms/push';
 import { MODE_LABELS } from '../../src/comms/presets';
 import { canCreateGroup } from '../../src/comms/permissions';
 import { SignIn } from '../../src/comms/SignIn';
 import type { Group } from '../../src/comms/types';
-import { Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
+import { Avatar, Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
 
 /** Demo-data mode: view the app as any demo person to check permissions. */
 const TEST_USERS = ['u-admin', 'u-eng', 'u-vbcoach', 'u-s01', 'u-s08', 'u-p01'];
@@ -69,7 +70,7 @@ export default function Connect() {
         <Card>
           <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Waiting for approval</Text>
           <P>Thanks, {person.firstName || person.email}. A Kingdom Heights administrator will confirm your account and add you to your groups.</P>
-          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)} />
+          <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(load)} />
         </Card>
       </View>
     );
@@ -80,11 +81,15 @@ export default function Connect() {
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
       {live ? (
         <View style={[s.row, { justifyContent: 'space-between' }]}>
-          <View style={{ flex: 1 }}><P muted>Signed in as {person.firstName} {person.lastName} · {person.schoolRole}</P></View>
-          <View style={[s.row, { gap: 14 }]}>
-            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => router.push('/set-password')}>Password</Text>
-            <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(signOut).then(load)}>Sign out</Text>
-          </View>
+          <Pressable onPress={() => router.push('/profile')} accessibilityRole="button" accessibilityLabel="My profile"
+            style={[s.row, { flex: 1 }]}>
+            <Avatar person={person} size={40} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: C.ink }}>{person.firstName} {person.lastName}</Text>
+              <P muted>{person.schoolRole} · My profile & notifications ›</P>
+            </View>
+          </Pressable>
+          <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(load)}>Sign out</Text>
         </View>
       ) : (
         <>

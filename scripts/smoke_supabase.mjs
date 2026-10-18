@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * End-to-end check against a live Supabase project, using the same queries
- * as src/api/connect.ts and the seeded demo accounts.
+ * as src/api/connect.ts and the seeded demo accounts. Only works on a project
+ * set up with `supabase_setup.mjs --demo` (demo accounts sign in with a password).
  *
  *   SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smoke_supabase.mjs
  *

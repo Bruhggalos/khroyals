@@ -28,3 +28,10 @@ export const when = (iso: string) => {
 };
 
 export { ask } from '../ui';
+
+/** What deleting does at each stage. */
+export function deleteWarning(l: { status: string }) {
+  if (l.status === 'pending') return 'The sale is off: your buyer is told, and the post disappears from the Marketplace.';
+  if (l.status === 'sold') return 'It disappears from your list.';
+  return 'It disappears from the Marketplace, and anyone in line is told.';
+}

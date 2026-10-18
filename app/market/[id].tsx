@@ -5,7 +5,7 @@
  * confirms; then both get a deal card to arrange the handoff at school.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -14,8 +14,8 @@ import {
   type Listing, type MarketLine, type Person,
 } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
-import { ask, conditionLabel, inLine, money, nameOf, parseMoney, when } from '../../src/market/format';
-import { Button, C, Card, Chip, H, Loading, P, s } from '../../src/ui';
+import { ask, conditionLabel, deleteWarning, inLine, money, nameOf, parseMoney, when } from '../../src/market/format';
+import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const GREEN = '#15803D';
 
@@ -75,6 +75,12 @@ function ItemView({ id, me }: { id: string; me: Person }) {
           ? <SellerLine l={l} lines={data.lines} busy={busy} act={act} />
           : <BuyerPanel l={l} me={me} lines={data.lines} busy={busy} act={act} />}
 
+      {seller && (
+        <Text style={{ color: C.danger, fontWeight: '600', marginTop: 8 }} accessibilityRole="button"
+          onPress={() => ask('Delete this post?', deleteWarning(l), 'Delete', () => act(() => marketRemove(l.id), () => router.back()))}>
+          🗑 Delete this post
+        </Text>
+      )}
       {isAdmin && !seller && (
         <Text style={{ color: C.danger, fontWeight: '600', marginTop: 8 }}
           onPress={() => ask('Remove this post?', "It comes down because it isn't a uniform or school-related item, and the seller is told why.", 'Remove',
@@ -148,7 +154,7 @@ function SellerLine({ l, lines, busy, act }: { l: Listing; lines: MarketLine[]; 
             {!!x.message && <P muted>“{x.message}”</P>}
             {x.status === 'offered' && (counter?.lineId === x.id ? (
               <View style={s.row}>
-                <TextInput style={[s.input, { flex: 1, padding: 10 }]} placeholder="Your price ($)" keyboardType="decimal-pad" autoFocus
+                <Field label="Your price ($)" placeholder="0.00" style={{ flex: 1, padding: 10 }} keyboardType="decimal-pad" autoFocus
                   value={counter.text} onChangeText={(text) => setCounter({ lineId: x.id, text })} />
                 <Button label="Send" disabled={busy} onPress={() => sendCounter(x)} />
               </View>
@@ -168,10 +174,6 @@ function SellerLine({ l, lines, busy, act }: { l: Listing; lines: MarketLine[]; 
             `Sell "${l.title}" to ${nameOf(chosen.buyerId)} for ${money(chosen.agreedCents!)}? The post closes to everyone else, and you two arrange the handoff at school.`,
             'Confirm', () => act(() => marketSelect(chosen.id), () => setPicked(null)))} />
       )}
-      <Text style={{ color: C.danger, fontWeight: '600', marginTop: 6 }}
-        onPress={() => ask('Take down this post?', 'It disappears from the Marketplace.', 'Take down', () => act(() => marketRemove(l.id), () => router.back()))}>
-        Take down this post
-      </Text>
     </View>
   );
 }
@@ -220,9 +222,9 @@ function BuyerPanel({ l, me, lines, busy, act }: { l: Listing; me: Person; lines
           'Dibs', () => act(() => marketDibs(l.id)))} />
       {offer ? (
         <Card style={{ gap: 8 }}>
-          <TextInput style={s.input} placeholder="Your offer ($)" keyboardType="decimal-pad" autoFocus
+          <Field label="Your offer ($)" placeholder="0.00" keyboardType="decimal-pad" autoFocus
             value={offer.price} onChangeText={(price) => setOffer({ ...offer, price })} />
-          <TextInput style={s.input} placeholder="Note to the seller (optional)" maxLength={300}
+          <Field label="Note to the seller (optional)" placeholder="e.g. Can pick up Friday" maxLength={300}
             value={offer.note} onChangeText={(note) => setOffer({ ...offer, note })} />
           <View style={s.row}>
             <View style={{ flex: 1 }}><Button label="Send offer" disabled={busy} onPress={send} /></View>

@@ -4,9 +4,9 @@
  * database enforces it too. First visit links the app; later visits ask for a code.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Alert, Image, Linking, Platform, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Linking, Platform, Text, View } from 'react-native';
 import { mfaEnroll, mfaStatus, mfaVerify, myAccess, type Access } from '../api/connect';
-import { Button, C, Card, H, Loading, P, s } from '../ui';
+import { Button, C, Card, Field, H, Loading, P, s } from '../ui';
 
 export function MfaGate({ children }: { children: (access: Access) => ReactNode }) {
   const [access, setAccess] = useState<Access | null>(null);
@@ -44,7 +44,7 @@ export function MfaGate({ children }: { children: (access: Access) => ReactNode 
 
   const codeBox = (
     <>
-      <TextInput style={[s.input, { fontSize: 22, letterSpacing: 6, textAlign: 'center' }]} placeholder="123456" keyboardType="number-pad"
+      <Field label="6-digit code from your authenticator app" style={{ fontSize: 22, letterSpacing: 6, textAlign: 'center' }} placeholder="123456" keyboardType="number-pad"
         maxLength={6} value={code} onChangeText={setCode} autoComplete="one-time-code" />
       <Button label={busy ? 'Checking…' : 'Verify'} onPress={verify} disabled={busy || code.length !== 6} />
     </>

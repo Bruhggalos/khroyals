@@ -15,7 +15,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import { registerPushToken, unregisterPushToken } from '../api/connect';
+import { markNotificationsOpened, registerPushToken, session, unregisterPushToken } from '../api/connect';
 import { handleCarlineResponse } from '../carline/autoCheckIn';
 import { notificationHref } from './inbox';
 import { clearLocalNotifications } from './localInbox';
@@ -74,7 +74,10 @@ export function handleNotificationTaps(): () => void {
   const open = (r: Notifications.NotificationResponse) => {
     Notifications.clearLastNotificationResponse();  // so the next launch doesn't replay it
     if (handleCarlineResponse(r)) return;
-    const href = notificationHref(r.notification.request.content.data);
+    const data: any = r.notification.request.content.data;
+    // Count the open for the sender (the app may have just started, so load the session first).
+    if (data?.notificationId) session().then(() => markNotificationsOpened([data.notificationId])).catch(() => {});
+    const href = notificationHref(data);
     if (href) router.push(href);
   };
   const last = Notifications.getLastNotificationResponse();

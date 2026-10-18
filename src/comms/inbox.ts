@@ -33,6 +33,11 @@ export function cancelLocalEntry(list: LocalNotice[], notificationId: string, no
   return list.filter((x) => !(x.notificationId === notificationId && at(x) > now));
 }
 
+/** Delete one from the Notifications page (by its key). */
+export function removeLocal(list: LocalNotice[], key: string): LocalNotice[] {
+  return list.filter((x) => x.key !== key);
+}
+
 /** The ones that have shown (in the last 30 days), newest first. */
 export function shownLocal(list: LocalNotice[], now = Date.now()): LocalNotice[] {
   return list.filter((x) => at(x) <= now && now - at(x) < MAX_AGE_MS).sort(newestFirst);

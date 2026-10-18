@@ -17,8 +17,9 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { router } from 'expo-router';
-import { carlineArrived, carlineCancel, carlineConfig, type Arrival } from '../api/connect';
+import { carlineArrived, carlineCancel, carlineConfig, type Arrival, type Spot } from '../api/connect';
 import { cancelLocal, notifyLocal } from '../comms/localInbox';
+import { currentSpot } from './location';
 
 const TASK = 'carline-arrival';
 const CATEGORY = 'carline-checked-in';
@@ -56,12 +57,20 @@ if (autoCheckInSupported) {
   TaskManager.defineTask<{ eventType: Location.GeofencingEventType }>(TASK, async ({ data, error }) => {
     if (error || !data) return;
     try {
-      if (data.eventType === Location.GeofencingEventType.Enter) await notifyArrival(await carlineArrived());
+      if (data.eventType === Location.GeofencingEventType.Enter) await notifyArrival(await carlineArrived(await backgroundSpot()));
       else await cancelLocal(REMINDER);
     } catch {
       // Signed out or offline: nothing to do until the next arrival.
     }
   });
+}
+
+/** The phone's position from a background wake-up (permission was granted when auto check-in was turned on). */
+async function backgroundSpot(): Promise<Spot> {
+  const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
+    .catch(() => Location.getLastKnownPositionAsync({ maxAge: 120_000 }));
+  if (!p) throw new Error('No location');
+  return { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy ?? null };
 }
 
 async function registerZone() {
@@ -115,7 +124,7 @@ export function handleCarlineResponse(r: Notifications.NotificationResponse): bo
     return true;
   }
   if (data?.carline === 'opens') {
-    carlineArrived().then(notifyArrival).catch(() => {}).finally(() => router.push('/carline'));
+    currentSpot().then(carlineArrived).then(notifyArrival).catch(() => {}).finally(() => router.push('/carline'));
     return true;
   }
   return false;

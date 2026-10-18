@@ -42,11 +42,22 @@ async function run<T>(p: PromiseLike<{ data: T; error: { message: string } | nul
 }
 
 const directory = new Map<string, Person>();
+
+// Profile photos: the bucket is private, so storage paths become signed URLs.
+const avatarSigned = new Map<string, { url: string; until: number }>();
+const avatarUrl = (path: string | null | undefined) => (!path ? '' : /^https?:/.test(path) ? path : avatarSigned.get(path)?.url ?? '');
+async function signAvatars(paths: (string | null | undefined)[]) {
+  const need = [...new Set(paths.filter((x): x is string =>
+    !!x && !/^https?:/.test(x) && (avatarSigned.get(x)?.until ?? 0) < Date.now()))];
+  if (!need.length) return;
+  const { data } = await sb().storage.from('avatars').createSignedUrls(need, 24 * 3600);
+  for (const d of data ?? []) if (d.path && d.signedUrl) avatarSigned.set(d.path, { url: d.signedUrl, until: Date.now() + 20 * 3600_000 });
+}
 let current: Person | null = null;
 
 const toPerson = (p: any): Person => ({
   id: p.id, firstName: p.first_name ?? '', lastName: p.last_name ?? '', schoolRole: p.school_role as SchoolRole,
-  avatar: p.avatar_url ?? `https://i.pravatar.cc/120?u=${p.id}`, grade: p.grade ?? undefined,
+  avatar: avatarUrl(p.avatar_url), grade: p.grade ?? undefined,
   email: p.email, pending: p.school_role == null, carlineDuty: !!p.carline_duty, volunteerLead: !!p.volunteer_lead,
 });
 
@@ -89,6 +100,7 @@ export async function session(): Promise<Person | null> {
   const uid = data.session?.user.id;
   if (!uid) { current = null; return null; }
   const people = await run(sb().from('profiles').select('*'));
+  await signAvatars(people.map((p: any) => p.avatar_url)).catch(() => {});
   directory.clear();
   people.forEach((p: any) => directory.set(p.id, toPerson(p)));
   current = directory.get(uid) ?? toPerson({ id: uid });
@@ -100,36 +112,6 @@ export const me = (): Person | null => (live ? current : mock.me());
 export const getUser = (id: string): Person | undefined => (live ? directory.get(id) : mock.getUser(id));
 export const listUsers = async (): Promise<Person[]> => (live ? [...directory.values()] : mock.listUsers());
 
-export async function signIn(email: string, password: string) {
-  await run(sb().auth.signInWithPassword({ email: email.trim(), password }) as any);
-  return session();
-}
-/**
- * Create an account with email + password. Returns the signed-in person, or
- * null when the project requires confirming the email first (the confirmation
- * link reopens the app and signs in). New people wait for admin approval.
- */
-export async function signUp(email: string, password: string, firstName: string, lastName: string) {
-  const data: any = await run(sb().auth.signUp({
-    email: email.trim(), password,
-    options: { emailRedirectTo: authRedirectUrl(), data: { first_name: firstName.trim(), last_name: lastName.trim() } },
-  }) as any);
-  // Supabase hides whether an email is already registered: an existing address comes back with no identities.
-  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    throw new Error('An account with this email already exists. Sign in, or use "Forgot password".');
-  }
-  return data.session ? session() : null;
-}
-
-/** Email a link that opens the app's "set a new password" screen. */
-export async function sendPasswordReset(email: string) {
-  await run(sb().auth.resetPasswordForEmail(email.trim(), { redirectTo: authRedirectUrl() }) as any);
-}
-
-/** Set or change the signed-in person's password. */
-export async function updatePassword(password: string) {
-  await run(sb().auth.updateUser({ password }) as any);
-}
 export async function signOut() { if (live) await sb().auth.signOut(); current = null; }
 export const onAuthChange = (cb: () => void) => {
   if (!live) return () => {};
@@ -273,7 +255,18 @@ const toPickup = (r: any): Pickup => ({
   id: r.id, studentId: r.student_id, guardianId: r.guardian_id, status: r.status,
   arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by, via: r.via ?? 'app',
 });
-export type CarlineConfig = { latitude: number; longitude: number; radius: number; start: string; end: string };
+export type CarlineConfig = {
+  latitude: number; longitude: number; radius: number; start: string; end: string;
+  line: { state: 'open' | 'early' | 'closed'; opensAt?: string; openedNow?: boolean };
+  /** Car line leads and the office can change these settings. */
+  canEdit: boolean;
+};
+export type Spot = { lat: number; lng: number; accuracy: number | null };
+/** One row of the staff board, in arrival order. */
+export type BoardRow = {
+  id: string; studentId: string; status: 'waiting' | 'picked_up'; via: 'app' | 'arrival'; arrivedAt: string; pickedUpAt: string | null;
+  distanceM: number | null; number: string | null; name: string; grade: number | null; parent: string; pickedUpBy: string;
+};
 export type Arrival =
   | { state: 'open'; checkedIn: string[]; names: string[] }
   | { state: 'early'; opensAt: string }
@@ -293,8 +286,9 @@ export async function carlineToday(): Promise<Pickup[]> {
   if (!live || !current) return [];
   return (await run(sb().rpc('carline_today'))).map(toPickup);
 }
-export async function carlineCheckIn(studentIds: string[]) {
-  await run(sb().rpc('carline_check_in', { p_students: studentIds }));
+/** "I'm here": announce these children, from where the parent is (the server checks the radius). */
+export async function carlineAnnounce(studentIds: string[], at: Spot) {
+  await run(sb().rpc('carline_announce', { p_students: studentIds, p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy }));
 }
 export async function carlineCancel(pickupId: string) { await run(sb().rpc('carline_cancel', { p_pickup: pickupId })); }
 export async function carlineConfirm(pickupId: string) { await run(sb().rpc('carline_confirm', { p_pickup: pickupId })); }
@@ -302,7 +296,27 @@ export async function carlineReopen(pickupId: string) { await run(sb().rpc('carl
 /** Where and when automatic check-in runs. */
 export async function carlineConfig(): Promise<CarlineConfig> { return run(sb().rpc('carline_config')) as Promise<CarlineConfig>; }
 /** The phone reached the car line: the server checks in the children if the line is open. */
-export async function carlineArrived(): Promise<Arrival> { return run(sb().rpc('carline_arrived')) as Promise<Arrival>; }
+export async function carlineArrived(at: Spot): Promise<Arrival> {
+  return run(sb().rpc('carline_arrived', { p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy })) as Promise<Arrival>;
+}
+/** Staff: today's line with pickup numbers. */
+export async function carlineBoard(): Promise<BoardRow[]> { return run(sb().rpc('carline_board')) as Promise<BoardRow[]>; }
+export async function carlineSetConfig(c: { latitude: number; longitude: number; radius: number; start: string; end: string }): Promise<CarlineConfig> {
+  return run(sb().rpc('carline_set_config', { p_lat: c.latitude, p_lng: c.longitude, p_radius: c.radius, p_start: c.start, p_end: c.end })) as Promise<CarlineConfig>;
+}
+/** Open the line for the rest of today (drills, demos, early dismissal), or close it again. */
+export async function carlineOpenNow(open: boolean): Promise<CarlineConfig> {
+  return run(sb().rpc('carline_open_now', { p_open: open })) as Promise<CarlineConfig>;
+}
+export async function setPickupNumber(studentId: string, number: string) {
+  await run(sb().rpc('set_pickup_number', { p_student: studentId, p_number: number }));
+}
+/** Pickup numbers this person may see (their children's, or everyone's for staff). */
+export async function pickupNumbers(): Promise<Record<string, string>> {
+  if (!live || !current) return {};
+  const rows: any[] = await run(sb().from('pickup_numbers').select('student_id, number'));
+  return Object.fromEntries(rows.map((r) => [r.student_id, r.number]));
+}
 
 /** Live car line changes (row-level security limits them to what this person may see). */
 export function subscribeCarline(onChange: () => void): () => void {
@@ -534,9 +548,6 @@ export function subscribeQuestions(onChange: () => void): () => void {
 
 // ---------------------------------------------------------------- admin
 
-export async function adminListPeople(): Promise<Person[]> {
-  return (await run(sb().rpc('admin_list_people'))).map(toPerson);
-}
 export async function adminUpdateProfile(userId: string, role: SchoolRole | null, grade?: number | null) {
   await run(sb().rpc('admin_update_profile', { p_user: userId, p_role: role, p_grade: grade ?? null }));
 }
@@ -546,8 +557,16 @@ export async function adminLinkGuardian(guardianId: string, studentId: string, l
 export async function adminSetCarlineDuty(userId: string, on: boolean) {
   await run(sb().rpc('admin_set_carline_duty', { p_user: userId, p_on: on }));
 }
-export async function adminGuardianLinks(): Promise<{ guardianId: string; studentId: string }[]> {
-  return (await run(sb().from('guardians').select('*'))).map((g: any) => ({ guardianId: g.guardian_id, studentId: g.student_id }));
+export type FamilyLink = { guardianId: string; studentId: string; guardianName: string; studentName: string; studentGrade: number | null };
+/** Every parent ↔ student link, with names (people may be on other pages of the list). */
+export async function adminFamilyLinks(): Promise<FamilyLink[]> {
+  const rows: any[] = await run(sb().from('guardians').select(
+    'guardian_id, student_id, guardian:profiles!guardians_guardian_id_fkey(first_name, last_name), student:profiles!guardians_student_id_fkey(first_name, last_name, grade)'));
+  return rows.map((g) => ({
+    guardianId: g.guardian_id, studentId: g.student_id,
+    guardianName: `${g.guardian?.first_name ?? ''} ${g.guardian?.last_name ?? ''}`.trim(),
+    studentName: `${g.student?.first_name ?? ''} ${g.student?.last_name ?? ''}`.trim(), studentGrade: g.student?.grade ?? null,
+  }));
 }
 export async function listAudit(limit = 100) {
   return run(sb().from('audit_log').select('*, groups(name)').order('at', { ascending: false }).limit(limit)) as Promise<any[]>;
@@ -567,19 +586,27 @@ export async function editableCalendars(): Promise<{ groupId: string | null; nam
 // ---------------------------------------------------------------- email codes + authenticator app (MFA)
 
 /** Email a 6-digit sign-in code (creates the account on first use; admins approve new people). */
+export class NoAccountError extends Error {}
+
 /**
- * Email a sign-in link (and a 6-digit code once the project uses its own email
- * service). The link reopens the app — or the web portal — and signs in.
+ * Email a one-time sign-in code. Signing in (`create` false) refuses unknown
+ * emails with NoAccountError so the app can offer sign-up instead; signing up
+ * (`create` true) creates the account (awaiting admin approval) and emails the
+ * code to confirm the address.
  */
-export async function sendEmailCode(email: string, firstName?: string, lastName?: string) {
-  await run(sb().auth.signInWithOtp({
-    email: email.trim(),
+export async function sendEmailCode(email: string, opts: { create: boolean; firstName?: string; lastName?: string }) {
+  const { error } = await sb().auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: opts.create,
       emailRedirectTo: authRedirectUrl(),
-      data: firstName ? { first_name: firstName, last_name: lastName ?? '' } : undefined,
+      data: opts.create ? { first_name: opts.firstName?.trim() ?? '', last_name: opts.lastName?.trim() ?? '' } : undefined,
     },
-  }) as any);
+  });
+  if (!error) return;
+  if (!opts.create && /signups? not allowed|user not found/i.test(error.message)) throw new NoAccountError('No account uses this email yet.');
+  if (/rate limit|too many/i.test(error.message)) throw new Error('Too many codes were sent recently. Wait a few minutes and try again.');
+  throw new Error(error.message);
 }
 
 /** Where sign-in links return to: this web page, or the app's khroyals://auth link. */
@@ -589,11 +616,10 @@ export function authRedirectUrl() {
 }
 
 /**
- * Finish signing in from an emailed link (tokens in the URL fragment or query).
- * Returns 'recovery' for password-reset links (show "set a new password"),
- * true for other sign-ins, false if the URL carried no sign-in.
+ * Finish signing in from an emailed link (tokens in the URL fragment or query),
+ * for emails that carry a button rather than a code. Returns whether it did.
  */
-export async function completeSignInFromUrl(url: string | null): Promise<boolean | 'recovery'> {
+export async function completeSignInFromUrl(url: string | null): Promise<boolean> {
   if (!live || !url || !/access_token|refresh_token|[?&]code=|error_description/.test(url)) return false;
   const params = new URLSearchParams((url.split('#')[1] ?? '') + '&' + (url.split('?')[1]?.split('#')[0] ?? ''));
   const err = params.get('error_description');
@@ -603,14 +629,16 @@ export async function completeSignInFromUrl(url: string | null): Promise<boolean
   else if (code) await run(sb().auth.exchangeCodeForSession(code) as any);
   else return false;
   await session();
-  return params.get('type') === 'recovery' ? 'recovery' : true;
+  return true;
 }
+/** Check the emailed one-time code and sign in. */
 export async function verifyEmailCode(email: string, code: string) {
-  await run(sb().auth.verifyOtp({ email: email.trim(), token: code.trim(), type: 'email' }) as any);
+  const { error } = await sb().auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.replace(/\D/g, ''), type: 'email' });
+  if (error) throw new Error(/expired|invalid/i.test(error.message) ? 'That code is wrong or has expired. Check the latest email, or send a new code.' : error.message);
   return session();
 }
 
-export type Access = { tier: 'director' | 'administrator' | 'office' | null; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
+export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 export async function myAccess(): Promise<Access | null> {
   if (!live || !current) return null;
   return run(sb().rpc('my_access')) as Promise<Access>;
@@ -642,16 +670,40 @@ export async function mfaVerify(factorId: string, code: string) {
 // ---------------------------------------------------------------- admin tiers & permissions
 
 export type PermissionInfo = { key: string; label: string; description: string };
-export type AdminPerson = Person & { adminTier: Access['tier']; granted: string[] };
+export type AdminPerson = Person & { adminTier: string | null; granted: string[] };
+export type AdminRole = { id: string; name: string; description: string; permissions: string[]; isSystem: boolean };
+export type PeopleFilter = 'all' | 'pending' | 'staff' | 'parents' | 'students' | 'admins';
 
 export async function permissionCatalog(): Promise<PermissionInfo[]> {
   return run(sb().rpc('permission_catalog')) as Promise<PermissionInfo[]>;
 }
-export async function adminListPeopleWithAccess(): Promise<AdminPerson[]> {
-  return (await run(sb().rpc('admin_list_people'))).map((p: any) => ({ ...toPerson(p), adminTier: p.admin_tier, granted: p.permissions ?? [] }));
+
+/** One page of people for the admin portal, with the total number of matches. */
+export async function adminListPeople(opts: { search?: string; filter?: PeopleFilter; limit?: number; offset?: number } = {}) {
+  const rows: any[] = await run(sb().rpc('admin_list_people', {
+    p_search: opts.search?.trim() || null, p_filter: opts.filter ?? 'all', p_limit: opts.limit ?? 20, p_offset: opts.offset ?? 0,
+  }));
+  return {
+    total: rows.length ? Number(rows[0].total) : 0,
+    people: rows.map((p): AdminPerson => ({ ...toPerson(p), adminTier: p.admin_tier, granted: p.permissions ?? [] })),
+  };
 }
-export async function adminSetAccess(userId: string, tier: Access['tier'], permissions: string[]) {
-  await run(sb().rpc('admin_set_access', { p_user: userId, p_tier: tier, p_permissions: permissions }));
+
+export async function adminRoles(): Promise<AdminRole[]> {
+  return (await run(sb().from('admin_roles').select('*').order('is_system', { ascending: false }).order('name')))
+    .map((r: any) => ({ id: r.id, name: r.name, description: r.description, permissions: r.permissions ?? [], isSystem: r.is_system }));
+}
+export async function adminSaveRole(role: { id?: string | null; name: string; description: string; permissions: string[] }) {
+  await run(sb().rpc('admin_save_role', { p_id: role.id ?? null, p_name: role.name, p_description: role.description, p_permissions: role.permissions }));
+}
+export async function adminDeleteRole(id: string) { await run(sb().rpc('admin_delete_role', { p_id: id })); }
+/** Give someone a role (not director) and extra permissions. */
+export async function adminSetAccess(userId: string, roleId: string | null, permissions: string[]) {
+  await run(sb().rpc('admin_set_access', { p_user: userId, p_tier: roleId, p_permissions: permissions }));
+}
+/** Add or remove a director (there must always be at least one). */
+export async function adminSetDirector(userId: string, director: boolean) {
+  await run(sb().rpc('admin_set_director', { p_user: userId, p_director: director }));
 }
 export async function transferDirector(userId: string) {
   await run(sb().rpc('transfer_director', { p_user: userId }));
@@ -666,15 +718,19 @@ const toNotice = (n: any): Notice => ({
 /** Every notification this person may see (admin portal history). */
 export async function listNotifications(limit = 50): Promise<Notice[]> {
   if (!live || !current) return [];
-  return (await run(sb().from('notifications').select('*').order('created_at', { ascending: false }).limit(limit))).map(toNotice);
+  // School-wide and group notifications (personal ones like reply alerts stay out of the portal history).
+  return (await run(sb().from('notifications').select('*').neq('audience', 'user')
+    .order('created_at', { ascending: false }).limit(limit))).map(toNotice);
 }
 /** The signed-in person's inbox: only notifications sent to them, newest first. */
 export async function myNotifications(limit = 50): Promise<Notice[]> {
   if (!live || !current) return [];
   return (await run(sb().rpc('my_notifications', { p_limit: limit }))).map(toNotice);
 }
-export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[] } = {}) {
-  await run(sb().rpc('send_notification', { p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null }));
+export async function sendNotification(title: string, body: string, audience: 'everyone' | 'roles' | 'group', opts: { groupId?: string; roles?: SchoolRole[]; urgent?: boolean } = {}) {
+  await run(sb().rpc('send_notification', {
+    p_title: title, p_body: body, p_audience: audience, p_group: opts.groupId ?? null, p_roles: opts.roles ?? null, p_urgent: !!opts.urgent,
+  }));
 }
 export async function setNotificationPref(groupId: string, pref: 'all' | 'mentions' | 'none') {
   await run(sb().rpc('set_notification_pref', { p_group: groupId, p_pref: pref }));
@@ -684,4 +740,244 @@ export async function registerPushToken(token: string, platform: string) {
 }
 export async function unregisterPushToken(token: string) {
   await run(sb().rpc('unregister_push_token', { p_token: token }));
+}
+
+// ---------------------------------------------------------------- my profile
+
+export type MySettings = {
+  pushSchool: boolean; pushGroups: boolean; pushReplies: boolean; pushMarketplace: boolean; pushVolunteer: boolean;
+  quietStart: string | null; quietEnd: string | null;
+};
+export type GroupPref = { groupId: string; name: string; icon: string; pref: 'all' | 'mentions' | 'none' };
+
+export async function updateMyName(first: string, last: string) {
+  await run(sb().rpc('update_my_profile', { p_first: first, p_last: last }));
+  await session();
+}
+/** Upload a JPEG (base64) as your profile photo, replacing the old one. */
+export async function uploadMyAvatar(base64: string) {
+  const old = current?.id ? (await run(sb().from('profiles').select('avatar_url').eq('id', current.id).single()) as any).avatar_url : null;
+  const path = `${current!.id}/${Date.now()}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('avatars').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  await run(sb().rpc('set_my_avatar', { p_path: path }));
+  if (old && !/^https?:/.test(old)) await sb().storage.from('avatars').remove([old]);
+  await session();
+}
+export async function removeMyAvatar() {
+  const old = (await run(sb().from('profiles').select('avatar_url').eq('id', current!.id).single()) as any).avatar_url;
+  await run(sb().rpc('set_my_avatar', { p_path: null }));
+  if (old && !/^https?:/.test(old)) await sb().storage.from('avatars').remove([old]);
+  await session();
+}
+/** Staff with people.roles: take down someone's photo. */
+export async function adminClearAvatar(userId: string) {
+  await run(sb().rpc('admin_clear_avatar', { p_user: userId }));
+  await session();
+}
+
+const DEFAULT_SETTINGS: MySettings = {
+  pushSchool: true, pushGroups: true, pushReplies: true, pushMarketplace: true, pushVolunteer: true, quietStart: null, quietEnd: null,
+};
+const toSettings = (r: any): MySettings => (r ? {
+  pushSchool: r.push_school ?? true, pushGroups: r.push_groups, pushReplies: r.push_replies ?? true,
+  pushMarketplace: r.push_marketplace, pushVolunteer: r.push_volunteer,
+  quietStart: r.quiet_start?.slice(0, 5) ?? null, quietEnd: r.quiet_end?.slice(0, 5) ?? null,
+} : DEFAULT_SETTINGS);
+export async function mySettings(): Promise<MySettings> {
+  if (!live) return DEFAULT_SETTINGS;
+  return toSettings(await run(sb().from('user_settings').select('*').maybeSingle()));
+}
+export async function updateMySettings(st: MySettings): Promise<MySettings> {
+  return toSettings(await run(sb().rpc('update_my_settings', {
+    p_push_groups: st.pushGroups, p_push_marketplace: st.pushMarketplace, p_push_volunteer: st.pushVolunteer,
+    p_quiet_start: st.quietStart, p_quiet_end: st.quietEnd, p_push_school: st.pushSchool, p_push_replies: st.pushReplies,
+  })));
+}
+/** Your notification level in each of your groups (the group's default when you haven't chosen). */
+export async function myGroupPrefs(): Promise<GroupPref[]> {
+  if (!live || !current) return [];
+  const rows: any[] = await run(sb().from('memberships').select('group_id, notification, groups(name, icon, settings)').eq('user_id', current.id));
+  return rows.filter((r) => r.groups).map((r) => ({
+    groupId: r.group_id, name: r.groups.name, icon: r.groups.icon,
+    pref: (r.notification ?? r.groups.settings?.notificationDefault ?? 'all') === 'digest' ? 'mentions' : (r.notification ?? r.groups.settings?.notificationDefault ?? 'all'),
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// ---------------------------------------------------------------- car screen (Android Auto)
+
+/** A car pass for this phone: lets the car screen show and check in only this parent's children. */
+export async function createCarPass(): Promise<string> {
+  return run(sb().rpc('create_car_pass')) as Promise<string>;
+}
+export async function revokeCarPass(token: string) {
+  await run(sb().rpc('revoke_car_pass', { p_token: token }));
+}
+
+// ---------------------------------------------------------------- stats & following
+
+const seen = new Set<string>();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+/** Note that these posts were on screen; sent in small batches. */
+export function recordPostViews(postIds: string[]) {
+  if (!live || !current) return;
+  postIds.forEach((id) => seen.add(id));
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    const ids = [...seen];
+    seen.clear(); flushTimer = null;
+    sb().rpc('record_post_views', { p_posts: ids }).then(() => {}, () => {});
+  }, 1500);
+}
+
+export type PostStats = {
+  postId: string; groupId: string; title: string; createdAt: string;
+  audience: number; viewers: number; views: number; reactions: Record<string, number>;
+  replies: number; repliers: number; pollVotes: number; score: number; followers: number;
+  notificationOpens: number; pushDevices: number;
+  byDay: { day: string; viewers: number }[];
+  seenBy: { name: string; role: string; at: string }[];
+};
+export async function postStats(postId: string): Promise<PostStats> {
+  return run(sb().rpc('post_stats', { p_post: postId })) as Promise<PostStats>;
+}
+export type GroupPostStat = { postId: string; title: string; kind: string; createdAt: string; author: string; viewers: number; audience: number; reactions: number; replies: number };
+export async function groupPostStats(groupId: string): Promise<GroupPostStat[]> {
+  const rows: any[] = await run(sb().rpc('group_post_stats', { p_group: groupId, p_limit: 100 }));
+  return rows.map((r) => ({
+    postId: r.post_id, title: r.title, kind: r.kind, createdAt: r.created_at, author: r.author,
+    viewers: Number(r.viewers), audience: Number(r.audience), reactions: Number(r.reactions), replies: Number(r.replies),
+  }));
+}
+
+/** Which of these posts the person follows for replies. */
+export async function myFollows(postIds: string[]): Promise<Set<string>> {
+  if (!live || !current || !postIds.length) return new Set();
+  const rows: any[] = await run(sb().from('post_follows').select('post_id, following').eq('user_id', current.id).in('post_id', postIds));
+  return new Set(rows.filter((r) => r.following).map((r) => r.post_id));
+}
+export async function setPostFollow(postId: string, follow: boolean) {
+  await run(sb().rpc('set_post_follow', { p_post: postId, p_follow: follow }));
+}
+
+export async function markNotificationsOpened(ids: string[]) {
+  if (!live || !current || !ids.length) return;
+  await sb().rpc('mark_notifications_opened', { p_ids: ids });
+}
+/** Notification ids this person has already opened. */
+export async function openedNotifications(ids: string[]): Promise<Set<string>> {
+  if (!live || !current || !ids.length) return new Set();
+  const rows: any[] = await run(sb().from('notification_opens').select('notification_id').in('notification_id', ids));
+  return new Set(rows.map((r) => r.notification_id));
+}
+/** For senders: how many people opened each notification. */
+export async function notificationOpenCounts(ids: string[]): Promise<Record<string, number>> {
+  if (!live || !ids.length) return {};
+  const rows: any[] = await run(sb().rpc('notification_open_counts', { p_ids: ids }));
+  return Object.fromEntries(rows.map((r) => [r.id, Number(r.opened)]));
+}
+
+/** Delete notifications from your own inbox (others and the sender's history keep them). */
+export async function dismissNotifications(ids: string[]) {
+  if (!ids.length) return;
+  await run(sb().rpc('dismiss_notifications', { p_ids: ids }));
+}
+export async function clearMyNotifications(): Promise<number> {
+  return run(sb().rpc('clear_my_notifications')) as Promise<number>;
+}
+
+// ---------------------------------------------------------------- children
+
+export type Child = {
+  id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
+  photoPath: string | null; photo: string; hasLogin: boolean; pickupNumber: string | null;
+  birthday: string | null; bio: string; allergies: string; medicalNotes: string; parents: string[];
+};
+export type FamilyRequest = {
+  id: string; kind: 'add_child' | 'edit_child'; status: string; createdAt: string; studentId: string | null;
+  details: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string | null };
+  decisionNote?: string | null;
+};
+
+/** The signed-in person's children with their details (photo URLs signed for display). */
+export async function myChildProfiles(): Promise<Child[]> {
+  if (!live || !current) return [];
+  const rows: any[] = await run(sb().rpc('my_children'));
+  await signAvatars(rows.map((c) => c.photoPath)).catch(() => {});
+  return rows.map((c) => ({ ...c, photo: avatarUrl(c.photoPath) }));
+}
+export async function updateChildDetails(studentId: string, d: { birthday: string | null; bio: string; allergies: string; medicalNotes: string }) {
+  await run(sb().rpc('update_child_details', {
+    p_student: studentId, p_birthday: d.birthday || null, p_bio: d.bio, p_allergies: d.allergies, p_medical_notes: d.medicalNotes,
+  }));
+}
+/** Upload a JPEG (base64) as a child's photo (parents and the office). */
+export async function uploadChildPhoto(studentId: string, base64: string, oldPath?: string | null) {
+  const path = `children/${studentId}/${Date.now()}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('avatars').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  await run(sb().rpc('set_child_photo', { p_student: studentId, p_path: path }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
+export async function removeChildPhoto(studentId: string, oldPath?: string | null) {
+  await run(sb().rpc('set_child_photo', { p_student: studentId, p_path: null }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
+export async function requestChild(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string }) {
+  await run(sb().rpc('request_child', {
+    p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_note: c.note ?? null,
+  }));
+}
+export async function requestChildEdit(studentId: string, c: { firstName: string; lastName: string; grade: number; note?: string }) {
+  await run(sb().rpc('request_child_edit', { p_student: studentId, p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_note: c.note ?? null }));
+}
+export async function cancelFamilyRequest(id: string) { await run(sb().rpc('cancel_family_request', { p_request: id })); }
+const toRequest = (r: any): FamilyRequest => ({
+  id: r.id, kind: r.kind, status: r.status, createdAt: r.created_at, studentId: r.student_id, details: r.details, decisionNote: r.decision_note,
+});
+/** This person's requests that the office hasn't answered yet. */
+export async function myFamilyRequests(): Promise<FamilyRequest[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('family_requests').select('*').eq('requested_by', current.id).eq('status', 'pending')
+    .order('created_at'))).map(toRequest);
+}
+
+export type AdminStudent = {
+  id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
+  managed: boolean; photoPath: string | null; parents: { id: string; name: string }[];
+};
+export async function adminListStudents(opts: { search?: string; limit?: number; offset?: number } = {}) {
+  const rows: any[] = await run(sb().rpc('admin_list_students', {
+    p_search: opts.search?.trim() || null, p_limit: opts.limit ?? 20, p_offset: opts.offset ?? 0,
+  }));
+  return {
+    total: rows.length ? Number(rows[0].total) : 0,
+    students: rows.map((r): AdminStudent => ({
+      id: r.id, firstName: r.first_name, lastName: r.last_name, grade: r.grade, gradeLabel: r.grade_label, classOf: r.class_of,
+      managed: r.managed, photoPath: r.photo_path, parents: r.parents ?? [],
+    })),
+  };
+}
+export async function adminCreateStudent(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; guardianId?: string | null }) {
+  return run(sb().rpc('admin_create_student', {
+    p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_guardian: c.guardianId ?? null,
+  })) as Promise<string>;
+}
+export async function adminUpdateStudent(id: string, c: { firstName: string; lastName: string; grade: number }) {
+  await run(sb().rpc('admin_update_student', { p_student: id, p_first: c.firstName, p_last: c.lastName, p_grade: c.grade }));
+}
+export async function adminDeleteStudent(id: string) { await run(sb().rpc('admin_delete_student', { p_student: id })); }
+export type AdminFamilyRequest = {
+  id: string; kind: 'add_child' | 'edit_child'; createdAt: string; details: FamilyRequest['details'];
+  requestedBy: { id: string; name: string; role: string };
+  student: { id: string; firstName: string; lastName: string; grade: number | null } | null;
+};
+export async function adminFamilyRequests(): Promise<AdminFamilyRequest[]> {
+  return run(sb().rpc('admin_family_requests')) as Promise<AdminFamilyRequest[]>;
+}
+/** Approve (optionally linking to an existing student instead of creating one) or decline. */
+export async function adminDecideFamilyRequest(id: string, approve: boolean, opts: { existingStudentId?: string | null; note?: string } = {}) {
+  await run(sb().rpc('admin_decide_family_request', {
+    p_request: id, p_approve: approve, p_existing: opts.existingStudentId ?? null, p_note: opts.note ?? null,
+  }));
 }

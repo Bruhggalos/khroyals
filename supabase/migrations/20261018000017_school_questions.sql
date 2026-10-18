@@ -3,10 +3,11 @@
 -- Anyone with an approved account sends the school a question; it stays in their
 -- log with the whole conversation, so they can come back for the answer and ask
 -- a follow-up. People who route questions (the new questions.manage permission,
--- part of the Office, Administrator and Director tiers) see every question, how
--- long it has waited, and assign it to a faculty or staff member, who can then
--- see and answer it. A question is visible only to whoever asked it, whoever it's
--- assigned to, and the routers. Each step notifies the people involved.
+-- given to the Director, Administrator and Office roles; directors can add it to
+-- their own roles) see every question, how long it has waited, and assign it to
+-- a faculty or staff member, who can then see and answer it. A question is
+-- visible only to whoever asked it, whoever it's assigned to, and the routers.
+-- Each step notifies the people involved.
 --
 -- Status: new (waiting, unassigned), assigned (waiting, with someone), answered
 -- (the school replied last), closed. waiting_since is when the asker's oldest
@@ -31,17 +32,9 @@ language sql immutable as $$
     ('audit.view',       'Activity log',          'Review the school-wide activity log.')
 $$;
 
-create or replace function app.tier_permissions(tier text) returns text[]
-language sql immutable as $$
-  select case tier
-    when 'director' then array['admins.manage', 'people.view', 'people.approve', 'people.roles', 'people.family',
-                               'groups.manage', 'calendar.school', 'push.send', 'questions.manage', 'audit.view']
-    when 'administrator' then array['people.view', 'people.approve', 'people.roles', 'people.family',
-                                    'groups.manage', 'calendar.school', 'push.send', 'questions.manage', 'audit.view']
-    when 'office' then array['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send',
-                             'questions.manage', 'audit.view']
-    else array[]::text[] end
-$$;
+-- Roles are rows in admin_roles (20261016000009): the starting roles route questions.
+update public.admin_roles set permissions = permissions || 'questions.manage'::text
+where id in ('director', 'administrator', 'office') and not ('questions.manage' = any (permissions));
 
 -- ======================================================================
 -- Tables

@@ -33,12 +33,19 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - **Never commit secrets.** Only the Supabase URL and *publishable* key belong in
   the repo (`app.json → expo.extra`). Service-role keys, `sb_secret_…` keys and
   `sbp_…` access tokens go in environment variables. The repo is public.
-- **Demo accounts must never get admin powers** — their shared password is in
-  `app.json`. Admin tiers (director / administrator / office) and permissions are
-  only for real accounts; the director is `patguettler@gmail.com`.
-- **Car line duty** isn't an admin power (no MFA), but it shows every child's
-  pickup status. The seed gives it to the demo Teacher for testing; it must go
-  with the demo accounts before real families use the app. The same goes for
+- **Sign-in is passwordless**: email → 6-digit code (`sendEmailCode` /
+  `verifyEmailCode`). Don't reintroduce passwords or demo logins in the app.
+- **Demo accounts (`--demo` only) must never get admin powers.** Admin roles
+  (`admin_roles`; director is built in) and permissions are only for real accounts.
+  There may be several directors but never zero (trigger `app.keep_a_director`);
+  `patguettler@gmail.com` is a director.
+- **Car line:** parents announce with their location (`carline_announce`; the server
+  checks the radius — never add a check-in path without it). All staff see the board
+  (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents
+  only). **Car line leads** (`carline_duty`) and people.family set the spot, radius,
+  hours and "open now" (`carline_set_config`, `carline_open_now`).
+- **Car line lead** isn't an admin power (no MFA), but it changes car line settings and pickup numbers. The seed gives it to the demo Teacher for testing; it must go
+  with the demo accounts (`--demo` projects only) before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.
 - **Every notification must reach the bell page.** The school's are rows in
   `public.notifications` (`app.notify_user()` for one person). Ones the phone shows
@@ -68,6 +75,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   rewrites the template AppDelegate during prebuild; `ios/` is generated, so never
   edit it by hand. If an Expo upgrade makes the plugin throw, check whether the
   new template already uses `ExpoAppSceneDelegate` and drop the plugin if so.
+- **Android Auto** = the car line only, in `modules/car-line` (Android-only local
+  Expo module: CarLineCarService + a car pass in SharedPreferences). The Kotlin only
+  compiles in the CI APK build, so check it after changes. Car passes may only ever
+  reach `car_carline_status` / `car_carline_check_in`.
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
 - Supabase free plan: built-in email sends only a few messages/hour and email

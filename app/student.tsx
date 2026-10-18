@@ -50,9 +50,10 @@ export default function Student() {
           </View>
         </Card>
       ))}
-      {person?.schoolRole === 'parent' && students.length === 0 && (
-        <Card><P muted>No students are linked to your account yet. The school office links parents to their students.</P></Card>
+      {person && person.schoolRole !== 'student' && students.length === 0 && (
+        <Card><P muted>No students are linked to your account yet. Add them under My children, or ask the school office.</P></Card>
       )}
+      {person && person.schoolRole !== 'student' && <Button kind="ghost" label="My children: photos, allergies, add a child" onPress={() => router.push('/children')} />}
       <Card>
         <H>Grades, report cards and schedules</H>
         <P muted>These are in the FACTS Family Portal for now.</P>

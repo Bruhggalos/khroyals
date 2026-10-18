@@ -107,34 +107,80 @@ enforces every rule**:
 npm test                         # includes tests/db.test.ts: migrations + seed + RLS in PGlite
 python3 scripts/gen_seed.py      # rebuild supabase/seed.sql and supabase/setup_all.sql
 # apply to a project (needs a personal access token for schema changes):
-SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… DEMO_PASSWORD=… \
-  NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs
+SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… SUPABASE_ACCESS_TOKEN=… \
+  NODE_USE_ENV_PROXY=1 node scripts/supabase_setup.mjs     # add --demo (+ DEMO_PASSWORD) for demo data
 SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… DEMO_PASSWORD=… node scripts/smoke_supabase.mjs
 ```
 
 Without an access token, paste `supabase/setup_all.sql` into the dashboard's SQL editor.
 
-**Sign-up & sign-in.** People create an account with name, email and password
-(an admin approves it), sign in with email + password, reset a forgotten password
-by email, or sign in with an emailed link instead. Emailed links open the app
-(`khroyals://auth`) or the web portal (`/auth`). Supabase's built-in email sends only
-2 emails/hour, so sign-up skips the confirmation email for now (see DEVELOPING.md).
+**Sign-up & sign-in (no passwords).** *Log in*: enter your email, we email a
+6-digit one-time code, type it in. An email with no account moves you to *Create
+account* (name + email → code); an admin then approves the account. There is no
+password to forget — a lost-access user just logs in again with a fresh code.
+Codes last 10 minutes. The email shows the code only once the project has custom
+SMTP (see DEVELOPING.md); until then Supabase's default email has a sign-in
+button, which the app also accepts (`khroyals://auth`, web `/auth`).
 
-**Admins.** Admin tiers: one **Director** (all powers; only one who manages
-admins; can hand the role on), **Administrators** (everything but managing admins)
-and **Office** (approvals, families, school calendar, notifications, activity log);
-the director can also grant single permissions to anyone. Admin tools need a code
+**Admins.** **Directors** have every permission and manage admins and roles.
+There can be several, never zero (a database trigger blocks removing the last
+one), so changing personnel = add the new director, then the old one steps down.
+Directors create **roles** (bundles of permissions — *Administrator* and *Office*
+come built in and are editable) and assign them to staff, and can grant single
+extra permissions to anyone. The portal's people list is paged and searchable
+server-side (`admin_list_people`). Admin tools need a code
 from an authenticator app (free TOTP, enforced in the database; switch with
 `app.settings.require_admin_mfa`). The admin portal is the app's **Admin portal**
 screen: same on web (`npx expo export --platform web`, host the `dist/` folder),
 Android and iPhone.
+
+**My profile** (person button in the top bar, or your name on Connect): profile
+photo (private `avatars` bucket, signed URLs; staff with *people.roles* can remove
+one), name, and push settings — group posts, Marketplace, Volunteering, quiet
+hours, and a level per group. School-wide announcements always push. Settings only
+filter pushes (`app.wants_push`); the in-app inbox still lists everything.
+
+**Android Auto:** the car line on the car's screen — each child's status and an
+"I'm here" button (`modules/car-line`, using a per-phone car pass that can only do
+that). CarPlay waits on Apple's Driving Task entitlement.
+
+**Stats.** The app records who saw each post (`record_post_views`, once per person
+plus repeat counts) and who opened each notification. Authors and group moderators
+(admins with *groups.manage* too) get **📊 Stats** on a post (`post_stats`: % of the
+group who saw it, views, reactions, replies, poll votes, followers, push opens, views
+by day, who saw it) and a **Group stats** screen (`group_post_stats`); the portal's
+notification history shows opens. **Following:** authors and repliers follow a post
+automatically; anyone can follow/unfollow (🔔), and new replies notify followers
+(`app.notify_reply`). My profile toggles: school announcements (urgent ones always
+push), group posts, replies, Marketplace, Volunteering, quiet hours, per-group level.
+
+**Children.** Children are students without a login: profiles with `managed = true`
+(no auth account), linked to any approved adult through `guardians`, so the car line,
+family groups and grade-based groups work for them. The office adds them (Admin portal
+→ **Students**) or approves parents' requests (`request_child`, `request_child_edit` →
+`admin_decide_family_request`). Parents edit photo, bio, birthday, allergies and health
+notes themselves (**My children**); those details (`student_details`, child photos under
+`avatars/children/<id>/`) are visible only to the child's parents and staff. Grades come
+from the graduation year (`class_of`) and move up every July 1 (`app.refresh_grades`,
+daily via pg_cron). K2 = -3, K3 = -2, K4 = -1, Kindergarten = 0.
+
+**Car line (like PikMyKid).** Every student has a pickup number (auto-assigned,
+editable by the office/car line leads; siblings may share). Parents tap **I'm here**
+(or Android Auto, or automatic check-in) and the app sends their location; the server
+only accepts it within the radius of the pickup spot during pickup hours (or when staff
+opened the line today). Only a child's linked parents can announce them. All staff see
+the live board (number, name, grade, parent, distance) and mark pickups. Car line leads
+and the office set the spot ("Use my location"), radius (feet) and hours in **Car line
+settings**.
 
 **Notifications.** Everything sent to a person lands on the Notifications page
 (the bell in the top bar, `app/notifications.tsx`): the school's notifications
 (`public.notifications` via `my_notifications()`: group posts, announcements,
 Marketplace, Volunteer, Ask the School) merged with the ones the phone shows by
 itself (the car line's, kept on the phone by `src/comms/localInbox.ts`). Tapping
-one opens what it's about (`notificationHref()` in `src/comms/inbox.ts`). After
+one opens what it's about (`notificationHref()` in `src/comms/inbox.ts`). New ones
+are marked; swipe one (or tap ✕) to delete it, or *Clear all* (`dismiss_notifications`,
+`clear_my_notifications`; the phone's own are deleted on the phone). After
 sign-in the iPhone and Android apps ask permission to show notifications; the page
 says when they're off and links to Settings.
 
@@ -201,16 +247,16 @@ text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated wit
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the
 whole conversation, so they can come back for the answer and follow up. Routers (the
-*Route questions* permission, part of the Office, Administrator and Director tiers)
-work from Admin portal → Questions: oldest waiting first, with ages that turn amber
+*Route questions* permission, in the Director, Administrator and Office roles to
+start) work from Admin portal → Questions: oldest waiting first, with ages that turn amber
 after a day and red after three, and they assign each question to a faculty or staff
 member, who sees it under *Assigned to me* and answers it. Only the asker, the
 assignee and routers can see a question. Routers are told about new questions,
 assignees about assignments and follow-ups, and askers about answers.
 
-**Demo accounts** (`u-admin@demo.khroyals.test`, `u-eng@…`, `u-s01@…`, `u-p01@…`, …)
-share the password in `expo.extra.demoPassword`, which also shows one-tap demo
-logins on the sign-in screen. Remove it (and the accounts) before real families use the app.
+**Demo data** (accounts like `u-eng@demo.khroyals.test` with groups and posts) is
+only created with `supabase_setup.mjs --demo`, for local or throwaway projects. The
+app has no demo logins.
 
 ## Royals Connect — how groups work
 

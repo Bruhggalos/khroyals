@@ -7,7 +7,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { addLocal, cancelLocalEntry, shownLocal, type LocalNotice } from './inbox';
+import { addLocal, cancelLocalEntry, removeLocal, shownLocal, type LocalNotice } from './inbox';
 
 const KEY = 'khroyals.localNotifications';
 
@@ -51,7 +51,12 @@ export async function localNotifications(): Promise<LocalNotice[]> {
   return shownLocal(await read());
 }
 
-/** Forget them (on sign-out: they belonged to the person who was signed in). */
+/** Delete one from the Notifications page. */
+export async function dismissLocal(key: string) {
+  await write(removeLocal(await read(), key));
+}
+
+/** Forget them all (sign-out, or "Clear all" on the Notifications page). */
 export async function clearLocalNotifications() {
   await AsyncStorage.removeItem(KEY).catch(() => {});
 }

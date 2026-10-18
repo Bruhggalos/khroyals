@@ -16,6 +16,8 @@ const db = new PGlite();
 
 const id = (legacy: string) => `md5('khroyals:${legacy}')::uuid`;
 const CHI = (t: string) => `'${t} America/Chicago'::timestamptz`;
+/** The car line pickup spot (app.settings), as SQL arguments. */
+const AT = '34.7264, -86.6177';
 
 async function asSuper() {
   await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false), set_config('request.jwt.claims', '', false);`);
@@ -200,7 +202,7 @@ test('admin console: approve sign-ups and manage roles', async () => {
 test('admin tiers: one director; admin powers need an authenticator-verified session', async () => {
   await asSuper();
   assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'director');
-  await rejects(`update profiles set admin_tier = 'director' where id = ${id('u-ap')}`, /profiles_one_director|duplicate/);
+  await rejects(`update profiles set admin_tier = null where id = ${id('u-admin')}`, /at least one director/);
 
   await as('u-admin');  // signed in with email only
   await rejects(`select * from admin_list_people()`, /MFA_REQUIRED/);
@@ -220,6 +222,7 @@ test('admin tiers: director grants tiers and permissions; others cannot', async 
   await as('u-admin', true);
   await one(`select admin_set_access(${id('u-libr')}, 'office')`);
   await rejects(`select admin_set_access(${id('u-s01')}, 'office')`, /staff accounts/);
+  await rejects(`select admin_set_access(${id('u-eng')}, 'director')`, /Make director/);
   await rejects(`select admin_set_access(${id('u-eng')}, null, array['admins.manage'])`, /can't be granted/);
   await one(`select admin_set_access(${id('u-eng')}, null, array['calendar.school'])`);  // a teacher runs the school calendar
 
@@ -299,26 +302,43 @@ test('inbox: my_notifications lists only what was sent to me', async () => {
   await db.exec(`update memberships set notification = 'none' where group_id = ${vb} and user_id = ${id('u-s05')}`);
 });
 
-test('car line: parents check in their own children; staff on duty see the line and confirm pickups', async () => {
+test('car line: parents announce from the pickup spot; staff see the line and confirm pickups', async () => {
   const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
   const [ava, eng] = [await uid('u-s01'), await uid('u-eng')];
   const today = async (who: string) => { await as(who); return rows(`select * from carline_today()`); };
+  // Open the line for today so this doesn't depend on when the tests run.
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on'`);
 
-  // Rosa Reyes (u-p01) is Ava's (u-s01) parent.
+  // Rosa Reyes (u-p01) is Ava's (u-s01) parent. She has to be at school (the pickup spot is AT).
   await as('u-p01');
-  const [checkin] = await rows(`select * from carline_check_in()`);
+  await rejects(`select * from carline_announce(null, null, null)`, /Turn on location/);
+  await rejects(`select * from carline_announce(null, 34.80, -86.6177)`, /about 5\.1 miles from the pickup spot/);
+  await rejects(`select * from carline_check_in()`, /Update KH Royals/);
+  const [checkin] = await rows(`select * from carline_announce(null, ${AT})`);
   assert.equal(checkin.student_id, ava);
   assert.equal(checkin.status, 'waiting');
-  assert.equal((await rows(`select * from carline_check_in(array[${id('u-s01')}])`)).length, 1, 'checking in twice keeps one place in line');
-  await rejects(`select * from carline_check_in(array[${id('u-s02')}])`, /own children/);
+  assert.ok(checkin.distance_m <= 1);
+  assert.equal((await rows(`select * from carline_announce(array[${id('u-s01')}], ${AT})`)).length, 1, 'announcing twice keeps one place in line');
+  await rejects(`select * from carline_announce(array[${id('u-s02')}], ${AT})`, /own children/);
   await rejects(`insert into carline_pickups (student_id) values (${id('u-s02')})`, /permission denied/);
+  // 100 m away is inside the 150 m radius.
+  await as('u-p02');
+  assert.equal((await rows(`select * from carline_announce(null, 34.7273, -86.6177, 10)`)).length, 1);
+  await one(`select carline_cancel(id) from carline_pickups where guardian_id = ${id('u-p02')} and status = 'waiting'`);
+  await as('u-s01');
+  await rejects(`select * from carline_announce(null, ${AT})`, /Only parents/);
 
-  // Other parents and staff who aren't on duty see nothing; the demo Teacher (u-eng) is on duty.
-  assert.equal((await today('u-p02')).length, 0);
-  assert.equal((await today('u-sci')).length, 0);
+  // Other parents see only their own; every staff member sees the line and can confirm.
+  assert.equal((await today('u-p02')).filter((r) => r.status === 'waiting').length, 0);
+  assert.deepEqual((await today('u-sci')).filter((r) => r.status === 'waiting').map((r) => r.student_id), [ava]);
+  await as('u-s05');
+  await rejects(`select carline_confirm('${checkin.id}')`, /staff/);
   await as('u-sci');
-  await rejects(`select carline_confirm('${checkin.id}')`, /car line duty/);
-  assert.deepEqual((await today('u-eng')).map((r) => r.student_id), [ava]);
+  const board = (await one(`select carline_board() as b`)).b;
+  assert.equal(board.find((b: any) => b.id === checkin.id).name.startsWith('Ava'), true);
+  assert.match(board.find((b: any) => b.id === checkin.id).number, /^\d+$/, 'the board shows the pickup number');
+  assert.deepEqual((await today('u-eng')).filter((r) => r.status === 'waiting').map((r) => r.student_id), [ava]);
   await as('u-eng');
   const done = await one(`select * from carline_confirm('${checkin.id}')`);
   assert.equal(done.status, 'picked_up');
@@ -343,21 +363,55 @@ test('car line: parents check in their own children; staff on duty see the line 
   await asSuper();
   await db.exec(`set role anon`);
   await rejects(`select * from carline_today()`, /permission denied/);
+  await asSuper();
+  await db.exec(`update app.settings set value = null where key = 'carline_open_on'`);
 });
 
-test('car line duty: office staff assign it, and only to staff', async () => {
+test('car line leads: the office names them; they set the spot, radius, hours and numbers', async () => {
+  const set = `select carline_set_config(34.7300, -86.6200, 200, '14:30', '15:30')`;
   await as('u-s01');
   await rejects(`select admin_set_carline_duty(${id('u-sci')}, true)`, /permission/);
+  await as('u-sci');
+  await rejects(set, /car line leads and the office/);
+  await rejects(`select set_pickup_number(${id('u-s01')}, '7')`, /office or a car line lead/);
   await as('u-admin', true);
   await rejects(`select admin_set_carline_duty(${id('u-p02')}, true)`, /Only staff/);
   await one(`select admin_set_carline_duty(${id('u-sci')}, true)`);
   assert.equal((await one(`select carline_duty from admin_list_people() where id = ${id('u-sci')}`)).carline_duty, true);
   await as('u-sci');
-  assert.ok((await rows(`select * from carline_today()`)).length > 0, 'now sees the line');
+  const cfg = (await one(`${set} as c`)).c;
+  assert.equal(cfg.radius, 200);
+  assert.equal(cfg.canEdit, true);
+  await rejects(`select carline_set_config(34.73, -86.62, 5, '14:30', '15:30')`, /between 20 and 3,000/);
+  await rejects(`select carline_set_config(34.73, -86.62, 200, '16:00', '15:00')`, /pickup hours/);
+  assert.equal((await one(`select carline_open_now(true) as c`)).c.line.state, 'open');
+  assert.equal((await one(`select carline_open_now(false) as c`)).c.line.openedNow ?? false, false);
+  await one(`select set_pickup_number(${id('u-s01')}, '7a')`);
+  assert.equal((await one(`select number from pickup_numbers where student_id = ${id('u-s01')}`)).number, '7A');
+  await rejects(`select set_pickup_number(${id('u-s01')}, 'way too long!')`, /1–8 letters/);
+  // Put things back for the other tests.
+  await one(`select carline_set_config(34.7264, -86.6177, 150, '14:45', '15:30')`);
   await as('u-admin', true);
   await one(`select admin_set_carline_duty(${id('u-sci')}, false)`);
   await as('u-sci');
-  assert.equal((await rows(`select * from carline_today()`)).length, 0);
+  await rejects(set, /car line leads and the office/);
+});
+
+test('pickup numbers: every student gets one; only staff and their parents can see it', async () => {
+  await asSuper();
+  assert.equal((await one(`select count(*)::int n from profiles p where school_role = 'student'
+                           and not exists (select 1 from pickup_numbers n where n.student_id = p.id)`)).n, 0, 'all students numbered');
+  await as('u-p01');
+  const mine = await rows(`select * from pickup_numbers`);
+  assert.ok(mine.length >= 1);
+  assert.ok((await rows(`select 1 from pickup_numbers where student_id = ${id('u-s02')}`)).length === 0, "not other families' numbers");
+  await as('u-s01');
+  assert.equal((await rows(`select * from pickup_numbers`)).length, 0, 'students see none');
+  await as('u-sci');
+  assert.ok((await rows(`select * from pickup_numbers`)).length > 5, 'staff see all');
+  await as('u-admin', true);
+  const kid = (await one(`select admin_create_student('Noah', 'Park', 1) as id`)).id;
+  assert.ok((await one(`select number from pickup_numbers where student_id = '${kid}'`)).number, 'new students get a number');
 });
 
 test('car line auto check-in: only during pickup hours on school days', async () => {
@@ -384,19 +438,20 @@ test('car line auto check-in: only during pickup hours on school days', async ()
   // Wei Chen (u-p02) is Liam's (u-s02) parent and hasn't used the car line today.
   await as('u-p02');
   assert.equal((await one(`select carline_config() as c`)).c.radius, 150);
-  const first = (await one(`select carline_arrived() as r`)).r;
+  await rejects(`select carline_arrived(35.0, -86.6)`, /from the pickup spot/);
+  const first = (await one(`select carline_arrived(${AT}) as r`)).r;
   assert.equal(first.state, 'open');
   assert.deepEqual(first.names, ['Liam']);
-  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'arriving again adds nobody');
-  assert.equal((await rows(`select via from carline_today()`))[0].via, 'arrival');
+  assert.deepEqual((await one(`select carline_arrived(${AT}) as r`)).r.checkedIn, [], 'arriving again adds nobody');
+  assert.equal((await rows(`select via from carline_today() where status = 'waiting'`))[0].via, 'arrival');
   await as('u-eng');
   await one(`select carline_confirm('${first.checkedIn[0]}')`);
   await as('u-p02');
-  assert.deepEqual((await one(`select carline_arrived() as r`)).r.checkedIn, [], 'not again once picked up');
+  assert.deepEqual((await one(`select carline_arrived(${AT}) as r`)).r.checkedIn, [], 'not again once picked up');
 
   await asSuper();
   await db.exec(`set role anon`);
-  await rejects(`select carline_arrived()`, /permission denied/);
+  await rejects(`select carline_arrived(${AT})`, /permission denied/);
   await rejects(`select carline_config()`, /permission denied/);
 });
 
@@ -654,4 +709,356 @@ test('ask the school: private questions, routed by the office, answered by staff
   assert.ok((await one(`select 'questions.manage' = any (app.tier_permissions('office')) as ok`)).ok);
   await db.exec(`set role anon`);
   await rejects(`select * from school_questions`, /permission denied/);
+});
+
+test('directors: several allowed, never zero, and roles can change hands', async () => {
+  await as('u-admin', true);
+  await one(`select admin_set_director(${id('u-ap')}, true)`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from profiles where admin_tier = 'director'`)).length, 2, 'two directors');
+  await as('u-admin', true);
+  await one(`select admin_set_director(${id('u-admin')}, false)`);  // step down while another director remains
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'administrator');
+  await as('u-ap', true);
+  await rejects(`select admin_set_director(${id('u-ap')}, false)`, /at least one director/);
+  await rejects(`select admin_update_profile(${id('u-ap')}, null)`, /Transfer the director|at least one director/);
+  await asSuper();
+  await rejects(`delete from auth.users where id = ${id('u-ap')}`, /at least one director/);  // a departing last director's account can't vanish
+  await rejects(`select admin_set_director(${id('u-s01')}, true)`, /permission|staff/);
+  await as('u-ap', true);
+  await rejects(`select admin_set_director(${id('u-s01')}, true)`, /staff accounts/);
+  await one(`select transfer_director(${id('u-admin')})`);  // hand back for the other tests
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-admin')}`)).admin_tier, 'director');
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-ap')}`)).admin_tier, 'administrator');
+});
+
+test('roles: directors create roles, assign them, and deleting removes the access', async () => {
+  await as('u-ap', true);  // administrator
+  await rejects(`select admin_save_role(null, 'Athletics', '', array['calendar.school'])`, /permission/);
+  await as('u-admin', true);
+  await rejects(`select admin_save_role(null, 'Bad', '', array['admins.manage'])`, /can't be given/);
+  await rejects(`select admin_save_role('director', 'Director', '', array['push.send'])`, /can't be changed/);
+  const r = await one(`select * from admin_save_role(null, 'Athletics Director', 'Runs sports', array['calendar.school', 'push.send'])`);
+  assert.equal(r.id, 'athletics-director');
+  await rejects(`select admin_save_role(null, 'Athletics Director', '', '{}')`, /already exists/);
+  await one(`select admin_set_access(${id('u-vbcoach')}, 'athletics-director')`);
+  await as('u-vbcoach', true);
+  const access = (await one(`select my_access() as a`)).a;
+  assert.equal(access.roleName, 'Athletics Director');
+  assert.ok(access.permissions.includes('push.send'));
+  await one(`insert into events (title, starts_on) values ('Homecoming game', '2026-10-30') returning id`);
+  await rejects(`select * from admin_list_people()`, /permission/);
+  await as('u-admin', true);
+  await one(`select admin_save_role('athletics-director', 'Athletics Director', 'Runs sports', array['push.send'])`);
+  await as('u-vbcoach', true);
+  await rejects(`insert into events (title, starts_on) values ('Another', '2026-10-31')`, /row-level security/);
+  await as('u-admin', true);
+  await one(`select admin_delete_role('athletics-director')`);
+  await rejects(`select admin_delete_role('director')`, /can't be deleted/);
+  await asSuper();
+  assert.equal((await one(`select admin_tier from profiles where id = ${id('u-vbcoach')}`)).admin_tier, null);
+});
+
+test('people list: paged, searchable, filterable', async () => {
+  await as('u-admin', true);
+  const page1 = await rows(`select * from admin_list_people(null, 'all', 10, 0)`);
+  const page3 = await rows(`select * from admin_list_people(null, 'all', 10, 20)`);
+  assert.equal(page1.length, 10);
+  assert.ok(Number(page1[0].total) >= 25);
+  assert.equal(page3.length, Math.min(10, Number(page1[0].total) - 20));
+  assert.ok(!page1.some((p) => page3.some((q) => q.id === p.id)), 'pages don\'t overlap');
+  const parents = await rows(`select * from admin_list_people(null, 'parents', 50, 0)`);
+  assert.ok(parents.length >= 8 && parents.every((p) => p.school_role === 'parent'));
+  const found = await rows(`select * from admin_list_people('reyes', 'all', 25, 0)`);
+  assert.ok(found.length >= 1 && found.every((p) => /reyes/i.test(`${p.first_name} ${p.last_name} ${p.email}`)));
+  const staff = await rows(`select * from admin_list_people(null, 'staff', 100, 0)`);
+  const eng = (await one(`select ${id('u-eng')} as u`)).u;
+  assert.equal(staff.find((p) => p.id === eng)?.carline_duty, true, 'duty flags come with each person');
+});
+
+test('profile settings: your own photo, name and push choices', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [rosa, wei] = [await uid('u-p01'), await uid('u-p02')];
+  const put = (who: string, path: string) => `insert into storage.objects (bucket_id, name, owner) values ('avatars', '${path}', '${who}')`;
+
+  // Photos: upload only into your own folder, point your profile at it, everyone approved can see it.
+  await as('u-p01');
+  await db.exec(put(rosa, `${rosa}/me.jpg`));
+  await rejects(put(rosa, `${wei}/me.jpg`), /row-level security/);
+  await one(`select set_my_avatar('${rosa}/me.jpg')`);
+  await rejects(`select set_my_avatar('${wei}/me.jpg')`, /isn't yours/);
+  await as('u-s01');
+  assert.equal((await one(`select avatar_url from profiles where id = '${rosa}'`)).avatar_url, `${rosa}/me.jpg`);
+  assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'avatars'`)).length, 1);
+  await rejects(`select admin_clear_avatar('${rosa}')`, /permission/);
+  await as('u-admin', true);
+  await one(`select admin_clear_avatar('${rosa}')`);
+  assert.equal((await one(`select avatar_url from profiles where id = '${rosa}'`)).avatar_url, null);
+
+  // Names: your own only, never blank.
+  await as('u-p01');
+  await rejects(`select update_my_profile(' ', 'Reyes')`, /first and last name/);
+  await one(`select update_my_profile('Rosie', 'Reyes')`);
+  assert.equal((await one(`select first_name from profiles where id = '${rosa}'`)).first_name, 'Rosie');
+  await rejects(`update profiles set first_name = 'X' where id = '${wei}'`, /permission denied/);
+
+  // Push settings: private, and they decide which notifications reach the phone.
+  await one(`select * from update_my_settings(false, true, true)`);
+  await rejects(`select * from update_my_settings(true, true, true, '21:00', null)`, /both/);
+  await as('u-p02');
+  assert.equal((await rows(`select * from user_settings`)).length, 0, "can't see other people's settings");
+  await rejects(`insert into user_settings (user_id) values ('${wei}')`, /permission denied/);
+
+  await asSuper();
+  const wants = async (n: string, at = 'now()') => (await one(`select app.wants_push(n, '${rosa}', ${at}) as w from notifications n where id = '${n}'`)).w;
+  const group = await one(`insert into notifications (audience, group_id, title, body) values ('group', ${id('g-vb')}, 'VB', 'Practice') returning id`);
+  const school = await one(`insert into notifications (audience, title, body, urgent) values ('everyone', 'Closed', 'Snow day', true) returning id`);
+  const market = await one(`insert into notifications (audience, user_id, title, body, data, urgent) values ('user', '${rosa}', 'Offer', 'x', '{"listingId": "1"}', true) returning id`);
+  assert.equal(await wants(group.id), false, 'group pushes turned off');
+  assert.equal(await wants(school.id), true, 'school announcements always push');
+  assert.equal(await wants(market.id), true);
+  await as('u-p01');
+  await one(`select * from update_my_settings(true, false, true, '21:00', '07:00')`);
+  await asSuper();
+  assert.equal(await wants(market.id), false, 'marketplace pushes turned off');
+  const night = `'2026-10-16 23:30:00-05'::timestamptz`, noon = `'2026-10-16 12:00:00-05'::timestamptz`;
+  assert.equal(await wants(group.id, night), false, 'quiet hours (overnight window)');
+  assert.equal(await wants(group.id, noon), true);
+  assert.equal(await wants(school.id, night), true, 'announcements ignore quiet hours');
+  await db.exec(`delete from notifications where id in ('${group.id}', '${school.id}', '${market.id}'); delete from user_settings;`);
+});
+
+test('car screen: a parent\'s car pass shows and checks in only their own children', async () => {
+  // (The auto check-in test above opened the line all day, every day.)
+  await as('u-s01');
+  await rejects(`select create_car_pass()`, /for parents/);
+  await as('u-p04');
+  const pass = (await one(`select create_car_pass() as t`)).t as string;
+  assert.ok(pass.length >= 64);
+
+  await asSuper();
+  await db.exec(`set role anon`);
+  await rejects(`select create_car_pass()`, /permission denied/);
+  await rejects(`select car_carline_status('not-a-pass')`, /sign in again/);
+  const before = (await one(`select car_carline_status('${pass}') as s`)).s;
+  assert.equal(before.line.state, 'open');
+  assert.ok(before.children.length >= 1, 'their children');
+  assert.ok(before.children.every((c: any) => c.status === 'none'));
+  await rejects(`select car_carline_check_in('${pass}', 35.0, -86.6)`, /from the pickup spot/);
+  const after = (await one(`select car_carline_check_in('${pass}', ${AT}) as s`)).s;
+  assert.ok(after.children.every((c: any) => c.status === 'waiting' && c.position >= 1), 'checked in, with a place in line');
+
+  // The pass can't be used for anything else, and its owner was the one who checked in.
+  await rejects(`select * from carline_today()`, /permission denied/);
+  await asSuper();
+  const parent = (await one(`select ${id('u-p04')} as u`)).u;
+  const rows_ = await rows(`select guardian_id from carline_pickups where day = app.school_today() and guardian_id = '${parent}'`);
+  assert.equal(rows_.length, after.children.length);
+  assert.equal((await one(`select current_setting('request.jwt.claim.sub', true) as s`)).s, '', 'no leftover identity');
+
+  // Sign-out revokes it; so does losing access.
+  await db.exec(`set role anon`);
+  await one(`select revoke_car_pass('${pass}')`);
+  await rejects(`select car_carline_status('${pass}')`, /sign in again/);
+});
+
+test('post stats: views are counted once per person and only the author and moderators see them', async () => {
+  const vb = id('g-vb');
+  await as('u-vbcoach');
+  const post = await one(`select id from create_post(${vb}, 'announcement', 'Uniforms are in the gym office', 'Uniform pickup')`);
+  // Teammates see it (twice in a row counts once); the author's own views don't count.
+  for (const who of ['u-s05', 'u-s05', 'u-vbcoach']) {
+    await as(who);
+    await one(`select record_post_views(array['${post.id}'::uuid])`);
+  }
+  await as('u-s05');
+  await one(`select toggle_reaction('${post.id}', '👍')`).catch(() => null);
+  await rejects(`select post_stats('${post.id}')`, /author and the group's moderators/);
+  await rejects(`select * from post_views`, /permission denied/);
+  // Someone outside the group can't record a view of it.
+  await as('u-p02');
+  await one(`select record_post_views(array['${post.id}'::uuid])`);
+
+  await as('u-vbcoach');
+  const st = (await one(`select post_stats('${post.id}') as s`)).s;
+  assert.equal(st.viewers, 1, 'one person saw it');
+  assert.equal(st.views, 1);
+  assert.ok(st.audience >= st.viewers, 'out of the group');
+  assert.equal(st.seenBy.length, 1);
+  assert.equal(st.followers, 1, 'the author follows their post');
+  const list = await rows(`select * from group_post_stats(${vb})`);
+  assert.equal(Number(list.find((r) => r.post_id === post.id)?.viewers), 1);
+  await as('u-admin', true);
+  assert.equal((await one(`select post_stats('${post.id}') as s`)).s.viewers, 1, 'admins who manage groups see it too');
+});
+
+test('replies notify followers, who can unfollow; settings decide what pushes', async () => {
+  const vb = id('g-vb');
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [coach, s05] = [await uid('u-vbcoach'), await uid('u-s05')];
+  await as('u-vbcoach');
+  const post = await one(`select id from create_post(${vb}, 'message', 'Who can bring water Friday?')`);
+  await as('u-s05');
+  await one(`select add_comment('${post.id}', 'I can!')`);
+  await asSuper();
+  const toCoach = await rows(`select * from notifications where post_id = '${post.id}' and audience = 'user'`);
+  assert.deepEqual(toCoach.map((n) => n.user_id), [coach], 'the author hears about the reply; the replier does not');
+  assert.equal(toCoach[0].data.reply, true);
+  await as('u-vbcoach');
+  assert.equal((await rows(`select * from my_notifications() where post_id = '${post.id}' and audience = 'user'`)).length, 1);
+
+  // The replier now follows too; the coach's answer reaches them, until they unfollow.
+  await one(`select add_comment('${post.id}', 'Thanks!')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from notifications where post_id = '${post.id}' and user_id = '${s05}'`)).length, 1);
+  await as('u-s05');
+  await one(`select set_post_follow('${post.id}', false)`);
+  await as('u-vbcoach');
+  await one(`select add_comment('${post.id}', 'See you Friday')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from notifications where post_id = '${post.id}' and user_id = '${s05}'`)).length, 1, 'unfollowed');
+
+  // Opening a notification is counted for its sender.
+  await as('u-vbcoach');
+  const mine = (await rows(`select id from my_notifications() where post_id = '${post.id}'`)).map((n) => n.id);
+  await one(`select mark_notifications_opened(array[${mine.map((x) => `'${x}'::uuid`).join(',')}])`);
+  assert.equal((await rows(`select * from notification_opens`)).length, mine.length);
+
+  // Push choices: replies and non-urgent school notifications can be turned off; urgent ones can't.
+  await as('u-p01');
+  await one(`select * from update_my_settings(true, true, true, null, null, false, false)`);
+  await as('u-admin', true);
+  const normal = await one(`select * from send_notification('Spirit week', 'Wear blue Friday.', 'roles', null, array['parent'])`);
+  const urgent = await one(`select * from send_notification('Closed', 'Snow day tomorrow.', 'roles', null, array['parent'], true)`);
+  const counts = await rows(`select * from notification_open_counts(array['${normal.id}'::uuid])`);
+  assert.equal(Number(counts[0].opened), 0);
+  await asSuper();
+  const rosa = await uid('u-p01');
+  const wants = async (n: string) => (await one(`select app.wants_push(n, '${rosa}') as w from notifications n where id = '${n}'`)).w;
+  assert.equal(await wants(normal.id), false, 'school notifications turned off');
+  assert.equal(await wants(urgent.id), true, 'urgent ones still come through');
+  assert.equal(await wants(toCoach[0].id), false, 'replies turned off');
+  await db.exec(`delete from user_settings`);
+});
+
+test('inbox: delete one notification or clear them all (only for yourself)', async () => {
+  await as('u-admin', true);
+  const a = await one(`select * from send_notification('Picture day', 'Smile!', 'roles', null, array['parent'])`);
+  const b = await one(`select * from send_notification('Book fair', 'Next week.', 'roles', null, array['parent'])`);
+  const inbox = async (who: string) => { await as(who); return (await rows(`select id from my_notifications()`)).map((n) => n.id); };
+  assert.ok((await inbox('u-p05')).includes(a.id));
+  await as('u-p05');
+  await one(`select dismiss_notifications(array['${a.id}'::uuid])`);
+  assert.ok(!(await inbox('u-p05')).includes(a.id), 'deleted for them');
+  assert.ok((await inbox('u-p05')).includes(b.id));
+  assert.ok((await inbox('u-p06')).includes(a.id), 'still there for everyone else');
+  await as('u-p05');
+  assert.ok((await one(`select clear_my_notifications() as n`)).n >= 1);
+  assert.equal((await inbox('u-p05')).length, 0, 'cleared');
+  await rejects(`select * from notification_dismissals`, /permission denied/);
+  await as('u-admin', true);
+  assert.equal((await rows(`select 1 from notifications where id in ('${a.id}', '${b.id}')`)).length, 2, 'the sender\'s history keeps them');
+});
+
+test('marketplace: sellers delete posts at any stage, and people in line are told', async () => {
+  const told = async (who: string, listing: string) => {
+    await as(who);
+    return (await rows(`select body from my_notifications() where data->>'listingId' = '${listing}'`)).map((n) => n.body).join('\n');
+  };
+  // (Rosa, Wei and Dana accepted the terms in the marketplace test.)
+  await as('u-p01');
+  const open = await one(`select * from market_post('Backpack', '', 800, 1, 'good')`);
+  const pending = await one(`select * from market_post('Blazer', '', 2500, 1, 'good')`);
+  const sold = await one(`select * from market_post('Tie', '', 500, 1, 'new')`);
+  await as('u-p03');
+  await one(`select * from market_dibs('${open.id}')`);
+  await as('u-p02');
+  const line = await one(`select * from market_dibs('${pending.id}')`);
+  await one(`select * from market_dibs('${sold.id}')`);
+  await as('u-p01');
+  await one(`select market_select('${line.id}')`);
+  const soldLine = (await one(`select id from market_responses where listing_id = '${sold.id}'`)).id;
+  await one(`select market_select('${soldLine}')`);
+  await one(`select market_complete('${sold.id}')`);
+
+  for (const l of [open, pending, sold]) await one(`select market_remove('${l.id}')`);
+  assert.deepEqual((await rows(`select status from market_listings where id in ('${open.id}', '${pending.id}', '${sold.id}')`)).map((r) => r.status),
+    ['removed', 'removed', 'removed']);
+  await rejects(`select market_remove('${open.id}')`, /No such post/);
+  assert.match(await told('u-p03', open.id), /took this post down/);
+  assert.match(await told('u-p02', pending.id), /sale is off/);
+  assert.doesNotMatch(await told('u-p02', sold.id), /No longer available|took this post down/, 'a finished sale needs no notice');
+});
+
+test('children: the office adds them, parents ask for more, grades move up each year', async () => {
+  // Grades follow the graduation year; the school year starts July 1.
+  await asSuper();
+  const g = async (classOf: number, day: string) => (await one(`select app.grade_for_class(${classOf}, '${day}') as g`)).g;
+  assert.equal(await g(2030, '2026-10-17'), 9, 'Class of 2030 is in 9th grade in 2026–27');
+  assert.equal(await g(2030, '2027-06-30'), 9, 'same school year until July');
+  assert.equal(await g(2030, '2027-07-01'), 10, 'moves up on July 1');
+  assert.equal((await one(`select app.grade_label(-3) as l`)).l, 'K2');
+
+  // The office adds a child with no login and links a parent (a teacher can be a parent too).
+  await as('u-p05');
+  await rejects(`select admin_create_student('Ella', 'Kim', 2)`, /permission/);
+  await as('u-admin', true);
+  const ella = (await one(`select admin_create_student('Ella', 'Kim', 2, '2018-04-02', ${id('u-p05')}) as id`)).id;
+  await one(`select admin_link_guardian(${id('u-eng')}, '${ella}')`);
+  await rejects(`select admin_link_guardian(${id('u-s01')}, '${ella}')`, /approved adults/);
+  await rejects(`select admin_link_guardian(${id('u-p05')}, ${id('u-p06')})`, /must be students/);
+  const row = await one(`select * from profiles where id = '${ella}'`);
+  assert.equal(row.managed, true);
+  assert.equal(row.school_role, 'student');
+  assert.equal(row.grade, 2);
+  assert.ok(row.class_of > 2030, 'class year stored');
+  assert.equal((await one(`select count(*)::int n from admin_list_students('ella kim')`)).n, 1);
+
+  // Parents see their child and edit photo, bio, birthday and allergies directly.
+  await as('u-p05');
+  const kid = (await one(`select my_children() as k`)).k.find((k: any) => k.id === ella);
+  assert.equal(kid.firstName, 'Ella');
+  assert.equal(kid.gradeLabel, '2nd');
+  assert.equal(kid.parents.length, 2);
+  await one(`select update_child_details('${ella}', '2018-04-02', 'Loves art', 'Peanuts', '')`);
+  await one(`select set_child_photo('${ella}', 'children/${ella}/me.jpg')`);
+  await rejects(`select set_child_photo('${ella}', 'children/${ella.replace(/^./, '0')}/x.jpg')`, /isn't in this child's folder/);
+  // Other parents can't see the details or change anything.
+  await as('u-p06');
+  assert.equal((await rows(`select * from student_details`)).length, 0);
+  await rejects(`select update_child_details('${ella}', null, '', '', '')`, /Only this child's parents/);
+  await rejects(`insert into storage.objects (bucket_id, name, owner) values ('avatars', 'children/${ella}/x.jpg', ${id('u-p06')})`, /row-level security/);
+  // Staff can read allergies.
+  await as('u-sci');
+  assert.equal((await one(`select allergies from student_details where student_id = '${ella}'`)).allergies, 'Peanuts');
+
+  // Parents ask; the office approves or declines, and they're told.
+  await as('u-p06');
+  await rejects(`select request_child_edit('${ella}', 'Ella', 'Kim', 3)`, /Only this child's parents/);
+  const add = await one(`select * from request_child('Max', 'Ortiz', -1, null, 'Starting in January')`);
+  await as('u-p05');
+  const edit = await one(`select * from request_child_edit('${ella}', 'Ella', 'Kim-Lee', 2)`);
+  await as('u-s01');
+  await rejects(`select request_child('X', 'Y', 1)`, /approved parents/);
+  await as('u-admin', true);
+  const queue = (await one(`select admin_family_requests() as q`)).q;
+  assert.deepEqual(queue.map((r: any) => r.kind).sort(), ['add_child', 'edit_child']);
+  const max = (await one(`select admin_decide_family_request('${add.id}', true) as id`)).id;
+  await one(`select admin_decide_family_request('${edit.id}', false, null, 'Please call the office.')`);
+  await rejects(`select admin_decide_family_request('${add.id}', true)`, /already handled/);
+  await as('u-p06');
+  const theirs = (await one(`select my_children() as k`)).k;
+  assert.ok(theirs.some((k: any) => k.id === max && k.gradeLabel === 'K4'));
+  assert.ok((await rows(`select body from my_notifications() where data ? 'children'`)).length >= 1);
+  await as('u-p05');
+  assert.match((await rows(`select body from my_notifications() where data ? 'children'`)).map((n) => n.body).join(), /call the office/);
+  assert.equal((await one(`select last_name from profiles where id = '${ella}'`)).last_name, 'Kim', 'declined edits change nothing');
+
+  // Children without a login can be removed; accounts can't be removed this way.
+  await as('u-admin', true);
+  await rejects(`select admin_delete_student(${id('u-s01')})`, /without their own login/);
+  await one(`select admin_delete_student('${max}')`);
+  assert.equal((await rows(`select 1 from profiles where id = '${max}'`)).length, 0);
 });

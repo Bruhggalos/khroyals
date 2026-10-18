@@ -1,12 +1,12 @@
 /** Marketplace: items for sale, your posts, and what you're buying. */
 import { useCallback, useState } from 'react';
-import { FlatList, Image, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { listMarket, marketPhotoUrls, subscribeMarket, type Listing, type MarketLine, type Person } from '../../src/api/connect';
+import { listMarket, marketPhotoUrls, marketRemove, subscribeMarket, type Listing, type MarketLine, type Person } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
-import { conditionLabel, inLine, money } from '../../src/market/format';
-import { Button, C, Card, Loading, P, s } from '../../src/ui';
+import { conditionLabel, deleteWarning, inLine, money } from '../../src/market/format';
+import { Button, C, Card, Loading, P, ask, s } from '../../src/ui';
 
 type Tab = 'shop' | 'selling' | 'buying';
 
@@ -87,6 +87,13 @@ function Browse({ me }: { me: Person }) {
             <Text style={{ fontSize: 16, fontWeight: '800', color: C.primary }}>{money(l.priceCents)}</Text>
             <P muted>{note(l)}</P>
           </View>
+          {l.sellerId === me.id && (
+            <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel={`Delete ${l.title}`}
+              onPress={() => ask('Delete this post?', deleteWarning(l), 'Delete',
+                () => marketRemove(l.id).then(load).catch((e) => Alert.alert('Marketplace', e.message)))}>
+              <Ionicons name="trash-outline" size={22} color={C.danger} />
+            </Pressable>
+          )}
         </Card>
       )} />
   );

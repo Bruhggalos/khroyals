@@ -2247,16 +2247,1758 @@ alter publication supabase_realtime add table public.volunteer_opportunities, pu
 
 insert into app.applied_migrations (name) values ('20261016000008_volunteers.sql') on conflict do nothing;
 
--- ===== 20261016000010_school_questions.sql =====
+-- ===== 20261016000009_roles_directors_paging.sql =====
+-- Admin roles that directors create, several directors (never zero), and a
+-- paged, searchable people list for the admin portal.
+--
+-- profiles.admin_tier now points at admin_roles.id. "director" is a built-in
+-- role with every permission; "administrator" and "office" are starting
+-- roles directors can edit or delete, and directors can add their own (for
+-- example "Athletics Director" with calendar + notifications).
+
+-- ======================================================================
+-- Roles
+-- ======================================================================
+
+create table public.admin_roles (
+  id          text primary key,
+  name        text not null unique,
+  description text not null default '',
+  permissions text[] not null default '{}',
+  is_system   boolean not null default false,   -- director: can't be edited or deleted
+  created_at  timestamptz not null default now()
+);
+alter table public.admin_roles enable row level security;
+create policy "approved users can read roles" on public.admin_roles for select to authenticated
+  using (app.school_role() is not null);
+grant select on public.admin_roles to authenticated;
+revoke insert, update, delete on public.admin_roles from anon, authenticated;
+
+insert into public.admin_roles (id, name, description, permissions, is_system) values
+  ('director', 'Director', 'Runs the school''s account: every permission, and manages admins and roles.',
+   array['admins.manage', 'people.view', 'people.approve', 'people.roles', 'people.family', 'groups.manage',
+         'calendar.school', 'push.send', 'audit.view'], true),
+  ('administrator', 'Administrator', 'Everything except managing admins and roles.',
+   array['people.view', 'people.approve', 'people.roles', 'people.family', 'groups.manage', 'calendar.school',
+         'push.send', 'audit.view'], false),
+  ('office', 'Office', 'Front office: approvals, families, school calendar, notifications, activity log.',
+   array['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send', 'audit.view'], false)
+on conflict (id) do nothing;
+
+alter table public.profiles drop constraint if exists profiles_admin_tier_check;
+alter table public.profiles add constraint profiles_admin_tier_fkey
+  foreign key (admin_tier) references public.admin_roles (id) on update cascade on delete set null;
+
+-- Several directors are allowed …
+drop index if exists public.profiles_one_director;
+
+create or replace function app.tier_permissions(tier text) returns text[]
+language sql stable security definer set search_path = public as $$
+  select coalesce((select permissions from admin_roles where id = tier), array[]::text[])
+$$;
+
+-- … but never zero: block demoting, revoking or deleting the last one.
+create function app.keep_a_director() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.admin_tier = 'director'
+     and (tg_op = 'DELETE' or new.admin_tier is distinct from 'director' or new.school_role is null)
+     and not exists (select 1 from profiles
+                     where admin_tier = 'director' and school_role is not null and id <> old.id) then
+    raise exception 'There must always be at least one director. Make someone else a director first.'
+      using errcode = '42501';
+  end if;
+  return coalesce(new, old);
+end $$;
+create trigger keep_a_director before update of admin_tier, school_role or delete on public.profiles
+  for each row execute function app.keep_a_director();
+
+/** Director only: create or update a role. */
+create function public.admin_save_role(p_id text, p_name text, p_description text, p_permissions text[])
+returns public.admin_roles
+language plpgsql security definer set search_path = public as $$
+declare rid text; bad text; row admin_roles%rowtype;
+begin
+  perform app.require_permission('admins.manage');
+  if coalesce(trim(p_name), '') = '' then raise exception 'Give the role a name.'; end if;
+  select x into bad from unnest(coalesce(p_permissions, '{}')) x
+  where x = 'admins.manage' or x not in (select key from permission_catalog()) limit 1;
+  if bad is not null then raise exception 'Permission "%" can''t be given to a role.', bad; end if;
+  if p_id is not null and (select is_system from admin_roles where id = p_id) then
+    raise exception 'The Director role can''t be changed.';
+  end if;
+  rid := coalesce(p_id, trim(both '-' from regexp_replace(lower(trim(p_name)), '[^a-z0-9]+', '-', 'g')));
+  if rid = '' then rid := 'role-' || substr(md5(random()::text), 1, 6); end if;
+  if p_id is null and exists (select 1 from admin_roles where id = rid) then
+    rid := rid || '-' || substr(md5(random()::text), 1, 4);
+  end if;
+  insert into admin_roles (id, name, description, permissions)
+  values (rid, trim(p_name), coalesce(trim(p_description), ''), coalesce(p_permissions, '{}'))
+  on conflict (id) do update set name = excluded.name, description = excluded.description, permissions = excluded.permissions
+  returning * into row;
+  perform app.audit(null, case when p_id is null then 'role.created' else 'role.updated' end, rid,
+                    jsonb_build_object('name', p_name, 'permissions', p_permissions));
+  return row;
+exception when unique_violation then
+  raise exception 'A role named "%" already exists.', trim(p_name);
+end $$;
+
+/** Director only: delete a role; people who had it lose that admin access. */
+create function public.admin_delete_role(p_id text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('admins.manage');
+  if (select is_system from admin_roles where id = p_id) then raise exception 'The Director role can''t be deleted.'; end if;
+  delete from admin_roles where id = p_id;
+  perform app.audit(null, 'role.deleted', p_id);
+end $$;
+
+-- ======================================================================
+-- Directors
+-- ======================================================================
+
+/** Director only: give someone a role (not director) and extra permissions. */
+create or replace function public.admin_set_access(p_user uuid, p_tier text, p_permissions text[] default '{}') returns void
+language plpgsql security definer set search_path = public as $$
+declare cur profiles%rowtype; bad text;
+begin
+  perform app.require_permission('admins.manage');
+  select * into cur from profiles where id = p_user;
+  if not found then raise exception 'No such person.'; end if;
+  if p_tier = 'director' or cur.admin_tier = 'director' then
+    raise exception 'Use "Make director" / "Remove director" to change directors.';
+  end if;
+  if p_tier is not null and not exists (select 1 from admin_roles where id = p_tier) then
+    raise exception 'That role no longer exists.';
+  end if;
+  if p_tier is not null and coalesce(cur.school_role, '') not in ('admin', 'teacher', 'staff') then
+    raise exception 'Admin roles are for staff accounts. Change their school role to staff first.';
+  end if;
+  if cur.school_role is null or (cur.school_role = 'student' and cardinality(coalesce(p_permissions, '{}')) > 0) then
+    raise exception 'Students and unapproved accounts can''t be given admin permissions.';
+  end if;
+  select x into bad from unnest(coalesce(p_permissions, '{}')) x
+  where x = 'admins.manage' or x not in (select key from permission_catalog()) limit 1;
+  if bad is not null then raise exception 'Permission "%" can''t be granted.', bad; end if;
+  update profiles set admin_tier = p_tier, permissions = coalesce(p_permissions, '{}') where id = p_user;
+  perform app.audit(null, 'access.updated', p_user::text, jsonb_build_object('role', p_tier, 'permissions', p_permissions));
+end $$;
+
+/**
+ * Director only: make a staff member a director, or remove someone's director
+ * role (they become an administrator). Directors can step down themselves as
+ * long as another director remains.
+ */
+create function public.admin_set_director(p_user uuid, p_director boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare cur profiles%rowtype;
+begin
+  perform app.require_permission('admins.manage');
+  select * into cur from profiles where id = p_user;
+  if not found then raise exception 'No such person.'; end if;
+  if p_director then
+    if coalesce(cur.school_role, '') not in ('admin', 'teacher', 'staff') then
+      raise exception 'Directors must be staff accounts. Change their school role to staff first.';
+    end if;
+    update profiles set admin_tier = 'director', school_role = 'admin' where id = p_user;
+    perform app.audit(null, 'director.added', p_user::text);
+  elsif cur.admin_tier = 'director' then
+    update profiles set admin_tier = 'administrator' where id = p_user;   -- keep_a_director guards the last one
+    perform app.audit(null, 'director.removed', p_user::text);
+  end if;
+end $$;
+
+/** Hand over: make someone director, then step down yourself. */
+create or replace function public.transfer_director(p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if (select admin_tier from profiles where id = auth.uid()) is distinct from 'director' then
+    raise exception 'Only a director can hand over the role.';
+  end if;
+  perform public.admin_set_director(p_user, true);
+  perform public.admin_set_director(auth.uid(), false);
+end $$;
+
+/** Setup / emergency recovery only (not callable from the app): add a director by email. */
+create or replace function app.bootstrap_director(p_email text) returns void
+language plpgsql security definer set search_path = public as $$
+declare uid uuid;
+begin
+  select id into uid from profile_private where lower(email) = lower(p_email);
+  if uid is null then raise exception 'No account with email %; sign in once first.', p_email; end if;
+  update profiles set admin_tier = 'director', school_role = 'admin' where id = uid;
+end $$;
+
+create or replace function public.my_access() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'tier', p.admin_tier,
+    'roleName', r.name,
+    'isDirector', p.admin_tier = 'director',
+    'granted', p.permissions,
+    'permissions', app.permissions(),
+    'mfaRequired', coalesce(app.setting('require_admin_mfa'), 'true') = 'true'
+                   and (p.admin_tier is not null or cardinality(p.permissions) > 0),
+    'mfaVerified', app.mfa_ok() and coalesce(app.setting('require_admin_mfa'), 'true') = 'true')
+  from profiles p left join admin_roles r on r.id = p.admin_tier
+  where p.id = auth.uid()
+$$;
+
+-- ======================================================================
+-- Paged people list
+-- ======================================================================
+
+drop function public.admin_list_people();
+
+/**
+ * People for the admin portal, a page at a time. p_filter: all | pending |
+ * staff | parents | students | admins. Every row carries the total match count.
+ */
+create function public.admin_list_people(
+  p_search text default null, p_filter text default 'all', p_limit int default 25, p_offset int default 0
+) returns table (
+  id uuid, first_name text, last_name text, school_role text, grade int, email text,
+  admin_tier text, permissions text[], created_at timestamptz, total bigint
+)
+language plpgsql stable security definer set search_path = public as $$
+declare term text := '%' || lower(coalesce(trim(p_search), '')) || '%';
+begin
+  perform app.require_permission('people.view');
+  return query
+    select p.id, p.first_name, p.last_name, p.school_role, p.grade, pp.email, p.admin_tier, p.permissions, p.created_at,
+           count(*) over () as total
+    from profiles p left join profile_private pp on pp.id = p.id
+    where (lower(p.first_name || ' ' || p.last_name || ' ' || coalesce(pp.email, '')) like term)
+      and case coalesce(p_filter, 'all')
+            when 'pending'  then p.school_role is null
+            when 'staff'    then p.school_role in ('admin', 'teacher', 'staff')
+            when 'parents'  then p.school_role = 'parent'
+            when 'students' then p.school_role = 'student'
+            when 'admins'   then p.admin_tier is not null or cardinality(p.permissions) > 0
+            else true end
+    order by (p.school_role is null) desc, (p.admin_tier = 'director') desc, p.last_name, p.first_name, p.id
+    limit greatest(1, least(coalesce(p_limit, 25), 100)) offset greatest(0, coalesce(p_offset, 0));
+end $$;
+
+-- ======================================================================
+-- Privileges for the new and replaced functions
+-- ======================================================================
+
+revoke all on all functions in schema public from public, anon;
+revoke all on all functions in schema app from public, anon;
+grant execute on all functions in schema public to authenticated, service_role;
+grant execute on all functions in schema app to authenticated, service_role;
+revoke execute on function app.bootstrap_director(text) from authenticated;
+revoke execute on function app.push_targets(uuid) from authenticated;
+revoke execute on function public.push_targets(uuid) from authenticated;
+grant execute on function app.can_view_content(uuid, uuid) to anon;
+grant execute on function app.effective_role(uuid, uuid) to anon;
+grant execute on function app.school_role(uuid) to anon;
+grant execute on function app.audience_includes(text, text) to anon;
+grant execute on function app.role_rank(text) to anon;
+grant execute on function app.audience_rank(text) to anon;
+grant execute on function app.has_permission(text, uuid) to anon;
+grant execute on function app.permissions(uuid) to anon;
+grant execute on function app.mfa_ok() to anon;
+grant execute on function app.setting(text) to anon;
+grant execute on function app.tier_permissions(text) to anon;
+grant execute on function app.can_edit_calendar(uuid) to anon;
+grant all on public.admin_roles to service_role;
+
+insert into app.applied_migrations (name) values ('20261016000009_roles_directors_paging.sql') on conflict do nothing;
+
+-- ===== 20261016000010_people_list_duties.sql =====
+-- The paged admin people list (20261016000009) also returns the car line duty
+-- and Volunteer Leader flags the admin portal shows on each person.
+
+drop function public.admin_list_people(text, text, int, int);
+
+create function public.admin_list_people(
+  p_search text default null, p_filter text default 'all', p_limit int default 25, p_offset int default 0
+) returns table (
+  id uuid, first_name text, last_name text, school_role text, grade int, email text,
+  admin_tier text, permissions text[], carline_duty boolean, volunteer_lead boolean, created_at timestamptz, total bigint
+)
+language plpgsql stable security definer set search_path = public as $$
+declare term text := '%' || lower(coalesce(trim(p_search), '')) || '%';
+begin
+  perform app.require_permission('people.view');
+  return query
+    select p.id, p.first_name, p.last_name, p.school_role, p.grade, pp.email, p.admin_tier, p.permissions,
+           p.carline_duty, p.volunteer_lead, p.created_at, count(*) over () as total
+    from profiles p left join profile_private pp on pp.id = p.id
+    where (lower(p.first_name || ' ' || p.last_name || ' ' || coalesce(pp.email, '')) like term)
+      and case coalesce(p_filter, 'all')
+            when 'pending'  then p.school_role is null
+            when 'staff'    then p.school_role in ('admin', 'teacher', 'staff')
+            when 'parents'  then p.school_role = 'parent'
+            when 'students' then p.school_role = 'student'
+            when 'admins'   then p.admin_tier is not null or cardinality(p.permissions) > 0
+            else true end
+    order by (p.school_role is null) desc, (p.admin_tier = 'director') desc, p.last_name, p.first_name, p.id
+    limit greatest(1, least(coalesce(p_limit, 25), 100)) offset greatest(0, coalesce(p_offset, 0));
+end $$;
+
+revoke all on function public.admin_list_people(text, text, int, int) from public, anon;
+grant execute on function public.admin_list_people(text, text, int, int) to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261016000010_people_list_duties.sql') on conflict do nothing;
+
+-- ===== 20261016000011_profile_settings.sql =====
+-- Everyone's own profile settings: photo, name, and which push notifications
+-- reach their phone.
+--
+-- Photos live in a private "avatars" bucket, one folder per person; any
+-- approved member can see them (the app uses signed URLs). profiles.avatar_url
+-- holds the storage path. Staff with people.roles can remove a photo.
+--
+-- Push settings only decide what is pushed to devices; the in-app inbox still
+-- lists everything. School-wide announcements (everyone / by role) always
+-- push, so closures and emergencies reach families.
+
+-- ======================================================================
+-- Photos
+-- ======================================================================
+
+insert into storage.buckets (id, name, public) values ('avatars', 'avatars', false)
+on conflict (id) do nothing;
+create policy "profile photos: members read" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and app.school_role() is not null);
+create policy "profile photos: upload to your own folder" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "profile photos: delete your own" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+/** Set (a path in your own avatars folder) or clear (null) your photo. */
+create function public.set_my_avatar(p_path text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if p_path is not null and split_part(p_path, '/', 1) <> auth.uid()::text then
+    raise exception 'That photo isn''t yours.' using errcode = '42501';
+  end if;
+  update profiles set avatar_url = p_path where id = auth.uid();
+end $$;
+
+/** Staff with people.roles: remove someone's photo (e.g. an inappropriate one). */
+create function public.admin_clear_avatar(p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.roles');
+  update profiles set avatar_url = null where id = p_user;
+  perform app.audit(null, 'avatar.removed', p_user::text);
+end $$;
+
+/** Change your name (first and last are both required). */
+create or replace function public.update_my_profile(p_first text, p_last text, p_avatar text default null) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if coalesce(trim(p_first), '') = '' or coalesce(trim(p_last), '') = '' then
+    raise exception 'Enter your first and last name.';
+  end if;
+  if length(trim(p_first)) > 50 or length(trim(p_last)) > 50 then raise exception 'That name is too long.'; end if;
+  update profiles set first_name = trim(p_first), last_name = trim(p_last) where id = auth.uid();
+end $$;
+
+-- ======================================================================
+-- Push settings
+-- ======================================================================
+
+create table public.user_settings (
+  user_id          uuid primary key references public.profiles (id) on delete cascade,
+  push_groups      boolean not null default true,   -- posts in your groups (per-group levels still apply)
+  push_marketplace boolean not null default true,
+  push_volunteer   boolean not null default true,
+  quiet_start      time,                             -- no pushes between these (school time); both or neither
+  quiet_end        time,
+  updated_at       timestamptz not null default now(),
+  check ((quiet_start is null) = (quiet_end is null))
+);
+alter table public.user_settings enable row level security;
+create policy "own settings" on public.user_settings for select to authenticated using (user_id = auth.uid());
+revoke insert, update, delete on public.user_settings from anon, authenticated;
+grant select on public.user_settings to authenticated;
+grant all on public.user_settings to service_role;
+
+create function public.update_my_settings(
+  p_push_groups boolean, p_push_marketplace boolean, p_push_volunteer boolean,
+  p_quiet_start time default null, p_quiet_end time default null
+) returns public.user_settings
+language plpgsql security definer set search_path = public as $$
+declare row user_settings%rowtype;
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if (p_quiet_start is null) <> (p_quiet_end is null) then raise exception 'Set both quiet-hours times, or neither.'; end if;
+  insert into user_settings (user_id, push_groups, push_marketplace, push_volunteer, quiet_start, quiet_end)
+  values (auth.uid(), p_push_groups, p_push_marketplace, p_push_volunteer, p_quiet_start, p_quiet_end)
+  on conflict (user_id) do update set push_groups = excluded.push_groups, push_marketplace = excluded.push_marketplace,
+    push_volunteer = excluded.push_volunteer, quiet_start = excluded.quiet_start, quiet_end = excluded.quiet_end, updated_at = now()
+  returning * into row;
+  return row;
+end $$;
+
+/** Does this person want this notification pushed to their phone right now? */
+create function app.wants_push(n public.notifications, u uuid, at timestamptz default now()) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare st user_settings%rowtype; t time;
+begin
+  if n.audience in ('everyone', 'roles') then return true; end if;   -- school announcements always push
+  select * into st from user_settings where user_id = u;
+  if not found then return true; end if;
+  if n.audience = 'group' and not st.push_groups then return false; end if;
+  if n.data ? 'listingId' and not st.push_marketplace then return false; end if;
+  if n.data ? 'opportunityId' and not st.push_volunteer then return false; end if;
+  if st.quiet_start is not null then
+    t := (at at time zone 'America/Chicago')::time;
+    if (st.quiet_start <= st.quiet_end and t >= st.quiet_start and t < st.quiet_end)
+       or (st.quiet_start > st.quiet_end and (t >= st.quiet_start or t < st.quiet_end)) then
+      return false;
+    end if;
+  end if;
+  return true;
+end $$;
+
+create or replace function app.push_targets(p_notification uuid) returns table (token text, user_id uuid)
+language sql stable security definer set search_path = public as $$
+  select t.token, t.user_id
+  from notifications n, push_tokens t
+  where n.id = p_notification and app.notification_for(n, t.user_id) and app.wants_push(n, t.user_id)
+$$;
+
+revoke all on function app.wants_push(public.notifications, uuid, timestamptz) from public, anon, authenticated;
+grant execute on function app.wants_push(public.notifications, uuid, timestamptz) to service_role;
+revoke all on function app.push_targets(uuid) from public, anon, authenticated;
+grant execute on function app.push_targets(uuid) to service_role;
+revoke all on function public.set_my_avatar(text), public.admin_clear_avatar(uuid),
+  public.update_my_profile(text, text, text),
+  public.update_my_settings(boolean, boolean, boolean, time, time) from public, anon;
+grant execute on function public.set_my_avatar(text), public.admin_clear_avatar(uuid),
+  public.update_my_profile(text, text, text),
+  public.update_my_settings(boolean, boolean, boolean, time, time) to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261016000011_profile_settings.sql') on conflict do nothing;
+
+-- ===== 20261016000012_car_screen_passes.sql =====
+-- Car line on the car's screen (Android Auto; CarPlay can use the same calls).
+--
+-- The car screen runs as native code that can't use the app's sign-in, so a
+-- parent's phone gets a car pass when they sign in: a random token, stored
+-- hashed, that can do exactly two things for that parent — show today's car
+-- line status for their own children, and check them in. Nothing else. Passes
+-- last 90 days from last use and are revoked on sign-out.
+
+create table app.car_passes (
+  token_hash   text primary key,
+  user_id      uuid not null references public.profiles (id) on delete cascade,
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz not null default now()
+);
+create index on app.car_passes (user_id);
+revoke all on app.car_passes from public, anon, authenticated;
+
+create function app.car_token_hash(t text) returns text
+language sql immutable as $$ select encode(sha256(convert_to(coalesce(t, ''), 'UTF8')), 'hex') $$;
+
+/** Signed-in parent: a car pass for this phone (returned once; only its hash is kept). */
+create function public.create_car_pass() returns text
+language plpgsql security definer set search_path = public as $$
+declare t text;
+begin
+  if app.school_role() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if not exists (select 1 from guardians where guardian_id = auth.uid()) then
+    raise exception 'The car screen is for parents with children linked to their account.' using errcode = '42501';
+  end if;
+  delete from app.car_passes where last_used_at < now() - interval '90 days';
+  -- Keep a handful of devices per parent.
+  delete from app.car_passes where token_hash in (
+    select token_hash from app.car_passes where user_id = auth.uid() order by last_used_at desc offset 4);
+  t := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into app.car_passes (token_hash, user_id) values (app.car_token_hash(t), auth.uid());
+  return t;
+end $$;
+
+/** Sign-out: the pass stops working. */
+create function public.revoke_car_pass(p_token text) returns void
+language sql security definer set search_path = public as $$
+  delete from app.car_passes where token_hash = app.car_token_hash(p_token)
+$$;
+
+/** Check a pass and act as its parent for the rest of this call. */
+create function app.use_car_pass(p_token text) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare u uuid;
+begin
+  update app.car_passes set last_used_at = now()
+  where token_hash = app.car_token_hash(p_token) and last_used_at > now() - interval '90 days'
+  returning user_id into u;
+  if u is null or app.school_role(u) is null then
+    raise exception 'Open KH Royals on your phone and sign in again.' using errcode = '42501';
+  end if;
+  perform set_config('request.jwt.claim.sub', u::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated', 'aal', 'aal1')::text, true);
+  return u;
+end $$;
+
+/** Today's car line for the pass holder's children: {line, children: [{name, status, position}]}. */
+create function public.car_carline_status(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare u uuid := app.use_car_pass(p_token);
+begin
+  return jsonb_build_object(
+    'line', app.carline_window(),
+    'children', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'name', trim(p.first_name),
+               'status', coalesce(c.status, 'none'),
+               'position', case when c.status = 'waiting' then (
+                 select count(*) from carline_pickups w
+                 where w.day = app.school_today() and w.status = 'waiting' and w.arrived_at <= c.arrived_at) end)
+             order by p.first_name)
+      from guardians g join profiles p on p.id = g.student_id
+      left join lateral (
+        select * from carline_pickups x
+        where x.student_id = g.student_id and x.day = app.school_today() and x.status in ('waiting', 'picked_up')
+        order by (x.status = 'waiting') desc, x.arrived_at desc limit 1) c on true
+      where g.guardian_id = u), '[]'::jsonb));
+end $$;
+
+/** "I'm here": check in the pass holder's children, then return the new status. */
+create function public.car_carline_check_in(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.use_car_pass(p_token);
+  if app.carline_window()->>'state' = 'closed' then
+    raise exception 'The car line is closed right now.';
+  end if;
+  perform public.carline_check_in(null);
+  return public.car_carline_status(p_token);
+end $$;
+
+revoke all on function app.car_token_hash(text), app.use_car_pass(text) from public, anon, authenticated;
+revoke all on function public.create_car_pass() from public, anon;
+grant execute on function public.create_car_pass() to authenticated, service_role;
+revoke all on function public.revoke_car_pass(text), public.car_carline_status(text), public.car_carline_check_in(text) from public;
+grant execute on function public.revoke_car_pass(text), public.car_carline_status(text), public.car_carline_check_in(text)
+  to anon, authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261016000012_car_screen_passes.sql') on conflict do nothing;
+
+-- ===== 20261016000013_post_stats_subscriptions.sql =====
+-- Post stats and notification subscriptions.
+--
+-- Stats: the app records who has seen each post (once per person, with a
+-- repeat count) and who opened each notification. Authors, group moderators
+-- and admins who manage groups see a post's stats: views, how many of the
+-- group that is, reactions, replies, poll votes, followers and who has seen
+-- it. Notification senders see how many people opened a notification.
+--
+-- Subscriptions: people follow a post to hear about replies (authors and
+-- repliers follow automatically; anyone can follow or unfollow), and choose in
+-- My profile whether school announcements, group posts and replies reach their
+-- phone. Admins can mark a school notification urgent so it reaches everyone.
+
+-- ======================================================================
+-- Views and opens
+-- ======================================================================
+
+create table public.post_views (
+  post_id       uuid not null references public.posts (id) on delete cascade,
+  user_id       uuid not null references public.profiles (id) on delete cascade,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at  timestamptz not null default now(),
+  times         int not null default 1,
+  primary key (post_id, user_id)
+);
+alter table public.post_views enable row level security;   -- read only through post_stats()
+revoke all on public.post_views from anon, authenticated;
+
+/** The app saw these posts on screen. Repeat views count again after 30 minutes. */
+create function public.record_post_views(p_posts uuid[]) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or app.school_role() is null then return; end if;
+  insert into post_views (post_id, user_id)
+    select distinct x, auth.uid() from unnest(p_posts[1:200]) x
+    join posts p on p.id = x
+    where p.status = 'published' and p.author_id is distinct from auth.uid() and app.can_read_post(x)
+  on conflict (post_id, user_id) do update set last_seen_at = now(), times = post_views.times + 1
+    where post_views.last_seen_at < now() - interval '30 minutes';
+end $$;
+
+create table public.notification_opens (
+  notification_id uuid not null references public.notifications (id) on delete cascade,
+  user_id         uuid not null references public.profiles (id) on delete cascade,
+  opened_at       timestamptz not null default now(),
+  primary key (notification_id, user_id)
+);
+alter table public.notification_opens enable row level security;
+create policy "own opens" on public.notification_opens for select to authenticated using (user_id = auth.uid());
+grant select on public.notification_opens to authenticated;
+revoke insert, update, delete on public.notification_opens from anon, authenticated;
+
+/** Notifications the person opened (tapped, or saw in their inbox). */
+create function public.mark_notifications_opened(p_ids uuid[]) returns void
+language sql security definer set search_path = public as $$
+  insert into notification_opens (notification_id, user_id)
+    select n.id, auth.uid() from notifications n
+    where n.id = any (p_ids[1:200]) and auth.uid() is not null and app.notification_for(n, auth.uid())
+  on conflict do nothing
+$$;
+
+/** Senders (and push.send admins): how many people opened each notification. */
+create function public.notification_open_counts(p_ids uuid[]) returns table (id uuid, opened bigint)
+language sql stable security definer set search_path = public as $$
+  select n.id, (select count(*) from notification_opens o where o.notification_id = n.id)
+  from notifications n
+  where n.id = any (p_ids) and (n.created_by = auth.uid() or app.has_permission('push.send'))
+$$;
+
+-- ======================================================================
+-- Following posts, and reply notifications
+-- ======================================================================
+
+create table public.post_follows (
+  post_id   uuid not null references public.posts (id) on delete cascade,
+  user_id   uuid not null references public.profiles (id) on delete cascade,
+  following boolean not null default true,   -- false = they unfollowed (stays off)
+  primary key (post_id, user_id)
+);
+alter table public.post_follows enable row level security;
+create policy "own follows" on public.post_follows for select to authenticated using (user_id = auth.uid());
+grant select on public.post_follows to authenticated;
+revoke insert, update, delete on public.post_follows from anon, authenticated;
+
+create function app.auto_follow(p uuid, u uuid) returns void
+language sql security definer set search_path = public as $$
+  insert into post_follows (post_id, user_id) select p, u where u is not null on conflict do nothing
+$$;
+
+create function app.follow_own_post() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.auto_follow(new.post_id, new.author_id);   -- anonymous_authors rows
+  return new;
+end $$;
+create function app.follow_new_post() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.auto_follow(new.id, new.author_id);
+  return new;
+end $$;
+create trigger follow_new_post after insert on public.posts for each row execute function app.follow_new_post();
+create trigger follow_own_post after insert on app.anonymous_authors for each row execute function app.follow_own_post();
+
+/** Follow or unfollow replies on a post you can read. */
+create function public.set_post_follow(p_post uuid, p_follow boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not coalesce(app.can_read_post(p_post), false) then raise exception 'Post not found.'; end if;
+  insert into post_follows (post_id, user_id, following) values (p_post, auth.uid(), p_follow)
+  on conflict (post_id, user_id) do update set following = excluded.following;
+end $$;
+
+/** A published reply notifies the post's followers (not the replier); replying follows the post. */
+create function app.notify_reply() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare po posts%rowtype; g groups%rowtype; who text;
+begin
+  if new.status <> 'published' or (tg_op = 'UPDATE' and old.status = 'published') then return new; end if;
+  select * into po from posts where id = new.post_id;
+  select * into g from groups where id = po.group_id;
+  select nullif(trim(first_name || ' ' || last_name), '') into who from profiles where id = new.author_id;
+  insert into notifications (audience, user_id, group_id, post_id, title, body, data, urgent, created_by)
+    select 'user', f.user_id, po.group_id, po.id,
+           '💬 ' || coalesce(who, 'Someone') || ' replied',
+           left(coalesce(nullif(po.title, ''), g.name) || ': ' || new.body, 200),
+           jsonb_build_object('groupId', po.group_id, 'postId', po.id, 'commentId', new.id, 'reply', true),
+           false, new.author_id
+    from post_follows f
+    where f.post_id = po.id and f.following and f.user_id is distinct from new.author_id
+      and app.can_read_post(po.id, f.user_id);
+  perform app.auto_follow(po.id, new.author_id);
+  return new;
+end $$;
+create trigger notify_reply after insert or update of status on public.comments
+  for each row execute function app.notify_reply();
+
+-- ======================================================================
+-- My profile: more push choices; urgent school notifications
+-- ======================================================================
+
+alter table public.user_settings
+  add column push_school  boolean not null default true,   -- school-wide notifications that aren't urgent
+  add column push_replies boolean not null default true;   -- replies on posts you follow
+
+drop function public.update_my_settings(boolean, boolean, boolean, time, time);
+create function public.update_my_settings(
+  p_push_groups boolean, p_push_marketplace boolean, p_push_volunteer boolean,
+  p_quiet_start time default null, p_quiet_end time default null,
+  p_push_school boolean default true, p_push_replies boolean default true
+) returns public.user_settings
+language plpgsql security definer set search_path = public as $$
+declare row user_settings%rowtype;
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if (p_quiet_start is null) <> (p_quiet_end is null) then raise exception 'Set both quiet-hours times, or neither.'; end if;
+  insert into user_settings (user_id, push_groups, push_marketplace, push_volunteer, quiet_start, quiet_end, push_school, push_replies)
+  values (auth.uid(), p_push_groups, p_push_marketplace, p_push_volunteer, p_quiet_start, p_quiet_end, p_push_school, p_push_replies)
+  on conflict (user_id) do update set push_groups = excluded.push_groups, push_marketplace = excluded.push_marketplace,
+    push_volunteer = excluded.push_volunteer, quiet_start = excluded.quiet_start, quiet_end = excluded.quiet_end,
+    push_school = excluded.push_school, push_replies = excluded.push_replies, updated_at = now()
+  returning * into row;
+  return row;
+end $$;
+
+/** Urgent school notifications always push; everything else follows the person's choices. */
+create or replace function app.wants_push(n public.notifications, u uuid, at timestamptz default now()) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare st user_settings%rowtype; t time;
+begin
+  if n.audience in ('everyone', 'roles') and n.urgent then return true; end if;
+  select * into st from user_settings where user_id = u;
+  if not found then return true; end if;
+  if n.audience in ('everyone', 'roles') and not st.push_school then return false; end if;
+  if n.data ? 'reply' then
+    if not st.push_replies then return false; end if;
+  elsif n.audience = 'group' and not st.push_groups then return false;
+  end if;
+  if n.data ? 'listingId' and not st.push_marketplace then return false; end if;
+  if n.data ? 'opportunityId' and not st.push_volunteer then return false; end if;
+  if st.quiet_start is not null then
+    t := (at at time zone 'America/Chicago')::time;
+    if (st.quiet_start <= st.quiet_end and t >= st.quiet_start and t < st.quiet_end)
+       or (st.quiet_start > st.quiet_end and (t >= st.quiet_start or t < st.quiet_end)) then
+      return false;
+    end if;
+  end if;
+  return true;
+end $$;
+
+drop function public.send_notification(text, text, text, uuid, text[]);
+/** Admins (push.send) or a group's moderators send a notification; urgent ones ignore people's settings. */
+create function public.send_notification(
+  p_title text, p_body text, p_audience text, p_group uuid default null, p_roles text[] default null,
+  p_urgent boolean default false
+) returns public.notifications
+language plpgsql security definer set search_path = public as $$
+declare row notifications%rowtype;
+begin
+  if coalesce(trim(p_title), '') = '' or coalesce(trim(p_body), '') = '' then raise exception 'Add a title and a message.'; end if;
+  if not (app.has_permission('push.send') or (p_audience = 'group' and app.is_moderator(p_group))) then
+    perform app.require_permission('push.send');
+  end if;
+  insert into notifications (audience, group_id, roles, title, body, data, urgent, created_by)
+  values (p_audience, p_group, p_roles, trim(p_title), trim(p_body),
+          case when p_group is null then '{}'::jsonb else jsonb_build_object('groupId', p_group) end,
+          coalesce(p_urgent, false) or p_audience = 'group', auth.uid())
+  returning * into row;
+  perform app.audit(p_group, 'notification.sent', row.id::text,
+                    jsonb_build_object('audience', p_audience, 'roles', p_roles, 'title', p_title, 'urgent', p_urgent));
+  return row;
+end $$;
+
+-- ======================================================================
+-- Stats
+-- ======================================================================
+
+/** May this person see a post's stats? Its author, the group's moderators (incl. admins who manage groups). */
+create function app.can_see_post_stats(p uuid, u uuid default auth.uid()) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select po.author_id = u or app.is_moderator(po.group_id, u)
+                     or exists (select 1 from app.anonymous_authors a where a.post_id = po.id and a.author_id = u)
+                   from posts po where po.id = p), false)
+$$;
+
+/** One post's stats, for its author and the group's moderators. */
+create function public.post_stats(p_post uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare po posts%rowtype; member_count int;
+begin
+  if not app.can_see_post_stats(p_post) then
+    raise exception 'Only the author and the group''s moderators can see these stats.' using errcode = '42501';
+  end if;
+  select * into po from posts where id = p_post;
+  select count(*) into member_count from memberships m
+    where m.group_id = po.group_id and m.user_id is distinct from po.author_id and app.can_view_content(po.group_id, m.user_id);
+  return jsonb_build_object(
+    'postId', po.id, 'groupId', po.group_id, 'title', coalesce(nullif(po.title, ''), left(po.body, 80)),
+    'createdAt', po.created_at,
+    'audience', member_count,
+    'viewers', (select count(*) from post_views where post_id = po.id),
+    'views', (select coalesce(sum(times), 0) from post_views where post_id = po.id),
+    'reactions', coalesce((select jsonb_object_agg(emoji, n) from (
+                   select emoji, count(*) n from reactions where post_id = po.id group by emoji) r), '{}'::jsonb),
+    'replies', (select count(*) from comments where post_id = po.id and status = 'published'),
+    'repliers', (select count(distinct author_id) from comments where post_id = po.id and status = 'published'),
+    'pollVotes', (select count(*) from poll_votes where post_id = po.id),
+    'score', po.score,
+    'followers', (select count(*) from post_follows where post_id = po.id and following),
+    'notificationOpens', (select count(*) from notification_opens o join notifications n on n.id = o.notification_id
+                          where n.post_id = po.id and n.audience = 'group'),
+    'pushDevices', (select coalesce(sum(sent_count), 0) from notifications where post_id = po.id and audience = 'group'),
+    'byDay', coalesce((select jsonb_agg(jsonb_build_object('day', d, 'viewers', n) order by d) from (
+                 select (first_seen_at at time zone 'America/Chicago')::date d, count(*) n
+                 from post_views where post_id = po.id group by 1) x), '[]'::jsonb),
+    'seenBy', coalesce((select jsonb_agg(jsonb_build_object('name', trim(p.first_name || ' ' || p.last_name),
+                                                           'role', p.school_role, 'at', v.first_seen_at)
+                                         order by v.first_seen_at desc)
+                        from (select * from post_views where post_id = po.id order by first_seen_at desc limit 200) v
+                        join profiles p on p.id = v.user_id), '[]'::jsonb)
+  );
+end $$;
+
+/** A group's recent posts with their numbers, for the group's moderators. */
+create function public.group_post_stats(p_group uuid, p_limit int default 50) returns table (
+  post_id uuid, title text, kind text, created_at timestamptz, author text,
+  viewers bigint, audience bigint, reactions bigint, replies bigint
+)
+language plpgsql stable security definer set search_path = public as $$
+declare members bigint;
+begin
+  if not app.is_moderator(p_group) then
+    raise exception 'Only the group''s moderators can see its stats.' using errcode = '42501';
+  end if;
+  select count(*) into members from memberships m where m.group_id = p_group and app.can_view_content(p_group, m.user_id);
+  return query
+    select po.id, coalesce(nullif(po.title, ''), left(po.body, 80)), po.kind, po.created_at,
+           coalesce(nullif(trim(pr.first_name || ' ' || pr.last_name), ''), 'Anonymous'),
+           (select count(*) from post_views v where v.post_id = po.id),
+           greatest(members - case when po.author_id is null then 0 else 1 end, 0),
+           (select count(*) from reactions r where r.post_id = po.id),
+           (select count(*) from comments c where c.post_id = po.id and c.status = 'published')
+    from posts po left join profiles pr on pr.id = po.author_id
+    where po.group_id = p_group and po.status = 'published'
+    order by po.created_at desc
+    limit least(greatest(coalesce(p_limit, 50), 1), 200);
+end $$;
+
+-- ======================================================================
+-- Privileges
+-- ======================================================================
+
+revoke all on function app.auto_follow(uuid, uuid), app.can_see_post_stats(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.record_post_views(uuid[]), public.mark_notifications_opened(uuid[]),
+  public.notification_open_counts(uuid[]), public.set_post_follow(uuid, boolean),
+  public.update_my_settings(boolean, boolean, boolean, time, time, boolean, boolean),
+  public.send_notification(text, text, text, uuid, text[], boolean),
+  public.post_stats(uuid), public.group_post_stats(uuid, int) from public, anon;
+grant execute on function public.record_post_views(uuid[]), public.mark_notifications_opened(uuid[]),
+  public.notification_open_counts(uuid[]), public.set_post_follow(uuid, boolean),
+  public.update_my_settings(boolean, boolean, boolean, time, time, boolean, boolean),
+  public.send_notification(text, text, text, uuid, text[], boolean),
+  public.post_stats(uuid), public.group_post_stats(uuid, int) to authenticated, service_role;
+grant all on public.post_views, public.notification_opens, public.post_follows to service_role;
+
+insert into app.applied_migrations (name) values ('20261016000013_post_stats_subscriptions.sql') on conflict do nothing;
+
+-- ===== 20261017000014_clear_notifications_delete_listings.sql =====
+-- Clearing notifications, and deleting Marketplace posts at any stage.
+--
+-- Notifications: people can delete one (swipe or ✕) or clear them all. That
+-- hides them from that person's inbox only; senders' history and stats stay.
+--
+-- Marketplace: sellers can delete their post whether it's open, has a sale
+-- pending (the buyer is told the sale is off) or is sold (it leaves their
+-- list). Everyone still waiting in line is told it's gone.
+
+create table public.notification_dismissals (
+  notification_id uuid not null references public.notifications (id) on delete cascade,
+  user_id         uuid not null references public.profiles (id) on delete cascade,
+  dismissed_at    timestamptz not null default now(),
+  primary key (notification_id, user_id)
+);
+alter table public.notification_dismissals enable row level security;
+revoke all on public.notification_dismissals from anon, authenticated;
+grant all on public.notification_dismissals to service_role;
+
+create or replace function public.my_notifications(p_limit int default 50) returns setof public.notifications
+language sql stable security definer set search_path = public as $$
+  select n.* from notifications n
+  where app.notification_for(n, auth.uid())
+    and not exists (select 1 from notification_dismissals d where d.notification_id = n.id and d.user_id = auth.uid())
+  order by n.created_at desc
+  limit least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+
+/** Delete notifications from your inbox. */
+create function public.dismiss_notifications(p_ids uuid[]) returns void
+language sql security definer set search_path = public as $$
+  insert into notification_dismissals (notification_id, user_id)
+    select n.id, auth.uid() from notifications n
+    where n.id = any (p_ids[1:500]) and auth.uid() is not null and app.notification_for(n, auth.uid())
+  on conflict do nothing
+$$;
+
+/** Clear all: every notification currently in your inbox. */
+create function public.clear_my_notifications() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  insert into notification_dismissals (notification_id, user_id)
+    select x.id, auth.uid() from notifications x where app.notification_for(x, auth.uid())
+  on conflict do nothing;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+/** Sellers delete their post at any stage; admins remove posts that don't belong. */
+create or replace function public.market_remove(p_listing uuid, p_reason text default null) returns void
+language plpgsql security definer set search_path = public as $$
+declare r market_listings%rowtype; why text := coalesce(nullif(trim(p_reason), ''), 'it isn''t a uniform or school-related item');
+        b uuid;
+begin
+  select * into r from market_listings where id = p_listing for update;
+  if not found or r.status = 'removed' then raise exception 'No such post.'; end if;
+  if app.has_permission('groups.manage') and r.seller_id <> auth.uid() then
+    update market_listings set status = 'removed', updated_at = now() where id = p_listing;
+    perform app.audit(null, 'market.removed', r.seller_id::text, jsonb_build_object('listing', r.id, 'title', r.title, 'reason', why));
+    perform app.notify_user(r.seller_id, '🚫 Post removed: ' || r.title,
+      'Kingdom Heights removed your Marketplace post because ' || why || '.', jsonb_build_object('listingId', r.id));
+  elsif r.seller_id <> auth.uid() then
+    raise exception 'Only the seller can delete this post.' using errcode = '42501';
+  else
+    update market_listings set status = 'removed', updated_at = now() where id = p_listing;
+  end if;
+  -- Tell everyone still in line (and a pending buyer) that it's gone.
+  if r.status in ('open', 'pending') then
+    for b in select distinct buyer_id from market_responses
+             where listing_id = p_listing and status in ('agreed', 'offered', 'countered', 'selected') loop
+      perform app.notify_user(b, 'No longer available: ' || r.title,
+        case when r.status = 'pending' and b = r.buyer_id then 'The seller deleted the post, so the sale is off.'
+             else 'The seller took this post down.' end,
+        jsonb_build_object('listingId', r.id));
+    end loop;
+    update market_responses set status = 'withdrawn', updated_at = now()
+    where listing_id = p_listing and status in ('agreed', 'offered', 'countered', 'selected');
+  end if;
+end $$;
+
+revoke all on function public.dismiss_notifications(uuid[]), public.clear_my_notifications() from public, anon;
+grant execute on function public.dismiss_notifications(uuid[]), public.clear_my_notifications() to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261017000014_clear_notifications_delete_listings.sql') on conflict do nothing;
+
+-- ===== 20261017000015_children.sql =====
+-- Children: students without their own login, managed by their parents.
+--
+-- The school adds children and links them to parents (any approved adult can
+-- be a parent; every child is a student at the school). Parents can ask to add
+-- a child or to change a child's name or grade; the school approves. Once
+-- linked, parents keep the rest up to date themselves: photo, bio, birthday,
+-- allergies and health notes.
+--
+-- A child is a profile with managed = true and no auth account, so everything
+-- that already works for students (family links, car line, grade-based groups)
+-- works for them. Their private details live in student_details, readable only
+-- by their parents and school staff.
+--
+-- Grades move up by themselves: a student's class (graduation year) is stored,
+-- and the grade follows from the school year (which starts July 1). K2 = -3,
+-- K3 = -2, K4 = -1, Kindergarten = 0, then 1–12.
+
+-- ======================================================================
+-- Profiles without a login
+-- ======================================================================
+
+alter table public.profiles drop constraint if exists profiles_id_fkey;
+alter table public.profiles alter column id set default gen_random_uuid();
+alter table public.profiles
+  add column managed  boolean not null default false,   -- a child with no login of their own
+  add column class_of int;                                -- graduation year (students)
+
+-- Deleting a login still removes its profile (the foreign key used to do this).
+create function app.drop_profile_with_login() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from profiles where id = old.id and not managed;
+  return old;
+end $$;
+create trigger on_auth_user_deleted after delete on auth.users
+  for each row execute function app.drop_profile_with_login();
+
+-- ======================================================================
+-- Grades that move up every year
+-- ======================================================================
+
+/** The calendar year a school year ends in (it starts July 1, Central time). */
+create function app.school_year_end(d date default app.school_today()) returns int
+language sql immutable as $$ select extract(year from d)::int + case when extract(month from d) >= 7 then 1 else 0 end $$;
+
+create function app.grade_for_class(class_of int, d date default app.school_today()) returns int
+language sql immutable as $$ select 12 - (class_of - app.school_year_end(d)) $$;
+
+create function app.class_for_grade(grade int, d date default app.school_today()) returns int
+language sql immutable as $$ select app.school_year_end(d) + (12 - grade) $$;
+
+/** Keep grade and class in step: setting either one sets the other. */
+create function app.sync_grade() returns trigger
+language plpgsql as $$
+begin
+  if new.class_of is not null and (tg_op = 'INSERT' or new.class_of is distinct from old.class_of) then
+    new.grade := app.grade_for_class(new.class_of);
+  elsif new.grade is not null and (tg_op = 'INSERT' or new.grade is distinct from old.grade) then
+    new.class_of := app.class_for_grade(new.grade);
+  elsif new.grade is null and tg_op = 'UPDATE' and old.grade is not null and new.class_of is not distinct from old.class_of then
+    new.class_of := null;
+  end if;
+  return new;
+end $$;
+create trigger sync_grade before insert or update of grade, class_of on public.profiles
+  for each row execute function app.sync_grade();
+
+update public.profiles set class_of = app.class_for_grade(grade) where grade is not null and class_of is null;
+
+/** Move everyone to this school year's grade (run daily; a no-op except after July 1). */
+create function app.refresh_grades() returns int
+language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  update profiles set grade = app.grade_for_class(class_of)
+  where class_of is not null and grade is distinct from app.grade_for_class(class_of);
+  get diagnostics n = row_count;
+  return n;
+end $$;
+
+-- Daily refresh where pg_cron exists (Supabase); the app also refreshes when it lists students.
+do $$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    create extension if not exists pg_cron;
+    perform cron.schedule('refresh-grades', '15 6 * * *', 'select app.refresh_grades()');
+  end if;
+exception when others then
+  raise notice 'pg_cron not available: %', sqlerrm;
+end $$;
+
+/** "K2", "K", "3rd", "12th", or "Graduated". */
+create function app.grade_label(g int) returns text
+language sql immutable as $$
+  select case
+    when g is null then null
+    when g <= -3 then 'K2' when g = -2 then 'K3' when g = -1 then 'K4' when g = 0 then 'Kindergarten'
+    when g > 12 then 'Graduated'
+    when g = 1 then '1st' when g = 2 then '2nd' when g = 3 then '3rd'
+    else g || 'th' end
+$$;
+
+-- ======================================================================
+-- Private details, editable by parents
+-- ======================================================================
+
+create table public.student_details (
+  student_id    uuid primary key references public.profiles (id) on delete cascade,
+  birthday      date,
+  bio           text not null default '' check (char_length(bio) <= 500),
+  allergies     text not null default '' check (char_length(allergies) <= 500),
+  medical_notes text not null default '' check (char_length(medical_notes) <= 1000),
+  updated_at    timestamptz not null default now(),
+  updated_by    uuid references public.profiles (id) on delete set null
+);
+alter table public.student_details enable row level security;
+create policy "parents and staff" on public.student_details for select to authenticated
+  using (app.is_guardian_of(student_id) or app.is_staff());
+grant select on public.student_details to authenticated;
+revoke insert, update, delete on public.student_details from anon, authenticated;
+grant all on public.student_details to service_role;
+
+create function app.can_manage_child(s uuid, u uuid default auth.uid()) returns boolean
+language sql stable security definer set search_path = public as $$
+  select app.is_guardian_of(s, u) or app.has_permission('people.family', u)
+$$;
+
+/** Parents (or the office): a child's birthday, bio, allergies and health notes. */
+create function public.update_child_details(
+  p_student uuid, p_birthday date, p_bio text, p_allergies text, p_medical_notes text
+) returns public.student_details
+language plpgsql security definer set search_path = public as $$
+declare row student_details%rowtype;
+begin
+  if not app.can_manage_child(p_student) then
+    raise exception 'Only this child''s parents or the school office can change these details.' using errcode = '42501';
+  end if;
+  if p_birthday is not null and (p_birthday > current_date or p_birthday < current_date - interval '25 years') then
+    raise exception 'Check the birthday.';
+  end if;
+  insert into student_details (student_id, birthday, bio, allergies, medical_notes, updated_by)
+  values (p_student, p_birthday, coalesce(trim(p_bio), ''), coalesce(trim(p_allergies), ''), coalesce(trim(p_medical_notes), ''), auth.uid())
+  on conflict (student_id) do update set birthday = excluded.birthday, bio = excluded.bio, allergies = excluded.allergies,
+    medical_notes = excluded.medical_notes, updated_at = now(), updated_by = auth.uid()
+  returning * into row;
+  return row;
+end $$;
+
+-- Photos: avatars/children/<student id>/…, seen only by the child's parents and staff.
+drop policy if exists "profile photos: members read" on storage.objects;
+create policy "profile photos: members read" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and app.school_role() is not null and (storage.foldername(name))[1] <> 'children');
+
+create function app.child_folder(name text) returns uuid
+language sql immutable as $$
+  select case when (storage.foldername(name))[1] = 'children'
+               and (storage.foldername(name))[2] ~ '^[0-9a-f-]{36}$' then (storage.foldername(name))[2]::uuid end
+$$;
+create policy "child photos: parents and staff read" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and app.child_folder(name) is not null
+         and (app.is_staff() or app.is_guardian_of(app.child_folder(name))));
+create policy "child photos: parents upload" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and app.child_folder(name) is not null and app.can_manage_child(app.child_folder(name)));
+create policy "child photos: parents delete" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and app.child_folder(name) is not null and app.can_manage_child(app.child_folder(name)));
+
+/** Set (a path in the child's photo folder) or clear (null) a child's photo. */
+create function public.set_child_photo(p_student uuid, p_path text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not app.can_manage_child(p_student) then
+    raise exception 'Only this child''s parents or the school office can change the photo.' using errcode = '42501';
+  end if;
+  if p_path is not null and app.child_folder(p_path) is distinct from p_student then
+    raise exception 'That photo isn''t in this child''s folder.' using errcode = '42501';
+  end if;
+  update profiles set avatar_url = p_path where id = p_student and school_role = 'student';
+end $$;
+
+/** A parent's children: names, grade, photo path, details and the other parents. */
+create function public.my_children() returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.refresh_grades();
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', p.id, 'firstName', p.first_name, 'lastName', p.last_name, 'grade', p.grade, 'gradeLabel', app.grade_label(p.grade),
+      'classOf', p.class_of, 'photoPath', p.avatar_url, 'hasLogin', not p.managed,
+      'birthday', d.birthday, 'bio', coalesce(d.bio, ''), 'allergies', coalesce(d.allergies, ''), 'medicalNotes', coalesce(d.medical_notes, ''),
+      'parents', (select coalesce(jsonb_agg(trim(q.first_name || ' ' || q.last_name) order by q.first_name), '[]'::jsonb)
+                  from guardians g2 join profiles q on q.id = g2.guardian_id where g2.student_id = p.id))
+      order by p.first_name)
+    from guardians g join profiles p on p.id = g.student_id left join student_details d on d.student_id = p.id
+    where g.guardian_id = auth.uid() and p.school_role = 'student'), '[]'::jsonb);
+end $$;
+
+-- ======================================================================
+-- Requests the school approves
+-- ======================================================================
+
+create table public.family_requests (
+  id            uuid primary key default gen_random_uuid(),
+  requested_by  uuid not null references public.profiles (id) on delete cascade,
+  kind          text not null check (kind in ('add_child', 'edit_child')),
+  student_id    uuid references public.profiles (id) on delete cascade,   -- edit_child
+  details       jsonb not null,           -- firstName, lastName, grade, birthday, note
+  status        text not null default 'pending' check (status in ('pending', 'approved', 'declined', 'cancelled')),
+  decided_by    uuid references public.profiles (id) on delete set null,
+  decided_at    timestamptz,
+  decision_note text,
+  created_at    timestamptz not null default now(),
+  check (kind = 'add_child' or student_id is not null)
+);
+create index on public.family_requests (status, created_at);
+alter table public.family_requests enable row level security;
+create policy "own requests, or the office" on public.family_requests for select to authenticated
+  using (requested_by = auth.uid() or app.has_permission('people.family'));
+grant select on public.family_requests to authenticated;
+revoke insert, update, delete on public.family_requests from anon, authenticated;
+grant all on public.family_requests to service_role;
+
+create function app.check_child_fields(first text, last text, grade int) returns void
+language plpgsql immutable as $$
+begin
+  if coalesce(trim(first), '') = '' or coalesce(trim(last), '') = '' then raise exception 'Enter the child''s first and last name.'; end if;
+  if grade is null or grade < -3 or grade > 12 then raise exception 'Choose a grade from K2 to 12th.'; end if;
+end $$;
+
+/** Any approved adult: ask the school to add their child. */
+create function public.request_child(p_first text, p_last text, p_grade int, p_birthday date default null, p_note text default null)
+returns public.family_requests
+language plpgsql security definer set search_path = public as $$
+declare row family_requests%rowtype;
+begin
+  if coalesce(app.school_role(), 'student') = 'student' then
+    raise exception 'Only approved parents and staff can add children.' using errcode = '42501';
+  end if;
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  insert into family_requests (requested_by, kind, details)
+  values (auth.uid(), 'add_child', jsonb_build_object('firstName', trim(p_first), 'lastName', trim(p_last), 'grade', p_grade,
+                                                     'birthday', p_birthday, 'note', nullif(trim(p_note), '')))
+  returning * into row;
+  return row;
+end $$;
+
+/** A child's parent: ask the school to change the child's name or grade. */
+create function public.request_child_edit(p_student uuid, p_first text, p_last text, p_grade int, p_note text default null)
+returns public.family_requests
+language plpgsql security definer set search_path = public as $$
+declare row family_requests%rowtype;
+begin
+  if not app.is_guardian_of(p_student) then raise exception 'Only this child''s parents can ask for changes.' using errcode = '42501'; end if;
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  insert into family_requests (requested_by, kind, student_id, details)
+  values (auth.uid(), 'edit_child', p_student, jsonb_build_object('firstName', trim(p_first), 'lastName', trim(p_last),
+                                                                 'grade', p_grade, 'note', nullif(trim(p_note), '')))
+  returning * into row;
+  return row;
+end $$;
+
+create function public.cancel_family_request(p_request uuid) returns void
+language sql security definer set search_path = public as $$
+  update family_requests set status = 'cancelled' where id = p_request and requested_by = auth.uid() and status = 'pending'
+$$;
+
+-- ======================================================================
+-- The office (people.family)
+-- ======================================================================
+
+/** Add a child (no login) and optionally link a parent. Returns the child's id. */
+create function public.admin_create_student(
+  p_first text, p_last text, p_grade int, p_birthday date default null, p_guardian uuid default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare sid uuid;
+begin
+  perform app.require_permission('people.family');
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  insert into profiles (first_name, last_name, school_role, grade, managed)
+  values (trim(p_first), trim(p_last), 'student', p_grade, true) returning id into sid;
+  if p_birthday is not null then
+    insert into student_details (student_id, birthday, updated_by) values (sid, p_birthday, auth.uid());
+  end if;
+  if p_guardian is not null then perform public.admin_link_guardian(p_guardian, sid, true); end if;
+  perform app.audit(null, 'student.created', sid::text, jsonb_build_object('name', trim(p_first) || ' ' || trim(p_last), 'grade', p_grade));
+  return sid;
+end $$;
+
+/** Change a student's name or grade. */
+create function public.admin_update_student(p_student uuid, p_first text, p_last text, p_grade int) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  update profiles set first_name = trim(p_first), last_name = trim(p_last), grade = p_grade
+  where id = p_student and school_role = 'student';
+  if not found then raise exception 'No such student.'; end if;
+  perform app.audit(null, 'student.updated', p_student::text, jsonb_build_object('grade', p_grade));
+end $$;
+
+/** Remove a child who has left the school (children with their own login are managed as accounts). */
+create function public.admin_delete_student(p_student uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  delete from profiles where id = p_student and managed;
+  if not found then raise exception 'Only children without their own login can be removed here.'; end if;
+  perform app.audit(null, 'student.removed', p_student::text);
+end $$;
+
+/** Link any approved adult to a student (or unlink). */
+create or replace function public.admin_link_guardian(p_guardian uuid, p_student uuid, p_link boolean default true) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  if p_link then
+    if coalesce(app.school_role(p_student), '') <> 'student' then raise exception 'Children must be students at the school.'; end if;
+    if coalesce(app.school_role(p_guardian), 'student') = 'student' then
+      raise exception 'Parents must be approved adults (not students).';
+    end if;
+    insert into guardians values (p_guardian, p_student) on conflict do nothing;
+  else
+    delete from guardians where guardian_id = p_guardian and student_id = p_student;
+  end if;
+  perform app.audit(null, case when p_link then 'family.linked' else 'family.unlinked' end, p_guardian::text,
+                    jsonb_build_object('student', p_student));
+end $$;
+
+/** Pending requests from parents, newest last. */
+create function public.admin_family_requests() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', r.id, 'kind', r.kind, 'details', r.details, 'createdAt', r.created_at,
+      'requestedBy', jsonb_build_object('id', p.id, 'name', trim(p.first_name || ' ' || p.last_name), 'role', p.school_role),
+      'student', case when s.id is null then null else jsonb_build_object('id', s.id, 'firstName', s.first_name,
+                   'lastName', s.last_name, 'grade', s.grade) end)
+      order by r.created_at)
+    from family_requests r join profiles p on p.id = r.requested_by left join profiles s on s.id = r.student_id
+    where r.status = 'pending'), '[]'::jsonb);
+end $$;
+
+/**
+ * Approve or decline a parent's request. Approving "add a child" creates the
+ * student, or links the parent to an existing one (p_existing: e.g. the
+ * other parent already added them). The parent is told either way.
+ */
+create function public.admin_decide_family_request(
+  p_request uuid, p_approve boolean, p_existing uuid default null, p_note text default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare r family_requests%rowtype; sid uuid; d jsonb;
+begin
+  perform app.require_permission('people.family');
+  select * into r from family_requests where id = p_request and status = 'pending' for update;
+  if not found then raise exception 'That request was already handled.'; end if;
+  d := r.details;
+  if p_approve then
+    if r.kind = 'add_child' then
+      sid := coalesce(p_existing, public.admin_create_student(d->>'firstName', d->>'lastName', (d->>'grade')::int,
+                                                               nullif(d->>'birthday', '')::date));
+      perform public.admin_link_guardian(r.requested_by, sid, true);
+    else
+      sid := r.student_id;
+      perform public.admin_update_student(sid, d->>'firstName', d->>'lastName', (d->>'grade')::int);
+    end if;
+  end if;
+  update family_requests set status = case when p_approve then 'approved' else 'declined' end,
+    decided_by = auth.uid(), decided_at = now(), decision_note = nullif(trim(p_note), ''),
+    student_id = coalesce(sid, student_id)
+  where id = r.id;
+  perform app.notify_user(r.requested_by,
+    case when p_approve then '✅ ' else '' end || case r.kind when 'add_child' then 'Adding ' else 'Changes for ' end
+      || (d->>'firstName') || case when p_approve then ': approved' else ': not approved' end,
+    coalesce(nullif(trim(p_note), ''), case when p_approve then 'The school office approved your request.'
+                                            else 'The school office couldn''t approve this request. Contact the office with questions.' end),
+    jsonb_build_object('children', true));
+  return sid;
+end $$;
+
+/** Students for the office, with their parents and any login. */
+create function public.admin_list_students(p_search text default null, p_limit int default 25, p_offset int default 0)
+returns table (id uuid, first_name text, last_name text, grade int, grade_label text, class_of int, managed boolean,
+               photo_path text, parents jsonb, total bigint)
+language plpgsql security definer set search_path = public as $$
+declare term text := '%' || lower(coalesce(trim(p_search), '')) || '%';
+begin
+  perform app.require_permission('people.family');
+  perform app.refresh_grades();
+  return query
+    select p.id, p.first_name, p.last_name, p.grade, app.grade_label(p.grade), p.class_of, p.managed, p.avatar_url,
+           (select coalesce(jsonb_agg(jsonb_build_object('id', q.id, 'name', trim(q.first_name || ' ' || q.last_name)) order by q.first_name), '[]'::jsonb)
+            from guardians g join profiles q on q.id = g.guardian_id where g.student_id = p.id),
+           count(*) over ()
+    from profiles p
+    where p.school_role = 'student'
+      and (lower(p.first_name || ' ' || p.last_name) like term
+           or exists (select 1 from guardians g join profiles q on q.id = g.guardian_id
+                      where g.student_id = p.id and lower(q.first_name || ' ' || q.last_name) like term))
+    order by p.grade nulls last, p.last_name, p.first_name, p.id
+    limit greatest(1, least(coalesce(p_limit, 25), 100)) offset greatest(0, coalesce(p_offset, 0));
+end $$;
+
+-- ======================================================================
+-- Privileges
+-- ======================================================================
+
+revoke all on function app.drop_profile_with_login(), app.refresh_grades(), app.can_manage_child(uuid, uuid),
+  app.check_child_fields(text, text, int) from public, anon, authenticated;
+-- Storage policies on child photos ask this as the signed-in person.
+grant execute on function app.can_manage_child(uuid, uuid) to authenticated;
+grant execute on function app.refresh_grades() to service_role;
+grant execute on function app.school_year_end(date), app.grade_for_class(int, date), app.class_for_grade(int, date),
+  app.grade_label(int), app.child_folder(text) to authenticated, service_role;
+revoke all on function public.update_child_details(uuid, date, text, text, text), public.set_child_photo(uuid, text),
+  public.my_children(), public.request_child(text, text, int, date, text), public.request_child_edit(uuid, text, text, int, text),
+  public.cancel_family_request(uuid), public.admin_create_student(text, text, int, date, uuid),
+  public.admin_update_student(uuid, text, text, int), public.admin_delete_student(uuid),
+  public.admin_family_requests(), public.admin_decide_family_request(uuid, boolean, uuid, text),
+  public.admin_list_students(text, int, int) from public, anon;
+grant execute on function public.update_child_details(uuid, date, text, text, text), public.set_child_photo(uuid, text),
+  public.my_children(), public.request_child(text, text, int, date, text), public.request_child_edit(uuid, text, text, int, text),
+  public.cancel_family_request(uuid), public.admin_create_student(text, text, int, date, uuid),
+  public.admin_update_student(uuid, text, text, int), public.admin_delete_student(uuid),
+  public.admin_family_requests(), public.admin_decide_family_request(uuid, boolean, uuid, text),
+  public.admin_list_students(text, int, int) to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261017000015_children.sql') on conflict do nothing;
+
+-- ===== 20261017000016_carline_location_numbers.sql =====
+-- Car line, PikMyKid style.
+--
+-- * Every student has a pickup number (assigned automatically; the office or a
+--   car line lead can change it). Staff call children by number; parents see
+--   their children's numbers. Only staff and the child's parents can read it.
+-- * Parents announce "I'm here" only from within the pickup radius: the app
+--   sends the phone's location and the server checks the distance. Only a
+--   child's linked parents can announce for that child.
+-- * All staff (teachers, staff, admins) see the live line and confirm pickups.
+-- * Car line leads (carline_duty) and the office (people.family) set the
+--   pickup spot, the radius and the hours, and can open the line now (drills,
+--   demos, early dismissal) for the rest of the day.
+
+-- ======================================================================
+-- Pickup numbers
+-- ======================================================================
+
+create table public.pickup_numbers (
+  student_id uuid primary key references public.profiles (id) on delete cascade,
+  number     text not null check (number ~ '^[A-Za-z0-9-]{1,8}$'),
+  updated_at timestamptz not null default now()
+);
+create index on public.pickup_numbers (number);
+alter table public.pickup_numbers enable row level security;
+create policy "staff and the child's parents" on public.pickup_numbers for select to authenticated
+  using (app.is_staff() or app.is_guardian_of(student_id));
+grant select on public.pickup_numbers to authenticated;
+revoke insert, update, delete on public.pickup_numbers from anon, authenticated;
+grant all on public.pickup_numbers to service_role;
+
+/** The next unused number (numbers start at 101). */
+create function app.next_pickup_number() returns text
+language sql volatile security definer set search_path = public as $$
+  select (greatest(100, coalesce(max(number::int), 100)) + 1)::text from pickup_numbers where number ~ '^[0-9]{1,7}$'
+$$;
+
+/** Every student gets a number when they become a student. */
+create function app.assign_pickup_number() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.school_role = 'student' and not exists (select 1 from pickup_numbers where student_id = new.id) then
+    insert into pickup_numbers (student_id, number) values (new.id, app.next_pickup_number());
+  end if;
+  return new;
+end $$;
+create trigger assign_pickup_number after insert or update of school_role on public.profiles
+  for each row execute function app.assign_pickup_number();
+
+-- Students who already exist.
+do $$
+declare s uuid;
+begin
+  for s in select id from profiles where school_role = 'student' and id not in (select student_id from pickup_numbers)
+           order by last_name, first_name loop
+    insert into pickup_numbers (student_id, number) values (s, app.next_pickup_number());
+  end loop;
+end $$;
+
+create function app.can_run_carline(u uuid default auth.uid()) returns boolean
+language sql stable security definer set search_path = public as $$
+  select app.on_carline_duty(u) or app.has_permission('people.family', u)
+$$;
+
+/** The office or a car line lead: change a student's pickup number (siblings may share one). */
+create function public.set_pickup_number(p_student uuid, p_number text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not app.can_run_carline() then
+    raise exception 'Only the office or a car line lead can change pickup numbers.' using errcode = '42501';
+  end if;
+  if coalesce(app.school_role(p_student), '') <> 'student' then raise exception 'No such student.'; end if;
+  if coalesce(trim(p_number), '') !~ '^[A-Za-z0-9-]{1,8}$' then
+    raise exception 'Pickup numbers are 1–8 letters or digits.';
+  end if;
+  insert into pickup_numbers (student_id, number) values (p_student, upper(trim(p_number)))
+  on conflict (student_id) do update set number = excluded.number, updated_at = now();
+  perform app.audit(null, 'carline.number', p_student::text, jsonb_build_object('number', upper(trim(p_number))));
+end $$;
+
+-- ======================================================================
+-- Where, how far, when
+-- ======================================================================
+
+insert into app.settings values ('carline_open_on', null) on conflict (key) do nothing;
+
+/** Metres between two points (haversine). */
+create function app.distance_m(lat1 float8, lng1 float8, lat2 float8, lng2 float8) returns float8
+language sql immutable as $$
+  select 2 * 6371000 * asin(sqrt(
+    power(sin(radians(lat2 - lat1) / 2), 2) +
+    cos(radians(lat1)) * cos(radians(lat2)) * power(sin(radians(lng2 - lng1) / 2), 2)))
+$$;
+
+/** Open on school days in the pickup window, or any time the line was opened for today. */
+create or replace function app.carline_window(now_ts timestamptz default now()) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare
+  local timestamp := now_ts at time zone 'America/Chicago';
+  d date := local::date;
+  t time := local::time;
+  opens time := coalesce(app.setting('carline_start'), '14:45')::time;
+  closes time := coalesce(app.setting('carline_end'), '15:30')::time;
+begin
+  if app.setting('carline_open_on') = d::text then
+    return jsonb_build_object('state', 'open', 'openedNow', true);
+  end if;
+  if not (extract(isodow from d)::int = any (string_to_array(coalesce(app.setting('carline_days'), '1,2,3,4,5'), ',')::int[]))
+     or d < coalesce(app.setting('carline_first_day'), '-infinity')::date
+     or d > coalesce(app.setting('carline_last_day'), 'infinity')::date
+     or exists (select 1 from events
+                where group_id is null and category in ('No School', 'Teacher In-Service', 'E-Learning')
+                  and d between starts_on and coalesce(ends_on, starts_on))
+     or t > closes then
+    return jsonb_build_object('state', 'closed');
+  end if;
+  if t < opens then
+    return jsonb_build_object('state', 'early', 'opensAt', (d + opens) at time zone 'America/Chicago');
+  end if;
+  return jsonb_build_object('state', 'open');
+end $$;
+
+/** The car line zone and hours (and whether it's open now), for the app. */
+create or replace function public.carline_config() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'latitude', app.setting('carline_latitude')::float8,
+    'longitude', app.setting('carline_longitude')::float8,
+    'radius', app.setting('carline_radius_m')::float8,
+    'start', app.setting('carline_start'),
+    'end', app.setting('carline_end'),
+    'line', app.carline_window(),
+    'canEdit', app.can_run_carline())
+$$;
+
+/** Car line leads and the office: pickup spot, radius (metres) and hours. */
+create function public.carline_set_config(p_lat float8, p_lng float8, p_radius float8, p_start text, p_end text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not app.can_run_carline() then
+    raise exception 'Only car line leads and the office can change car line settings.' using errcode = '42501';
+  end if;
+  if p_lat is null or p_lng is null or p_lat not between -90 and 90 or p_lng not between -180 and 180 then
+    raise exception 'Set the pickup location.';
+  end if;
+  if p_radius is null or p_radius < 20 or p_radius > 3000 then
+    raise exception 'Choose a radius between 20 and 3,000 metres (about 65 feet to 2 miles).';
+  end if;
+  if p_start !~ '^\d{1,2}:\d{2}$' or p_end !~ '^\d{1,2}:\d{2}$' or p_start::time >= p_end::time then
+    raise exception 'Set pickup hours like 14:45 to 15:30.';
+  end if;
+  update app.settings set value = round(p_lat::numeric, 6)::text where key = 'carline_latitude';
+  update app.settings set value = round(p_lng::numeric, 6)::text where key = 'carline_longitude';
+  update app.settings set value = round(p_radius)::text where key = 'carline_radius_m';
+  update app.settings set value = p_start where key = 'carline_start';
+  update app.settings set value = p_end where key = 'carline_end';
+  perform app.audit(null, 'carline.settings', null,
+                    jsonb_build_object('lat', p_lat, 'lng', p_lng, 'radius', p_radius, 'start', p_start, 'end', p_end));
+  return public.carline_config();
+end $$;
+
+/** Car line leads and the office: open the line for the rest of today (or close it again). */
+create function public.carline_open_now(p_open boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not app.can_run_carline() then
+    raise exception 'Only car line leads and the office can open the car line.' using errcode = '42501';
+  end if;
+  update app.settings set value = case when p_open then app.school_today()::text end where key = 'carline_open_on';
+  perform app.audit(null, case when p_open then 'carline.opened' else 'carline.closed' end);
+  return public.carline_config();
+end $$;
+
+-- ======================================================================
+-- Announcing arrival (location required)
+-- ======================================================================
+
+alter table public.carline_pickups add column distance_m int;   -- how far from the pickup spot when announced
+
+/** Raise unless (lat, lng) is within the radius (allowing for the phone's accuracy, up to 50 m). */
+create function app.require_at_school(p_lat float8, p_lng float8, p_accuracy float8) returns int
+language plpgsql stable security definer set search_path = public as $$
+declare d float8; r float8 := coalesce(app.setting('carline_radius_m')::float8, 150);
+begin
+  if p_lat is null or p_lng is null then
+    raise exception 'Turn on location for KH Royals so the school knows you''re at pickup.';
+  end if;
+  d := app.distance_m(p_lat, p_lng, app.setting('carline_latitude')::float8, app.setting('carline_longitude')::float8);
+  if d > r + least(greatest(coalesce(p_accuracy, 0), 0), 50) then
+    raise exception 'You''re about % from the pickup spot. You can announce when you''re within %.',
+      case when d >= 1609 then round((d / 1609.34)::numeric, 1) || ' miles' else round(d * 3.28084) || ' feet' end,
+      round(r * 3.28084) || ' feet';
+  end if;
+  return round(d)::int;
+end $$;
+
+/** A parent at pickup announces the children they're collecting (all of theirs when p_students is null). */
+create function public.carline_announce(p_students uuid[], p_lat float8, p_lng float8, p_accuracy float8 default null)
+returns setof public.carline_pickups
+language plpgsql security definer set search_path = public as $$
+declare kids uuid[]; dist int;
+begin
+  if coalesce(app.school_role(), 'student') = 'student' then
+    raise exception 'Only parents can announce pickup.' using errcode = '42501';
+  end if;
+  if p_students is not null and exists (select 1 from unnest(p_students) s where not app.is_guardian_of(s)) then
+    raise exception 'You can only announce your own children.' using errcode = '42501';
+  end if;
+  kids := coalesce(p_students, array(select student_id from guardians where guardian_id = auth.uid()));
+  if cardinality(kids) = 0 then raise exception 'No children are linked to your account yet.'; end if;
+  if app.carline_window()->>'state' = 'closed' then raise exception 'The car line is closed right now.'; end if;
+  dist := app.require_at_school(p_lat, p_lng, p_accuracy);
+  insert into carline_pickups (student_id, guardian_id, distance_m)
+    select distinct k, auth.uid(), dist from unnest(kids) k
+    on conflict (student_id, day) where status = 'waiting' do nothing;
+  return query select * from carline_pickups
+    where student_id = any (kids) and day = app.school_today() and status = 'waiting' order by arrived_at;
+end $$;
+
+-- The old check-in had no location check: it now needs the current app.
+create or replace function public.carline_check_in(p_students uuid[] default null) returns setof public.carline_pickups
+language plpgsql security definer set search_path = public as $$
+begin
+  raise exception 'Update KH Royals to announce pickup (it now checks that you''re at school).';
+end $$;
+
+/** Automatic check-in (geofence): same rules, with the phone's location. */
+drop function public.carline_arrived();
+create function public.carline_arrived(p_lat float8, p_lng float8, p_accuracy float8 default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare w jsonb := app.carline_window(); ids uuid[]; names text[]; dist int;
+begin
+  if app.school_role() is null then raise exception 'Sign in to use the car line.' using errcode = '42501'; end if;
+  if w->>'state' <> 'open' then return w; end if;
+  dist := app.require_at_school(p_lat, p_lng, p_accuracy);
+  with ins as (
+    insert into carline_pickups (student_id, guardian_id, via, distance_m)
+      select g.student_id, auth.uid(), 'arrival', dist from guardians g
+      where g.guardian_id = auth.uid()
+        and not exists (select 1 from carline_pickups c where c.student_id = g.student_id
+                          and c.day = app.school_today() and c.status in ('waiting', 'picked_up'))
+    on conflict (student_id, day) where status = 'waiting' do nothing
+    returning id, student_id
+  )
+  select array_agg(ins.id order by p.first_name), array_agg(p.first_name order by p.first_name)
+    into ids, names from ins join profiles p on p.id = ins.student_id;
+  return jsonb_build_object('state', 'open', 'checkedIn', coalesce(to_jsonb(ids), '[]'::jsonb),
+                            'names', coalesce(to_jsonb(names), '[]'::jsonb));
+end $$;
+
+-- ======================================================================
+-- Staff: everyone on staff sees the line and confirms pickups
+-- ======================================================================
+
+drop policy "car line: your children, or staff on duty" on public.carline_pickups;
+create policy "car line: your children, or staff" on public.carline_pickups for select to authenticated
+  using (app.is_guardian_of(student_id) or app.is_staff());
+
+create or replace function public.carline_confirm(p_pickup uuid) returns public.carline_pickups
+language plpgsql security definer set search_path = public as $$
+declare r carline_pickups%rowtype;
+begin
+  if not app.is_staff() then raise exception 'Only school staff can confirm pickups.' using errcode = '42501'; end if;
+  update carline_pickups set status = 'picked_up', picked_up_at = now(), picked_up_by = auth.uid()
+  where id = p_pickup and status = 'waiting' returning * into r;
+  if not found then raise exception 'That child isn''t waiting in the car line.'; end if;
+  return r;
+end $$;
+
+create or replace function public.carline_reopen(p_pickup uuid) returns public.carline_pickups
+language plpgsql security definer set search_path = public as $$
+declare r carline_pickups%rowtype;
+begin
+  if not app.is_staff() then raise exception 'Only school staff can change pickups.' using errcode = '42501'; end if;
+  update carline_pickups set status = 'waiting', picked_up_at = null, picked_up_by = null
+  where id = p_pickup and status = 'picked_up' and day = app.school_today() returning * into r;
+  if not found then raise exception 'Only today''s pickups can be undone.'; end if;
+  return r;
+exception when unique_violation then
+  raise exception 'This child is already waiting in the car line again.';
+end $$;
+
+/** The staff board: today's line with pickup numbers, names, grades and parents, in arrival order. */
+create function public.carline_board() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not app.is_staff() then raise exception 'The car line board is for school staff.' using errcode = '42501'; end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', c.id, 'studentId', c.student_id, 'status', c.status, 'via', c.via,
+      'arrivedAt', c.arrived_at, 'pickedUpAt', c.picked_up_at, 'distanceM', c.distance_m,
+      'number', n.number, 'name', trim(s.first_name || ' ' || s.last_name), 'grade', s.grade,
+      'parent', trim(g.first_name || ' ' || g.last_name),
+      'pickedUpBy', trim(coalesce(b.first_name, '') || ' ' || coalesce(b.last_name, '')))
+      order by c.arrived_at)
+    from carline_pickups c
+    join profiles s on s.id = c.student_id
+    left join pickup_numbers n on n.student_id = c.student_id
+    left join profiles g on g.id = c.guardian_id
+    left join profiles b on b.id = c.picked_up_by
+    where c.day = app.school_today() and c.status in ('waiting', 'picked_up')), '[]'::jsonb);
+end $$;
+
+-- ======================================================================
+-- Children's numbers for parents and the car screen
+-- ======================================================================
+
+create or replace function public.my_children() returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.refresh_grades();
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', p.id, 'firstName', p.first_name, 'lastName', p.last_name, 'grade', p.grade, 'gradeLabel', app.grade_label(p.grade),
+      'classOf', p.class_of, 'photoPath', p.avatar_url, 'hasLogin', not p.managed, 'pickupNumber', n.number,
+      'birthday', d.birthday, 'bio', coalesce(d.bio, ''), 'allergies', coalesce(d.allergies, ''), 'medicalNotes', coalesce(d.medical_notes, ''),
+      'parents', (select coalesce(jsonb_agg(trim(q.first_name || ' ' || q.last_name) order by q.first_name), '[]'::jsonb)
+                  from guardians g2 join profiles q on q.id = g2.guardian_id where g2.student_id = p.id))
+      order by p.first_name)
+    from guardians g join profiles p on p.id = g.student_id
+    left join student_details d on d.student_id = p.id left join pickup_numbers n on n.student_id = p.id
+    where g.guardian_id = auth.uid() and p.school_role = 'student'), '[]'::jsonb);
+end $$;
+
+create or replace function public.car_carline_status(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare u uuid := app.use_car_pass(p_token);
+begin
+  return jsonb_build_object(
+    'line', app.carline_window(),
+    'children', coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'name', trim(p.first_name),
+               'number', n.number,
+               'status', coalesce(c.status, 'none'),
+               'position', case when c.status = 'waiting' then (
+                 select count(*) from carline_pickups w
+                 where w.day = app.school_today() and w.status = 'waiting' and w.arrived_at <= c.arrived_at) end)
+             order by p.first_name)
+      from guardians g join profiles p on p.id = g.student_id
+      left join pickup_numbers n on n.student_id = p.id
+      left join lateral (
+        select * from carline_pickups x
+        where x.student_id = g.student_id and x.day = app.school_today() and x.status in ('waiting', 'picked_up')
+        order by (x.status = 'waiting') desc, x.arrived_at desc limit 1) c on true
+      where g.guardian_id = u and p.school_role = 'student'), '[]'::jsonb));
+end $$;
+
+drop function public.car_carline_check_in(text);
+/** Android Auto "I'm here", with the phone's location. */
+create function public.car_carline_check_in(p_token text, p_lat float8, p_lng float8, p_accuracy float8 default null) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.use_car_pass(p_token);
+  perform public.carline_announce(null, p_lat, p_lng, p_accuracy);
+  return public.car_carline_status(p_token);
+end $$;
+
+-- ======================================================================
+-- Privileges
+-- ======================================================================
+
+revoke all on function app.next_pickup_number(), app.assign_pickup_number(), app.require_at_school(float8, float8, float8)
+  from public, anon, authenticated;
+grant execute on function app.can_run_carline(uuid), app.distance_m(float8, float8, float8, float8) to authenticated, service_role;
+revoke all on function public.set_pickup_number(uuid, text), public.carline_set_config(float8, float8, float8, text, text),
+  public.carline_open_now(boolean), public.carline_announce(uuid[], float8, float8, float8),
+  public.carline_arrived(float8, float8, float8), public.carline_board() from public, anon;
+grant execute on function public.set_pickup_number(uuid, text), public.carline_set_config(float8, float8, float8, text, text),
+  public.carline_open_now(boolean), public.carline_announce(uuid[], float8, float8, float8),
+  public.carline_arrived(float8, float8, float8), public.carline_board() to authenticated, service_role;
+revoke all on function public.car_carline_check_in(text, float8, float8, float8) from public;
+grant execute on function public.car_carline_check_in(text, float8, float8, float8) to anon, authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261017000016_carline_location_numbers.sql') on conflict do nothing;
+
+-- ===== 20261018000017_school_questions.sql =====
 -- Ask the School (Apps → Ask the School).
 --
 -- Anyone with an approved account sends the school a question; it stays in their
 -- log with the whole conversation, so they can come back for the answer and ask
 -- a follow-up. People who route questions (the new questions.manage permission,
--- part of the Office, Administrator and Director tiers) see every question, how
--- long it has waited, and assign it to a faculty or staff member, who can then
--- see and answer it. A question is visible only to whoever asked it, whoever it's
--- assigned to, and the routers. Each step notifies the people involved.
+-- given to the Director, Administrator and Office roles; directors can add it to
+-- their own roles) see every question, how long it has waited, and assign it to
+-- a faculty or staff member, who can then see and answer it. A question is
+-- visible only to whoever asked it, whoever it's assigned to, and the routers.
+-- Each step notifies the people involved.
 --
 -- Status: new (waiting, unassigned), assigned (waiting, with someone), answered
 -- (the school replied last), closed. waiting_since is when the asker's oldest
@@ -2281,17 +4023,9 @@ language sql immutable as $$
     ('audit.view',       'Activity log',          'Review the school-wide activity log.')
 $$;
 
-create or replace function app.tier_permissions(tier text) returns text[]
-language sql immutable as $$
-  select case tier
-    when 'director' then array['admins.manage', 'people.view', 'people.approve', 'people.roles', 'people.family',
-                               'groups.manage', 'calendar.school', 'push.send', 'questions.manage', 'audit.view']
-    when 'administrator' then array['people.view', 'people.approve', 'people.roles', 'people.family',
-                                    'groups.manage', 'calendar.school', 'push.send', 'questions.manage', 'audit.view']
-    when 'office' then array['people.view', 'people.approve', 'people.family', 'calendar.school', 'push.send',
-                             'questions.manage', 'audit.view']
-    else array[]::text[] end
-$$;
+-- Roles are rows in admin_roles (20261016000009): the starting roles route questions.
+update public.admin_roles set permissions = permissions || 'questions.manage'::text
+where id in ('director', 'administrator', 'office') and not ('questions.manage' = any (permissions));
 
 -- ======================================================================
 -- Tables
@@ -2460,7 +4194,7 @@ grant all on public.school_questions, public.school_question_messages to service
 
 alter publication supabase_realtime add table public.school_questions, public.school_question_messages;
 
-insert into app.applied_migrations (name) values ('20261016000010_school_questions.sql') on conflict do nothing;
+insert into app.applied_migrations (name) values ('20261018000017_school_questions.sql') on conflict do nothing;
 
 -- ===== seed =====
 -- Generated by scripts/gen_seed.py — demo data for Royals Connect + the 2026–27 school calendar.

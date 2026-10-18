@@ -1,6 +1,6 @@
 /** Sell an item: photo, title, price, quantity, condition and a description. */
 import { useState } from 'react';
-import { Alert, Image, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Platform, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { marketPost, uploadMarketPhoto, type Condition } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
 import { CONDITIONS, parseMoney } from '../../src/market/format';
-import { Button, C, Card, P, s } from '../../src/ui';
+import { Button, C, Card, Field, P, s } from '../../src/ui';
 
 const MAX_WIDTH = 1200;
 
@@ -73,10 +73,10 @@ function Form() {
         </View>
       </Card>
 
-      <TextInput style={s.input} placeholder="What are you selling? (e.g. Navy polo, size M)" value={title} onChangeText={setTitle} maxLength={80} />
+      <Field label="What are you selling?" placeholder="e.g. Navy polo, size M" value={title} onChangeText={setTitle} maxLength={80} />
       <View style={s.row}>
-        <TextInput style={[s.input, { flex: 1 }]} placeholder="Price ($)" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
-        <TextInput style={[s.input, { width: 110 }]} placeholder="Quantity" keyboardType="number-pad" value={quantity} onChangeText={setQuantity} />
+        <Field label="Price ($)" placeholder="0.00" style={{ flex: 1 }} keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
+        <Field label="Quantity" placeholder="1" style={{ width: 110 }} keyboardType="number-pad" value={quantity} onChangeText={setQuantity} />
       </View>
       <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted }}>CONDITION</Text>
       <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
@@ -88,7 +88,7 @@ function Form() {
           </Text>
         ))}
       </View>
-      <TextInput style={[s.input, { minHeight: 90, textAlignVertical: 'top' }]} multiline maxLength={1000}
+      <Field label="Details" style={{ minHeight: 90, textAlignVertical: 'top' }} multiline maxLength={1000}
         placeholder="Details: size, color, wear, what's included…" value={description} onChangeText={setDescription} />
       <P muted>Quantity describes the bundle. One buyer gets the whole post.</P>
       <Button label={busy ? 'Posting…' : 'Post item'} disabled={busy} onPress={post} />

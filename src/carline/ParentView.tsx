@@ -1,36 +1,59 @@
-/** Parent side of the car line: pick the children you're collecting and tell the staff on duty you're here. */
+/**
+ * Parent side of the car line: each child's pickup number, then "I'm here"
+ * once you're at school. The app sends your location and the school checks
+ * you're within the pickup radius.
+ */
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { carlineCancel, carlineCheckIn, type Person, type Pickup } from '../api/connect';
+import { carlineAnnounce, carlineCancel, type CarlineConfig, type Person, type Pickup } from '../api/connect';
 import { C, Card, H, P, s } from '../ui';
 import { AutoCheckInCard } from './AutoCheckInCard';
-import { clock, gradeLabel } from './format';
+import { clock, gradeLabel, hoursLabel } from './format';
+import { LocationError, currentSpot, distanceLabel } from './location';
 
-export function ParentView({ kids, pickups, onChange }: { kids: Person[]; pickups: Pickup[]; onChange: () => void }) {
+export function ParentView({ kids, pickups, numbers, config, onChange }: {
+  kids: Person[]; pickups: Pickup[]; numbers: Record<string, string>; config: CarlineConfig | null; onChange: () => void;
+}) {
   const [skip, setSkip] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
 
   // Each child's latest check-in today (cancelled ones don't count).
   const status = (id: string) => [...pickups].reverse().find((p) => p.studentId === id && p.status !== 'cancelled');
   const ready = kids.filter((k) => !status(k.id));
   const chosen = ready.filter((k) => !skip.has(k.id));
   const waiting = kids.filter((k) => status(k.id)?.status === 'waiting');
+  const closed = config?.line.state === 'closed';
 
   const toggle = (id: string) => setSkip((cur) => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const run = (fn: () => Promise<void>) => { setBusy(true); fn().then(onChange).catch((e) => Alert.alert('Car line', e.message)).finally(() => setBusy(false)); };
+  const announce = async () => {
+    setBusy(true); setProblem(null);
+    try {
+      const at = await currentSpot();
+      await carlineAnnounce(chosen.map((k) => k.id), at);
+      onChange();
+    } catch (e: any) {
+      setProblem(e.message);
+      if (e instanceof LocationError && Platform.OS !== 'web') {
+        Alert.alert('Location needed', e.message, [{ text: 'Not now', style: 'cancel' }, { text: 'Open settings', onPress: () => Linking.openSettings() }]);
+      }
+    } finally { setBusy(false); }
+  };
 
   if (kids.length === 0) return (
-    <Card><H>No children linked yet</H><P muted>The school office links parents to their students. Once yours are linked, they'll show up here.</P></Card>
+    <Card><H>No children linked yet</H><P muted>Add your children under My profile → My children, or ask the school office to link them.</P></Card>
   );
 
   return (
     <View style={{ gap: 12 }}>
       <Card>
-        <H>{waiting.length ? "You're in the car line" : 'Picking up?'}</H>
+        <H>{waiting.length ? "You're in the car line" : closed ? 'The car line is closed' : 'Picking up?'}</H>
         <P muted>{waiting.length
-          ? 'The staff on duty can see you. Pull forward when you\'re waved up.'
-          : 'When you join the car line, choose who you\'re picking up and tap the button. The staff on duty see it right away.'}</P>
+          ? 'Staff can see you and your pickup numbers. Pull forward when you\'re waved up.'
+          : closed
+            ? `It's open on school days${config ? `, ${hoursLabel(config.start, config.end)}` : ''}.`
+            : `When you get to school${config ? ` (within ${distanceLabel(config.radius)} of the pickup spot)` : ''}, choose who you're picking up and tap I'm here. Staff see it right away.`}</P>
       </Card>
 
       {kids.map((k) => {
@@ -49,24 +72,32 @@ export function ParentView({ kids, pickups, onChange }: { kids: Person[]; pickup
                   p?.status === 'waiting' && `In line since ${clock(p.arrivedAt)}${p.via === 'arrival' ? ' (automatic)' : ''}`,
                   p?.status === 'picked_up' && p.pickedUpAt && `Picked up at ${clock(p.pickedUpAt)}`].filter(Boolean).join(' · ')}
               </P>
+              {p?.status === 'waiting' && (
+                <Text style={{ color: C.danger, fontWeight: '600' }} onPress={() => carlineCancel(p.id).then(onChange).catch((e) => Alert.alert('Car line', e.message))}>
+                  Cancel
+                </Text>
+              )}
             </View>
-            {p?.status === 'waiting' && (
-              <Text style={{ color: C.danger, fontWeight: '600' }} onPress={() => run(() => carlineCancel(p.id))}>Cancel</Text>
-            )}
+            <View style={{ alignItems: 'center', minWidth: 64, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 10, backgroundColor: C.primary }}
+              accessibilityLabel={`Pickup number ${numbers[k.id] ?? 'not set'}`}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>PICKUP #</Text>
+              <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>{numbers[k.id] ?? '—'}</Text>
+            </View>
           </Card>
         );
       })}
 
-      {ready.length > 0 && (
-        <Pressable disabled={busy || chosen.length === 0} onPress={() => run(() => carlineCheckIn(chosen.map((k) => k.id)))}
-          accessibilityRole="button"
+      {ready.length > 0 && !closed && (
+        <Pressable disabled={busy || chosen.length === 0} onPress={announce} accessibilityRole="button"
           style={({ pressed }) => [s.btn, { paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10 },
             (busy || chosen.length === 0) && { opacity: 0.4 }, pressed && { opacity: 0.8 }]}>
           <Ionicons name="car" size={22} color="#fff" />
-          <Text style={[s.btnT, { fontSize: 18 }]}>I'm in the car line</Text>
+          <Text style={[s.btnT, { fontSize: 18 }]}>{busy ? 'Checking your location…' : "I'm here"}</Text>
         </Pressable>
       )}
+      {problem && <Text style={{ color: C.danger, fontWeight: '600' }}>{problem}</Text>}
       {ready.length > 0 && chosen.length === 0 && <P muted>Choose at least one child.</P>}
+      <P muted>Show your pickup number in your windshield. Uses your location only when you tap I'm here.</P>
       <AutoCheckInCard />
     </View>
   );

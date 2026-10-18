@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.khroyals'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.carline"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Android Auto templates (car app library)
+  implementation 'androidx.car.app:app:1.4.0'
+}

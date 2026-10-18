@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { addLocal, cancelLocalEntry, notificationHref, shownLocal, type LocalNotice } from '../src/comms/inbox';
+import { addLocal, cancelLocalEntry, notificationHref, removeLocal, shownLocal, type LocalNotice } from '../src/comms/inbox';
 
 const NOW = Date.parse('2026-10-16T19:00:00Z');
 const min = (m: number) => new Date(NOW + m * 60_000).toISOString();
@@ -26,6 +26,11 @@ test('rescheduling or cancelling a reminder only touches the one that hasn\'t sh
   assert.deepEqual(list.map((n) => n.title), ['today again', 'yesterday']);
   list = cancelLocalEntry(list, 'carline-opens', NOW);
   assert.deepEqual(list.map((n) => n.title), ['yesterday'], 'yesterday\'s reminder showed, so it stays');
+});
+
+test('deleting one from the page removes just that showing', () => {
+  const list = [note('carline-opens', min(-60), 'today'), note('carline-opens', min(-24 * 60), 'yesterday')];
+  assert.deepEqual(removeLocal(list, list[1].key).map((n) => n.title), ['today']);
 });
 
 test('the page keeps the last 50, for 30 days', () => {
