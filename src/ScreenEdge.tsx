@@ -9,7 +9,7 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from './ui';
 
-const WIDTH = 2;
+const WIDTH = 4;
 
 /** About the phone screen's own corner radius, so the line follows the glass instead of being cut off at the corners. */
 function useCornerRadius() {
