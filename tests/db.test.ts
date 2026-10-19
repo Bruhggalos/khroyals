@@ -1268,3 +1268,59 @@ test('family accounts: pick up linked children, volunteer and follow activities;
   await as('u-gran');
   assert.deepEqual((await one(`select my_children() as k`)).k, []);
 });
+
+test('car line vehicles: your own, the last one used is the default, and staff see it on the board', async () => {
+  const rosa = id('u-p01');
+  await as('u-s01');
+  await rejects(`select * from vehicle_save(null, 'Honda', 'suv', 'silver')`, /adults who pick children up/);
+  await as('u-p01');
+  await rejects(`select * from vehicle_save(null, '  ', 'suv', 'silver')`, /make/);
+  await rejects(`select * from vehicle_save(null, 'Honda', 'spaceship', 'silver')`, /vehicle type/);
+  await rejects(`select * from vehicle_save(null, 'Honda', 'suv', 'plaid')`, /vehicle color/);
+  const suv = await one(`select * from vehicle_save(null, ' Honda ', 'suv', 'silver')`);
+  const truck = await one(`select * from vehicle_save(null, 'Ford', 'truck', 'red')`);
+  assert.equal(suv.make, 'Honda');
+  assert.equal((await rows(`select * from vehicles`)).length, 2);
+
+  // Only you see and change your vehicles, or arrive in them.
+  await as('u-p02');
+  assert.equal((await rows(`select * from vehicles`)).length, 0);
+  await rejects(`select vehicle_delete('${suv.id}')`, /isn't one of yours/);
+  await rejects(`select * from vehicle_save('${suv.id}', 'Kia', 'van', 'blue')`, /isn't one of yours/);
+  await rejects(`select * from carline_announce(null, ${AT}, null, '${suv.id}')`, /isn't one of yours/);
+
+  // Rosa arrives in the truck: staff see it next to Ava's number, and it becomes her default.
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on';
+                 update carline_pickups set status = 'cancelled' where day = app.school_today() and status = 'waiting';`);
+  await as('u-p01');
+  const [first] = await rows(`select * from carline_announce(null, ${AT}, null, '${truck.id}')`);
+  assert.equal(first.vehicle.label, 'Red Ford Truck');
+  await as('u-sci');
+  const onBoard = (await one(`select carline_board() as b`)).b.find((b: any) => b.id === first.id);
+  assert.deepEqual([onBoard.vehicle, onBoard.vehicleColor, onBoard.vehicleKind], ['Red Ford Truck', 'red', 'truck']);
+  await as('u-p01');
+  const [again] = await rows(`select * from carline_announce(null, ${AT})`);
+  assert.deepEqual([again.id, again.vehicle.label], [first.id, 'Red Ford Truck'], 'no choice: the last one used');
+  const [switched] = await rows(`select * from carline_announce(null, ${AT}, null, '${suv.id}')`);
+  assert.deepEqual([switched.id, switched.vehicle.label], [first.id, 'Silver Honda SUV'], 'same place in line, new vehicle');
+
+  // Choosing a default in My profile; the car screen then arrives in it.
+  await one(`select vehicle_use('${truck.id}')`);
+  await one(`select carline_cancel('${first.id}')`);
+  const pass = (await one(`select create_car_pass() as t`)).t as string;
+  await asSuper();
+  assert.equal((await one(`select (app.pickup_vehicle(null, ${rosa})).make as m`)).m, 'Ford');
+  await db.exec(`set role anon`);
+  await one(`select car_carline_check_in('${pass}', ${AT}) as s`);
+  await asSuper();
+  const waiting = `select vehicle->>'label' as l from carline_pickups where guardian_id = ${rosa} and day = app.school_today() and status = 'waiting'`;
+  assert.equal((await one(waiting)).l, 'Red Ford Truck');
+
+  // Deleting a vehicle doesn't change what the line recorded.
+  await as('u-p01');
+  await one(`select vehicle_delete('${truck.id}')`);
+  assert.deepEqual((await rows(`select make from vehicles`)).map((v) => v.make), ['Honda']);
+  await asSuper();
+  assert.equal((await one(waiting)).l, 'Red Ford Truck');
+});

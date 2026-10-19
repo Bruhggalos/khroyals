@@ -13,6 +13,7 @@ import {
 } from '../src/api/connect';
 import { forgetCarPass } from '../src/carline/carPass';
 import { disableAutoCheckIn } from '../src/carline/autoCheckIn';
+import { MyVehicles } from '../src/carline/MyVehicles';
 import { disablePush, enablePush } from '../src/comms/push';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
 
@@ -164,6 +165,9 @@ export default function Profile() {
           </View>
         </Card>
       )}
+
+      {/* Whoever picks children up: parents, Family accounts and staff. */}
+      {!person.pending && (adult || family) && <MyVehicles />}
 
       <Card>
         <H>Name</H>

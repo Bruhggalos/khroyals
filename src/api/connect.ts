@@ -14,6 +14,7 @@ import * as mock from './mockApi';
 import { supabase } from './supabase';
 import type { Decision } from '../comms/permissions';
 import type { Comment, Group, GroupRole, GroupSettings, Post, SchoolRole, User } from '../comms/types';
+import type { VehicleColor, VehicleKind } from '../carline/vehicles';
 import type { Category, EventKind } from '../sports/categories';
 import { sampleSports } from '../sports/sample';
 
@@ -252,10 +253,13 @@ export type Pickup = {
   arrivedAt: string; pickedUpAt: string | null; pickedUpBy: string | null;
   /** 'arrival' = checked in automatically when the parent's phone reached the car line. */
   via: 'app' | 'arrival';
+  /** The vehicle that's coming, as it was when announced. */
+  vehicle: PickupVehicle | null;
 };
+export type PickupVehicle = { id: string; make: string; kind: string; color: string; label: string };
 const toPickup = (r: any): Pickup => ({
   id: r.id, studentId: r.student_id, guardianId: r.guardian_id, status: r.status,
-  arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by, via: r.via ?? 'app',
+  arrivedAt: r.arrived_at, pickedUpAt: r.picked_up_at, pickedUpBy: r.picked_up_by, via: r.via ?? 'app', vehicle: r.vehicle ?? null,
 });
 export type CarlineConfig = {
   latitude: number; longitude: number; radius: number; start: string; end: string;
@@ -268,6 +272,8 @@ export type Spot = { lat: number; lng: number; accuracy: number | null };
 export type BoardRow = {
   id: string; studentId: string; status: 'waiting' | 'picked_up'; via: 'app' | 'arrival'; arrivedAt: string; pickedUpAt: string | null;
   distanceM: number | null; number: string | null; name: string; grade: number | null; parent: string; pickedUpBy: string;
+  /** "Silver Honda SUV", when the driver saved their vehicle. */
+  vehicle: string | null; vehicleColor: string | null; vehicleKind: string | null;
 };
 export type Arrival =
   | { state: 'open'; checkedIn: string[]; names: string[] }
@@ -290,10 +296,27 @@ export async function carlineToday(): Promise<Pickup[]> {
   if (!live || !current) return [];
   return (await run(sb().rpc('carline_today'))).map(toPickup);
 }
-/** "I'm here": announce these children, from where the parent is (the server checks the radius). */
-export async function carlineAnnounce(studentIds: string[], at: Spot) {
-  await run(sb().rpc('carline_announce', { p_students: studentIds, p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy }));
+/** "I'm here": announce these children, from where the parent is (the server checks the radius), in this vehicle (else their default). */
+export async function carlineAnnounce(studentIds: string[], at: Spot, vehicleId?: string | null) {
+  await run(sb().rpc('carline_announce', {
+    p_students: studentIds, p_lat: at.lat, p_lng: at.lng, p_accuracy: at.accuracy, p_vehicle: vehicleId ?? null,
+  }));
 }
+
+/** A vehicle someone drives to pickup. The first in myVehicles() is their default (the last one used). */
+export type Vehicle = { id: string; make: string; kind: VehicleKind; color: VehicleColor; lastUsedAt: string | null };
+const toVehicle = (r: any): Vehicle => ({ id: r.id, make: r.make, kind: r.kind, color: r.color, lastUsedAt: r.last_used_at });
+export async function myVehicles(): Promise<Vehicle[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('vehicles').select('*').eq('owner_id', current.id)
+    .order('last_used_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }))).map(toVehicle);
+}
+export async function saveVehicle(v: { id?: string | null; make: string; kind: VehicleKind; color: VehicleColor }): Promise<Vehicle> {
+  return toVehicle(await rpc('vehicle_save', { p_id: v.id ?? null, p_make: v.make, p_kind: v.kind, p_color: v.color }));
+}
+export async function deleteVehicle(id: string) { await rpc('vehicle_delete', { p_id: id }); }
+/** Make this the default for the next pickup. */
+export async function chooseVehicle(id: string) { await rpc('vehicle_use', { p_id: id }); }
 export async function carlineCancel(pickupId: string) { await run(sb().rpc('carline_cancel', { p_pickup: pickupId })); }
 export async function carlineConfirm(pickupId: string) { await run(sb().rpc('carline_confirm', { p_pickup: pickupId })); }
 export async function carlineReopen(pickupId: string) { await run(sb().rpc('carline_reopen', { p_pickup: pickupId })); }

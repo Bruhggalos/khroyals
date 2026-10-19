@@ -6,6 +6,7 @@ import { carlineConfirm, carlineReopen, type BoardRow } from '../api/connect';
 import { C, Card, P, s } from '../ui';
 import { clock, gradeLabel, minutesSince } from './format';
 import { distanceLabel } from './location';
+import { VehicleIcon } from './VehicleIcon';
 
 const GREEN = '#15803D';
 
@@ -43,7 +44,13 @@ export function DutyView({ board, onChange }: { board: BoardRow[]; onChange: () 
               </View>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontSize: 20, fontWeight: '800', color: C.ink }}>{p.name}</Text>
-                <P muted>{[gradeLabel(p.grade), p.parent && `Parent: ${p.parent}`].filter(Boolean).join(' · ')}</P>
+                {!!p.vehicle && (
+                  <View style={[s.row, { gap: 8 }]} accessibilityLabel={`Arriving in a ${p.vehicle}`}>
+                    <VehicleIcon kind={p.vehicleKind} color={p.vehicleColor} size={24} />
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: C.ink, flexShrink: 1 }}>{p.vehicle}</Text>
+                  </View>
+                )}
+                <P muted>{[gradeLabel(p.grade), p.parent && `Driver: ${p.parent}`].filter(Boolean).join(' · ')}</P>
                 <P muted>
                   {clock(p.arrivedAt)}{p.via === 'arrival' ? ' (automatic)' : ''} · {mins < 1 ? 'just now' : `${mins} min`}
                   {p.distanceM != null ? ` · ${distanceLabel(p.distanceM)} away` : ''}

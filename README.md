@@ -184,8 +184,10 @@ editable by the office/car line leads; siblings may share). Parents tap **I'm he
 (or Android Auto, or automatic check-in) and the app sends their location; the server
 only accepts it within the radius of the pickup spot during pickup hours (or when staff
 opened the line today). Only a child's linked parents, or a Family account linked to
-them, can announce them. All staff see
-the live board (number, name, grade, parent, distance) and mark pickups. Car line leads
+them, can announce them. Drivers save the vehicles they use in My profile → **My
+vehicles** (make, type, color; `vehicles`) and pick one above I'm here; the last one used
+is the default, which automatic check-in and the car screen use too. All staff see
+the live board (number, name, grade, vehicle, driver, distance) and mark pickups. Car line leads
 and the office set the spot ("Use my location"), radius (feet) and hours in **Car line
 settings**.
 

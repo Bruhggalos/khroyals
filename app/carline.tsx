@@ -9,8 +9,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  carlineBoard, carlineConfig, carlineToday, isFamily, live, myChildren, pickupNumbers, session, subscribeCarline,
-  type BoardRow, type CarlineConfig, type Person, type Pickup,
+  carlineBoard, carlineConfig, carlineToday, isFamily, live, myChildren, myVehicles, pickupNumbers, session, subscribeCarline,
+  type BoardRow, type CarlineConfig, type Person, type Pickup, type Vehicle,
 } from '../src/api/connect';
 import { DutyView } from '../src/carline/DutyView';
 import { ParentView } from '../src/carline/ParentView';
@@ -22,6 +22,7 @@ const isStaff = (p: Person | null) => !!p && ['admin', 'teacher', 'staff'].inclu
 export default function CarLine() {
   const [person, setPerson] = useState<Person | null | undefined>(undefined);
   const [kids, setKids] = useState<Person[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [board, setBoard] = useState<BoardRow[]>([]);
   const [numbers, setNumbers] = useState<Record<string, string>>({});
@@ -40,10 +41,10 @@ export default function CarLine() {
     try {
       const p = await session();
       const ok = !!p && !p.pending;
-      const [k, today, b, n, c] = ok
-        ? await Promise.all([myChildren(), carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([]), pickupNumbers(), carlineConfig()])
-        : [[], [], [], {}, null];
-      setPerson(p); setKids(k); setPickups(today); setBoard(b); setNumbers(n); setConfig(c); setError(null);
+      const [k, today, b, n, c, v] = ok
+        ? await Promise.all([myChildren(), carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([]), pickupNumbers(), carlineConfig(), myVehicles().catch(() => [])])
+        : [[], [], [], {}, null, []];
+      setPerson(p); setKids(k); setVehicles(v); setPickups(today); setBoard(b); setNumbers(n); setConfig(c); setError(null);
     } catch (e: any) {
       setError(e.message ?? String(e));
     }
@@ -106,7 +107,7 @@ export default function CarLine() {
       )}
       {shown === 'staff' && staff
         ? <DutyView board={board} onChange={refresh} />
-        : <ParentView kids={kids} family={isFamily(person)} numbers={numbers} config={config} onChange={refresh}
+        : <ParentView kids={kids} family={isFamily(person)} vehicles={vehicles} numbers={numbers} config={config} onChange={refresh}
             pickups={pickups.filter((p) => kids.some((k) => k.id === p.studentId))} />}
     </ScrollView>
   );
