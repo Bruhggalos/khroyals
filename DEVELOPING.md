@@ -7,6 +7,7 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
 |---|---|
 | Web app (site + Royals Connect + admin portal) | https://bruhggalos.github.io/khroyals/ |
 | Android APK | GitHub → **Actions → Android APK** → latest run on `main` → **Artifacts → khroyals-android-apk** |
+| iPhone (TestFlight) | App Store Connect → **KH Royals → TestFlight**; uploads come from a Mac with `scripts/testflight.sh` (§9) |
 | Backend | Supabase project `twmeenkvoedoryhterpf` (dashboard: supabase.com/dashboard) |
 | Branch | Everything goes to `main`; every push builds the APK and redeploys the web app |
 
@@ -278,6 +279,38 @@ nothing that needs reading at length; Apple's *CarPlay Developer Guide* lists th
 current limits. This app uses one list plus alerts. Check the guide before adding
 screens to `src/carplay/screen.ts`.
 
-## 9. Not set up yet
+## 9. TestFlight (iPhone testers)
+
+The app is `com.khroyals.app` in App Store Connect, on the Apple team **Never Ending
+Technology, Inc.** (`NH4U6X4G8C`). iPhone builds are uploaded from a Mac (CI only
+builds Android):
+
+```bash
+APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh
+```
+
+- Xcode must be signed in (**Settings → Accounts**) to an account on that team with
+  the Admin or App Manager role; it makes the distribution certificate and profile.
+- The script runs a clean prebuild with the real app ID, archives, and uploads. Each
+  upload gets a new build number from the date and time (`2026.1019.1432`); set
+  `IOS_BUILD_NUMBER` to choose one. Bump `version` in `app.json` for a new release.
+- It replaces your test-phone setup in `ios/`; prebuild again with
+  `IOS_BUNDLE_ID=com.khroyals.app.dev` (§3) before the next test-phone build.
+- `app.json` declares that the app only uses standard encryption (HTTPS), so
+  builds skip the export compliance question.
+- Apple takes 10–30 minutes to process a build. Then, in **TestFlight**:
+  - **Internal testing:** add people who are users on the App Store Connect team
+    (up to 100). No review; they get each build right away.
+  - **External testing:** a group with email invites or a public link (up to
+    10,000). The first build of each version goes through Beta App Review
+    (about a day), which needs "What to Test" notes and a way for the reviewer to
+    sign in. Sign-in is by emailed code, so either point them at the signed-out
+    screens or give them a review account with no admin powers.
+  - Testers install the **TestFlight** app and accept the invite. Builds expire
+    after 90 days.
+- Push notifications reach TestFlight installs only after the Expo push setup in §7.
+  CarPlay stays off until Apple grants the entitlement (§8).
+
+## 10. Not set up yet
 
 Open work, and who owns each item, is tracked in [ROADMAP.md](ROADMAP.md).

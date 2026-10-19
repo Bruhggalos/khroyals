@@ -1,10 +1,12 @@
-// app.json holds the app's settings; this adjusts two things at build time.
+// app.json holds the app's settings; this adjusts three things at build time.
 //
 // 1. Developers can sign iPhone builds with their own Apple team under a
 //    separate app ID, so the real ID (com.khroyals.app) stays free for whoever
 //    publishes the app:
 //      APPLE_TEAM_ID=XXXXXXXXXX IOS_BUNDLE_ID=com.khroyals.app.dev npx expo prebuild --platform ios --clean
 //    With neither variable set (CI, the web build, everyone else) nothing changes.
+//    IOS_BUILD_NUMBER sets the iPhone build number; every TestFlight upload needs
+//    a new one (scripts/testflight.sh uses the date and time).
 //
 // 2. The web app is served from /khroyals (experiments.baseUrl), but iPhone
 //    release builds must not use that prefix: Xcode's bundling step
@@ -30,6 +32,7 @@ module.exports = ({ config }) => {
       ...config.ios,
       ...(process.env.IOS_BUNDLE_ID ? { bundleIdentifier: process.env.IOS_BUNDLE_ID } : {}),
       ...(process.env.APPLE_TEAM_ID ? { appleTeamId: process.env.APPLE_TEAM_ID } : {}),
+      ...(process.env.IOS_BUILD_NUMBER ? { buildNumber: process.env.IOS_BUILD_NUMBER } : {}),
     },
   };
 };
