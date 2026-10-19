@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { live, onAuthChange, session } from '../src/api/connect';
 import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
+import { edgeLayout } from '../src/ScreenEdge';
 import { C } from '../src/ui';
 
 // A screen opened straight from a link (khroyals://calendar, a web address, a notification
@@ -29,7 +30,9 @@ export default function Root() {
       headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' },
       // Back arrow only; otherwise iOS labels it with the tab group's route name, "(tabs)".
       headerBackButtonDisplayMode: 'minimal',
-    }}>
+    }}
+      // The red edge line under the header; the tabs draw their own, and the video player is black.
+      screenLayout={edgeLayout({ bottom: true, skip: ['(tabs)', 'video'] })}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'My profile' }} />
     </Stack>

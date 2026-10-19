@@ -96,6 +96,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - **Every screen has a way back.** `app/_layout.tsx` sets `unstable_settings.initialRouteName
   = '(tabs)'`, so a screen opened straight from a link (khroyals://…, a web address, a
   notification that starts the app) still has the tabs underneath and a back button. Keep it.
+- **Light screens have a thin red edge line** (`src/ScreenEdge.tsx`): under the blue
+  header, down the sides and along the bottom of the phone. Both navigators add it with
+  `screenLayout={edgeLayout(…)}` and the tab bar draws its part (`tabBarBackground`), so
+  new screens get it for free. A screen with a dark background goes in the root
+  layout's `skip` list (like `video`).
 - The web build is served under `/khroyals` (`expo.experiments.baseUrl`); use
   expo-router links, not hard-coded absolute paths.
 - **CarPlay** (`modules/carplay`, `src/carplay`, `plugins/withCarPlay.js`): iPhone

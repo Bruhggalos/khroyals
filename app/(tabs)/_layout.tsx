@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { bottomArc } from '../../src/arcText';
+import { edgeLayout, TabBarEdge } from '../../src/ScreenEdge';
 import { C } from '../../src/ui';
 
 const BUTTON = 66;          // the shield button's diameter
@@ -66,7 +67,10 @@ export default function TabsLayout() {
       headerTitleAlign: 'left',
       headerRight: () => <View style={{ flexDirection: 'row' }}><ProfileButton /><NotificationsButton /></View>,
       tabBarActiveTintColor: C.primary,
-    }}>
+      tabBarBackground: TabBarEdge,
+    }}
+      // The red edge line runs down the sides of each tab and on around the tab bar.
+      screenLayout={edgeLayout({ bottom: false })}>
       <Tabs.Screen name="index" options={{ title: 'Info', headerTitle: 'Kingdom Heights', tabBarIcon: icon('🏫') }} />
       <Tabs.Screen name="share" options={{ title: 'Share', tabBarIcon: icon('📲') }} />
       <Tabs.Screen name="apps" options={{ title: 'Apps', headerTitle: 'Boldly Christian', tabBarButton: (props) => <AppsTabButton {...props} /> }} />
