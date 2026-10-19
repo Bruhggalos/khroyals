@@ -165,6 +165,9 @@ export default function Children() {
   const header = <Stack.Screen options={{ title: 'My children' }} />;
   if (!live) return <View style={[s.screen, s.pad]}>{header}<P muted>Needs the school's Royals Connect account.</P></View>;
   if (person === undefined || !kids) return <>{header}<Loading /></>;
+  if (person?.schoolRole === 'family') {
+    return <View style={[s.screen, s.pad]}>{header}<Card><P>Family accounts don't manage children. The school office links the children you pick up; ask them to add or remove one.</P></Card></View>;
+  }
   if (!person || person.pending || person.schoolRole === 'student') {
     return <View style={[s.screen, s.pad]}>{header}<Card><P>Log in with an approved parent or staff account to manage your children.</P></Card></View>;
   }

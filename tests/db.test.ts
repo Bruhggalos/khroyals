@@ -1196,3 +1196,75 @@ test('activities: sports, theater, music, art and clubs, each with its own kinds
   await db.exec(`set role anon`);
   assert.ok((await rows(`select category from sports where category = 'theater'`)).length >= 1, 'anyone sees categories');
 });
+
+test('family accounts: pick up linked children, volunteer and follow activities; no groups, child details, Marketplace or questions', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [gran, ava] = [await uid('u-gran'), await uid('u-s01')];
+  await asSuper();
+  await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ('${gran}', 'gran@demo.khroyals.test', $1)`,
+    [{ first_name: 'June', last_name: 'Reyes' }]);
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on'`);
+
+  // The office approves her as Family and links her to Ava. It's a pickup link, not a parent link.
+  await as('u-admin', true);
+  await one(`select admin_update_profile('${gran}', 'family')`);
+  await one(`select admin_link_guardian('${gran}', '${ava}')`);
+  assert.equal((await rows(`select id from admin_list_people(null, 'family')`)).map((p) => p.id).join(), gran);
+  const listed = (await one(`select parents from admin_list_students('June')`)).parents;
+  assert.ok(listed.some((a: any) => a.id === gran && a.family === true), 'the Students tab shows her as family');
+  await rejects(`select admin_set_access('${gran}', null, array['push.send'])`, /Family accounts/);
+  await rejects(`select admin_set_volunteer_lead('${gran}', true)`, /parents or staff/);
+  await asSuper();
+  assert.equal(await one(`select 1 from guardians where guardian_id = '${gran}'`), undefined);
+
+  // Car line: only Ava, from the pickup spot, with her pickup number but none of her private details.
+  await as('u-gran');
+  const kids = (await one(`select my_children() as k`)).k;
+  assert.deepEqual(kids.map((k: any) => k.id), [ava]);
+  assert.ok(kids[0].pickupNumber, 'her pickup number');
+  assert.equal(kids[0].allergies, undefined, 'no allergies or medical notes');
+  assert.equal((await rows(`select * from pickup_numbers`)).length, 1);
+  await rejects(`select * from carline_announce(array[${id('u-s02')}], ${AT})`, /own children/);
+  const [pickup] = await rows(`select * from carline_announce(null, ${AT})`);
+  assert.equal(pickup.student_id, ava);
+  assert.ok((await rows(`select * from carline_today()`)).every((r) => r.student_id === ava), 'she sees only Ava in the line');
+  await one(`select carline_cancel('${pickup.id}')`);
+  assert.ok(((await one(`select create_car_pass() as t`)).t as string).length >= 64, 'the car screen works for her too');
+
+  // No Royals Connect, student details, Marketplace, family requests or Ask the School.
+  assert.equal((await rows(`select id from groups`)).length, 0);
+  assert.equal((await can('u-gran', 'g-announce', 'viewContent')).allowed, false);
+  await as('u-gran');
+  await rejects(`select join_group(${id('g-announce')})`, /Family accounts/);
+  assert.equal((await rows(`select * from student_details`)).length, 0);
+  assert.equal((await rows(`select * from market_listings`)).length, 0);
+  await rejects(`select * from request_child('New', 'Kid', 3)`, /Only approved parents and staff/);
+  await rejects(`select * from ask_school('Other', 'Bus times', 'When does the bus leave?')`, /Family accounts/);
+  await asSuper();
+  await rejects(`insert into memberships (group_id, user_id, role, source) values (${id('g-announce')}, '${gran}', 'member', 'self')`, /Family accounts/);
+  assert.equal(await one(`select 1 from app.rule_targets(${id('g-announce')}) where user_id = '${gran}'`), undefined);
+
+  // Activities: she can follow, but only parents sign children up.
+  const vb = await one(`select id from sports where name = 'Volleyball'`);
+  const season = await one(`select id from sport_seasons where sport_id = '${vb.id}' limit 1`);
+  await as('u-gran');
+  await one(`select sport_follow('${vb.id}', true)`);
+  assert.equal((await rows(`select * from my_sports()`)).some((s: any) => s.sport_id === vb.id || s.sportId === vb.id), true);
+  await rejects(`select * from sport_register('${season.id}', '${ava}')`, /own children/);
+
+  // Volunteer: she says yes and joins that opportunity's chat.
+  await as('u-p05');
+  const opp = await one(`select * from volunteer_post('Field day helpers', 'Run a station.', app.school_today() + 7, null, '09:00', '11:00', 'Field', 5)`);
+  await as('u-gran');
+  await one(`select volunteer_say_yes('${opp.id}')`);
+  await one(`select * from volunteer_send('${opp.id}', 'Happy to run the ring toss.')`);
+  assert.equal((await rows(`select body from volunteer_messages where opportunity_id = '${opp.id}'`)).length, 1);
+
+  // Changing her role takes the pickup links away; approving her as a parent doesn't make her Ava's parent.
+  await as('u-admin', true);
+  await one(`select admin_update_profile('${gran}', 'parent')`);
+  await asSuper();
+  assert.equal(await one(`select 1 from family_pickups where family_id = '${gran}'`), undefined);
+  await as('u-gran');
+  assert.deepEqual((await one(`select my_children() as k`)).k, []);
+});

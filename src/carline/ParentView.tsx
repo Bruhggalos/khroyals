@@ -12,8 +12,9 @@ import { AutoCheckInCard } from './AutoCheckInCard';
 import { clock, gradeLabel, hoursLabel } from './format';
 import { LocationError, currentSpot, distanceLabel } from './location';
 
-export function ParentView({ kids, pickups, numbers, config, onChange }: {
-  kids: Person[]; pickups: Pickup[]; numbers: Record<string, string>; config: CarlineConfig | null; onChange: () => void;
+export function ParentView({ kids, family, pickups, numbers, config, onChange }: {
+  /** `family`: a Family account, whose children only the school office links. */
+  kids: Person[]; family?: boolean; pickups: Pickup[]; numbers: Record<string, string>; config: CarlineConfig | null; onChange: () => void;
 }) {
   const [skip, setSkip] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -42,7 +43,9 @@ export function ParentView({ kids, pickups, numbers, config, onChange }: {
   };
 
   if (kids.length === 0) return (
-    <Card><H>No children linked yet</H><P muted>Add your children under My profile → My children, or ask the school office to link them.</P></Card>
+    <Card><H>No children linked yet</H><P muted>{family
+      ? 'Ask the school office to link the children you pick up.'
+      : 'Add your children under My profile → My children, or ask the school office to link them.'}</P></Card>
   );
 
   return (

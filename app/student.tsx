@@ -7,7 +7,7 @@ import { useCallback, useState } from 'react';
 import { Linking, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { live, myChildren, session, type Person } from '../src/api/connect';
+import { isFamily, live, myChildren, session, type Person } from '../src/api/connect';
 import { gradeLabel } from '../src/carline/format';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
 
@@ -21,13 +21,23 @@ export default function Student() {
   const load = useCallback(async () => {
     if (!live) return;
     const p = await session().catch(() => null);
-    setKids(p && !p.pending ? await myChildren().catch(() => []) : []);
+    setKids(p && !p.pending && !isFamily(p) ? await myChildren().catch(() => []) : []);
     setPerson(p);
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const header = <Stack.Screen options={{ title: 'Student' }} />;
   if (person === undefined) return <>{header}<Loading /></>;
+  if (isFamily(person)) return (
+    <View style={[s.screen, s.pad]}>
+      {header}
+      <Card>
+        <H>Not part of Family accounts</H>
+        <P muted>The Student app is for parents and students. You can pick up the children the school linked to you in the Car Line.</P>
+        <Button label="Open the Car Line" onPress={() => router.replace('/carline')} />
+      </Card>
+    </View>
+  );
   const students = person?.schoolRole === 'student' ? [person] : kids;
 
   return (

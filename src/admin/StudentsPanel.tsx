@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
 import {
-  adminCreateStudent, adminDecideFamilyRequest, adminDeleteStudent, adminFamilyRequests, adminLinkGuardian, adminListPeople,
+  ROLE_LABELS, adminCreateStudent, adminDecideFamilyRequest, adminDeleteStudent, adminFamilyRequests, adminLinkGuardian, adminListPeople,
   adminListStudents, adminUpdateStudent, pickupNumbers, setPickupNumber, type AdminFamilyRequest, type AdminPerson, type AdminStudent,
 } from '../api/connect';
 import { GradePicker } from '../comms/GradePicker';
@@ -20,6 +20,13 @@ const confirm = (title: string, msg: string, onYes: () => void) => {
   Alert.alert(title, msg, [{ text: 'Cancel', style: 'cancel' }, { text: 'Yes', style: 'destructive', onPress: onYes }]);
 };
 const name = (p: { firstName: string; lastName: string }) => `${p.firstName} ${p.lastName}`.trim();
+/** "Parents: Rosa Reyes · Family: June Reyes" */
+const adults = (x: AdminStudent) => {
+  const parents = x.parents.filter((p) => !p.family).map((p) => p.name);
+  const family = x.parents.filter((p) => p.family).map((p) => p.name);
+  const parts = [parents.length && `Parents: ${parents.join(', ')}`, family.length && `Family: ${family.join(', ')}`].filter(Boolean);
+  return parts.length ? parts.join(' · ') : 'No parents linked';
+};
 
 /** Search approved adults (anyone but students) to link as a parent. */
 function AdultSearch({ label, onPick, exclude = [] }: { label: string; onPick: (p: AdminPerson) => void; exclude?: string[] }) {
@@ -36,7 +43,7 @@ function AdultSearch({ label, onPick, exclude = [] }: { label: string; onPick: (
     <View style={{ gap: 6 }}>
       <Field label={label} placeholder="Search by name or email" autoCapitalize="none" value={q} onChangeText={setQ} />
       {hits.map((p) => (
-        <Text key={p.id} style={{ color: C.primary }} onPress={() => { setQ(''); onPick(p); }}>+ {name(p)} <Text style={{ color: C.muted }}>· {p.schoolRole} · {p.email}</Text></Text>
+        <Text key={p.id} style={{ color: C.primary }} onPress={() => { setQ(''); onPick(p); }}>+ {name(p)} <Text style={{ color: C.muted }}>· {ROLE_LABELS[p.schoolRole] ?? p.schoolRole} · {p.email}</Text></Text>
       ))}
     </View>
   );
@@ -107,7 +114,7 @@ function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: C.ink }}>{name(x)}</Text>
           <P muted>{gradeLabel(x.grade)}{x.classOf ? ` · Class of ${x.classOf}` : ''}{number ? ` · Pickup #${number}` : ''}</P>
-          <P muted>{x.parents.length ? `Parents: ${x.parents.map((p) => p.name).join(', ')}` : 'No parents linked'}</P>
+          <P muted>{adults(x)}</P>
         </View>
         {x.managed ? <Chip label="No login" color={C.muted} /> : <Chip label="Has login" />}
       </View>
@@ -126,14 +133,16 @@ function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string
             <Button label="Save" kind="ghost" disabled={!pickup.trim() || pickup.trim().toUpperCase() === number}
               onPress={() => setPickupNumber(x.id, pickup).then(onChange).catch(fail)} />
           </View>
-          <H>Parents</H>
+          <H>Parents and family</H>
           {x.parents.map((p) => (
-            <Text key={p.id} style={{ color: C.ink }}>👪 {p.name}{'  '}
-              <Text style={{ color: C.danger }} onPress={() => confirm('Unlink parent?', `${p.name} will no longer see ${x.firstName}.`,
+            <Text key={p.id} style={{ color: C.ink }}>{p.family ? '🚗' : '👪'} {p.name}{p.family ? ' · Family (car line pickup)' : ''}{'  '}
+              <Text style={{ color: C.danger }} onPress={() => confirm(p.family ? 'Unlink family member?' : 'Unlink parent?',
+                p.family ? `${p.name} will no longer be able to pick up ${x.firstName}.` : `${p.name} will no longer see ${x.firstName}.`,
                 () => adminLinkGuardian(p.id, x.id, false).then(onChange).catch(fail))}>unlink</Text>
             </Text>
           ))}
-          <AdultSearch label="Link a parent" exclude={x.parents.map((p) => p.id)}
+          <P muted>Family accounts (grandparents and other relatives) only get car line pickup for the children linked here.</P>
+          <AdultSearch label="Link a parent or family member" exclude={x.parents.map((p) => p.id)}
             onPick={(p) => adminLinkGuardian(p.id, x.id, true).then(onChange).catch(fail)} />
           <View style={[s.row, { justifyContent: 'space-between' }]}>
             {x.managed ? (

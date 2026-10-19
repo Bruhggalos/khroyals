@@ -46,6 +46,13 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents
   only). **Car line leads** (`carline_duty`) and people.family set the spot, radius,
   hours and "open now" (`carline_set_config`, `carline_open_now`).
+- **Family accounts** (`school_role = 'family'`: grandparents, other relatives) are closed
+  by default. They get car line pickup for the children the office links in
+  `family_pickups` (never `guardians`), Volunteer, Activities (follow, no sign-ups) and the
+  public screens. Groups refuse them (`app.effective_role`, the `no_family_in_groups`
+  trigger, `app.rule_targets`), and so do Ask the School, the Marketplace, child details and
+  family requests. Car line code reads `app.pickup_children()` / `app.can_pick_up()`, not
+  `guardians` directly. A new feature stays closed to Family unless you open it on purpose.
 - **Car line lead** isn't an admin power (no MFA), but it changes car line settings and pickup numbers. The seed gives it to the demo Teacher for testing; it must go
   with the demo accounts (`--demo` projects only) before real families use the app. The same goes for
   **Volunteer Leader**, which the seed also gives the demo Teacher.

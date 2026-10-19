@@ -21,5 +21,6 @@ export function QuestionsGate({ title, children }: { title: string; children: (m
     </Card>,
   );
   if (me.pending) return box(<Card><H>Waiting for approval</H><P muted>You can ask the school once the office approves your account.</P></Card>);
+  if (me.schoolRole === 'family') return box(<Card><H>Not part of Family accounts</H><P muted>Ask the School is for parents, students and staff. A parent, or a call to the school office, can help with your question.</P></Card>);
   return <>{header}{children(me)}</>;
 }

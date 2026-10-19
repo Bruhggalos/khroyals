@@ -12,7 +12,8 @@
  * "forum, but only students in Period 3 may post".
  */
 
-export type SchoolRole = 'admin' | 'teacher' | 'staff' | 'parent' | 'student';
+/** `family`: grandparents and other relatives the office links to children for car line pickup (no groups). */
+export type SchoolRole = 'admin' | 'teacher' | 'staff' | 'parent' | 'student' | 'family';
 
 /** Role a person holds inside one group. Ordered from most to least privileged. */
 export type GroupRole = 'owner' | 'moderator' | 'member' | 'subscriber';

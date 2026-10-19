@@ -277,10 +277,12 @@ export type Arrival =
 /** Staff the office has put on car line duty (the database checks the same rule). */
 export const onCarlineDuty = (p: Person | null) => !!p?.carlineDuty && ['admin', 'teacher', 'staff'].includes(p.schoolRole);
 
-/** Students linked to the signed-in parent, from the directory loaded by session(). */
+/** Students linked to the signed-in parent (or the children a Family account picks up), from the directory loaded by session(). */
 export async function myChildren(): Promise<Person[]> {
   if (!live || !current) return [];
-  const links = await run(sb().from('guardians').select('student_id').eq('guardian_id', current.id));
+  const links = current.schoolRole === 'family'
+    ? await run(sb().from('family_pickups').select('student_id').eq('family_id', current.id))
+    : await run(sb().from('guardians').select('student_id').eq('guardian_id', current.id));
   return (links as any[]).map((l) => directory.get(l.student_id)).filter(Boolean) as Person[];
 }
 /** Today's car line: your children's check-ins, or everyone's for staff on duty. */
@@ -584,9 +586,19 @@ const toOpportunity = (r: any): Opportunity => ({
 const toSignup = (r: any): Signup => ({ opportunityId: r.opportunity_id, userId: r.user_id, createdAt: r.created_at });
 const toMessage = (r: any): VolunteerMessage => ({ id: r.id, opportunityId: r.opportunity_id, authorId: r.author_id, body: r.body, createdAt: r.created_at });
 
-/** Parents and staff volunteer; the office picks Volunteer Leaders (the database checks the same). */
-export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent', 'teacher', 'staff', 'admin'].includes(p.schoolRole);
-export const isVolunteerLead = (p: Person | null) => canVolunteer(p) && !!p?.volunteerLead;
+/** Parents, staff and Family accounts volunteer; the office picks Volunteer Leaders (the database checks the same). */
+export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent', 'teacher', 'staff', 'admin', 'family'].includes(p.schoolRole);
+/**
+ * A Family account (a grandparent, say): car line pickup for the children the office linked,
+ * Volunteer, Activities and the school's news, calendar and Handbook. No groups, Student app,
+ * Marketplace or Ask the School; the database refuses those too.
+ */
+export const isFamily = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'family';
+/** How a school role reads on screen. */
+export const ROLE_LABELS: Record<SchoolRole, string> = {
+  admin: 'Admin', teacher: 'Teacher', staff: 'Staff', parent: 'Parent', student: 'Student', family: 'Family',
+};
+export const isVolunteerLead = (p: Person | null) => canVolunteer(p) && !!p?.volunteerLead && p?.schoolRole !== 'family';
 
 /** Opportunities this person can see (open ones, plus deleted ones they were part of) and everyone's sign-ups. */
 export async function listVolunteer(): Promise<{ opportunities: Opportunity[]; signups: Signup[] }> {
@@ -696,16 +708,22 @@ export async function adminLinkGuardian(guardianId: string, studentId: string, l
 export async function adminSetCarlineDuty(userId: string, on: boolean) {
   await run(sb().rpc('admin_set_carline_duty', { p_user: userId, p_on: on }));
 }
-export type FamilyLink = { guardianId: string; studentId: string; guardianName: string; studentName: string; studentGrade: number | null };
+/** A parent's link to a student, or (pickupOnly) a Family account's car line link. */
+export type FamilyLink = { guardianId: string; studentId: string; guardianName: string; studentName: string; studentGrade: number | null; pickupOnly?: boolean };
 /** Every parent ↔ student link, with names (people may be on other pages of the list). */
 export async function adminFamilyLinks(): Promise<FamilyLink[]> {
-  const rows: any[] = await run(sb().from('guardians').select(
-    'guardian_id, student_id, guardian:profiles!guardians_guardian_id_fkey(first_name, last_name), student:profiles!guardians_student_id_fkey(first_name, last_name, grade)'));
-  return rows.map((g) => ({
-    guardianId: g.guardian_id, studentId: g.student_id,
+  const [parents, family]: any[][] = await Promise.all([
+    run(sb().from('guardians').select(
+      'guardian_id, student_id, guardian:profiles!guardians_guardian_id_fkey(first_name, last_name), student:profiles!guardians_student_id_fkey(first_name, last_name, grade)')),
+    run(sb().from('family_pickups').select(
+      'guardian_id:family_id, student_id, guardian:profiles!family_pickups_family_id_fkey(first_name, last_name), student:profiles!family_pickups_student_id_fkey(first_name, last_name, grade)')),
+  ]);
+  const toLink = (g: any, pickupOnly: boolean): FamilyLink => ({
+    guardianId: g.guardian_id, studentId: g.student_id, pickupOnly,
     guardianName: `${g.guardian?.first_name ?? ''} ${g.guardian?.last_name ?? ''}`.trim(),
     studentName: `${g.student?.first_name ?? ''} ${g.student?.last_name ?? ''}`.trim(), studentGrade: g.student?.grade ?? null,
-  }));
+  });
+  return [...parents.map((g) => toLink(g, false)), ...family.map((g) => toLink(g, true))];
 }
 export async function listAudit(limit = 100) {
   return run(sb().from('audit_log').select('*, groups(name)').order('at', { ascending: false }).limit(limit)) as Promise<any[]>;
@@ -811,7 +829,7 @@ export async function mfaVerify(factorId: string, code: string) {
 export type PermissionInfo = { key: string; label: string; description: string };
 export type AdminPerson = Person & { adminTier: string | null; granted: string[] };
 export type AdminRole = { id: string; name: string; description: string; permissions: string[]; isSystem: boolean };
-export type PeopleFilter = 'all' | 'pending' | 'staff' | 'parents' | 'students' | 'admins';
+export type PeopleFilter = 'all' | 'pending' | 'staff' | 'parents' | 'family' | 'students' | 'admins';
 
 export async function permissionCatalog(): Promise<PermissionInfo[]> {
   return run(sb().rpc('permission_catalog')) as Promise<PermissionInfo[]>;
@@ -1083,7 +1101,8 @@ export async function myFamilyRequests(): Promise<FamilyRequest[]> {
 
 export type AdminStudent = {
   id: string; firstName: string; lastName: string; grade: number | null; gradeLabel: string | null; classOf: number | null;
-  managed: boolean; photoPath: string | null; parents: { id: string; name: string }[];
+  /** Parents, then Family accounts (`family`: car line pickup only). */
+  managed: boolean; photoPath: string | null; parents: { id: string; name: string; family?: boolean }[];
 };
 export async function adminListStudents(opts: { search?: string; limit?: number; offset?: number } = {}) {
   const rows: any[] = await run(sb().rpc('admin_list_students', {

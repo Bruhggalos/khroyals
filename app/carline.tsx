@@ -9,7 +9,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  carlineBoard, carlineConfig, carlineToday, live, myChildren, pickupNumbers, session, subscribeCarline,
+  carlineBoard, carlineConfig, carlineToday, isFamily, live, myChildren, pickupNumbers, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person, type Pickup,
 } from '../src/api/connect';
 import { DutyView } from '../src/carline/DutyView';
@@ -106,7 +106,7 @@ export default function CarLine() {
       )}
       {shown === 'staff' && staff
         ? <DutyView board={board} onChange={refresh} />
-        : <ParentView kids={kids} numbers={numbers} config={config} onChange={refresh}
+        : <ParentView kids={kids} family={isFamily(person)} numbers={numbers} config={config} onChange={refresh}
             pickups={pickups.filter((p) => kids.some((k) => k.id === p.studentId))} />}
     </ScrollView>
   );

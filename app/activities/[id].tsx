@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
-  canManageSport, decideSportRegistration, followSport, getUser, listSports, listUsers, myAccess, myChildren, mySports,
+  canManageSport, decideSportRegistration, followSport, getUser, isFamily, listSports, listUsers, myAccess, myChildren, mySports,
   registerForSport, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, withdrawSportRegistration,
   type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
@@ -48,7 +48,8 @@ export default function SportPage() {
       const ids = active.map((x) => x.id);
       const approved = !!p && !p.pending;
       const [ev, rg, ks, mine, a] = await Promise.all([
-        sportSchedule(ids, { past: true }), approved ? sportRegistrations(ids) : [], approved ? myChildren() : [],
+        // Family accounts follow activities but don't sign children up.
+        sportSchedule(ids, { past: true }), approved ? sportRegistrations(ids) : [], approved && !isFamily(p) ? myChildren() : [],
         approved ? mySports() : [], approved ? myAccess().catch(() => null) : null,
       ]);
       setSport(sp); setSeasons(active); setEvents(ev); setRegs(rg); setKids(ks); setMe(p); setAccess(a);

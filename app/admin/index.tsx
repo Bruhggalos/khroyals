@@ -10,7 +10,7 @@ import { Stack, router } from 'expo-router';
 import {
   adminClearAvatar, adminDeleteRole, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
   adminSetCarlineDuty, adminSetDirector, adminSetVolunteerLead, adminUpdateProfile, getUser, listAudit, listMyGroups, listNotifications, listQuestions, me, notificationOpenCounts, permissionCatalog,
-  sendNotification, subscribeQuestions,
+  ROLE_LABELS, sendNotification, subscribeQuestions,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo, type SchoolQuestion,
 } from '../../src/api/connect';
 import { StudentsPanel } from '../../src/admin/StudentsPanel';
@@ -22,9 +22,9 @@ import type { Group, SchoolRole } from '../../src/comms/types';
 import { Avatar, Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const PAGE = 20;
-const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'parent', 'student'];
+const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'parent', 'family', 'student'];
 const FILTERS: [PeopleFilter, string][] = [
-  ['all', 'All'], ['pending', 'Needs approval'], ['staff', 'Staff'], ['parents', 'Parents'], ['students', 'Students'], ['admins', 'Admins'],
+  ['all', 'All'], ['pending', 'Needs approval'], ['staff', 'Staff'], ['parents', 'Parents'], ['family', 'Family'], ['students', 'Students'], ['admins', 'Admins'],
 ];
 const STAFF = ['admin', 'teacher', 'staff'];
 
@@ -70,7 +70,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
   const isAdminAccount = !!p.adminTier || p.schoolRole === 'admin';
   const roleOptions = ROLES.filter((r) => {
     if (r === 'admin' || isAdminAccount) return can('admins.manage');
-    if (p.pending && (r === 'parent' || r === 'student')) return can('people.approve') || can('people.roles');
+    if (p.pending && (r === 'parent' || r === 'student' || r === 'family')) return can('people.approve') || can('people.roles');
     return can('people.roles');
   });
   const setRole = (r: SchoolRole | null) =>
@@ -90,10 +90,13 @@ function PersonCard({ p, links, access, roles, onChange }: {
         {roleName && <Chip label={roleName} color={C.accent} />}
         {p.carlineDuty && <Chip label="Car line lead" color="#15803D" />}
         {p.volunteerLead && <Chip label="Volunteer lead" color="#DB2777" />}
-        {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={p.schoolRole} />}
+        {p.pending ? <Chip label="Needs approval" color="#B45309" /> : <Chip label={ROLE_LABELS[p.schoolRole] ?? p.schoolRole} />}
       </View>
       {(children.length > 0 || parents.length > 0) && (
-        <P muted>{children.length ? `Parent of ${children.map((c) => c.studentName).join(', ')}` : `Parents: ${parents.map((c) => c.guardianName).join(', ')}`}</P>
+        <P muted>{children.length
+          ? `${p.schoolRole === 'family' ? 'Picks up' : 'Parent of'} ${children.map((c) => c.studentName).join(', ')}`
+          : [['Parents', parents.filter((c) => !c.pickupOnly)], ['Family', parents.filter((c) => c.pickupOnly)]]
+              .filter(([, l]) => (l as FamilyLink[]).length).map(([t, l]) => `${t}: ${(l as FamilyLink[]).map((c) => c.guardianName).join(', ')}`).join(' · ')}</P>
       )}
       {open && (
         <View style={{ gap: 8 }}>
@@ -114,7 +117,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
                 () => adminSetCarlineDuty(p.id, !p.carlineDuty).then(onChange).catch(fail), '#15803D')}
             </View>
           )}
-          {!p.pending && p.schoolRole !== 'student' && can('people.family') && (
+          {!p.pending && p.schoolRole !== 'student' && p.schoolRole !== 'family' && can('people.family') && (
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {pill(p.volunteerLead ? '🙋 Volunteer Leader' : '🙋 Make Volunteer Leader', !!p.volunteerLead,
                 () => adminSetVolunteerLead(p.id, !p.volunteerLead).then(onChange).catch(fail), '#DB2777')}
@@ -139,7 +142,9 @@ function PersonCard({ p, links, access, roles, onChange }: {
                   + {fullName(x)} ({x.grade != null ? gradeLabel(x.grade) : 'no grade'})
                 </Text>
               ))}
-              <P muted>Linked parents join their student's family groups automatically.</P>
+              <P muted>{p.schoolRole === 'family'
+                ? 'Family accounts can pick up the students linked here at the car line. They don\'t join groups.'
+                : 'Linked parents join their student\'s family groups automatically.'}</P>
             </View>
           )}
         </View>
@@ -283,7 +288,7 @@ function AccessCard({ p, roles, catalog, onChange }: { p: AdminPerson; roles: Ad
             </View>
           ) : <P muted>Admin roles are for staff accounts; you can still grant individual permissions.</P>}
           {label('EXTRA PERMISSIONS')}
-          <PermissionChecks catalog={catalog} value={granted} fixed={fixed} onChange={setGranted} disabled={p.schoolRole === 'student'} />
+          <PermissionChecks catalog={catalog} value={granted} fixed={fixed} onChange={setGranted} disabled={p.schoolRole === 'student' || p.schoolRole === 'family'} />
           <Button label="Save access" onPress={save} />
           <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
             {staff ? link(`Make ${p.firstName || 'them'} a director…`, () => confirm('Add a director?',
@@ -389,7 +394,7 @@ function Notifications({ access }: { access: Access }) {
           </View>
           {audience === 'roles' && (
             <View style={[s.row, { flexWrap: 'wrap' }]}>
-              {(['parent', 'student', 'teacher', 'staff'] as SchoolRole[]).map((r) => pill(r, roles.includes(r), () => setRoles(roles.includes(r) ? roles.filter((x) => x !== r) : [...roles, r])))}
+              {(['parent', 'family', 'student', 'teacher', 'staff'] as SchoolRole[]).map((r) => pill(r, roles.includes(r), () => setRoles(roles.includes(r) ? roles.filter((x) => x !== r) : [...roles, r])))}
             </View>
           )}
           {audience === 'group' && (

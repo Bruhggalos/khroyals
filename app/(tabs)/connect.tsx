@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session, setMockUser, signOut,
-  type Person,
+  ROLE_LABELS, isFamily, joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session,
+  setMockUser, signOut, type Person,
 } from '../../src/api/connect';
 import { forgetCarPass } from '../../src/carline/carPass';
 import { disableAutoCheckIn } from '../../src/carline/autoCheckIn';
@@ -45,7 +45,9 @@ export default function Connect() {
     try {
       const p = await session();
       setPerson(p);
-      if (p && !p.pending) {
+      if (isFamily(p)) {
+        setGroups([]);  // Family accounts aren't in groups
+      } else if (p && !p.pending) {
         setGroups(await listMyGroups());
         setDiscover(await listDiscoverableGroups());
         if (!live) setPeople(await listUsers());
@@ -86,7 +88,7 @@ export default function Connect() {
             <Avatar person={person} size={40} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700', color: C.ink }}>{person.firstName} {person.lastName}</Text>
-              <P muted>{person.schoolRole} · My profile & notifications ›</P>
+              <P muted>{ROLE_LABELS[person.schoolRole] ?? person.schoolRole} · My profile & notifications ›</P>
             </View>
           </Pressable>
           <Text style={{ color: C.primary, fontWeight: '600' }} onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(load)}>Sign out</Text>
@@ -111,12 +113,22 @@ export default function Connect() {
         </>
       )}
 
+      {isFamily(person) && (
+        <Card>
+          <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Family account</Text>
+          <P>Use the Car Line for the children the school linked to you, sign up to volunteer, and follow activities.
+            The calendar, news and Handbook are on the Home page.</P>
+          <P muted>Groups are for parents, students and staff, so they don't appear here. To pick up another child, ask the school office.</P>
+          <Button label="Open the Car Line" onPress={() => router.push('/carline')} />
+        </Card>
+      )}
+
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         {canCreateGroup(person) && <View style={{ flex: 1 }}><Button label="+ New group" onPress={() => router.push('/group/new')} /></View>}
         {isAdmin && <View style={{ flex: 1 }}><Button kind="ghost" label="Admin portal" onPress={() => router.push('/admin')} /></View>}
       </View>
 
-      {groups.length === 0 && <P muted>You're not in any groups yet.</P>}
+      {groups.length === 0 && !isFamily(person) && <P muted>You're not in any groups yet.</P>}
       {groups.map((g) => <GroupRow key={g.id} g={g} onPress={() => router.push(`/group/${g.id}`)} />)}
 
       {discover.length > 0 && (
