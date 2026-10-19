@@ -13,6 +13,8 @@ rules and traps.
   blocks the APK otherwise).
 - For UI changes, also check the web build renders: `npx expo export --platform web`.
 - Keep commits focused; describe the user-visible change in the message.
+- Open work and its owners are in [ROADMAP.md](ROADMAP.md). When a change finishes
+  an item, delete its row in the same commit; add a row for work you leave unfinished.
 
 ## Stack
 

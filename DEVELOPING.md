@@ -280,4 +280,4 @@ screens to `src/carplay/screen.ts`.
 
 ## 9. Not set up yet
 
-- **iOS builds**, **custom email (SMTP, needed for codes in the email)**, **editing site pages/news from the admin portal**.
+Open work, and who owns each item, is tracked in [ROADMAP.md](ROADMAP.md).

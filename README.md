@@ -7,6 +7,7 @@ real [khroyals.com](https://www.khroyals.com/).
 
 > **Building it or putting it on a phone?** See [DEVELOPING.md](DEVELOPING.md).
 > AI coding agents: read [AGENTS.md](AGENTS.md).
+> What's left to do, and who owns it: [ROADMAP.md](ROADMAP.md).
 
 ## Run it
 
