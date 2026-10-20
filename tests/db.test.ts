@@ -898,6 +898,10 @@ test('replies notify followers, who can unfollow; settings decide what pushes', 
   const vb = id('g-vb');
   const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
   const [coach, s05] = [await uid('u-vbcoach'), await uid('u-s05')];
+  // The seed gives this group student quiet hours (10 PM–6 AM); lift them so the test passes at any hour.
+  await asSuper();
+  const settings = (await one(`select settings from groups where id = ${vb}`)).settings;
+  await db.query(`update groups set settings = settings - 'quietHours' where id = ${vb}`);
   await as('u-vbcoach');
   const post = await one(`select id from create_post(${vb}, 'message', 'Who can bring water Friday?')`);
   await as('u-s05');
@@ -941,6 +945,7 @@ test('replies notify followers, who can unfollow; settings decide what pushes', 
   assert.equal(await wants(urgent.id), true, 'urgent ones still come through');
   assert.equal(await wants(toCoach[0].id), false, 'replies turned off');
   await db.exec(`delete from user_settings`);
+  await db.query(`update groups set settings = $1 where id = ${vb}`, [settings]);
 });
 
 test('inbox: delete one notification or clear them all (only for yourself)', async () => {
