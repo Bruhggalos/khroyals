@@ -46,6 +46,7 @@ export function shownLocal(list: LocalNotice[], now = Date.now()): LocalNotice[]
 /** Where tapping a notification goes, from its data (the school's and the phone's alike). */
 export function notificationHref(data: Record<string, unknown> | null | undefined): string | null {
   if (!data) return null;
+  if (data.alertId) return '/alerts';
   if (data.carline) return '/carline';
   if (data.listingId) return `/market/${data.listingId}`;
   if (data.opportunityId) return `/volunteer/${data.opportunityId}`;

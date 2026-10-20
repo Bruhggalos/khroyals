@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { live, onAuthChange, session } from '../src/api/connect';
+import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
+import { AlertTakeover } from '../src/alerts/AlertTakeover';
 import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
 import { edgeLayout } from '../src/ScreenEdge';
@@ -17,7 +18,7 @@ function usePush() {
   useEffect(() => handleNotificationTaps(), []);
   useEffect(() => {
     if (!live) return;
-    const register = () => session().then((p) => { if (p && !p.pending) { enablePush(); syncCarPass(p); } }).catch(() => {});
+    const register = () => session().then((p) => { if (p && !p.pending) { enablePush({ critical: isSchoolStaff(p) }); syncCarPass(p); } }).catch(() => {});
     register();
     return onAuthChange(register);
   }, []);
@@ -44,6 +45,8 @@ export default function Root() {
         // On a computer the app (and admin portal) sits in a readable centered column.
         ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: 960, alignSelf: 'center' }}>{stack}</View></View>
         : stack}
+      {/* Teachers and staff: an active critical alert covers the app until they answer it. */}
+      <AlertTakeover />
     </>
   );
 }

@@ -311,6 +311,28 @@ APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh
 - Push notifications reach TestFlight installs only after the Expo push setup in §7.
   CarPlay stays off until Apple grants the entitlement (§8).
 
-## 10. Not set up yet
+## 10. Critical alerts (loud on staff phones)
+
+Critical alerts go to every teacher and staff member and always push, whatever their
+settings or quiet hours. How loud they are on an iPhone depends on Apple:
+
+- **Now (no approval needed):** they arrive as **Time Sensitive** notifications, which
+  break through Focus modes but not the silent switch. The app has the Time Sensitive
+  entitlement already; Xcode turns the capability on when it signs.
+- **After Apple approves:** they ring even on silent and Do Not Disturb.
+  1. Request the **Critical Alerts** entitlement for `com.khroyals.app`
+     (https://developer.apple.com/contact/request/notifications-critical-alerts-entitlement/). Explain that it's for school
+     emergencies (lockdowns, severe weather) sent only to staff by the administration.
+  2. Once granted, build with `CRITICAL_ALERTS_ENTITLEMENT=1` (prebuild, test phone and
+     `scripts/testflight.sh`; signing fails before Apple grants it).
+  3. When that build is out, turn the loud level on for pushes:
+     `update app.settings set value = 'on' where key = 'critical_alerts';`
+     Staff are then asked once to allow critical alerts.
+- **Android:** alerts use the "Critical alerts" channel (max importance, allowed to ring
+  through Do Not Disturb if the person grants it).
+- Phones only get any of this after the push setup in §7; until then alerts still fill
+  the screen when the app is open and land on the bell page.
+
+## 11. Not set up yet
 
 Open work, and who owns each item, is tracked in [ROADMAP.md](ROADMAP.md).

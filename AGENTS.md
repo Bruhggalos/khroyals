@@ -53,6 +53,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   trigger, `app.rule_targets`), and so do Ask the School, the Marketplace, child details and
   family requests. Car line code reads `app.pickup_children()` / `app.can_pick_up()`, not
   `guardians` directly. A new feature stays closed to Family unless you open it on purpose.
+- **Critical alerts** (`critical_alerts`, `critical_alert_responses`) are for teachers, staff
+  and admins only (`app.is_staff()`); only `alerts.send` holders send them and give the all
+  clear. Anything with `data.alertId` always pushes (`app.wants_push`), and `data.level` sets
+  how loud the push is (`app.alert_level()`, the `critical_alerts` setting). Alert kinds are
+  in both `src/alerts/kinds.ts` and the database checks. Keep the full-screen alert
+  (`src/alerts/AlertTakeover.tsx`) mounted in `app/_layout.tsx`.
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.

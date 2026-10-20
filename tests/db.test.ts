@@ -1328,3 +1328,70 @@ test('car line vehicles: your own, the last one used is the default, and staff s
   await asSuper();
   assert.equal((await one(waiting)).l, 'Red Ford Truck');
 });
+
+test('critical alerts: admins send them to every teacher and staff member, who answer safe or need help', async () => {
+  const sci = (await one(`select ${id('u-sci')} as u`)).u as string;
+  const send = `select * from critical_alert_send('threat', 'Lockdown: active threat', 'Lock your door and keep students out of sight.')`;
+  // Only admins with "Send critical alerts", in an authenticator-verified session.
+  await as('u-sci');
+  await rejects(send, /permission/);
+  await as('u-admin');
+  await rejects(send, /MFA_REQUIRED/);
+  await as('u-admin', true);
+  await rejects(`select * from critical_alert_send('drill', 'Lockdown')`, /what kind/);
+  await rejects(`select * from critical_alert_send('threat', '   ')`, /title/);
+  const alert = await one(send);
+
+  // It goes to teachers and staff and always pushes, even in quiet hours with school news off.
+  await asSuper();
+  const n = await one(`select * from notifications where data->>'alertId' = '${alert.id}'`);
+  assert.deepEqual(n.roles, ['admin', 'teacher', 'staff']);
+  assert.equal(n.data.level, 'time-sensitive', 'until Apple grants Critical Alerts');
+  const forWho = async (who: string) => (await one(`select app.notification_for(n, ${id(who)}) as y from notifications n where id = '${n.id}'`)).y;
+  assert.equal(await forWho('u-sci'), true);
+  assert.equal(await forWho('u-p01'), false);
+  assert.equal(await forWho('u-s01'), false);
+  await db.exec(`insert into user_settings (user_id, push_school, quiet_start, quiet_end) values ('${sci}', false, '00:00', '23:59')
+                 on conflict (user_id) do update set push_school = false, quiet_start = '00:00', quiet_end = '23:59'`);
+  assert.equal((await one(`select app.wants_push(n, '${sci}') as y from notifications n where id = '${n.id}'`)).y, true);
+
+  // Parents and students can't see or answer it.
+  for (const who of ['u-p01', 'u-s01']) {
+    await as(who);
+    assert.equal((await rows(`select * from critical_alerts`)).length, 0, who);
+    await rejects(`select * from critical_alert_respond('${alert.id}', 'safe')`, /teachers and staff/);
+  }
+
+  // A teacher is safe; another needs help, and the senders are told right away.
+  await as('u-sci');
+  assert.equal((await rows(`select * from critical_alerts where id = '${alert.id}'`)).length, 1);
+  assert.ok((await rows(`select data from my_notifications()`)).some((x) => x.data?.alertId === alert.id));
+  await one(`select * from critical_alert_respond('${alert.id}', 'safe')`);
+  await as('u-eng');
+  await rejects(`select * from critical_alert_respond('${alert.id}', 'maybe')`, /safe or I need help/);
+  await one(`select * from critical_alert_respond('${alert.id}', 'help', 'Room 12, a student is hurt')`);
+  assert.equal((await rows(`select * from critical_alert_responses`)).length, 1, 'staff see only their own answer');
+  await as('u-sci');
+  await rejects(`select critical_alert_status('${alert.id}')`, /permission/);
+  await as('u-admin', true);
+  const status = (await one(`select critical_alert_status('${alert.id}') as s`)).s as any[];
+  assert.deepEqual([status[0].status, status[0].note], ['help', 'Room 12, a student is hurt'], 'help first');
+  assert.equal(status.find((p) => p.id === sci).status, 'safe');
+  assert.ok(status.some((p) => p.status === 'none'), 'and who hasn\'t answered');
+  assert.ok(status.every((p) => ['admin', 'teacher', 'staff'].includes(p.role)));
+  assert.ok((await rows(`select title from my_notifications()`)).some((x) => /needs help/.test(x.title)));
+
+  // All clear: everyone hears it, and answers close.
+  await one(`select * from critical_alert_end('${alert.id}', 'Police have cleared the building.')`);
+  await rejects(`select * from critical_alert_end('${alert.id}')`, /already ended/);
+  await as('u-sci');
+  await rejects(`select * from critical_alert_respond('${alert.id}', 'safe')`, /has ended/);
+  assert.equal((await one(`select body from my_notifications() where title like '✅ All clear%' limit 1`)).body, 'Police have cleared the building.');
+
+  // The Office role sends them too; once Apple approves, pushes ring as Critical Alerts.
+  await asSuper();
+  assert.ok((await one(`select permissions from admin_roles where id = 'office'`)).permissions.includes('alerts.send'));
+  await db.exec(`update app.settings set value = 'on' where key = 'critical_alerts'`);
+  assert.equal((await one(`select app.alert_level() as l`)).l, 'critical');
+  await db.exec(`update app.settings set value = 'off' where key = 'critical_alerts'`);
+});

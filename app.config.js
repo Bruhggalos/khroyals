@@ -7,6 +7,9 @@
 //    With neither variable set (CI, the web build, everyone else) nothing changes.
 //    IOS_BUILD_NUMBER sets the iPhone build number; every TestFlight upload needs
 //    a new one (scripts/testflight.sh uses the date and time).
+//    Critical alerts break through Focus modes as Time Sensitive notifications. Once
+//    Apple grants the Critical Alerts entitlement, build with
+//    CRITICAL_ALERTS_ENTITLEMENT=1 so they ring on silent too (signing fails without it).
 //
 // 2. The web app is served from /khroyals (experiments.baseUrl), but iPhone
 //    release builds must not use that prefix: Xcode's bundling step
@@ -33,6 +36,11 @@ module.exports = ({ config }) => {
       ...(process.env.IOS_BUNDLE_ID ? { bundleIdentifier: process.env.IOS_BUNDLE_ID } : {}),
       ...(process.env.APPLE_TEAM_ID ? { appleTeamId: process.env.APPLE_TEAM_ID } : {}),
       ...(process.env.IOS_BUILD_NUMBER ? { buildNumber: process.env.IOS_BUILD_NUMBER } : {}),
+      entitlements: {
+        ...config.ios?.entitlements,
+        'com.apple.developer.usernotifications.time-sensitive': true,
+        ...(process.env.CRITICAL_ALERTS_ENTITLEMENT === '1' ? { 'com.apple.developer.usernotifications.critical-alerts': true } : {}),
+      },
     },
   };
 };

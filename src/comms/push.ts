@@ -33,15 +33,27 @@ export type Permission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 const projectId = (): string | undefined => (Constants.expoConfig?.extra as any)?.eas?.projectId
   ?? (Constants as any).easConfig?.projectId ?? (appJson as any).expo?.extra?.eas?.projectId;
 
-/** Ask to show notifications (once; iOS won't ask again after "Don't Allow"), then register for the school's pushes. */
-export async function enablePush(): Promise<{ state: PushState; detail?: string }> {
+/**
+ * Ask to show notifications (once; iOS won't ask again after "Don't Allow"), then register for the school's pushes.
+ * `critical`: teachers and staff, who get critical alerts. iPhone also asks to let those ring on silent (only once
+ * the app has Apple's Critical Alerts entitlement; until then iOS skips that question).
+ */
+export async function enablePush(opts: { critical?: boolean } = {}): Promise<{ state: PushState; detail?: string }> {
   if (Platform.OS === 'web') return { state: 'unsupported', detail: 'Notifications need the Android or iPhone app.' };
   try {
     if (Platform.OS === 'android') {  // Android 13+ only asks once a channel exists
       await Notifications.setNotificationChannelAsync('default', { name: 'Royals Connect', importance: Notifications.AndroidImportance.HIGH });
+      await Notifications.setNotificationChannelAsync('critical', {
+        name: 'Critical alerts', description: 'Severe weather, lockdowns and other emergencies from the school administration.',
+        importance: Notifications.AndroidImportance.MAX, bypassDnd: true, enableVibrate: true, vibrationPattern: [0, 600, 300, 600, 300, 600],
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC, sound: 'default',
+      });
     }
     let perm = await Notifications.getPermissionsAsync();
     if (perm.status !== 'granted' && perm.canAskAgain) perm = await Notifications.requestPermissionsAsync();
+    if (perm.status === 'granted' && opts.critical && Platform.OS === 'ios' && !perm.ios?.allowsCriticalAlerts) {
+      perm = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: true, allowSound: true, allowCriticalAlerts: true } });
+    }
     if (perm.status !== 'granted') return { state: 'denied', detail: 'Notifications are turned off for KH Royals in your phone\'s Settings.' };
     if (!Device.isDevice) return { state: 'unsupported', detail: 'The school\'s pushes need a real phone; simulators only show the app\'s own notifications.' };
     const id = projectId();

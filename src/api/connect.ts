@@ -15,6 +15,7 @@ import { supabase } from './supabase';
 import type { Decision } from '../comms/permissions';
 import type { Comment, Group, GroupRole, GroupSettings, Post, SchoolRole, User } from '../comms/types';
 import type { VehicleColor, VehicleKind } from '../carline/vehicles';
+import type { AlertKind } from '../alerts/kinds';
 import type { Category, EventKind } from '../sports/categories';
 import { sampleSports } from '../sports/sample';
 
@@ -617,6 +618,8 @@ export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent'
  * Marketplace or Ask the School; the database refuses those too.
  */
 export const isFamily = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'family';
+/** Teachers, staff and admins (who also get critical alerts). */
+export const isSchoolStaff = (p: Person | null | undefined) => !!p && !p.pending && ['admin', 'teacher', 'staff'].includes(p.schoolRole);
 /** How a school role reads on screen. */
 export const ROLE_LABELS: Record<SchoolRole, string> = {
   admin: 'Admin', teacher: 'Teacher', staff: 'Staff', parent: 'Parent', student: 'Student', family: 'Family',
@@ -816,6 +819,52 @@ export async function verifyEmailCode(email: string, code: string) {
   const { error } = await sb().auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.replace(/\D/g, ''), type: 'email' });
   if (error) throw new Error(/expired|invalid/i.test(error.message) ? 'That code is wrong or has expired. Check the latest email, or send a new code.' : error.message);
   return session();
+}
+
+// ------------------------------------------------------------------ critical alerts
+
+/** A critical alert to every teacher and staff member (severe weather, an active threat, a dangerous situation). */
+export type CriticalAlert = {
+  id: string; kind: AlertKind; title: string; body: string; createdBy: string | null; createdAt: string;
+  endedAt: string | null; endedBy: string | null; endNote: string | null;
+};
+export type AlertAnswer = { alertId: string; userId: string; status: 'safe' | 'help'; note: string | null; updatedAt: string };
+/** For the senders: one teacher or staff member and their answer ('none' = hasn't answered). */
+export type AlertStatusRow = { id: string; name: string; role: SchoolRole; status: 'safe' | 'help' | 'none'; note: string | null; updatedAt: string | null };
+const toAlert = (r: any): CriticalAlert => ({
+  id: r.id, kind: r.kind, title: r.title, body: r.body ?? '', createdBy: r.created_by, createdAt: r.created_at,
+  endedAt: r.ended_at, endedBy: r.ended_by, endNote: r.end_note,
+});
+/** The latest alerts, newest first (teachers and staff only; everyone else gets none). */
+export async function listAlerts(limit = 20): Promise<CriticalAlert[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('critical_alerts').select('*').order('created_at', { ascending: false }).limit(limit))).map(toAlert);
+}
+export async function myAlertAnswers(): Promise<AlertAnswer[]> {
+  if (!live || !current) return [];
+  return (await run(sb().from('critical_alert_responses').select('*').eq('user_id', current.id))).map((r: any) => ({
+    alertId: r.alert_id, userId: r.user_id, status: r.status, note: r.note, updatedAt: r.updated_at,
+  }));
+}
+export async function sendCriticalAlert(kind: AlertKind, title: string, body: string): Promise<CriticalAlert> {
+  return toAlert(await rpc('critical_alert_send', { p_kind: kind, p_title: title, p_body: body }));
+}
+export async function answerAlert(alertId: string, status: 'safe' | 'help', note?: string | null) {
+  await rpc('critical_alert_respond', { p_alert: alertId, p_status: status, p_note: note?.trim() || null });
+}
+export async function endAlert(alertId: string, note?: string | null) {
+  await rpc('critical_alert_end', { p_alert: alertId, p_note: note?.trim() || null });
+}
+export async function alertStatus(alertId: string): Promise<AlertStatusRow[]> {
+  return (await rpc('critical_alert_status', { p_alert: alertId })) as AlertStatusRow[];
+}
+export function subscribeAlerts(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`alerts-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'critical_alerts' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'critical_alert_responses' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
 }
 
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };

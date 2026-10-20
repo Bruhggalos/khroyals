@@ -20,7 +20,7 @@ are in [DEVELOPING.md](DEVELOPING.md).
 
 | Item | Owner | Status | Notes |
 |---|---|---|---|
-| Push notifications reach phones | — | Not started | Expo project + Apple push key ([DEVELOPING §7](DEVELOPING.md#7-push-notifications)). Until then notifications only show on the bell page. |
+| Push notifications reach phones | — | Not started | Expo project + Apple push key ([DEVELOPING §7](DEVELOPING.md#7-push-notifications)). Until then notifications only show on the bell page, and critical alerts only when the app is open. |
 | Push notifications on Android | — | Not started | Firebase project and `google-services.json` ([DEVELOPING §7](DEVELOPING.md#7-push-notifications)). |
 | Custom email (SMTP) | — | Not started | Supabase's built-in email sends only a few messages an hour, and its template can't be changed, so sign-in emails need it to carry the code reliably. |
 | iPhone app on TestFlight | Ben | Blocked: App Store Connect record | The record's Bundle ID must be `com.khroyals.app`; the build itself archives fine. |
@@ -30,6 +30,8 @@ are in [DEVELOPING.md](DEVELOPING.md).
 
 | Item | Owner | Status | Notes |
 |---|---|---|---|
+| Critical Alerts entitlement | Ben | Not started | Alerts arrive as Time Sensitive now; ask Apple for Critical Alerts so they ring on silent ([DEVELOPING §10](DEVELOPING.md#10-critical-alerts-loud-on-staff-phones)). |
+| Review critical alert templates | — | Not started | The starting wording for lockdown, severe weather and hold in place should match the school's safety plan (`src/alerts/kinds.ts`). |
 | CarPlay | Ben | Waiting on Apple | Built; needs Apple's CarPlay entitlement and a first look at the car screen in the simulator ([DEVELOPING §8](DEVELOPING.md#8-carplay)). |
 | Edit site pages and news from the admin portal | — | Not started | Site content is imported from khroyals.com today ([DEVELOPING §6](DEVELOPING.md#6-refresh-the-school-website-content)). |
 

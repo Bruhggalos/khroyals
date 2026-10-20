@@ -191,6 +191,15 @@ the live board (number, name, grade, vehicle, driver, distance) and mark pickups
 and the office set the spot ("Use my location"), radius (feet) and hours in **Car line
 settings**.
 
+**Critical alerts** (Apps → Alerts; teachers, staff and admins only). Admins with **Send
+critical alerts** (`alerts.send`: Director, Administrator and Office to start) send an alert
+for severe weather, an active threat (lockdown), a dangerous situation or another urgent
+message. Each kind starts with a template the sender edits. Every teacher and staff member
+gets it at once (always pushed, loud: see DEVELOPING §10), and it covers their app until they
+answer **I'm safe** or **I need help** (with where they are). Senders see a live roll call
+(need help first, then no answer, then safe) and give the **all clear**, which everyone is
+told about. Parents, students and Family accounts never see alerts.
+
 **Notifications.** Everything sent to a person lands on the Notifications page
 (the bell in the top bar, `app/notifications.tsx`): the school's notifications
 (`public.notifications` via `my_notifications()`: group posts, announcements,

@@ -17,6 +17,22 @@ const MAX_AGE_MS = 15 * 60 * 1000; // don't deliver stale notifications (e.g. qu
 
 type Note = { id: string; title: string; body: string; data: Record<string, unknown>; created_at: string };
 
+/**
+ * How a notification rings. Critical alerts (data.alertId) use the Android "critical"
+ * channel and, on iPhone, data.level: 'critical' rings on silent and Do Not Disturb (needs
+ * Apple's Critical Alerts entitlement in the app), 'time-sensitive' breaks through Focus.
+ */
+function loudness(n: Note) {
+  if (!n.data?.alertId) return { sound: 'default', channelId: 'default' };
+  const critical = n.data.level === 'critical';
+  return {
+    sound: critical ? { critical: true, name: 'default', volume: 1 } : 'default',
+    interruptionLevel: critical ? 'critical' : 'time-sensitive',
+    channelId: 'critical',
+    priority: 'high',
+  };
+}
+
 async function deliver(n: Note) {
   // Claim it so concurrent calls don't double-send.
   const { data: claimed } = await db.from('notifications').update({ status: 'sending' })
@@ -39,9 +55,7 @@ async function deliver(n: Note) {
     const res = await fetch(EXPO, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(batch.map((to) => ({
-        to, title: n.title, body: n.body, data: { ...n.data, notificationId: n.id }, sound: 'default', channelId: 'default',
-      }))),
+      body: JSON.stringify(batch.map((to) => ({ to, ...loudness(n), title: n.title, body: n.body, data: { ...n.data, notificationId: n.id } }))),
     });
     const out = await res.json().catch(() => ({}));
     (out.data ?? []).forEach((r: { status: string; details?: { error?: string } }, j: number) => {
