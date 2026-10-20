@@ -1024,7 +1024,9 @@ test('children: the office adds them, parents ask for more, grades move up each 
   assert.equal(kid.parents.length, 2);
   await one(`select update_child_details('${ella}', '2018-04-02', 'Loves art', 'Peanuts', '')`);
   await one(`select set_child_photo('${ella}', 'children/${ella}/me.jpg')`);
-  await rejects(`select set_child_photo('${ella}', 'children/${ella.replace(/^./, '0')}/x.jpg')`, /isn't in this child's folder/);
+  // Another child's folder: change the first character (to one it isn't already).
+  const other = ella.replace(/^./, (c: string) => (c === '0' ? '1' : '0'));
+  await rejects(`select set_child_photo('${ella}', 'children/${other}/x.jpg')`, /isn't in this child's folder/);
   // Other parents can't see the details or change anything.
   await as('u-p06');
   assert.equal((await rows(`select * from student_details`)).length, 0);
@@ -1305,7 +1307,9 @@ test('car line vehicles: your own, the last one used is the default, and staff s
   const [switched] = await rows(`select * from carline_announce(null, ${AT}, null, '${suv.id}')`);
   assert.deepEqual([switched.id, switched.vehicle.label], [first.id, 'Silver Honda SUV'], 'same place in line, new vehicle');
 
-  // Choosing a default in My profile; the car screen then arrives in it.
+  // Choosing a default in My profile; the car screen then arrives in it. (PGlite's clock ticks in
+  // milliseconds, so wait one to keep "last used" in order.)
+  await new Promise((r) => setTimeout(r, 5));
   await one(`select vehicle_use('${truck.id}')`);
   await one(`select carline_cancel('${first.id}')`);
   const pass = (await one(`select create_car_pass() as t`)).t as string;
