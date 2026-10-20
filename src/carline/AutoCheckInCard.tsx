@@ -9,7 +9,7 @@ import { hoursLabel } from './format';
 export function AutoCheckInCard() {
   const [on, setOn] = useState<boolean | null>(null);
   const [cfg, setCfg] = useState<CarlineConfig | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
+  const [problem, setProblem] = useState<{ text: string; settings: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -25,13 +25,14 @@ export function AutoCheckInCard() {
     try {
       if (want) {
         const why = await enableAutoCheckIn();
-        if (why) { setProblem(why); return; }
+        if (why) { setProblem({ text: why, settings: true }); return; }
       } else {
         await disableAutoCheckIn();
       }
       setOn(want);
     } catch (e: any) {
-      setProblem(e.message ?? String(e));
+      console.warn('Automatic check-in', e?.message ?? e);
+      setProblem({ text: 'Automatic check-in couldn\'t start on this phone. Update KH Royals and try again, or tap I\'m here when you arrive.', settings: false });
     } finally {
       setBusy(false);
     }
@@ -50,8 +51,8 @@ export function AutoCheckInCard() {
       </P>
       {problem && (
         <>
-          <P>{problem}</P>
-          <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => Linking.openSettings()}>Open Settings</Text>
+          <P>{problem.text}</P>
+          {problem.settings && <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => Linking.openSettings()}>Open Settings</Text>}
         </>
       )}
     </Card>

@@ -49,3 +49,9 @@ test('the Android build gets 4 GB for Gradle', () => {
   assert.match(out[0].value, /-Xmx4096m/);
   assert.equal(setJvmArgs([]).find((i: any) => i.key === 'org.gradle.jvmargs')?.value, JVM_ARGS, 'added when missing');
 });
+
+test('automatic car line check-in has background location on iPhone and Android', () => {
+  const loc = (appJson.expo.plugins as any[]).find((p) => Array.isArray(p) && p[0] === 'expo-location')?.[1];
+  assert.equal(loc?.isIosBackgroundLocationEnabled, true, 'iPhone: the "location" background mode, or startGeofencingAsync fails');
+  assert.equal(loc?.isAndroidBackgroundLocationEnabled, true);
+});
