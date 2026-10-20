@@ -1,17 +1,22 @@
 /**
- * One activity (a sport, show, ensemble, club…): follow it (★), its current and next season
- * (details, grades, sign-up for your children), and its schedule. Its coaches or directors and
- * the activity managers also approve sign-ups and edit the schedule and seasons; activity
- * managers edit the activity and who leads it.
+ * One activity (a sport, show, ensemble, club…): its team photo, follow it (★), its current and
+ * next season (details, grades, sign-up for your children), and its schedule with where each item
+ * is and Are you going? for registered children. Its coaches or directors and the activity
+ * managers also see who's coming, change the team photo, approve sign-ups and edit the schedule
+ * and seasons; activity managers edit the activity and who leads it.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   canManageSport, decideSportRegistration, followSport, getUser, isFamily, listSports, listUsers, myAccess, myChildren, mySports,
-  registerForSport, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, withdrawSportRegistration,
-  type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
+  registerForSport, removeSportPhoto, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, uploadSportPhoto,
+  withdrawSportRegistration, type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
+import { pickSquarePhoto } from '../../src/photos';
+import { AttendanceLine, RsvpButton, SportAvatar } from '../../src/sports/cards';
+import { useEventPeople } from '../../src/sports/hooks';
+import { noteActivityViewed } from '../../src/sports/recent';
 import { isPastTime, splitPast } from '../../src/calendar/past';
 import { PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
 import { categoryInfo, leaders } from '../../src/sports/categories';
@@ -42,7 +47,9 @@ export default function SportPage() {
   const today = schoolToday();
   const load = useCallback(async () => {
     try {
-      const [d, p] = await Promise.all([listSports(), session()]);
+      const p = await session();
+      const d = await listSports();  // after session(), so the team photo is signed for approved accounts
+      noteActivityViewed(id);
       const sp = d.sports.find((x) => x.id === id) ?? null;
       const active = sp ? activeSeasons(d.seasons, sp.id, schoolToday()) : [];
       const ids = active.map((x) => x.id);
@@ -59,8 +66,10 @@ export default function SportPage() {
     }
   }, [id]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
-  useEffect(() => subscribeSports(load), [load]);
-  const refresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
+  const upcomingEvents = events.filter((e) => !isPastTime(e.startsAt, e.endsAt));
+  const rsvp = useEventPeople(me, upcomingEvents);
+  useEffect(() => subscribeSports(() => { load(); rsvp.reload(); }), [load, rsvp.reload]);
+  const refresh = async () => { setRefreshing(true); await Promise.all([load(), rsvp.reload()]); setRefreshing(false); };
 
   if (sport === undefined) return <><Stack.Screen options={{ title: 'Activities' }} /><Loading /></>;
   if (!sport) return <View style={[s.screen, s.pad]}><Stack.Screen options={{ title: 'Activities' }} /><Card><H>That activity is gone</H></Card></View>;
@@ -82,7 +91,7 @@ export default function SportPage() {
       <Stack.Screen options={{ title: sport.name }} />
 
       <Card style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
-        <Text style={{ fontSize: 46 }} accessible={false}>{sport.icon}</Text>
+        <SportAvatar sport={sport} size={76} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{sport.name}</Text>
           <Tag label={`${categoryInfo(sport.category).emoji} ${categoryInfo(sport.category).label}`} color={C.muted} />
@@ -91,6 +100,7 @@ export default function SportPage() {
         </View>
         <StarButton following={following} onPress={toggleFollow} />
       </Card>
+      {manage && approved && <TeamPhotoLink sport={sport} onChange={load} />}
       <P muted>{following ? 'You\'ll see its schedule in Activities and hear about changes and sign-ups.' : 'Follow to see its schedule in Activities and hear about changes and sign-ups.'}</P>
 
       {seasons.length === 0 && <Card><P muted>No season is scheduled yet. Follow it to hear when sign-ups open.</P></Card>}
@@ -101,16 +111,52 @@ export default function SportPage() {
 
       <Text style={{ fontSize: 13, fontWeight: '800', color: C.muted, letterSpacing: 0.5, marginTop: 8 }}>SCHEDULE</Text>
       <PastToggle count={schedule.past.length} shown={past.shown} onToggle={past.toggle} />
-      {[...(past.shown ? schedule.past : []), ...schedule.upcoming].map((e) => (
-        <EventRow key={e.id} e={e} past={past.shown && schedule.past.includes(e)}
-          onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined} />
-      ))}
+      {[...(past.shown ? schedule.past : []), ...schedule.upcoming].map((e) => {
+        const people = rsvp.peopleFor(e);
+        const att = rsvp.attendanceFor(e);
+        return (
+          <EventRow key={e.id} e={e} past={past.shown && schedule.past.includes(e)}
+            onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined}
+            footer={people.length || att.length ? (
+              <>
+                <AttendanceLine rows={att} />
+                <RsvpButton e={e} people={people} answers={rsvp.answers} onChange={rsvp.reload} />
+              </>
+            ) : undefined} />
+        );
+      })}
       {schedule.upcoming.length === 0 && <Card><P muted>Nothing coming up on the schedule.</P></Card>}
 
       {manage && (
         <ManagePanel sport={sport} seasons={seasons} regs={regs} isManager={isManager} onChange={load} />
       )}
     </ScrollView>
+  );
+}
+
+/** Coaches/directors and activity managers: take, choose or remove the team photo. */
+function TeamPhotoLink({ sport, onChange }: { sport: Sport; onChange: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const choose = async (camera: boolean) => {
+    const photo = await pickSquarePhoto(camera);
+    if (!photo) return;
+    setBusy(true);
+    try { await uploadSportPhoto(sport.id, photo, sport.photoPath); onChange(); } catch (e) { fail(e); } finally { setBusy(false); }
+  };
+  const ask = () => {
+    if (Platform.OS === 'web') { choose(false); return; }
+    Alert.alert('Team photo', 'Families and staff see it on this activity and its events.', [
+      { text: 'Take a photo', onPress: () => choose(true) },
+      { text: 'Choose from library', onPress: () => choose(false) },
+      ...(sport.photoPath ? [{ text: 'Remove photo', style: 'destructive' as const,
+        onPress: () => { removeSportPhoto(sport.id, sport.photoPath).then(onChange).catch(fail); } }] : []),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+  };
+  return (
+    <Text style={{ color: C.primary, fontWeight: '700' }} onPress={busy ? undefined : ask} accessibilityRole="button">
+      {busy ? 'Uploading the team photo…' : sport.photoPath ? 'Change the team photo' : '+ Add a team photo'}
+    </Text>
   );
 }
 

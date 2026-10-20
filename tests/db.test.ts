@@ -1395,3 +1395,67 @@ test('critical alerts: admins send them to every teacher and staff member, who a
   assert.equal((await one(`select app.alert_level() as l`)).l, 'critical');
   await db.exec(`update app.settings set value = 'off' where key = 'critical_alerts'`);
 });
+
+test('activity events: addresses, team photos, and families answer "Are you going?" for coaches to see', async () => {
+  const at = (days: number) => `date_trunc('day', now()) + interval '${days} days 16 hours'`;
+  const ava = (await one(`select ${id('u-s01')} as u`)).u as string;
+  // A club with a coach, an open season, and Ava (Rosa's daughter) registered.
+  await as('u-admin', true);
+  const club = await one(`select * from sport_save(null, 'Science Olympiad', '🔬', 'Build and compete', 'clubs')`);
+  await one(`select sport_set_coach('${club.id}', ${id('u-vbcoach')}, true)`);
+  await as('u-vbcoach');
+  const season = await one(`select * from season_save(null, '${club.id}', 'Fall 2026', app.school_today() - 1, app.school_today() + 40,
+    app.school_today() - 1, app.school_today() + 5)`);
+  await as('u-p01');
+  const reg = await one(`select * from sport_register('${season.id}', '${ava}')`);
+  await as('u-vbcoach');
+  await one(`select * from sport_decide('${reg.id}', true)`);
+
+  // Schedule items carry an address under the venue, and families see it in their schedule.
+  await rejects(`select * from sport_event_save(null, '${season.id}', 'meeting', 'Build night', ${at(2)}, null, 'STEM Lab', null, '', repeat('x', 201))`, /200 characters/);
+  const ev = await one(`select * from sport_event_save(null, '${season.id}', 'meeting', 'Build night', ${at(2)}, null,
+    'Mark Russell Recreation Center', null, '', '429 Taylor Road, Huntsville, AL 35763')`);
+  assert.equal(ev.address, '429 Taylor Road, Huntsville, AL 35763');
+  await as('u-p01');
+  assert.equal((await rows(`select address from my_sport_schedule() where id = '${ev.id}'`))[0].address, '429 Taylor Road, Huntsville, AL 35763');
+
+  // Rosa answers for Ava; Ava can answer for herself; nobody else can, and only registered kids count.
+  await rejects(`select sport_rsvp('${ev.id}', ${id('u-s02')}, 'going')`, /own children/);
+  await rejects(`select sport_rsvp('${ev.id}', '${ava}', 'maybe')`, /Going or Not going/);
+  await one(`select sport_rsvp('${ev.id}', '${ava}', 'going')`);
+  assert.deepEqual((await rows(`select status from sport_event_rsvps`)).map((r) => r.status), ['going']);
+  await as('u-s01');
+  await one(`select sport_rsvp('${ev.id}', '${ava}', 'not_going')`);
+  await as('u-p02');
+  await rejects(`select sport_rsvp('${ev.id}', '${ava}', 'going')`, /own children/);
+  assert.equal((await rows(`select * from sport_event_rsvps`)).length, 0, 'other families see nothing');
+  await rejects(`select sport_rsvp('${ev.id}', ${id('u-s02')}, 'going')`, /registered participants/);
+  assert.equal((await rows(`select * from sport_event_attendance(array['${ev.id}']::uuid[])`)).length, 0, 'only leaders see attendance');
+
+  // The coach sees everyone registered with their answer.
+  await as('u-vbcoach');
+  const att = await rows(`select * from sport_event_attendance(array['${ev.id}']::uuid[])`);
+  assert.deepEqual(att.map((a) => [a.student_id, a.status]), [[ava, 'not_going']]);
+
+  // Cancelled items take no answers; clearing an answer works.
+  await one(`select * from sport_event_cancel('${ev.id}', true)`);
+  await as('u-p01');
+  await rejects(`select sport_rsvp('${ev.id}', '${ava}', 'going')`, /cancelled/);
+  await as('u-vbcoach');
+  await one(`select * from sport_event_cancel('${ev.id}', false)`);
+  await as('u-p01');
+  await one(`select sport_rsvp('${ev.id}', '${ava}', null)`);
+  assert.equal((await rows(`select * from sport_event_rsvps`)).length, 0);
+
+  // Team photo: the coach uploads into the activity's folder; parents can't.
+  const path = `sports/${club.id}/team.jpg`;
+  await rejects(`insert into storage.objects (bucket_id, name) values ('avatars', '${path}')`, /row-level security/);
+  await rejects(`select set_sport_photo('${club.id}', '${path}')`, /coaches or directors/);
+  await as('u-vbcoach');
+  await one(`insert into storage.objects (bucket_id, name) values ('avatars', '${path}') returning id`);
+  await rejects(`select set_sport_photo('${club.id}', 'sports/${ava}/x.jpg')`, /this activity's folder/);
+  await one(`select set_sport_photo('${club.id}', '${path}')`);
+  await as('u-p01');
+  assert.equal((await one(`select photo_path from sports where id = '${club.id}'`)).photo_path, path);
+  assert.equal((await rows(`select name from storage.objects where name = '${path}'`)).length, 1, 'approved accounts see team photos');
+});

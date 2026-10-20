@@ -288,8 +288,14 @@ auditions and performances for theater and music; meetings, competitions and exh
 for art and clubs; home/away and cancellations. People with an approved account tap an
 activity's ★ button to **follow** it, and parents **sign up** their children during a
 season's sign-up window; its coach or director approves, and only then is the child
-registered. **Your schedule** lists what's coming up for the activities you're involved
-in: followed, or a child (or you, as a student) registered. Managers: the *Manage
+registered. The Activities home has a search (🔍) and two carousels: **Your activities**
+(registered, followed, then ones you opened lately) and **Upcoming events**, which counts
+down to each game, practice or rehearsal with its venue, address and **Directions** (Maps),
+then **Full schedule** for the next two months. Parents answer **Are you going?** (Going /
+Not going) for each registered child, and students for themselves (`sport_event_rsvps`);
+coaches and directors see who's coming on each item (`sport_event_attendance`). Coaches,
+directors and activity managers can add a **team photo** (`avatars/sports/<id>/`, seen by
+approved accounts; signed-out visitors see the emoji). Managers: the *Manage
 activities* permission (`sports.manage`; Director and Administrator roles to start; add
 it to a role like "Athletic Director") adds activities and their coaches or directors,
 who (staff, no authenticator code needed) run its seasons, schedule and sign-ups.

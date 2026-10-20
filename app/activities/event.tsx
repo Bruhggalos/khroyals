@@ -36,6 +36,7 @@ export default function EditSportEvent() {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [location, setLocation] = useState('');
+  const [address, setAddress] = useState('');
   const [home, setHome] = useState<boolean | null>(true);
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
@@ -52,7 +53,7 @@ export default function EditSportEvent() {
         const e = (await sportSchedule(all.filter((x) => x.sportId === sport).map((x) => x.id), { past: true })).find((x) => x.id === id);
         if (e) {
           setExisting(e); setSeason(e.seasonId); setKind(e.kind); setTitle(e.title); setDate(localDate(e.startsAt));
-          setStart(localTime(e.startsAt)); setEnd(e.endsAt ? localTime(e.endsAt) : ''); setLocation(e.location ?? '');
+          setStart(localTime(e.startsAt)); setEnd(e.endsAt ? localTime(e.endsAt) : ''); setLocation(e.location ?? ''); setAddress(e.address ?? '');
           setHome(e.home); setNotes(e.notes);
         }
       }
@@ -71,7 +72,7 @@ export default function EditSportEvent() {
     setBusy(true);
     saveSportEvent({
       id: id ?? null, seasonId: season!, kind, title, startsAt: startsAt!, endsAt,
-      location: location.trim() || null, home: withHome ? home : null, notes,
+      location: location.trim() || null, address: address.trim() || null, home: withHome ? home : null, notes,
     }).then(() => router.back()).catch((e) => Alert.alert('Activities', e.message)).finally(() => setBusy(false));
   };
   const ask = (q: string, ok: string, go: () => void) => {
@@ -105,6 +106,8 @@ export default function EditSportEvent() {
           <Field label="Ends (optional)" placeholder="6:00 PM" value={end} onChangeText={setEnd} autoCapitalize="none" style={{ flex: 1 }} />
         </View>
         <Field label="Where" placeholder={category === 'theater' || category === 'music' ? 'Dream Theatre' : 'KH Gym'} value={location} onChangeText={setLocation} />
+        <Field label="Address (optional)" placeholder="429 Taylor Road, Huntsville, AL 35763" hint="For away games and other venues; Directions opens Maps."
+          value={address} onChangeText={setAddress} maxLength={200} />
         {withHome && <View style={[s.row]}>{pill('Home', home === true, () => setHome(true))}{pill('Away', home === false, () => setHome(false))}</View>}
         <Field label="Notes (optional)" placeholder={category === 'sports' ? 'Bus leaves at 3:15, wear white…' : 'What to bring, who should come…'}
           value={notes} onChangeText={setNotes} multiline />

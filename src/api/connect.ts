@@ -359,7 +359,8 @@ export function subscribeCarline(onChange: () => void): () => void {
 // ---------------------------------------------------------------- activities (sports, theater, music, art, clubs)
 // Stored in the sports tables (named before theater was added); `category` says which kind.
 
-export type Sport = { id: string; name: string; icon: string; description: string; category: Category; coachIds: string[] };
+/** `photo`: the team photo's URL when there is one (only approved accounts can see it). */
+export type Sport = { id: string; name: string; icon: string; description: string; category: Category; coachIds: string[]; photoPath?: string | null; photo?: string };
 export type SportSeason = {
   id: string; sportId: string; name: string; startsOn: string; endsOn: string;
   signupOpens: string | null; signupCloses: string | null; minGrade: number | null; maxGrade: number | null;
@@ -369,6 +370,8 @@ export type SportEventKind = EventKind;
 export type SportEvent = {
   id: string; seasonId: string; kind: SportEventKind; title: string; startsAt: string; endsAt: string | null;
   location: string | null; home: boolean | null; notes: string; cancelled: boolean;
+  /** Street address under the venue name (Directions opens Maps). */
+  address?: string | null;
 };
 export type SportRegistration = {
   id: string; seasonId: string; studentId: string; requestedBy: string | null;
@@ -382,7 +385,7 @@ const toSeason = (r: any): SportSeason => ({
 });
 const toSportEvent = (r: any): SportEvent => ({
   id: r.id, seasonId: r.season_id, kind: r.kind, title: r.title, startsAt: r.starts_at, endsAt: r.ends_at,
-  location: r.location, home: r.home, notes: r.notes, cancelled: r.cancelled,
+  location: r.location, home: r.home, notes: r.notes, cancelled: r.cancelled, address: r.address ?? null,
 });
 const toRegistration = (r: any): SportRegistration => ({
   id: r.id, seasonId: r.season_id, studentId: r.student_id, requestedBy: r.requested_by, status: r.status,
@@ -398,10 +401,13 @@ export async function listSports(): Promise<{ sports: Sport[]; seasons: SportSea
     run(sb().from('sport_coaches').select('sport_id, user_id')),
     run(sb().from('sport_seasons').select('*').order('starts_on')),
   ]);
+  // Team photos are private to approved accounts; signed-out visitors see the emoji.
+  if (current && !current.pending) await signAvatars((sports as any[]).map((x) => x.photo_path)).catch(() => {});
   return {
     sports: (sports as any[]).map((x) => ({
       id: x.id, name: x.name, icon: x.icon, description: x.description, category: x.category ?? 'sports',
       coachIds: (coaches as any[]).filter((c) => c.sport_id === x.id).map((c) => c.user_id),
+      photoPath: x.photo_path ?? null, photo: current && !current.pending ? avatarUrl(x.photo_path) : '',
     })),
     seasons: (seasons as any[]).map(toSeason),
   };
@@ -464,7 +470,7 @@ export async function saveSportEvent(e: Omit<SportEvent, 'id' | 'cancelled'> & {
   if (!live) noServer();
   await rpc('sport_event_save', {
     p_id: e.id ?? null, p_season: e.seasonId, p_kind: e.kind, p_title: e.title, p_starts: e.startsAt, p_ends: e.endsAt,
-    p_location: e.location, p_home: e.home, p_notes: e.notes,
+    p_location: e.location, p_home: e.home, p_notes: e.notes, p_address: e.address ?? null,
   });
 }
 export async function cancelSportEvent(id: string, cancelled: boolean) {
@@ -483,11 +489,44 @@ export async function decideSportRegistration(id: string, approve: boolean, note
 }
 
 /** Live schedule and sign-up changes. */
+/** A family's answer to "Are you going?" for one registered child. */
+export type SportRsvp = { eventId: string; studentId: string; status: 'going' | 'not_going' };
+/** For an activity's leaders: one registered participant and their answer. */
+export type SportAttendance = { eventId: string; studentId: string; name: string; status: 'going' | 'not_going' | 'none' };
+/** Your family's answers for these schedule items. */
+export async function myRsvps(eventIds: string[]): Promise<SportRsvp[]> {
+  if (!live || !current || !eventIds.length) return [];
+  const rows: any[] = await run(sb().from('sport_event_rsvps').select('*').in('event_id', eventIds));
+  return rows.map((r) => ({ eventId: r.event_id, studentId: r.student_id, status: r.status }));
+}
+/** Going, Not going, or null to clear. */
+export async function answerRsvp(eventId: string, studentId: string, status: 'going' | 'not_going' | null) {
+  await rpc('sport_rsvp', { p_event: eventId, p_student: studentId, p_status: status });
+}
+/** Who's coming, for the schedule items you lead (others come back empty). */
+export async function eventAttendance(eventIds: string[]): Promise<SportAttendance[]> {
+  if (!live || !current || !eventIds.length) return [];
+  const rows: any[] = await rpc('sport_event_attendance', { p_events: eventIds });
+  return rows.map((r) => ({ eventId: r.event_id, studentId: r.student_id, name: r.name, status: r.status }));
+}
+/** Upload a JPEG (base64) as an activity's team photo (its coaches or directors and activity managers). */
+export async function uploadSportPhoto(sportId: string, base64: string, oldPath?: string | null) {
+  const path = `sports/${sportId}/${Date.now()}.jpg`;
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  await run(sb().storage.from('avatars').upload(path, bytes.buffer, { contentType: 'image/jpeg' }) as any);
+  await run(sb().rpc('set_sport_photo', { p_sport: sportId, p_path: path }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
+export async function removeSportPhoto(sportId: string, oldPath?: string | null) {
+  await run(sb().rpc('set_sport_photo', { p_sport: sportId, p_path: null }));
+  if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
+}
 export function subscribeSports(onChange: () => void): () => void {
   if (!live) return () => {};
   const ch: RealtimeChannel = sb().channel(`sports-${Math.random().toString(36).slice(2)}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sport_events' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'sport_registrations' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sport_event_rsvps' }, onChange)
     .subscribe();
   return () => { sb().removeChannel(ch); };
 }

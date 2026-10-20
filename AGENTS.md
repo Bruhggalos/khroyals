@@ -72,6 +72,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   it lets them run that activity's seasons, schedule and sign-ups
   (`app.can_manage_sport`). Adding activities and their coaches needs `sports.manage`.
   Sign-ups only count once approved (`sport_registrations.status = 'registered'`).
+  "Are you going?" answers (`sport_event_rsvps`, `sport_rsvp`) are only for registered
+  participants, given by their parents (`app.my_students()`, so never Family accounts) or
+  themselves; only the activity's leaders see attendance.
 - **Calendars hide the past.** Every list of dated events (the Calendar app, activity
   schedules, Volunteer) shows what's still to come; past events stay out of view behind
   `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Track it with
