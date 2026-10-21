@@ -8,7 +8,7 @@
 import { AppRegistry } from 'react-native';
 import CarPlay from '../../modules/carplay';
 import {
-  carlineAnnounce, carlineCancel, carlineConfig, carlineToday, live, myChildren, onAuthChange, pickupNumbers, session, subscribeCarline,
+  carlineAnnounce, carlineCancel, carlineConfig, carlineToday, live, myPickupChildren, onAuthChange, pickupNumbers, session, subscribeCarline,
 } from '../api/connect';
 import { currentSpot } from '../carline/location';
 import { hoursLabel } from '../carline/time';
@@ -22,7 +22,7 @@ async function load(): Promise<CarState> {
   if (!me) return { kind: 'signed-out' };
   if (me.pending) return { kind: 'pending' };
   const [kids, pickups, config, numbers] = await Promise.all([
-    myChildren(), carlineToday(), carlineConfig().catch(() => null), pickupNumbers().catch(() => ({} as Record<string, string>)),
+    myPickupChildren(), carlineToday(), carlineConfig().catch(() => null), pickupNumbers().catch(() => ({} as Record<string, string>)),
   ]);
   return {
     kind: 'parent',

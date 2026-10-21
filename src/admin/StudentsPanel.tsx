@@ -12,6 +12,7 @@ import { GradePicker } from '../comms/GradePicker';
 import { gradeLabel } from '../comms/grades';
 import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../ui';
 import { DateField, birthdayMax, birthdayMin, birthdayStart, dateLabel } from '../forms/DateTimeField';
+import { PickupPeople } from '../carline/PickupPeople';
 
 const PAGE = 20;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -103,6 +104,7 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
 }
 
 function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string; onChange: () => void }) {
+  const [linking, setLinking] = useState<AdminPerson | null>(null);
   const [pickup, setPickup] = useState(number ?? '');
   const [open, setOpen] = useState(false);
   const [first, setFirst] = useState(x.firstName);
@@ -143,8 +145,25 @@ function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string
             </Text>
           ))}
           <P muted>Family accounts (grandparents and other relatives) only get car line pickup for the children linked here.</P>
-          <AdultSearch label="Link a parent or family member" exclude={x.parents.map((p) => p.id)}
-            onPick={(p) => adminLinkGuardian(p.id, x.id, true).then(onChange).catch(fail)} />
+          {linking ? (
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: C.ink }}>Link {name(linking)} as {x.firstName}'s:</Text>
+              <View style={[s.row, { gap: 8 }]}>
+                {(['mother', 'father'] as const).map((r) => (
+                  <View key={r} style={{ flex: 1 }}>
+                    <Button label={r === 'mother' ? 'Mother' : 'Father'}
+                      onPress={() => adminLinkGuardian(linking.id, x.id, true, r).then(() => { setLinking(null); onChange(); }).catch(fail)} />
+                  </View>
+                ))}
+              </View>
+              <Text style={{ color: C.muted }} onPress={() => setLinking(null)}>Cancel</Text>
+            </View>
+          ) : (
+            <AdultSearch label="Link a parent or family member" exclude={x.parents.map((p) => p.id)}
+              onPick={(p) => (p.schoolRole === 'family' ? adminLinkGuardian(p.id, x.id, true).then(onChange).catch(fail) : setLinking(p))} />
+          )}
+          <P muted>A child has at most one mother and one father. Anyone else who picks up goes on the approved list below.</P>
+          <PickupPeople studentId={x.id} childName={x.firstName} office />
           <View style={[s.row, { justifyContent: 'space-between' }]}>
             {x.managed ? (
               <Text style={{ color: C.danger, fontWeight: '600' }}
@@ -165,9 +184,11 @@ function AddStudent({ onDone }: { onDone: () => void }) {
   const [grade, setGrade] = useState<number | null>(null);
   const [birthday, setBirthday] = useState('');
   const [parent, setParent] = useState<AdminPerson | null>(null);
+  const [relation, setRelation] = useState<'mother' | 'father' | null>(null);
   const save = () => {
     if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
-    adminCreateStudent({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, guardianId: parent?.id ?? null })
+    if (parent && parent.schoolRole !== 'family' && !relation) return Alert.alert('Parent', `Is ${name(parent)} the mother or the father?`);
+    adminCreateStudent({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, guardianId: parent?.id ?? null, relation })
       .then(() => { Alert.alert('Added', `${first} is set up${parent ? ` and linked to ${name(parent)}` : ''}.`); onDone(); }).catch(fail);
   };
   return (
@@ -181,7 +202,21 @@ function AddStudent({ onDone }: { onDone: () => void }) {
       <GradePicker value={grade} onChange={setGrade} label="Grade this school year" />
       <DateField label="Birthday (optional)" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
       {parent
-        ? <Text style={{ color: C.ink }}>👪 Parent: {name(parent)}  <Text style={{ color: C.danger }} onPress={() => setParent(null)}>change</Text></Text>
+        ? (
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: C.ink }}>👪 Parent: {name(parent)}  <Text style={{ color: C.danger }} onPress={() => { setParent(null); setRelation(null); }}>change</Text></Text>
+            {parent.schoolRole !== 'family' && (
+              <View style={[s.row, { gap: 6 }]}>
+                {(['mother', 'father'] as const).map((r) => (
+                  <Text key={r} onPress={() => setRelation(r)} accessibilityRole="button"
+                    style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1,
+                      borderColor: relation === r ? C.primary : C.line, backgroundColor: relation === r ? C.primary : '#fff',
+                      color: relation === r ? '#fff' : C.ink, fontWeight: '600' }}>{r === 'mother' ? 'Mother' : 'Father'}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+        )
         : <AdultSearch label="Parent (optional; you can link more later)" onPick={setParent} />}
       <Button label="Add student" disabled={!first.trim() || !last.trim() || grade === null} onPress={save} />
     </Card>

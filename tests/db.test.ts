@@ -193,7 +193,7 @@ test('admin console: approve sign-ups and manage roles', async () => {
   assert.equal(pending.length, 1);
   assert.equal(pending[0].email, 'new@demo.khroyals.test');
   await one(`select admin_update_profile('00000000-0000-0000-0000-0000000000aa', 'parent')`);
-  await one(`select admin_link_guardian('00000000-0000-0000-0000-0000000000aa', ${id('u-s03')})`);
+  await one(`select admin_link_guardian('00000000-0000-0000-0000-0000000000aa', ${id('u-s03')}, true, 'father')`);
   await asSuper();
   const vbFamily = await one(`select role from memberships where group_id = ${id('g-vb-parents')} and user_id = '00000000-0000-0000-0000-0000000000aa'`);
   assert.ok(vbFamily, 'linking a guardian adds them to their student\'s family groups');
@@ -1010,8 +1010,8 @@ test('children: the office adds them, parents ask for more, grades move up each 
   await as('u-p05');
   await rejects(`select admin_create_student('Ella', 'Kim', 2)`, /permission/);
   await as('u-admin', true);
-  const ella = (await one(`select admin_create_student('Ella', 'Kim', 2, '2018-04-02', ${id('u-p05')}) as id`)).id;
-  await one(`select admin_link_guardian(${id('u-eng')}, '${ella}')`);
+  const ella = (await one(`select admin_create_student('Ella', 'Kim', 2, '2018-04-02', ${id('u-p05')}, 'mother') as id`)).id;
+  await one(`select admin_link_guardian(${id('u-eng')}, '${ella}', true, 'father')`);
   await rejects(`select admin_link_guardian(${id('u-s01')}, '${ella}')`, /approved adults/);
   await rejects(`select admin_link_guardian(${id('u-p05')}, ${id('u-p06')})`, /must be students/);
   const row = await one(`select * from profiles where id = '${ella}'`);
@@ -1044,7 +1044,7 @@ test('children: the office adds them, parents ask for more, grades move up each 
   // Parents ask; the office approves or declines, and they're told.
   await as('u-p06');
   await rejects(`select request_child_edit('${ella}', 'Ella', 'Kim', 3)`, /Only this child's parents/);
-  const add = await one(`select * from request_child('Max', 'Ortiz', -1, null, 'Starting in January')`);
+  const add = await one(`select * from request_child('Max', 'Ortiz', -1, null, 'Starting in January', 'mother')`);
   await as('u-p05');
   const edit = await one(`select * from request_child_edit('${ella}', 'Ella', 'Kim-Lee', 2)`);
   await as('u-s01');
@@ -1527,4 +1527,71 @@ test('car line pickups email every parent who picked the child up; an undo cance
   assert.deepEqual((await rows(`select status from app.email_queue where pickup_id = '${p.id}' order by status`)).map((r) => r.status), ['failed', 'sent']);
   await db.exec(`delete from guardians where guardian_id = ${id('u-p05')} and student_id = ${id('u-s01')};
                  update app.settings set value = null where key = 'carline_open_on'`);
+});
+
+test('parents: at most two per child, one mother and one father', async () => {
+  await as('u-admin', true);
+  await one(`select admin_set_parent_relation(${id('u-p04')}, ${id('u-s04')}, 'mother')`);
+  await rejects(`select admin_link_guardian(${id('u-p08')}, ${id('u-s04')})`, /mother or father/);
+  await rejects(`select admin_link_guardian(${id('u-p08')}, ${id('u-s04')}, true, 'mother')`, /already has a mother \(Sun/);
+  await one(`select admin_link_guardian(${id('u-p08')}, ${id('u-s04')}, true, 'father')`);
+  await rejects(`select admin_link_guardian(${id('u-p07')}, ${id('u-s04')}, true, 'father')`, /already has two parents/);
+  await one(`select admin_link_guardian(${id('u-p08')}, ${id('u-s04')}, false)`);
+  await rejects(`select admin_set_parent_relation(${id('u-p08')}, ${id('u-s04')}, 'father')`, /isn't linked/);
+  await as('u-p04');
+  const ppl = (await one(`select child_pickup_people(${id('u-s04')}) as p`)).p;
+  assert.deepEqual(ppl.parents.map((p: any) => p.relation), ['mother']);
+});
+
+test('approved pickup people: parents add an account by email, for a day or longer, and can remove them', async () => {
+  const sun = id('u-s04');
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on';
+                 delete from carline_pickups where student_id = ${sun}`);
+  const priya = (await one(`select ${id('u-p07')} as u`)).u;
+
+  // Only the child's parents (or the office) choose, and only people with an account.
+  await as('u-p02');
+  await rejects(`select add_pickup_person(${sun}, 'u-p07@demo.khroyals.test', 'carpool')`, /Only this child's parents/);
+  await as('u-p04');
+  await rejects(`select add_pickup_person(${sun}, 'nobody@example.com', 'carpool')`, /No Royals Connect account/);
+  await rejects(`select add_pickup_person(${sun}, 'u-s01@demo.khroyals.test', 'sibling')`, /Students can't/);
+  await rejects(`select add_pickup_person(${sun}, 'u-p04@demo.khroyals.test', 'other')`, /already a parent/);
+
+  // Before: Priya can't announce Sun.
+  await as('u-p07');
+  await rejects(`select * from carline_announce(array[${sun}], ${AT})`, /own children|pick up/);
+
+  // Today only.
+  await as('u-p04');
+  const added = (await one(`select add_pickup_person(${sun}, 'U-P07@demo.khroyals.test', 'carpool', app.school_today(), app.school_today()) as a`)).a;
+  assert.match(added.name, /Priya/);
+  await as('u-p07');
+  const sunId = (await one(`select ${sun} as u`)).u;
+  assert.ok((await rows(`select x as id from my_pickup_children() x`)).some((r) => r.id === sunId), 'Priya can pick Sun up today');
+  assert.match((await rows(`select body from my_notifications() where data->>'carline' = 'pickup-added'`))[0].body, /Sun \w+ added you to pick up \w+ from the car line on/);
+  await rejects(`select child_pickup_people(${sun})`, /Only this child's parents/);
+  const [p] = await rows(`select * from carline_announce(array[${sun}], ${AT})`);
+  assert.equal(p.guardian_id, priya, 'Priya announced Sun');
+
+  // The pickup email says who and how they're related.
+  await as('u-eng');
+  await one(`select carline_confirm('${p.id}')`);
+  await asSuper();
+  assert.match((await one(`select body from app.email_queue where pickup_id = '${p.id}'`)).body, /Picked up by: Priya \w+ \(carpool\)/);
+
+  // Removed: no more pickups. Future dates don't count yet.
+  await as('u-p04');
+  const list = (await one(`select child_pickup_people(${sun}) as p`)).p.approved;
+  assert.equal(list.length, 1);
+  assert.equal(list[0].active, true);
+  await one(`select remove_pickup_person('${list[0].id}')`);
+  await one(`select add_pickup_person(${sun}, 'u-p07@demo.khroyals.test', 'grandparent', app.school_today() + 1, null)`);
+  await as('u-p07');
+  assert.equal((await rows(`select * from my_pickup_children() x where x = ${sun}`)).length, 0, 'starts tomorrow');
+  await rejects(`select * from carline_announce(array[${sun}], ${AT})`, /own children|pick up/);
+  await rejects(`insert into pickup_authorizations (student_id, person_id, relationship) values (${sun}, '${priya}', 'other')`, /permission denied/);
+
+  await asSuper();
+  await db.exec(`delete from pickup_authorizations; update app.settings set value = null where key = 'carline_open_on'`);
 });

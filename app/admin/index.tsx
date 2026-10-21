@@ -64,6 +64,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
 }) {
   const [open, setOpen] = useState(!!p.pending);
   const [grade, setGrade] = useState<number | null>(p.grade ?? null);
+  const [linkKid, setLinkKid] = useState<{ id: string; name: string } | null>(null);
   const [q, setQ] = useState('');
   const found = usePeople(q.trim(), 'students', 6, 0, 0, q.trim() !== '');
   const can = (x: string) => access.permissions.includes(x);
@@ -136,9 +137,27 @@ function PersonCard({ p, links, access, roles, onChange }: {
                   <Text style={{ color: C.danger }} onPress={() => adminLinkGuardian(p.id, c.studentId, false).then(onChange).catch(fail)}>unlink</Text>
                 </Text>
               ))}
+              {linkKid && (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ color: C.ink }}>Link {p.firstName} to {linkKid.name} as their:</Text>
+                  <View style={[s.row, { gap: 8 }]}>
+                    {(['mother', 'father'] as const).map((r) => (
+                      <View key={r} style={{ flex: 1 }}>
+                        <Button label={r === 'mother' ? 'Mother' : 'Father'}
+                          onPress={() => adminLinkGuardian(p.id, linkKid.id, true, r).then(() => { setLinkKid(null); onChange(); }).catch(fail)} />
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={{ color: C.muted }} onPress={() => setLinkKid(null)}>Cancel</Text>
+                </View>
+              )}
               <Field label="Link a student" placeholder="Search by name" value={q} onChangeText={setQ} />
               {q.trim() !== '' && found?.people.filter((x) => !children.some((c) => c.studentId === x.id)).map((x) => (
-                <Text key={x.id} style={{ color: C.primary }} onPress={() => { setQ(''); adminLinkGuardian(p.id, x.id).then(onChange).catch(fail); }}>
+                <Text key={x.id} style={{ color: C.primary }} onPress={() => {
+                  setQ('');
+                  if (p.schoolRole === 'family') adminLinkGuardian(p.id, x.id).then(onChange).catch(fail);
+                  else setLinkKid({ id: x.id, name: fullName(x) });
+                }}>
                   + {fullName(x)} ({x.grade != null ? gradeLabel(x.grade) : 'no grade'})
                 </Text>
               ))}

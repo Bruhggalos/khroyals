@@ -10,7 +10,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  carlineBoard, carlineConfig, carlineToday, isFamily, live, myChildren, myVehicles, pickupNumbers, session, subscribeCarline,
+  carlineBoard, carlineConfig, carlineToday, isFamily, live, myPickupChildren, myVehicles, pickupNumbers, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person, type Pickup, type Vehicle,
 } from '../src/api/connect';
 import { DutyView } from '../src/carline/DutyView';
@@ -45,7 +45,7 @@ export default function CarLine() {
       const p = await session();
       const ok = !!p && !p.pending;
       const [k, today, b, n, c, v] = ok
-        ? await Promise.all([myChildren(), carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([]), pickupNumbers(), carlineConfig(), myVehicles().catch(() => [])])
+        ? await Promise.all([myPickupChildren(), carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([]), pickupNumbers(), carlineConfig(), myVehicles().catch(() => [])])
         : [[], [], [], {}, null, []];
       setPerson(p); setKids(k); setVehicles(v); setPickups(today); setBoard(b); setNumbers(n); setConfig(c); setError(null);
     } catch (e: any) {

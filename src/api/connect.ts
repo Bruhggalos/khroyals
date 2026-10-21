@@ -767,8 +767,14 @@ export function subscribeQuestions(onChange: () => void): () => void {
 export async function adminUpdateProfile(userId: string, role: SchoolRole | null, grade?: number | null) {
   await run(sb().rpc('admin_update_profile', { p_user: userId, p_role: role, p_grade: grade ?? null }));
 }
-export async function adminLinkGuardian(guardianId: string, studentId: string, link = true) {
-  await run(sb().rpc('admin_link_guardian', { p_guardian: guardianId, p_student: studentId, p_link: link }));
+export type ParentRelation = 'mother' | 'father';
+/** Link a parent (say mother or father; a child has at most one of each) or a Family account; or unlink. */
+export async function adminLinkGuardian(guardianId: string, studentId: string, link = true, relation: ParentRelation | null = null) {
+  await run(sb().rpc('admin_link_guardian', { p_guardian: guardianId, p_student: studentId, p_link: link, p_relation: relation }));
+}
+/** Say whether an existing parent link is the mother or the father. */
+export async function adminSetParentRelation(guardianId: string, studentId: string, relation: ParentRelation) {
+  await run(sb().rpc('admin_set_parent_relation', { p_guardian: guardianId, p_student: studentId, p_relation: relation }));
 }
 export async function adminSetCarlineDuty(userId: string, on: boolean) {
   await run(sb().rpc('admin_set_carline_duty', { p_user: userId, p_on: on }));
@@ -1191,9 +1197,10 @@ export async function removeChildPhoto(studentId: string, oldPath?: string | nul
   await run(sb().rpc('set_child_photo', { p_student: studentId, p_path: null }));
   if (oldPath && !/^https?:/.test(oldPath)) await sb().storage.from('avatars').remove([oldPath]);
 }
-export async function requestChild(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string }) {
+export async function requestChild(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string; relation: ParentRelation }) {
   await run(sb().rpc('request_child', {
     p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_note: c.note ?? null,
+    p_relation: c.relation,
   }));
 }
 export async function requestChildEdit(studentId: string, c: { firstName: string; lastName: string; grade: number; note?: string }) {
@@ -1227,9 +1234,12 @@ export async function adminListStudents(opts: { search?: string; limit?: number;
     })),
   };
 }
-export async function adminCreateStudent(c: { firstName: string; lastName: string; grade: number; birthday?: string | null; guardianId?: string | null }) {
+export async function adminCreateStudent(c: {
+  firstName: string; lastName: string; grade: number; birthday?: string | null; guardianId?: string | null; relation?: ParentRelation | null;
+}) {
   return run(sb().rpc('admin_create_student', {
     p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_guardian: c.guardianId ?? null,
+    p_relation: c.relation ?? null,
   })) as Promise<string>;
 }
 export async function adminUpdateStudent(id: string, c: { firstName: string; lastName: string; grade: number }) {
@@ -1249,4 +1259,34 @@ export async function adminDecideFamilyRequest(id: string, approve: boolean, opt
   await run(sb().rpc('admin_decide_family_request', {
     p_request: id, p_approve: approve, p_existing: opts.existingStudentId ?? null, p_note: opts.note ?? null,
   }));
+}
+
+// ---------------------------------------------------------------- who picks a child up
+
+export type PickupRelationship = 'grandparent' | 'aunt_uncle' | 'sibling' | 'stepparent' | 'family_friend' | 'nanny' | 'carpool' | 'other';
+export type ApprovedPickup = {
+  id: string; personId: string; name: string; relationship: PickupRelationship; label: string;
+  startsOn: string; endsOn: string | null; pending: boolean; active: boolean; grantedBy: string;
+};
+export type ChildPickupPeople = {
+  parents: { id: string; name: string; relation: ParentRelation | null }[];
+  family: { id: string; name: string }[];
+  approved: ApprovedPickup[];
+};
+/** A child's parents (mother/father), Family links and approved pickup people (parents and staff). */
+export async function childPickupPeople(studentId: string): Promise<ChildPickupPeople> {
+  return run(sb().rpc('child_pickup_people', { p_student: studentId })) as Promise<ChildPickupPeople>;
+}
+/** Parents (or the office): allow the account with this email to pick the child up (dates: "YYYY-MM-DD"; no end = until removed). */
+export async function addPickupPerson(studentId: string, email: string, relationship: PickupRelationship, startsOn?: string | null, endsOn?: string | null) {
+  return run(sb().rpc('add_pickup_person', {
+    p_student: studentId, p_email: email.trim(), p_relationship: relationship, p_starts: startsOn || null, p_ends: endsOn || null,
+  })) as Promise<{ id: string; name: string; pending: boolean }>;
+}
+export async function removePickupPerson(id: string) { await run(sb().rpc('remove_pickup_person', { p_id: id })); }
+/** Children this person may pick up today: their own, Family links, and approvals that cover today. */
+export async function myPickupChildren(): Promise<Person[]> {
+  if (!live || !current) return [];
+  const rows: any[] = await run(sb().rpc('my_pickup_children'));
+  return rows.map((r) => directory.get(typeof r === 'string' ? r : Object.values(r)[0] as string)).filter(Boolean) as Person[];
 }

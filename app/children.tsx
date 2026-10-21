@@ -15,12 +15,14 @@ import { pickSquarePhoto } from '../src/photos';
 import { gradeLabel } from '../src/comms/grades';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
 import { DateField, birthdayMax, birthdayMin, birthdayStart } from '../src/forms/DateTimeField';
+import { PickupPeople } from '../src/carline/PickupPeople';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const fail = (e: any) => Alert.alert('Something went wrong', e.message);
 
 function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest | undefined; onChange: () => void }) {
   const [open, setOpen] = useState(false);
+  const [pickups, setPickups] = useState(false);
   const [busy, setBusy] = useState(false);
   const [birthday, setBirthday] = useState(c.birthday ?? '');
   const [bio, setBio] = useState(c.bio);
@@ -58,7 +60,11 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
       </View>
       {!!c.allergies && <Text style={{ color: C.danger, fontWeight: '600' }}>⚠️ Allergies: {c.allergies}</Text>}
       {pending && <P muted>⏳ Waiting for the office to approve: {pending.details.firstName} {pending.details.lastName}, {gradeLabel(pending.details.grade)}</P>}
-      <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setOpen(!open)}>{open ? 'Close' : `Edit ${c.firstName}'s details`}</Text>
+      <View style={[s.row, { flexWrap: 'wrap', gap: 18 }]}>
+        <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setOpen(!open)}>{open ? 'Close' : `Edit ${c.firstName}'s details`}</Text>
+        <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setPickups(!pickups)}>{pickups ? 'Hide pickup list' : 'Who can pick up'}</Text>
+      </View>
+      {pickups && <PickupPeople studentId={c.id} childName={c.firstName} />}
       {open && (
         <View style={{ gap: 10 }}>
           <View style={[s.row, { flexWrap: 'wrap', gap: 16 }]}>
@@ -100,6 +106,7 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
 function AddChild({ onDone }: { onDone: () => void }) {
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
+  const [relation, setRelation] = useState<'mother' | 'father' | null>(null);
   const [grade, setGrade] = useState<number | null>(null);
   const [birthday, setBirthday] = useState('');
   const [note, setNote] = useState('');
@@ -108,7 +115,7 @@ function AddChild({ onDone }: { onDone: () => void }) {
     if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
     setBusy(true);
     try {
-      await requestChild({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, note });
+      await requestChild({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, note, relation: relation! });
       Alert.alert('Request sent', 'The school office will confirm and link your child to your account.');
       onDone();
     } catch (e) { fail(e); } finally { setBusy(false); }
@@ -122,9 +129,19 @@ function AddChild({ onDone }: { onDone: () => void }) {
         <Field label="Last name" autoComplete="off" value={last} onChangeText={setLast} style={{ flex: 1, minWidth: 0 }} />
       </View>
       <GradePicker value={grade} onChange={setGrade} label="Grade this school year" />
+      <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>I'm their</Text>
+      <View style={[s.row, { gap: 8 }]}>
+        {(['mother', 'father'] as const).map((r) => (
+          <Text key={r} onPress={() => setRelation(r)} accessibilityRole="button" accessibilityState={{ selected: relation === r }}
+            style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, overflow: 'hidden', borderWidth: 1,
+              borderColor: relation === r ? C.primary : C.line, backgroundColor: relation === r ? C.primary : '#fff',
+              color: relation === r ? '#fff' : C.ink, fontWeight: '600' }}>{r === 'mother' ? 'Mother' : 'Father'}</Text>
+        ))}
+      </View>
+      <P muted>A child can have one mother and one father in the app. Grandparents, sitters and others can be added as approved pickups.</P>
       <DateField label="Birthday (optional)" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
       <Field label="Note for the office (optional)" placeholder="e.g. Already enrolled; other parent is …" value={note} onChangeText={setNote} />
-      <Button label={busy ? 'Sending…' : 'Send to the office'} disabled={busy || !first.trim() || !last.trim() || grade === null} onPress={send} />
+      <Button label={busy ? 'Sending…' : 'Send to the office'} disabled={busy || !first.trim() || !last.trim() || grade === null || !relation} onPress={send} />
     </Card>
   );
 }

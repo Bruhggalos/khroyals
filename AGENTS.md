@@ -60,6 +60,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   how loud the push is (`app.alert_level()`, the `critical_alerts` setting). Alert kinds are
   in both `src/alerts/kinds.ts` and the database checks. Keep the full-screen alert
   (`src/alerts/AlertTakeover.tsx`) mounted in `app/_layout.tsx`.
+- **Parents and pickup people:** a child has at most two parents, one mother and one
+  father (`guardians.relation`, enforced by `app.check_parents`); links made before that
+  may have no relation until the office sets it. Anyone else who picks up must have an
+  account and is added by the child's parents or the office (`pickup_authorizations`,
+  `add_pickup_person`, optionally for a date range); they get the car line for that child
+  only, through `app.pickup_children()`, never `guardians`.
 - **Car line pickup emails:** confirming a pickup queues an email to every parent of the
   child (`app.pickup_confirmed` → `app.email_queue`, sent a minute later by the
   `send-email` Edge Function through Resend; `carline_reopen` cancels it). The Resend key

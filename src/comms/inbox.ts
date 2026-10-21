@@ -48,6 +48,7 @@ export function notificationHref(data: Record<string, unknown> | null | undefine
   if (!data) return null;
   if (data.alertId) return '/alerts';
   if (data.carline) return '/carline';
+  if (data.children) return '/children';
   if (data.listingId) return `/market/${data.listingId}`;
   if (data.opportunityId) return `/volunteer/${data.opportunityId}`;
   if (data.questionId) return `/questions/${data.questionId}`;
