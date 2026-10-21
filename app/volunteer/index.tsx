@@ -1,18 +1,19 @@
 /** Volunteer: upcoming opportunities, the ones you said yes to, and (for leaders) the ones you lead. */
 import { useCallback, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   isVolunteerLead, listVolunteer, subscribeVolunteer, type Opportunity, type Person, type Signup,
 } from '../../src/api/connect';
 import { PAST_STYLE, PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
+import { spotsLeft } from '../../src/volunteer/details';
 import { countLabel, isPast, whenLabel } from '../../src/volunteer/format';
+import { GREEN, OpportunityBanner, SpotsBar } from '../../src/volunteer/parts';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Chip, Loading, P, s } from '../../src/ui';
 
 type Tab = 'open' | 'mine' | 'leading';
-const GREEN = '#15803D';
 
 export default function Volunteer() {
   return <VolunteerGate title="Volunteer">{(me) => <Opportunities me={me} />}</VolunteerGate>;
@@ -66,22 +67,31 @@ function Opportunities({ me }: { me: Person }) {
       renderItem={({ item: o }) => {
         const n = count(o);
         const full = !!o.spots && n >= o.spots;
+        const left = spotsLeft(n, o.spots);
         return (
-          <Card onPress={() => router.push(`/volunteer/${o.id}`)} style={isPast(o) ? PAST_STYLE : undefined}>
-            <Text style={{ fontSize: 17, fontWeight: '700', color: C.ink }}>{o.title}</Text>
-            <P muted>{whenLabel(o)}{o.location ? ` · ${o.location}` : ''}</P>
-            <View style={[s.row, { flexWrap: 'wrap' }]}>
-              <View style={[s.row, { gap: 4 }]}>
-                <Ionicons name="people" size={16} color={C.primary} />
-                <Text style={{ color: C.primary, fontWeight: '700' }}>{countLabel(n, o.spots)}</Text>
+          <Pressable onPress={() => router.push(`/volunteer/${o.id}`)} accessibilityRole="button"
+            accessibilityLabel={`${o.title}, ${whenLabel(o)}${o.location ? `, ${o.location}` : ''}`}
+            style={({ pressed }) => [{ backgroundColor: C.card, borderRadius: 18, borderWidth: 1, borderColor: C.line, overflow: 'hidden' },
+              isPast(o) && PAST_STYLE, pressed && { opacity: 0.85 }]}>
+            <OpportunityBanner o={o} />
+            <View style={{ padding: 14, gap: 6 }}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: C.ink }}>{o.title}</Text>
+              <P muted>{whenLabel(o)}{o.location ? ` · ${o.location}` : ''}</P>
+              <View style={[s.row, { flexWrap: 'wrap' }]}>
+                <View style={[s.row, { gap: 4 }]}>
+                  <Ionicons name="people" size={16} color={C.primary} />
+                  <Text style={{ color: C.primary, fontWeight: '700' }}>{countLabel(n, o.spots)}</Text>
+                </View>
+                {!!left && !full && !isPast(o) && o.status === 'open' && <Text style={{ color: GREEN, fontWeight: '700' }}>{left}</Text>}
+                {o.status === 'deleted' ? <Chip label="Cancelled" color={C.danger} />
+                  : isPast(o) ? <Chip label="Past" color={C.muted} />
+                  : said(o) ? <Chip label="You said yes" color={GREEN} />
+                  : full ? <Chip label="Full" color={C.muted} /> : null}
+                {o.leadId === me.id && <Chip label="You lead" color={C.accent} />}
               </View>
-              {o.status === 'deleted' ? <Chip label="Cancelled" color={C.danger} />
-                : isPast(o) ? <Chip label="Past" color={C.muted} />
-                : said(o) ? <Chip label="You said yes" color={GREEN} />
-                : full ? <Chip label="Full" color={C.muted} /> : null}
-              {o.leadId === me.id && <Chip label="You lead" color={C.accent} />}
+              <SpotsBar n={n} spots={o.spots} />
             </View>
-          </Card>
+          </Pressable>
         );
       }} />
   );

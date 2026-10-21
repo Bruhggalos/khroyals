@@ -1,8 +1,9 @@
 /**
  * Car Line app (like PikMyKid). Parents announce "I'm here" from school (the
  * app checks they're within the pickup radius); all staff see the line live
- * with pickup numbers and confirm each pickup. Staff who are also parents can
- * switch between the two. Car line leads and the office open the settings.
+ * with pickup numbers and confirm each pickup. That's the staff version, on the Main
+ * Page's Staff view; staff who are also parents can switch to their children there, and
+ * on Standard they see the parent version. Car line leads and the office open the settings.
  */
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -15,6 +16,7 @@ import {
 import { DutyView } from '../src/carline/DutyView';
 import { ParentView } from '../src/carline/ParentView';
 import { hoursLabel } from '../src/carline/format';
+import { useStaffView } from '../src/staffView';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
 
 const isStaff = (p: Person | null) => !!p && ['admin', 'teacher', 'staff'].includes(p.schoolRole) && !p.pending;
@@ -29,6 +31,7 @@ export default function CarLine() {
   const [config, setConfig] = useState<CarlineConfig | null>(null);
   const [view, setView] = useState<'staff' | 'parent' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const staffView = useStaffView(person);
 
   const refresh = useCallback(async () => {
     try {
@@ -53,7 +56,8 @@ export default function CarLine() {
 
   const header = <Stack.Screen options={{
     title: 'Car Line',
-    headerRight: config?.canEdit ? () => (
+    // Car line leads who are staff get the settings in the staff version; leads who are parents always do.
+    headerRight: config?.canEdit && (staffView || !isStaff(person ?? null)) ? () => (
       <Pressable onPress={() => router.push('/carline-settings')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Car line settings" style={{ marginRight: 8 }}>
         <Ionicons name="settings-outline" size={22} color="#fff" />
       </Pressable>
@@ -75,7 +79,7 @@ export default function CarLine() {
 
   const staff = isStaff(person);
   const parent = kids.length > 0;
-  const shown = view ?? (staff ? 'staff' : 'parent');
+  const shown = view ?? (staffView ? 'staff' : 'parent');
   if (!staff && !parent && person.schoolRole === 'student') return box(
     <Card><H>For parents and staff</H><P muted>Parents announce pickup here, and school staff see the car line.</P></Card>,
   );
@@ -94,7 +98,7 @@ export default function CarLine() {
           </Text>
         </View>
       )}
-      {staff && parent && (
+      {staffView && parent && (
         <View style={[s.row, { alignSelf: 'center' }]}>
           {(['staff', 'parent'] as const).map((v) => (
             <Text key={v} onPress={() => setView(v)}
@@ -105,7 +109,7 @@ export default function CarLine() {
           ))}
         </View>
       )}
-      {shown === 'staff' && staff
+      {shown === 'staff' && staffView
         ? <DutyView board={board} onChange={refresh} />
         : <ParentView kids={kids} family={isFamily(person)} vehicles={vehicles} numbers={numbers} config={config} onChange={refresh}
             pickups={pickups.filter((p) => kids.some((k) => k.id === p.studentId))} />}

@@ -1,25 +1,29 @@
-/** Apps: the school's tools as large tiles, opened from the shield button in the middle of the tab bar. */
+/**
+ * Apps: the school's tools as large tiles, opened from the shield button in the middle of
+ * the tab bar. Teachers, staff and admins get a Standard / Staff switch at the top: Staff
+ * shows the staff versions (marked in gold), Standard the apps as parents see them.
+ */
 import { useCallback, useEffect, useState, type ComponentProps } from 'react';
 import { Image, Pressable, ScrollView, Text, View, type ImageSourcePropType } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  isFamily, isSchoolStaff, listAlerts, me, onAuthChange, session, subscribeAlerts, type CriticalAlert, type Person,
+  isFamily, isSchoolStaff, listAlerts, me, myAccess, onAuthChange, session, subscribeAlerts, type CriticalAlert, type Person,
 } from '../../src/api/connect';
 import { alertKind } from '../../src/alerts/kinds';
+import { visibleTiles, type TileRules } from '../../src/appTiles';
 import { NewsCarousel } from '../../src/site/NewsCarousel';
+import { GOLD, NAVY } from '../../src/sports/ui';
+import { useStaffViewSetting } from '../../src/staffView';
 import { C, P, s } from '../../src/ui';
 
-/**
- * A tile shows its own artwork or an Ionicons glyph. `family: false` keeps it off Family
- * accounts' page; `staffOnly` shows it only to teachers, staff and admins.
- */
-type App = { label: string; color: string; href: Href; family?: false; staffOnly?: true }
+/** A tile shows its own artwork or an Ionicons glyph; who sees it is in src/appTiles.ts. */
+type App = { label: string; color: string; href: Href } & TileRules
   & ({ icon: ComponentProps<typeof Ionicons>['name'] } | { image: ImageSourcePropType });
 
 const APPS: App[] = [
   { label: 'Alerts', icon: 'warning', color: '#B42318', href: '/alerts', staffOnly: true },
-  { label: 'Car Line', image: require('../../assets/apps/carline.png'), color: '#0A1F4D', href: '/carline' },
+  { label: 'Car Line', image: require('../../assets/apps/carline.png'), color: '#0A1F4D', href: '/carline', staffVersion: true },
   { label: 'Student', image: require('../../assets/apps/student.png'), color: '#0A1F4D', href: '/student', family: false },
   { label: 'Calendar', image: require('../../assets/apps/calendar.png'), color: '#0A1F4D', href: '/calendar' },
   { label: 'News', image: require('../../assets/apps/news.png'), color: '#0A1F4D', href: '/news' },
@@ -27,7 +31,8 @@ const APPS: App[] = [
   { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false },
   { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer' },
   { label: 'Handbook', image: require('../../assets/apps/handbook.png'), color: '#0A1F4D', href: '/handbook' },
-  { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false },
+  { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false, staffVersion: true },
+  { label: 'Admin', icon: 'shield-checkmark', color: NAVY, href: '/admin', adminOnly: true },
 ];
 
 /** The signed-in person (which apps they see depends on their role). */
@@ -54,16 +59,31 @@ function useActiveAlerts(staff: boolean) {
   return active;
 }
 
+/** Staff with admin powers (a tier or single permissions) get the admin portal's tile in staff view. */
+function useHasAdmin(staff: boolean) {
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    if (!staff) { setAdmin(false); return; }
+    myAccess().then((a) => setAdmin(!!a && (!!a.tier || a.granted.length > 0))).catch(() => setAdmin(false));
+  }, [staff]);
+  return admin;
+}
+
 export default function Apps() {
   const person = usePerson();
   const staff = isSchoolStaff(person);
+  // Active alerts show in both views: staff on Standard still need to see them.
   const active = useActiveAlerts(staff);
-  const apps = APPS.filter((a) => (a.staffOnly ? staff : !(isFamily(person) && a.family === false)));
+  const admin = useHasAdmin(staff);
+  const [staffSetting, setStaffSetting] = useStaffViewSetting();
+  const staffView = staff && staffSetting;
+  const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin });
   return (
     <View style={s.screen}>
       {/* Headlines stay put under the banner; the apps scroll below them. */}
       <View style={{ paddingHorizontal: 16, paddingTop: 16 }}><NewsCarousel /></View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.pad, { paddingTop: 12 }]}>
+      {staff && <ViewSwitch staffView={staffSetting} onChange={setStaffSetting} />}
       {active.map((a) => (
         <Pressable key={a.id} onPress={() => router.push('/alerts')} accessibilityRole="button" accessibilityLabel={`Critical alert: ${a.title}. Open`}
           style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 14,
@@ -78,11 +98,21 @@ export default function Apps() {
       ))}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
         {apps.map((a) => (
-          <Pressable key={a.label} onPress={() => router.push(a.href)} accessibilityRole="button" accessibilityLabel={a.label}
+          <Pressable key={a.label} onPress={() => router.push(a.href)} accessibilityRole="button"
+            accessibilityLabel={a.elevated ? `${a.label}, staff version` : a.label}
             style={({ pressed }) => [{ width: '33.33%', alignItems: 'center', gap: 8, paddingVertical: 14 }, pressed && { opacity: 0.6 }]}>
-            <View style={{ width: 84, height: 84, borderRadius: 24, overflow: 'hidden', backgroundColor: a.color, alignItems: 'center', justifyContent: 'center' }}>
-              {'image' in a ? <Image source={a.image} style={{ width: 84, height: 84 }} accessible={false} />
-                : <Ionicons name={a.icon} size={42} color="#fff" />}
+            <View>
+              <View style={{ width: 84, height: 84, borderRadius: 24, overflow: 'hidden', backgroundColor: a.color, alignItems: 'center', justifyContent: 'center',
+                borderWidth: a.elevated ? 3 : 0, borderColor: GOLD }}>
+                {'image' in a ? <Image source={a.image} style={{ width: a.elevated ? 78 : 84, height: a.elevated ? 78 : 84 }} accessible={false} />
+                  : <Ionicons name={a.icon} size={42} color="#fff" />}
+              </View>
+              {a.elevated && (
+                <View style={{ position: 'absolute', bottom: -8, alignSelf: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
+                  backgroundColor: GOLD, borderWidth: 2, borderColor: C.bg }}>
+                  <Text style={{ fontSize: 10, fontWeight: '900', letterSpacing: 1, color: '#fff' }}>STAFF</Text>
+                </View>
+              )}
             </View>
             <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>{a.label}</Text>
           </Pressable>
@@ -90,6 +120,33 @@ export default function Apps() {
       </View>
       <P muted>More school apps will show up here.</P>
       </ScrollView>
+    </View>
+  );
+}
+
+/** Standard / Staff: which versions of the apps a teacher, staff member or admin sees. */
+function ViewSwitch({ staffView, onChange }: { staffView: boolean; onChange: (staffView: boolean) => void }) {
+  const option = (value: boolean, icon: ComponentProps<typeof Ionicons>['name'], label: string) => {
+    const on = staffView === value;
+    return (
+      <Pressable onPress={() => onChange(value)} accessibilityRole="button" accessibilityState={{ selected: on }}
+        accessibilityLabel={value ? 'Staff versions of the apps' : 'Standard apps, as parents see them'}
+        style={{ flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 999,
+          backgroundColor: on ? (value ? NAVY : C.primary) : 'transparent' }}>
+        <Ionicons name={icon} size={16} color={on ? (value ? GOLD : '#fff') : C.muted} />
+        <Text style={{ fontWeight: '800', color: on ? '#fff' : C.muted }}>{label}</Text>
+      </Pressable>
+    );
+  };
+  return (
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: C.line }}>
+        {option(false, 'person-outline', 'Standard')}
+        {option(true, 'shield-checkmark', 'Staff')}
+      </View>
+      <Text style={{ fontSize: 13, color: C.muted, textAlign: 'center' }}>
+        {staffView ? 'Staff versions are marked in gold.' : 'The apps as parents see them, for your own children.'}
+      </Text>
     </View>
   );
 }

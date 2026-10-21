@@ -1,16 +1,20 @@
-/** Ask the School screens render inside this: signed in with an approved account. */
+/**
+ * Ask the School screens render inside this: signed in with an approved account. With
+ * `faq`, the F.A.Q.s link shows under the message for everyone else too.
+ */
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { live, session, type Person } from '../api/connect';
 import { Button, Card, H, Loading, P, s } from '../ui';
+import { FaqLink } from './FaqLink';
 
-export function QuestionsGate({ title, children }: { title: string; children: (me: Person) => React.ReactNode }) {
+export function QuestionsGate({ title, faq, children }: { title: string; faq?: boolean; children: (me: Person) => React.ReactNode }) {
   const [me, setMe] = useState<Person | null | undefined>();
   useEffect(() => { session().then(setMe).catch(() => setMe(null)); }, []);
 
   const header = <Stack.Screen options={{ title }} />;
-  const box = (body: React.ReactNode) => <View style={[s.screen, s.pad]}>{header}{body}</View>;
+  const box = (body: React.ReactNode) => <View style={[s.screen, s.pad]}>{header}{body}{faq && <FaqLink />}</View>;
   if (!live) return box(<Card><H>Ask the School needs the school server</H><P muted>This build is running on demo data.</P></Card>);
   if (me === undefined) return <>{header}<Loading /></>;
   if (!me) return box(

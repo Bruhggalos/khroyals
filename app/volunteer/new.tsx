@@ -57,7 +57,8 @@ function Form() {
       <Card>
         <Field label="What's the opportunity?" placeholder="e.g. Book fair helpers" value={title} onChangeText={setTitle} maxLength={100} />
         <Field label="Details" style={{ minHeight: 110, textAlignVertical: 'top' }} multiline maxLength={2000}
-          placeholder="What volunteers will do, what to bring, who to ask…" value={description} onChangeText={setDescription} />
+          placeholder={'What volunteers will do…\n\nWhat to bring:\nA water bottle'} value={description} onChangeText={setDescription}
+          hint={'Each part gets its own card. Leave a blank line between parts, and start one with a short heading and a colon, like "What to bring:".'} />
       </Card>
       <Card>
         <View style={s.row}>

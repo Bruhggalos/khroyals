@@ -1,8 +1,9 @@
 /**
- * A volunteer opportunity: details, who signed up (people icon + count), Say
- * Yes! / Remove me, and a chat for its volunteers and leader, where the
- * leader's messages stand out. The leader can delete it with a reason that every
- * volunteer is sent.
+ * A volunteer opportunity: a banner with its title, then one card per part (When,
+ * Where, About and any sections its details have, Volunteers), Say Yes! / Remove me,
+ * and a chat for its volunteers and leader, where the leader's messages stand out.
+ * Saying yes is celebrated with clapping hands. The leader can delete it with a
+ * reason that every volunteer is sent.
  */
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
@@ -12,11 +13,13 @@ import {
   getOpportunity, subscribeVolunteer, volunteerDelete, volunteerSayYes, volunteerSend, volunteerWithdraw,
   type Opportunity, type Person, type Signup, type VolunteerMessage,
 } from '../../src/api/connect';
-import { countLabel, isPast, nameOf, whenLabel } from '../../src/volunteer/format';
+import { NAVY } from '../../src/sports/ui';
+import { Cheer } from '../../src/volunteer/Cheer';
+import { detailSections, durationLabel, sectionIcon, spotsLeft, startsLabel } from '../../src/volunteer/details';
+import { countLabel, isPast, longDayLabel, nameOf, timeLabel } from '../../src/volunteer/format';
+import { GREEN, OpportunityBanner, Section, SectionTitle, SpotsBar } from '../../src/volunteer/parts';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Chip, Field, H, Input, Loading, P, s, ask, useBottomInset } from '../../src/ui';
-
-const GREEN = '#15803D';
 
 export default function OpportunityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +32,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const [deleting, setDeleting] = useState<string | null>(null);   // the reason, while the leader is deleting
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [cheer, setCheer] = useState<string | null>(null);   // the title being celebrated after Say Yes!
   const bottomInset = useBottomInset();
   const scroll = useRef<ScrollView>(null);
 
@@ -50,6 +54,9 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const full = !!o.spots && n >= o.spots;
   const past = isPast(o);
   const inChat = leading || signedUp;
+  const length = durationLabel(o);
+  const soon = o.status === 'open' ? startsLabel(o) : null;
+  const left = spotsLeft(n, o.spots);
   const send = () => {
     const body = draft.trim();
     if (!body) return;
@@ -60,39 +67,65 @@ function Detail({ id, me }: { id: string; me: Person }) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
       <ScrollView ref={scroll} style={s.screen} contentContainerStyle={[s.pad, { paddingBottom: 16 + bottomInset }]} keyboardShouldPersistTaps="handled">
         <Stack.Screen options={{ title: o.title }} />
-        <Card style={{ gap: 8 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{o.title}</Text>
-          <Line icon="calendar-outline" text={whenLabel(o)} />
-          {!!o.location && <Line icon="location-outline" text={o.location} />}
-          <Line icon="star" text={leading ? 'You lead this opportunity' : `Led by ${nameOf(o.leadId)}`} color={C.accent} />
-          {!!o.description && <P>{o.description}</P>}
-        </Card>
+        <OpportunityBanner o={o} hero leader={leading ? 'You lead this opportunity' : `Led by ${nameOf(o.leadId)}`}
+          style={{ borderRadius: 18, borderBottomWidth: 4 }} />
+
+        <Section icon="calendar-outline" title="When">
+          <Text style={big}>{longDayLabel(o)}</Text>
+          {!!timeLabel(o) && <Text style={sub}>{timeLabel(o)}</Text>}
+          {(!!length || !!soon) && (
+            <View style={[s.row, { gap: 8, flexWrap: 'wrap' }]}>
+              {!!length && <Pill icon="time-outline" text={length} color={C.primary} />}
+              {!!soon && <Pill icon="hourglass-outline" text={soon} color={soon === 'Happening now' ? GREEN : C.accent} />}
+            </View>
+          )}
+        </Section>
+
+        {!!o.location && (
+          <Section icon="location-outline" title="Where">
+            <Text style={big}>{o.location}</Text>
+          </Section>
+        )}
+
+        {/* The details: "About", then a card for each section the leader wrote ("What to bring:" …). */}
+        {detailSections(o.description).map((d, i) => (
+          <Section key={i} icon={sectionIcon(d.heading)} title={d.heading ?? 'About'}>
+            {d.paragraphs.map((text, j) => <Text key={j} style={paragraph}>{text}</Text>)}
+          </Section>
+        ))}
 
         {/* Who's volunteering: everyone can see the names and the count. */}
-        <Pressable onPress={() => setShowPeople(!showPeople)} accessibilityRole="button" accessibilityLabel={`${n} volunteers. Show who.`}
-          style={[s.card, s.row]}>
-          <Ionicons name="people" size={24} color={C.primary} />
-          <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: C.ink }}>
-            {countLabel(n, o.spots)} {o.spots ? 'spots filled' : n === 1 ? 'volunteer' : 'volunteers'}
-          </Text>
-          <Ionicons name={showPeople ? 'chevron-up' : 'chevron-down'} size={18} color={C.muted} />
-        </Pressable>
-        {showPeople && (
-          <Card style={{ gap: 6 }}>
-            <View style={s.row}>
-              <Ionicons name="star" size={16} color={C.accent} />
-              <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{nameOf(o.leadId)}</Text>
-              <Chip label="Leader" color={C.accent} />
-            </View>
-            {data.signups.length === 0 && <P muted>No volunteers yet.</P>}
-            {data.signups.map((x) => (
-              <View key={x.userId} style={s.row}>
-                <Ionicons name="person-circle-outline" size={18} color={C.muted} />
-                <Text style={{ flex: 1, color: C.ink }}>{x.userId === me.id ? 'You' : nameOf(x.userId)}</Text>
+        <Section icon="people-outline" title="Volunteers" tint={GREEN}>
+          <View style={[s.row, { alignItems: 'baseline', gap: 8 }]}>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: C.ink }}>{countLabel(n, o.spots)}</Text>
+            <Text style={{ flex: 1, fontSize: 16, color: C.muted, fontWeight: '600' }}>
+              {o.spots ? 'spots filled' : n === 1 ? 'volunteer' : 'volunteers'}
+            </Text>
+            {!!left && o.status === 'open' && !past && <Text style={{ fontWeight: '800', color: full ? C.muted : GREEN }}>{left}</Text>}
+          </View>
+          <SpotsBar n={n} spots={o.spots} />
+          <Pressable onPress={() => setShowPeople(!showPeople)} accessibilityRole="button" accessibilityState={{ expanded: showPeople }}
+            style={[s.row, { gap: 4, paddingVertical: 4 }]}>
+            <Text style={{ color: C.primary, fontWeight: '700' }}>{showPeople ? "Hide who's coming" : "See who's coming"}</Text>
+            <Ionicons name={showPeople ? 'chevron-up' : 'chevron-down'} size={16} color={C.primary} />
+          </Pressable>
+          {showPeople && (
+            <View style={{ gap: 8 }}>
+              <View style={s.row}>
+                <Ionicons name="star" size={16} color={C.accent} />
+                <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{nameOf(o.leadId)}</Text>
+                <Chip label="Leader" color={C.accent} />
               </View>
-            ))}
-          </Card>
-        )}
+              {data.signups.length === 0 && <P muted>No volunteers yet.</P>}
+              {data.signups.map((x) => (
+                <View key={x.userId} style={s.row}>
+                  <Ionicons name="person-circle-outline" size={18} color={C.muted} />
+                  <Text style={{ flex: 1, color: C.ink }}>{x.userId === me.id ? 'You' : nameOf(x.userId)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </Section>
 
         {o.status === 'deleted' ? (
           <Card style={{ borderColor: C.danger, borderWidth: 1 }}>
@@ -136,7 +169,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
         ) : full ? (
           <Card><P muted>All spots are filled. Thank you to everyone who said yes!</P></Card>
         ) : (
-          <Pressable disabled={busy} onPress={() => act(() => volunteerSayYes(o.id))} accessibilityRole="button"
+          <Pressable disabled={busy} onPress={() => act(() => volunteerSayYes(o.id), () => setCheer(o.title))} accessibilityRole="button"
             style={({ pressed }) => [s.btn, { backgroundColor: GREEN, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10 },
               (pressed || busy) && { opacity: 0.75 }]}>
             <Ionicons name="hand-left" size={22} color="#fff" />
@@ -144,7 +177,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
           </Pressable>
         )}
 
-        <Text style={{ fontSize: 12, fontWeight: '700', color: C.muted, marginTop: 8 }}>CHAT</Text>
+        <View style={{ marginTop: 8 }}><SectionTitle icon="chatbubbles-outline" title="Chat" /></View>
         {!inChat ? (
           <Card><P muted>Say Yes! to join the conversation with the other volunteers and {nameOf(o.leadId)}.</P></Card>
         ) : (
@@ -165,15 +198,21 @@ function Detail({ id, me }: { id: string; me: Person }) {
           </View>
         )}
       </ScrollView>
+      <Cheer title={cheer} onDone={() => setCheer(null)} />
     </KeyboardAvoidingView>
   );
 }
 
-function Line({ icon, text, color = C.muted }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string; color?: string }) {
+const big = { fontSize: 19, fontWeight: '800', color: NAVY } as const;
+const sub = { fontSize: 16, color: C.ink, fontWeight: '600' } as const;
+const paragraph = { fontSize: 16, lineHeight: 24, color: C.ink } as const;
+
+/** A small rounded label with an icon: "45 min", "In 2 days". */
+function Pill({ icon, text, color }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string; color: string }) {
   return (
-    <View style={s.row}>
-      <Ionicons name={icon} size={16} color={color} />
-      <Text style={{ flex: 1, color: C.ink }}>{text}</Text>
+    <View style={[s.row, { gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: `${color}14` }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text style={{ fontSize: 13, fontWeight: '700', color }}>{text}</Text>
     </View>
   );
 }

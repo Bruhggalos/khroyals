@@ -2,14 +2,15 @@ import { ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { getCalendar, getHome, getNews } from '../../src/api/mockApi';
 import { ArticleCard, SectionView } from '../../src/site/Blocks';
+import { isFaqSection } from '../../src/site/faq';
 import { C, Card, H, Loading, P, s, useLoad } from '../../src/ui';
 import { dateRange, upcoming } from '../../src/site/calendar';
 
-/** The khroyals.com home page, with upcoming dates and latest news under the hero. */
+/** The khroyals.com home page, with upcoming dates and latest news under the hero. Its F.A.Q.s are in Ask the School. */
 export default function Home() {
   const { data } = useLoad(async () => ({ home: await getHome(), news: await getNews(), cal: await getCalendar() }));
   if (!data) return <Loading />;
-  const [hero, ...rest] = data.home.sections;
+  const [hero, ...rest] = data.home.sections.filter((sec) => !isFaqSection(sec));
   const next = upcoming(data.cal.events, 3);
 
   return (
