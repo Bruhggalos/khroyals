@@ -1464,3 +1464,19 @@ test('activity events: addresses, team photos, and families answer "Are you goin
   assert.equal((await one(`select photo_path from sports where id = '${club.id}'`)).photo_path, path);
   assert.equal((await rows(`select name from storage.objects where name = '${path}'`)).length, 1, 'approved accounts see team photos');
 });
+
+test('every public table grants its access explicitly (Supabase stops auto-granting new tables)', async () => {
+  // Tables the app never reads directly; their data goes through functions.
+  const PRIVATE = new Set(['post_views', 'notification_dismissals']);
+  await asSuper();
+  const tables = (await rows(`select table_name from information_schema.tables
+                              where table_schema = 'public' and table_type = 'BASE TABLE'`)).map((r) => r.table_name as string);
+  const grants = await rows(`select table_name, grantee from information_schema.role_table_grants
+                             where table_schema = 'public' and privilege_type = 'SELECT'`);
+  const has = (t: string, role: string) => grants.some((g) => g.table_name === t && g.grantee === role);
+  const missing = tables.flatMap((t) => [
+    ...(has(t, 'service_role') ? [] : [`${t}: service_role`]),
+    ...(PRIVATE.has(t) || has(t, 'authenticated') ? [] : [`${t}: authenticated`]),
+  ]);
+  assert.deepEqual(missing, [], 'add "grant select on public.<table> to authenticated" (and service_role) in the migration that creates it');
+});

@@ -87,6 +87,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   by itself must use `notifyLocal()` (`src/comms/localInbox.ts`), never
   `scheduleNotificationAsync` directly (`tests/inbox.test.ts` checks). Add tap
   targets to `notificationHref()` in `src/comms/inbox.ts`.
+- **New tables need explicit grants.** Supabase no longer auto-grants new `public`
+  tables to the Data API (from Oct 30, 2026), so the migration that creates a table must
+  `grant select … to authenticated` (and `anon` if signed-out visitors read it) and
+  `grant all … to service_role`; writes still go through functions. `tests/db.test.ts`
+  fails on a table without them (private tables are listed there).
 - **Don't edit an applied migration.** Add a new timestamped file. Regenerate
   `supabase/seed.sql` + `supabase/setup_all.sql` with `python3 scripts/gen_seed.py`.
 - `tests/db.test.ts` runs every migration + the seed in PGlite with stubs
