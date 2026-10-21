@@ -60,6 +60,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   how loud the push is (`app.alert_level()`, the `critical_alerts` setting). Alert kinds are
   in both `src/alerts/kinds.ts` and the database checks. Keep the full-screen alert
   (`src/alerts/AlertTakeover.tsx`) mounted in `app/_layout.tsx`.
+- **Car line pickup emails:** confirming a pickup queues an email to every parent of the
+  child (`app.pickup_confirmed` → `app.email_queue`, sent a minute later by the
+  `send-email` Edge Function through Resend; `carline_reopen` cancels it). The Resend key
+  is the `RESEND_API_KEY` function secret, never in the repo; the sender is
+  `app.settings.email_from`.
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.

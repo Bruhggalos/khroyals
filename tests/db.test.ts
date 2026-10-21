@@ -1480,3 +1480,51 @@ test('every public table grants its access explicitly (Supabase stops auto-grant
   ]);
   assert.deepEqual(missing, [], 'add "grant select on public.<table> to authenticated" (and service_role) in the migration that creates it');
 });
+
+test('car line pickups email every parent who picked the child up; an undo cancels the email', async () => {
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on';
+                 delete from carline_pickups where student_id = ${id('u-s01')} and day = app.school_today();
+                 insert into guardians values (${id('u-p05')}, ${id('u-s01')}) on conflict do nothing;
+                 update profile_private set email = 'u-p05@demo.khroyals.test' where id = ${id('u-p05')}`);
+  await as('u-p01');
+  const [p] = await rows(`select * from carline_announce(array[${id('u-s01')}], ${AT})`);
+  await as('u-eng');
+  await one(`select carline_confirm('${p.id}')`);
+
+  await asSuper();
+  const mail = await rows(`select * from app.email_queue where pickup_id = '${p.id}' order by to_email`);
+  assert.deepEqual(mail.map((m) => m.to_email), ['u-p01@demo.khroyals.test', 'u-p05@demo.khroyals.test'], 'every parent');
+  assert.match(mail[0].subject, /^Ava was picked up at \d{1,2}:\d{2} (AM|PM)$/);
+  assert.match(mail[0].body, /Picked up by: Ros\w+ Reyes \(parent\)\nVehicle: \w+/);
+  assert.match(mail[0].body, /Released by: .+ \(school staff\)/);
+  assert.match(mail[0].body, /Pickup number: \w+/);
+  assert.match(mail[0].body, /call the school office/);
+  assert.ok(mail.every((m) => m.status === 'queued' && new Date(m.send_after) > new Date()), 'waits a minute');
+  // The other parent hears in the app too; the one who picked up doesn't need to.
+  await as('u-p05');
+  assert.match((await rows(`select body from my_notifications() where data->>'pickupId' = '${p.id}'`))[0].body, /picked up at .* by Ros\w+ Reyes/);
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from my_notifications() where data->>'pickupId' = '${p.id}'`)).length, 0);
+
+  // A mis-tap undone within the minute never emails anyone.
+  await as('u-eng');
+  await one(`select carline_reopen('${p.id}')`);
+  await asSuper();
+  assert.deepEqual((await rows(`select distinct status from app.email_queue where pickup_id = '${p.id}'`)).map((r) => r.status), ['cancelled']);
+
+  // Only the sender function (service role) can claim emails.
+  await as('u-admin', true);
+  await rejects(`select * from email_claim()`, /permission denied/);
+  await asSuper();
+  await db.exec(`update app.email_queue set status = 'queued', send_after = now() where pickup_id = '${p.id}'`);
+  const claimed = await rows(`select * from email_claim()`);
+  assert.equal(claimed.length, 2);
+  assert.match(claimed[0].sender, /Car Line <noreply@/);
+  assert.equal((await rows(`select * from email_claim()`)).length, 0, 'claimed once');
+  await one(`select email_done('${claimed[0].id}')`);
+  await one(`select email_done('${claimed[1].id}', 'bounced')`);
+  assert.deepEqual((await rows(`select status from app.email_queue where pickup_id = '${p.id}' order by status`)).map((r) => r.status), ['failed', 'sent']);
+  await db.exec(`delete from guardians where guardian_id = ${id('u-p05')} and student_id = ${id('u-s01')};
+                 update app.settings set value = null where key = 'carline_open_on'`);
+});

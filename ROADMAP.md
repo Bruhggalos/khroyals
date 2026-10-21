@@ -145,6 +145,7 @@ Working in the app and on the server today.
 | Car Line | Parent check-in | "I'm here" with location check, pickup numbers, saved vehicles |
 | Car Line | Automatic check-in | Geofence checks children in on arrival; skips no-school days |
 | Car Line | Duty board | Live board for staff, "Picked up" with Undo, daily pickup record |
+| Car Line | Pickup emails | Every parent is emailed who picked the child up, which staff member released them, and when (undo within a minute cancels it) |
 | Car Line | Car line settings | Spot, radius and hours set by leads and the office |
 | Car Line | Android Auto | Car-screen status and "I'm here" button |
 | Alerts | Critical alerts | Templates for weather, lockdown, hold; staff answer "I'm safe" / "I need help"; live roll call and all clear |

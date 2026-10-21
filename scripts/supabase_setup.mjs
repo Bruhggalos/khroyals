@@ -105,6 +105,8 @@ async function deployFunction(slug, { verifyJwt }) {
 /** Deploy supabase/functions/send-push and point the database at it. */
 async function deployPush() {
   await deployFunction('send-push', { verifyJwt: false });
+  // Car line pickup emails (needs the RESEND_API_KEY function secret; see DEVELOPING.md).
+  await deployFunction('send-email', { verifyJwt: false });
   await sql(`create extension if not exists pg_net with schema extensions;
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }
