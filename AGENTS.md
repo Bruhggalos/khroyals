@@ -76,6 +76,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   "Are you going?" answers (`sport_event_rsvps`, `sport_rsvp`) are only for registered
   participants, given by their parents (`app.my_students()`, so never Family accounts) or
   themselves; only the activity's leaders see attendance.
+- **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
+  (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
+  browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`
+  (`src/forms/dates.ts`). `tests/datetime.test.ts` fails on a typed date or time box.
 - **Calendars hide the past.** Every list of dated events (the Calendar app, activity
   schedules, Volunteer) shows what's still to come; past events stay out of view behind
   `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Track it with

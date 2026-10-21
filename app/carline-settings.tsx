@@ -10,6 +10,7 @@ import { carlineConfig, carlineOpenNow, carlineSetConfig, type CarlineConfig } f
 import { hoursLabel } from '../src/carline/format';
 import { currentSpot, distanceLabel } from '../src/carline/location';
 import { Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
+import { TimeField } from '../src/forms/DateTimeField';
 
 const FEET = 3.28084;
 const RADII_FT = [100, 250, 500, 1000, 2000];
@@ -50,7 +51,8 @@ export default function CarlineSettings() {
     const la = Number(lat), lo = Number(lng), ft = Number(feet);
     if (!Number.isFinite(la) || !Number.isFinite(lo) || !lat || !lng) return Alert.alert('Pickup spot', 'Set the pickup location first.');
     if (!(ft >= 65 && ft <= 9800)) return Alert.alert('Radius', 'Choose between 65 feet and about 2 miles (9,800 feet).');
-    if (!TIME.test(start) || !TIME.test(end)) return Alert.alert('Hours', 'Use 24-hour times like 14:45 and 15:30.');
+    if (!TIME.test(start) || !TIME.test(end)) return Alert.alert('Hours', 'Choose when the car line opens and closes.');
+    if (end <= start) return Alert.alert('Hours', 'The car line has to close after it opens.');
     step(() => carlineSetConfig({ latitude: la, longitude: lo, radius: ft / FEET, start, end }), 'Parents can now announce from within ' + `${Math.round(ft)} feet of this spot.`);
   };
   const open = cfg.line.state === 'open' && cfg.line.openedNow;
@@ -91,8 +93,8 @@ export default function CarlineSettings() {
         <H>Hours</H>
         <P muted>School days only; days marked No School on the school calendar stay closed.</P>
         <View style={s.row}>
-          <Field label="Opens" placeholder="14:45" keyboardType="numbers-and-punctuation" maxLength={5} value={start} onChangeText={setStart} style={{ flex: 1, minWidth: 0 }} />
-          <Field label="Closes" placeholder="15:30" keyboardType="numbers-and-punctuation" maxLength={5} value={end} onChangeText={setEnd} style={{ flex: 1, minWidth: 0 }} />
+          <TimeField label="Opens" value={start} onChange={setStart} initial="14:45" style={{ flex: 1, minWidth: 0 }} />
+          <TimeField label="Closes" value={end} onChange={setEnd} initial="15:30" style={{ flex: 1, minWidth: 0 }} />
         </View>
         {TIME.test(start) && TIME.test(end) && <P muted>{hoursLabel(start, end)}</P>}
       </Card>

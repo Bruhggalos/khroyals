@@ -8,6 +8,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { deleteSeason, listSports, saveSeason } from '../../src/api/connect';
 import { GradePicker } from '../../src/comms/GradePicker';
 import { Button, C, Card, Field, Loading, P, s } from '../../src/ui';
+import { DateField, toDateString } from '../../src/forms/DateTimeField';
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
@@ -18,7 +19,7 @@ export default function EditSeason() {
   const [starts, setStarts] = useState('');
   const [ends, setEnds] = useState('');
   const [signup, setSignup] = useState(true);
-  const [opens, setOpens] = useState(new Date().toISOString().slice(0, 10));
+  const [opens, setOpens] = useState(toDateString(new Date()));
   const [closes, setCloses] = useState('');
   const [minGrade, setMinGrade] = useState<number | null>(6);
   const [maxGrade, setMaxGrade] = useState<number | null>(12);
@@ -66,10 +67,9 @@ export default function EditSeason() {
       <Card style={{ gap: 12 }}>
         <Field label="Season" placeholder="Fall 2026, Varsity, Spring production…" value={name} onChangeText={setName} maxLength={80} />
         <View style={[s.row, { alignItems: 'flex-start' }]}>
-          <Field label="Starts" placeholder="2026-08-03" value={starts} onChangeText={setStarts} autoCapitalize="none" style={{ flex: 1 }} />
-          <Field label="Ends" placeholder="2026-10-31" value={ends} onChangeText={setEnds} autoCapitalize="none" style={{ flex: 1 }} />
+          <DateField label="Starts" value={starts} onChange={(d) => { setStarts(d); if (ends && ends < d) setEnds(''); }} style={{ flex: 1 }} />
+          <DateField label="Ends" value={ends} onChange={setEnds} min={starts || undefined} initial={starts} style={{ flex: 1 }} />
         </View>
-        <P muted>Dates as YYYY-MM-DD.</P>
       </Card>
       <Card style={{ gap: 12 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>Online sign-up</Text>
@@ -79,8 +79,8 @@ export default function EditSeason() {
         </View>
         {signup && (
           <View style={[s.row, { alignItems: 'flex-start' }]}>
-            <Field label="Opens" value={opens} onChangeText={setOpens} autoCapitalize="none" style={{ flex: 1 }} />
-            <Field label="Closes" placeholder="2026-07-31" value={closes} onChangeText={setCloses} autoCapitalize="none" style={{ flex: 1 }} />
+            <DateField label="Opens" value={opens} onChange={(d) => { setOpens(d); if (closes && closes < d) setCloses(''); }} style={{ flex: 1 }} />
+            <DateField label="Closes" value={closes} onChange={setCloses} min={opens || undefined} initial={opens} style={{ flex: 1 }} />
           </View>
         )}
         {signup && <P muted>Followers are told the day sign-ups open. You approve each sign-up from the activity's page.</P>}

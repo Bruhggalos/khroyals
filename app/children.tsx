@@ -14,6 +14,7 @@ import { GradePicker } from '../src/comms/GradePicker';
 import { pickSquarePhoto } from '../src/photos';
 import { gradeLabel } from '../src/comms/grades';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
+import { DateField, birthdayMax, birthdayMin, birthdayStart } from '../src/forms/DateTimeField';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const fail = (e: any) => Alert.alert('Something went wrong', e.message);
@@ -36,7 +37,7 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
     if (b64) await uploadChildPhoto(c.id, b64, c.photoPath);
   });
   const save = () => {
-    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Use the format YYYY-MM-DD, like 2016-04-02.');
+    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
     step(() => updateChildDetails(c.id, { birthday: birthday || null, bio, allergies, medicalNotes: medical }), `${c.firstName}'s details are updated.`);
   };
   const sendEdit = () => edit && step(async () => {
@@ -65,7 +66,7 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
             <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => photo(false)}>{c.photo ? 'Change photo' : 'Add a photo'}</Text>
             {!!c.photoPath && <Text style={{ color: C.danger, fontWeight: '600' }} onPress={() => step(() => removeChildPhoto(c.id, c.photoPath))}>Remove photo</Text>}
           </View>
-          <Field label="Birthday" placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" maxLength={10} value={birthday} onChangeText={setBirthday} />
+          <DateField label="Birthday" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
           <Field label="About" placeholder="Interests, favorite subjects…" multiline maxLength={500} value={bio} onChangeText={setBio} style={{ minHeight: 70 }} />
           <Field label="Allergies" placeholder="e.g. Peanuts, bee stings" maxLength={500} value={allergies} onChangeText={setAllergies} />
           <Field label="Health notes for the school" placeholder="Medications, conditions staff should know about" multiline maxLength={1000}
@@ -104,7 +105,7 @@ function AddChild({ onDone }: { onDone: () => void }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const send = async () => {
-    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Use the format YYYY-MM-DD, like 2016-04-02.');
+    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
     setBusy(true);
     try {
       await requestChild({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, note });
@@ -121,7 +122,7 @@ function AddChild({ onDone }: { onDone: () => void }) {
         <Field label="Last name" autoComplete="off" value={last} onChangeText={setLast} style={{ flex: 1, minWidth: 0 }} />
       </View>
       <GradePicker value={grade} onChange={setGrade} label="Grade this school year" />
-      <Field label="Birthday (optional)" placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" maxLength={10} value={birthday} onChangeText={setBirthday} />
+      <DateField label="Birthday (optional)" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
       <Field label="Note for the office (optional)" placeholder="e.g. Already enrolled; other parent is …" value={note} onChangeText={setNote} />
       <Button label={busy ? 'Sending…' : 'Send to the office'} disabled={busy || !first.trim() || !last.trim() || grade === null} onPress={send} />
     </Card>

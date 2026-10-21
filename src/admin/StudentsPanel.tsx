@@ -11,6 +11,7 @@ import {
 import { GradePicker } from '../comms/GradePicker';
 import { gradeLabel } from '../comms/grades';
 import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../ui';
+import { DateField, birthdayMax, birthdayMin, birthdayStart, dateLabel } from '../forms/DateTimeField';
 
 const PAGE = 20;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -84,7 +85,7 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
       </Text>
       <P muted>From {r.requestedBy.name} ({r.requestedBy.role}) · {new Date(r.createdAt).toLocaleDateString()}</P>
       {r.kind === 'edit_child' && r.student && <P muted>Now: {name(r.student)}, {gradeLabel(r.student.grade)}</P>}
-      {!!d.birthday && <P muted>Birthday: {d.birthday}</P>}
+      {!!d.birthday && <P muted>Birthday: {dateLabel(d.birthday)}</P>}
       {!!d.note && <P>“{d.note}”</P>}
       <Field label="Note to the parent (optional)" value={note} onChangeText={setNote} />
       <View style={[s.row, { flexWrap: 'wrap' }]}>
@@ -165,7 +166,7 @@ function AddStudent({ onDone }: { onDone: () => void }) {
   const [birthday, setBirthday] = useState('');
   const [parent, setParent] = useState<AdminPerson | null>(null);
   const save = () => {
-    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Use the format YYYY-MM-DD.');
+    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
     adminCreateStudent({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, guardianId: parent?.id ?? null })
       .then(() => { Alert.alert('Added', `${first} is set up${parent ? ` and linked to ${name(parent)}` : ''}.`); onDone(); }).catch(fail);
   };
@@ -178,7 +179,7 @@ function AddStudent({ onDone }: { onDone: () => void }) {
         <Field label="Last name" value={last} onChangeText={setLast} style={{ flex: 1, minWidth: 0 }} />
       </View>
       <GradePicker value={grade} onChange={setGrade} label="Grade this school year" />
-      <Field label="Birthday (optional)" placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" maxLength={10} value={birthday} onChangeText={setBirthday} />
+      <DateField label="Birthday (optional)" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
       {parent
         ? <Text style={{ color: C.ink }}>👪 Parent: {name(parent)}  <Text style={{ color: C.danger }} onPress={() => setParent(null)}>change</Text></Text>
         : <AdultSearch label="Parent (optional; you can link more later)" onPick={setParent} />}

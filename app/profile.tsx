@@ -16,6 +16,7 @@ import { disableAutoCheckIn } from '../src/carline/autoCheckIn';
 import { MyVehicles } from '../src/carline/MyVehicles';
 import { disablePush, enablePush } from '../src/comms/push';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
+import { TimeField } from '../src/forms/DateTimeField';
 
 const PHOTO_SIZE = 512;
 const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
@@ -113,7 +114,7 @@ export default function Profile() {
 
   const saveSettings = (next: MySettings) => step('settings', async () => setSettings(await updateMySettings(next)));
   const saveQuiet = (q = quiet) => {
-    if (q.on && (!TIME.test(q.start) || !TIME.test(q.end))) return Alert.alert('Quiet hours', 'Use 24-hour times like 21:00 and 07:00.');
+    if (q.on && (!TIME.test(q.start) || !TIME.test(q.end))) return Alert.alert('Quiet hours', 'Choose when quiet hours start and end.');
     if (!settings) return;
     const pad = (t: string) => t.padStart(5, '0');
     saveSettings({ ...settings, quietStart: q.on ? pad(q.start) : null, quietEnd: q.on ? pad(q.end) : null });
@@ -200,10 +201,8 @@ export default function Profile() {
         {quiet.on && (
           <>
             <View style={s.row}>
-              <Field label="From" placeholder="21:00" keyboardType="numbers-and-punctuation" maxLength={5}
-                value={quiet.start} onChangeText={(start) => setQuiet({ ...quiet, start })} style={{ flex: 1, minWidth: 0 }} />
-              <Field label="Until" placeholder="07:00" keyboardType="numbers-and-punctuation" maxLength={5}
-                value={quiet.end} onChangeText={(end) => setQuiet({ ...quiet, end })} style={{ flex: 1, minWidth: 0 }} />
+              <TimeField label="From" value={quiet.start} onChange={(start) => setQuiet({ ...quiet, start })} style={{ flex: 1, minWidth: 0 }} />
+              <TimeField label="Until" value={quiet.end} onChange={(end) => setQuiet({ ...quiet, end })} style={{ flex: 1, minWidth: 0 }} />
             </View>
             <Button kind="ghost" label="Save quiet hours" disabled={!!busy} onPress={() => saveQuiet()} />
           </>

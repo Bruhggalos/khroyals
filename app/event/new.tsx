@@ -4,6 +4,7 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { createEvent, editableCalendars } from '../../src/api/connect';
 import { Button, C, Card, Field, H, Loading, P, s } from '../../src/ui';
+import { DateField, TimeField, toDateString } from '../../src/forms/DateTimeField';
 
 const CATEGORIES = ['Event', 'No School', 'Academic', 'Special Student Day', 'Teacher In-Service', 'E-Learning', 'Athletics', 'Fine Arts'];
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -13,7 +14,7 @@ export default function NewEvent() {
   const [cals, setCals] = useState<{ groupId: string | null; name: string }[] | null>(null);
   const [cal, setCal] = useState(0);
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(toDateString(new Date()));
   const [endDate, setEndDate] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -23,7 +24,8 @@ export default function NewEvent() {
   if (!cals) return <Loading />;
   if (!cals.length) return <View style={s.center}><P>You can't add events to any calendar.</P></View>;
 
-  const valid = title.trim() && isDate(date) && (endDate === '' || (isDate(endDate) && endDate >= date)) && isTime(start) && isTime(end);
+  const valid = title.trim() && isDate(date) && (endDate === '' || (isDate(endDate) && endDate >= date)) && isTime(start) && isTime(end)
+    && (!start || !end || endDate > date || end > start);
   const save = () => createEvent({
     groupId: cals[cal].groupId, title: title.trim(), date, endDate: endDate || null, startTime: start || null, endTime: end || null,
     allDay: !start, location: location.trim() || null, category: cals[cal].groupId ? 'Group' : category,
@@ -44,12 +46,12 @@ export default function NewEvent() {
       <Card>
         <Field label="Title" placeholder="e.g. Spring concert" value={title} onChangeText={setTitle} />
         <View style={s.row}>
-          <Field label="Date" placeholder="YYYY-MM-DD" value={date} onChangeText={setDate} style={{ flex: 1 }} />
-          <Field label="End date (optional)" placeholder="YYYY-MM-DD" value={endDate} onChangeText={setEndDate} style={{ flex: 1 }} />
+          <DateField label="Date" value={date} onChange={(d) => { setDate(d); if (endDate && endDate < d) setEndDate(''); }} style={{ flex: 1 }} />
+          <DateField label="End date (optional)" optional value={endDate} onChange={setEndDate} min={date} initial={date} placeholder="Same day" style={{ flex: 1 }} />
         </View>
         <View style={s.row}>
-          <Field label="Start time (optional)" placeholder="15:30" value={start} onChangeText={setStart} style={{ flex: 1 }} />
-          <Field label="End time" placeholder="17:00" value={end} onChangeText={setEnd} style={{ flex: 1 }} />
+          <TimeField label="Start time (optional)" optional value={start} onChange={setStart} placeholder="All day" initial="15:00" style={{ flex: 1 }} />
+          <TimeField label="End time (optional)" optional value={end} onChange={setEnd} initial={start || '16:00'} style={{ flex: 1 }} />
         </View>
         <Field label="Location (optional)" placeholder="e.g. Gym" value={location} onChangeText={setLocation} />
         <P muted>Leave the start time empty for an all-day event.</P>
