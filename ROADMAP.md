@@ -147,6 +147,7 @@ Working in the app and on the server today.
 | Car Line | Duty board | Live board for staff, "Picked up" with Undo, daily pickup record |
 | Car Line | Pickup emails | Every parent is emailed who picked the child up, which staff member released them, and when (undo within a minute cancels it) |
 | Car Line | Approved pickup people | Parents (or the office) let another account holder pick a child up, for today, until a date, or until removed; at most one mother and one father per child |
+| Accounts | Duplicate children | One record per child: same name and birthday is refused; likely matches (typos, nicknames, birthday, grade) are shown to the office, which links the parent to the existing child |
 | Car Line | Car line settings | Spot, radius and hours set by leads and the office |
 | Car Line | Android Auto | Car-screen status and "I'm here" button |
 | Alerts | Critical alerts | Templates for weather, lockdown, hold; staff answer "I'm safe" / "I need help"; live roll call and all clear |

@@ -1595,3 +1595,48 @@ test('approved pickup people: parents add an account by email, for a day or long
   await asSuper();
   await db.exec(`delete from pickup_authorizations; update app.settings set value = null where key = 'carline_open_on'`);
 });
+
+test('duplicate children: the same child is never added twice; likely matches are caught; twins are not', async () => {
+  await asSuper();
+  const score = async (a: string, b: string) =>
+    (await one(`select app.child_match_score(${a}, ${b}) as s`)).s as number;
+  assert.ok(await score(`'Matthew', 'Kim-Lee', '2017-03-04', 3`, `'Matt', 'Kim', '2017-03-04'::date, 3`) >= 6, 'nickname + hyphenated name + birthday');
+  assert.ok(await score(`'José', 'Ortiz', null, 2`, `'jose', 'ORTIZ', null, 2`) >= 6, 'accents and case');
+  assert.ok(await score(`'Ava', 'Kim', '2017-03-04', 3`, `'Mia', 'Kim', '2017-03-04'::date, 3`) < 6, 'twins are different children');
+  assert.ok(await score(`'Ava', 'Kim', '2017-03-04', 3`, `'Ava', 'Kim', '2015-01-01'::date, 5`) < 4, 'same name, different child');
+
+  // The office can't create the same child twice.
+  await as('u-admin', true);
+  const lily = (await one(`select admin_create_student('Lily', 'Chen-Park', 1, '2019-05-06') as id`)).id;
+  await rejects(`select admin_create_student('lily', 'Chen Park', 1, '2019-05-06', null, null, true)`, /already a student/);
+  await rejects(`select admin_create_student('Lilly', 'Chen-Park', 1)`, /looks like Lily Chen-Park/);
+  const similar = (await one(`select admin_similar_students('Lilly', 'Chen-Park', null, 1) as s`)).s;
+  assert.equal(similar[0].id, lily);
+  assert.equal(similar[0].strong, true);
+  // Twins: same birthday, different first name, no warning.
+  await one(`select admin_create_student('Rose', 'Chen-Park', 1, '2019-05-06')`);
+  // Editing into a duplicate is refused too.
+  const rose = (await one(`select id from profiles where first_name = 'Rose' and last_name = 'Chen-Park'`)).id;
+  await rejects(`select admin_update_student('${rose}', 'Lily', 'Chen-Park', 1)`, /already a student/);
+
+  // Two parents ask for the same child: the office sees the match and links instead of creating.
+  await as('u-p06');
+  await one(`select * from request_child('Lily', 'Chen-Park', 1, null, null, 'mother')`);
+  await rejects(`select * from request_child('lily', 'Chen-Park', 1, null, null, 'mother')`, /already asked/);
+  await as('u-p08');
+  await one(`select * from request_child('Lilly', 'Chenpark', 1, '2019-05-06', null, 'father')`);
+  await as('u-admin', true);
+  const reqs = (await one(`select admin_family_requests() as q`)).q.filter((r: any) => /Chen/i.test(r.details.lastName));
+  assert.equal(reqs.length, 2);
+  assert.ok(reqs.every((r: any) => r.matches[0]?.id === lily), 'both point at the existing student');
+  assert.ok(reqs.every((r: any) => r.similarRequests.length === 1), 'and at each other');
+  await rejects(`select admin_decide_family_request('${reqs[1].id}', true)`, /looks like Lily Chen-Park/);
+  for (const r of reqs) await one(`select admin_decide_family_request('${r.id}', true, '${lily}')`);
+  const parents = (await one(`select child_pickup_people('${lily}') as p`)).p.parents;
+  assert.deepEqual(parents.map((p: any) => p.relation).sort(), ['father', 'mother'], 'one record, both parents');
+  assert.equal((await one(`select count(*)::int n from profiles where app.norm_name(last_name) = 'chenpark' and app.norm_name(first_name) like 'lil%'`)).n, 1);
+
+  // A parent can't re-add a child already linked to them.
+  await as('u-p06');
+  await rejects(`select * from request_child('Lily', 'Chen-Park', 1, null, null, 'mother')`, /already linked to your account/);
+});

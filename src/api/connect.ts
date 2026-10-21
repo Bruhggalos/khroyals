@@ -1169,7 +1169,7 @@ export type Child = {
 };
 export type FamilyRequest = {
   id: string; kind: 'add_child' | 'edit_child'; status: string; createdAt: string; studentId: string | null;
-  details: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string | null };
+  details: { firstName: string; lastName: string; grade: number; birthday?: string | null; note?: string | null; relation?: ParentRelation | null };
   decisionNote?: string | null;
 };
 
@@ -1236,10 +1236,12 @@ export async function adminListStudents(opts: { search?: string; limit?: number;
 }
 export async function adminCreateStudent(c: {
   firstName: string; lastName: string; grade: number; birthday?: string | null; guardianId?: string | null; relation?: ParentRelation | null;
+  /** The office confirmed it's a different child from a likely match. */
+  notDuplicate?: boolean;
 }) {
   return run(sb().rpc('admin_create_student', {
     p_first: c.firstName, p_last: c.lastName, p_grade: c.grade, p_birthday: c.birthday || null, p_guardian: c.guardianId ?? null,
-    p_relation: c.relation ?? null,
+    p_relation: c.relation ?? null, p_force: !!c.notDuplicate,
   })) as Promise<string>;
 }
 export async function adminUpdateStudent(id: string, c: { firstName: string; lastName: string; grade: number }) {
@@ -1250,14 +1252,30 @@ export type AdminFamilyRequest = {
   id: string; kind: 'add_child' | 'edit_child'; createdAt: string; details: FamilyRequest['details'];
   requestedBy: { id: string; name: string; role: string };
   student: { id: string; firstName: string; lastName: string; grade: number | null } | null;
+  /** Existing students this "add a child" request looks like, best first. */
+  matches: SimilarStudent[];
+  /** Other parents' waiting requests for what looks like the same child. */
+  similarRequests: { id: string; from: string; relation: string | null; name: string }[];
 };
+export type SimilarStudent = {
+  id: string; score: number; strong: boolean; name: string; gradeLabel: string | null; birthday: string | null;
+  parents: { name: string; relation: string | null }[];
+};
+/** The office: students that look like a child about to be added (strong = needs confirming it's a different child). */
+export async function adminSimilarStudents(c: { firstName: string; lastName: string; birthday?: string | null; grade?: number | null }) {
+  return run(sb().rpc('admin_similar_students', {
+    p_first: c.firstName, p_last: c.lastName, p_birthday: c.birthday || null, p_grade: c.grade ?? null,
+  })) as Promise<SimilarStudent[]>;
+}
 export async function adminFamilyRequests(): Promise<AdminFamilyRequest[]> {
   return run(sb().rpc('admin_family_requests')) as Promise<AdminFamilyRequest[]>;
 }
 /** Approve (optionally linking to an existing student instead of creating one) or decline. */
-export async function adminDecideFamilyRequest(id: string, approve: boolean, opts: { existingStudentId?: string | null; note?: string } = {}) {
+export async function adminDecideFamilyRequest(id: string, approve: boolean,
+  opts: { existingStudentId?: string | null; note?: string; notDuplicate?: boolean } = {}) {
   await run(sb().rpc('admin_decide_family_request', {
     p_request: id, p_approve: approve, p_existing: opts.existingStudentId ?? null, p_note: opts.note ?? null,
+    p_force: !!opts.notDuplicate,
   }));
 }
 

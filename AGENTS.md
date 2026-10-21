@@ -66,6 +66,13 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   account and is added by the child's parents or the office (`pickup_authorizations`,
   `add_pickup_person`, optionally for a date range); they get the car line for that child
   only, through `app.pickup_children()`, never `guardians`.
+- **No duplicate children.** Two students can never share a normalized first + last name
+  and birthday (`app.require_unique_child`, enforced by triggers). Creating a student
+  (`admin_create_student`, or approving a parent's request) refuses a likely duplicate
+  (`app.child_match_score` ≥ 6: names with typos/nicknames/hyphens, birthday, grade;
+  a different first name counts against, so twins pass) unless the office confirms it's a
+  different child (`p_force`). Parents never see other families' children; matches are
+  shown to the office only (`admin_family_requests().matches`).
 - **Car line pickup emails:** confirming a pickup queues an email to every parent of the
   child (`app.pickup_confirmed` → `app.email_queue`, sent a minute later by the
   `send-email` Edge Function through Resend; `carline_reopen` cancels it). The Resend key
