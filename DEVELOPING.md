@@ -308,6 +308,9 @@ APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh
     screens or give them a review account with no admin powers.
   - Testers install the **TestFlight** app and accept the invite. Builds expire
     after 90 days.
+- Testers sign in with an emailed code, and Supabase's built-in email only sends a
+  few an hour, so invite testers a few at a time until custom email (SMTP) is set
+  up. New accounts wait until an admin approves them in the admin portal.
 - Push notifications reach TestFlight installs only after the Expo push setup in §7.
   CarPlay stays off until Apple grants the entitlement (§8).
 

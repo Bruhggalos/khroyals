@@ -81,7 +81,7 @@ feedback comes in.
 
 | Item | Owner | Status | Notes |
 |---|---|---|---|
-| iPhone app on TestFlight | Ben | Blocked: App Store Connect record | The record's Bundle ID must be `com.khroyals.app`; the build itself archives fine ([DEVELOPING §9](DEVELOPING.md#9-testflight-iphone-testers)). |
+| iPhone app on TestFlight | Ben | In progress | First build (0.1.0, 2026.1021.1932) uploaded Oct 21, 2026. Next: internal testers, then an external group through Beta App Review ([DEVELOPING §9](DEVELOPING.md#9-testflight-iphone-testers)). |
 | Google Play release signing | — | Not started | The APK uses the development key; needs an upload keystore or EAS Build, then a Play testing track. |
 | Build the iPhone app in CI | — | Not started | GitHub Actions builds Android only; iPhone builds are made on a Mac. |
 | Penetration testing | — | Not started | Must pass before Full release. Run on the integrated beta build: phone apps, admin web portal, database permissions and API functions, sign-in, and the FACTS connection. Fix and retest any findings before Phase 4. |
