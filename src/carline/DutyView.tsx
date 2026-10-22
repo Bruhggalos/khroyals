@@ -1,4 +1,4 @@
-/** Staff side of the car line: arrivals appear live with pickup numbers; tap when each child is in the car. */
+/** Staff side of the car line: arrivals appear live with pickup numbers; tap when each child is in the car. The traffic flow map is at the bottom. */
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { carlineConfirm, carlineReopen, type BoardRow } from '../api/connect';
 import { C, Card, P, s } from '../ui';
 import { clock, gradeLabel, minutesSince } from './format';
 import { distanceLabel } from './location';
+import { TrafficFlow } from './TrafficFlow';
 import { VehicleIcon } from './VehicleIcon';
 
 const GREEN = '#15803D';
@@ -82,6 +83,8 @@ export function DutyView({ board, onChange }: { board: BoardRow[]; onChange: () 
           ))}
         </>
       )}
+
+      <TrafficFlow />
     </View>
   );
 }

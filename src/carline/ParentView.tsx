@@ -1,7 +1,8 @@
 /**
  * Parent side of the car line: each child's pickup number, the vehicle you're
  * arriving in, then Check In once you're at school. The app sends your location
- * and the school checks you're within the pickup radius. The button never hides:
+ * and the school checks you're within the pickup radius. The traffic flow card says which
+ * line to follow (blue for K2–K4, red for K–12th) and opens the map. The button never hides:
  * it's greyed out outside pickup hours and turns green ("Checked In!") once you're
  * in line (src/carline/checkInButton.ts).
  */
@@ -15,6 +16,7 @@ import { VehicleIcon } from './VehicleIcon';
 import { vehicleLabel } from './vehicles';
 import { AutoCheckInCard } from './AutoCheckInCard';
 import { checkInButton } from './checkInButton';
+import { TrafficFlow } from './TrafficFlow';
 import { clock, gradeLabel, hoursLabel } from './format';
 import { LocationError, currentSpot, distanceLabel } from './location';
 
@@ -126,6 +128,8 @@ export function ParentView({ kids, family, vehicles, pickups, numbers, config, o
             ? `It's open on school days${config ? `, ${hoursLabel(config.start, config.end)}` : ''}.`
             : `When you get to school${config ? ` (within ${distanceLabel(config.radius)} of the pickup spot)` : ''}, choose who you're picking up and tap Check In. Staff see it right away.`}</P>
       </Card>
+
+      <TrafficFlow grades={kids.map((k) => k.grade)} />
 
       {kids.map((k) => {
         const p = status(k.id);

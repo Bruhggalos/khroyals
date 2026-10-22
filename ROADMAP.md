@@ -144,7 +144,7 @@ Working in the app and on the server today.
 | Royals Connect | Moderation | Lock, approval queues, slow mode, quiet hours, mutes, pinning, audit log |
 | Royals Connect | Auto-membership | Rules add people by role, grade, section, team or club, plus their guardians |
 | Royals Connect | Post stats and following | Who saw each post, opens, reactions; follow a post for reply notifications |
-| Car Line | Parent check-in | "I'm here" with location check, pickup numbers, saved vehicles |
+| Car Line | Parent check-in | Check In with a location check, pickup numbers, saved vehicles, and the traffic flow map with each family’s line (blue for K2–K4, red for K–12th) |
 | Car Line | Automatic check-in | Geofence checks children in on arrival; skips no-school days |
 | Car Line | Duty board | Live board for staff, "Picked up" with Undo, daily pickup record |
 | Car Line | Pickup emails | Every parent is emailed who picked the child up, which staff member released them, and when (undo within a minute cancels it) |
