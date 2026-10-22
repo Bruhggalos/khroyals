@@ -13,6 +13,7 @@ import {
   ROLE_LABELS, sendNotification, subscribeQuestions,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo, type SchoolQuestion,
 } from '../../src/api/connect';
+import { ClassesPanel } from '../../src/admin/ClassesPanel';
 import { StudentsPanel } from '../../src/admin/StudentsPanel';
 import { GradePicker } from '../../src/comms/GradePicker';
 import { gradeLabel } from '../../src/comms/grades';
@@ -520,6 +521,7 @@ function Portal({ access }: { access: Access }) {
   const tabs = [
     can('people.view') && ['people', 'People'],
     can('people.family') && ['students', 'Students'],
+    can('people.family') && ['classes', 'Classes'],
     can('admins.manage') && ['admins', 'Admins & roles'],
     ['notify', 'Notifications'],
     can('questions.manage') && ['questions', 'Questions'],
@@ -537,6 +539,7 @@ function Portal({ access }: { access: Access }) {
       <View style={[s.row, { flexWrap: 'wrap' }]}>{tabs.map(([k, l]) => pill(l, tab === k, () => setTab(k)))}</View>
       {tab === 'people' && <People access={access} roles={roles} />}
       {tab === 'students' && <StudentsPanel />}
+      {tab === 'classes' && <ClassesPanel />}
       {tab === 'admins' && <Admins catalog={catalog} roles={roles} reloadRoles={loadRoles} />}
       {tab === 'notify' && <Notifications access={access} />}
       {tab === 'questions' && <QuestionsPanel />}

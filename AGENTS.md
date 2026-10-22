@@ -78,6 +78,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   `send-email` Edge Function through Resend; `carline_reopen` cancels it). The Resend key
   is the `RESEND_API_KEY` function secret, never in the repo; the sender is
   `app.settings.email_from`.
+- **Students' apps** (Ask the Teacher, Assignments) use class sections (`rosters` with kind
+  'section': a lead teacher and its students; Admin portal → Classes). In Ask the Teacher only the
+  student and a teacher of one of their sections write (`teacher_send`, `app.teaches`); the student's
+  parents and `messages.review` holders only read (`app.reads_teacher_thread`). Checking an assignment
+  off (`assignment_done`) is private to the student. Students' Main Page is the short list in
+  `src/appTiles.ts` (`student: false` hides a tile from them).
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.

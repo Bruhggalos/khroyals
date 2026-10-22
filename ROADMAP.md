@@ -38,7 +38,8 @@ only the apps they'll have.
 
 | Item | Owner | Status | Notes |
 |---|---|---|---|
-| Views and app availability by user type | Ben | Not started | Set which apps and home view each user type gets (parent, student, teacher, staff, admin, family). Today it's partly hard-coded: Alerts is staff-only and Family accounts are hidden from four apps. |
+| Views and app availability by user type | Ben | In progress | Set which apps and home view each user type gets (parent, student, teacher, staff, admin, family). Done: students see Student, Calendar, News, Activities, Handbook, Ask the Teacher, Assignments and Campus Map (`src/appTiles.ts`); staff get the Standard / Staff switch. |
+| Artwork for the new student apps | — | Not started | Ask the Teacher, Assignments and Campus Map use plain gold icons on the Main Page; the other tiles have artwork in `assets/apps/`. |
 | Elevated app versions for Admin and Faculty | Ben | In progress | Done: a Standard / Staff switch on the Main Page for teachers, staff and admins; Staff shows Alerts, the admin portal and the staff versions of Car Line (duty board) and Ask the School (assigned questions), marked in gold. Still to decide: staff versions of Activities (coaches) and Volunteer (leaders), and whether Standard should hide coach and leader controls. |
 | Replace the More tab with a Profile tab | Ben | Not started | One tab for every setting: profile, notifications, My children, My vehicles, sign out (plus Car line settings and Admin portal for staff). More's contents (site menu, contact, social, quick links) move to the Info tab. |
 | Info tab: school life essentials | Ben | Not started | Address with directions, office phone and email, bullying policy and reporting (the Bullying page is already imported), report an issue. Built from the website's content; extra items are confirmed with the school in Phase 2. |
@@ -60,8 +61,10 @@ set up) and a private repo. Do the data review before FACTS grades come into the
 | Agreement and ownership | Ben | Not started | Agreement on who owns the code and data, a data-privacy agreement and support terms | Settle first, at approval. |
 | School-owned developer accounts | — | Not started | Apple Developer enrollment as an organization (needs a D-U-N-S number, which can take a couple of weeks) and a Google Play account | Start right away: TestFlight and push notifications depend on it. |
 | Make the repo private | Ben | Not started | — | The repo is public today; fine for a prototype, not once it handles student data. |
-| Student data review (FERPA/COPPA) | — | Not started | Approval of how student data is stored and shown | Gate for the FACTS grades work. |
-| FACTS SIS API integration (read-only) | Ben | Not started | A read-only API key from someone with FACTS admin rights (People, Academics, Gradebook: Read; Admissions, Billing: None) | Also needs a vendor subscription key from FACTS. Nightly roster sync plus grades, report cards and schedules in the Student app; keys stay on the server. |
+| Student data review (FERPA/COPPA) | — | Not started | Approval of how student data is stored and shown | Gate for the FACTS grades work. Include Ask the Teacher: students and teachers message each other, and parents and admins with Student messages can read it. |
+| FACTS SIS API integration (read-only) | Ben | Not started | A read-only API key from someone with FACTS admin rights (People, Academics, Gradebook: Read; Admissions, Billing: None) | Also needs a vendor subscription key from FACTS. Nightly roster sync (including class sections and their teachers, which Ask the Teacher and Assignments use) plus grades, report cards and schedules in the Student app; keys stay on the server. |
+| Campus map image and places | — | Not started | The school's campus or building map, and the places to mark on it (office, gym, library, car line) | The Campus Map shows the address, front office and car line spot until then; add the map and pins in `src/campus/campus.ts`. |
+| Class sections on live | — | Not started | Each class's teacher and students | Set them up in Admin portal → Classes (or from FACTS). Until then students see no teachers in Ask the Teacher and get no class assignments. |
 | Custom email (SMTP) | — | Not started | DNS access for khroyals.com, to send sign-in emails from the school's address | Needed before beta: Supabase's built-in email sends only a few messages an hour, and its template can't be changed to carry the sign-in code. |
 | Push notifications on iPhone and Android | — | Not started | Which Apple and Google accounts the app is published under | Expo project + Apple push key; Firebase project and `google-services.json` for Android ([DEVELOPING §7](DEVELOPING.md#7-push-notifications)). Until then notifications only show on the bell page, and critical alerts only when the app is open. |
 | Review critical alert templates | — | Not started | The school's safety plan and sign-off on wording | Lockdown, severe weather and hold-in-place templates (`src/alerts/kinds.ts`). |
@@ -156,7 +159,11 @@ Working in the app and on the server today.
 | Marketplace | Buy and sell | Terms gate, photos, Dibs or Offer with one counter, deal card |
 | Volunteer | Opportunities and item requests | Leaders post, "Say Yes!" sign-ups with spot limits, item requests people pledge toward with quantity progress, chat per opportunity |
 | Ask the School | Questions | Ask and follow up; routers assign to staff; ages turn amber and red |
-| Student | Student app | Lists your children; links to the FACTS Family Portal for grades |
+| Student | Student app | Lists your children; links to the FACTS Family Portal for grades; parents read each child's messages with teachers |
+| Student | Ask the Teacher | Students message the teachers of their classes; teachers reply or start a conversation; parents and admins with Student messages can read |
+| Student | Assignments | Teachers assign work to a class; students add their own, sorted overdue / today / coming up, and check them off privately |
+| Student | Campus Map | The school's map with numbered places once it's added; directions and the front office until then |
+| Admin portal | Classes | Class sections with their teacher and students, for Ask the Teacher and Assignments |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |
 | Admin portal | Students, questions, push | Add children, approve family requests, route questions, send pushes |

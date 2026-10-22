@@ -17,21 +17,24 @@ import { GOLD, NAVY } from '../../src/sports/ui';
 import { useStaffViewSetting } from '../../src/staffView';
 import { C, P, s } from '../../src/ui';
 
-/** A tile shows its own artwork or an Ionicons glyph; who sees it is in src/appTiles.ts. */
+/** A tile shows its own artwork or an Ionicons glyph (white, or `glyph` color); who sees it is in src/appTiles.ts. */
 type App = { label: string; color: string; href: Href } & TileRules
-  & ({ icon: ComponentProps<typeof Ionicons>['name'] } | { image: ImageSourcePropType });
+  & ({ icon: ComponentProps<typeof Ionicons>['name']; glyph?: string } | { image: ImageSourcePropType });
 
 const APPS: App[] = [
   { label: 'Alerts', icon: 'warning', color: '#B42318', href: '/alerts', staffOnly: true },
-  { label: 'Car Line', image: require('../../assets/apps/carline.png'), color: '#0A1F4D', href: '/carline', staffVersion: true },
+  { label: 'Car Line', image: require('../../assets/apps/carline.png'), color: '#0A1F4D', href: '/carline', staffVersion: true, student: false },
   { label: 'Student', image: require('../../assets/apps/student.png'), color: '#0A1F4D', href: '/student', family: false },
   { label: 'Calendar', image: require('../../assets/apps/calendar.png'), color: '#0A1F4D', href: '/calendar' },
   { label: 'News', image: require('../../assets/apps/news.png'), color: '#0A1F4D', href: '/news' },
   { label: 'Activities', image: require('../../assets/apps/activities.png'), color: '#0A1F4D', href: '/activities' },
-  { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false },
-  { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer' },
+  { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false, student: false },
+  { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer', student: false },
   { label: 'Handbook', image: require('../../assets/apps/handbook.png'), color: '#0A1F4D', href: '/handbook' },
-  { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false, staffVersion: true },
+  { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false, student: false, staffVersion: true },
+  { label: 'Ask the Teacher', icon: 'chatbubbles', glyph: GOLD, color: NAVY, href: '/teachers', family: false, studentApp: true },
+  { label: 'Assignments', icon: 'checkbox', glyph: GOLD, color: NAVY, href: '/assignments', family: false, studentApp: true },
+  { label: 'Campus Map', icon: 'map', glyph: GOLD, color: NAVY, href: '/campus-map' },
   { label: 'Admin', icon: 'shield-checkmark', color: NAVY, href: '/admin', adminOnly: true },
 ];
 
@@ -77,7 +80,8 @@ export default function Apps() {
   const admin = useHasAdmin(staff);
   const [staffSetting, setStaffSetting] = useStaffViewSetting();
   const staffView = staff && staffSetting;
-  const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin });
+  const student = !!person && !person.pending && person.schoolRole === 'student';
+  const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin, student });
   return (
     <View style={s.screen}>
       {/* Headlines stay put under the banner; the apps scroll below them. */}
@@ -105,7 +109,7 @@ export default function Apps() {
               <View style={{ width: 84, height: 84, borderRadius: 24, overflow: 'hidden', backgroundColor: a.color, alignItems: 'center', justifyContent: 'center',
                 borderWidth: a.elevated ? 3 : 0, borderColor: GOLD }}>
                 {'image' in a ? <Image source={a.image} style={{ width: a.elevated ? 78 : 84, height: a.elevated ? 78 : 84 }} accessible={false} />
-                  : <Ionicons name={a.icon} size={42} color="#fff" />}
+                  : <Ionicons name={a.icon} size={42} color={a.glyph ?? '#fff'} />}
               </View>
               {a.elevated && (
                 <View style={{ position: 'absolute', bottom: -8, alignSelf: 'center', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,

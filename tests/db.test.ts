@@ -716,6 +716,105 @@ test('volunteer item requests: leaders ask for things, people pledge up to what 
     /volunteer_items_shape/);
 });
 
+test('students: Ask the Teacher and assignments, with teachers from class rosters', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, jen] = [await uid('u-s01'), await uid('u-eng')];
+  const told = async (key: string, value: string) =>
+    (await rows(`select title || ' ' || body as t from my_notifications() where data->>'${key}' = '${value}'`)).map((n) => n.t).join('\n');
+
+  // Ava (u-s01) is in English 10 – Period 3, taught by Jennifer (u-eng). Jessica (u-sci) leads a club, not a class.
+  await as('u-s01');
+  assert.deepEqual((await rows(`select * from my_teachers()`)).map((t) => [t.teacher_id, t.classes, t.thread_id]),
+    [[jen, 'English 10 – Period 3', null]]);
+  await rejects(`select * from teacher_send('${ava}', ${id('u-sci')}, 'Hi')`, /teachers of your classes/);
+  await rejects(`select * from teacher_send('${ava}', '${jen}', '   ')`, /Write a message first/);
+  await one(`select * from teacher_send('${ava}', '${jen}', 'Is the essay due Friday?')`);
+  const thread = (await one(`select teacher_thread_for('${ava}', '${jen}') as t`)).t as string;
+
+  // Jennifer is told, sees it unread, and answers (which reads it).
+  await as('u-eng');
+  assert.match(await told('teacherThreadId', thread), /Is the essay due Friday\?/);
+  assert.deepEqual((await rows(`select student_id, unread from teacher_conversations()`)).map((c) => [c.student_id, c.unread]), [[ava, true]]);
+  assert.ok((await rows(`select student_id from my_class_students()`)).some((s) => s.student_id === ava));
+  await one(`select * from teacher_send('${ava}', '${jen}', 'Yes, by 3:00.')`);
+  assert.equal((await one(`select unread from teacher_conversations()`)).unread, false);
+  await rejects(`select * from teacher_send(${id('u-s05')}, '${jen}', 'Hello')`, /students in your classes/);
+
+  // Ava sees the answer as unread until she opens the conversation.
+  await as('u-s01');
+  assert.equal((await one(`select unread from my_teachers()`)).unread, true);
+  await one(`select teacher_thread_read('${thread}')`);
+  assert.equal((await one(`select unread from my_teachers()`)).unread, false);
+  const t = (await one(`select teacher_thread('${thread}') as t`)).t;
+  assert.deepEqual([t.canWrite, t.messages.length, t.teacherName], [true, 2, 'Jennifer Taylor']);
+
+  // Rosa (Ava's mother) reads it but can't write; another parent and another student see nothing.
+  await as('u-p01');
+  assert.equal((await one(`select teacher_thread('${thread}') as t`)).t.canWrite, false);
+  assert.equal((await rows(`select 1 from teacher_conversations('${ava}')`)).length, 1);
+  await rejects(`select * from teacher_send('${ava}', '${jen}', 'Thanks!')`, /Only the student and the teacher/);
+  await as('u-p02');
+  assert.equal((await one(`select teacher_thread('${thread}') as t`)).t, null);
+  assert.equal((await rows(`select 1 from teacher_messages`)).length, 0);
+  await as('u-s02');
+  assert.equal((await rows(`select 1 from teacher_threads`)).length, 0);
+  await rejects(`insert into teacher_messages (thread_id, body) values ('${thread}', 'sneaky')`, /permission denied/);
+
+  // Admins with messages.review read every conversation, once verified with their authenticator app.
+  await as('u-ap');
+  assert.equal((await rows(`select 1 from teacher_conversations()`)).length, 0);
+  await as('u-ap', true);
+  assert.equal((await rows(`select 1 from teacher_conversations()`)).length, 1);
+  assert.ok((await rows(`select key from permission_catalog()`)).some((p) => p.key === 'messages.review'));
+
+  // Assignments: only a class's teacher assigns to it (a club isn't a class), and its students are told.
+  await as('u-sci');
+  await rejects(`select * from assignment_add('Lab report', '', null, 'eng10-p3')`, /classes you teach/);
+  await rejects(`select * from assignment_add('Lab report', '', null, 'club-03')`, /classes you teach/);
+  await as('u-eng');
+  assert.deepEqual((await rows(`select id, students from my_sections()`)).map((s) => [s.id, Number(s.students)]), [['eng10-p3', 5]]);
+  const essay = await one(`select * from assignment_add('Persuasive essay', 'Two pages.', app.school_today() + 3, 'eng10-p3')`);
+  await rejects(`select * from assignment_add('My list', '', null, null)`, /for students/);
+
+  // Ava sees it, adds her own, and checks the essay off; only she sees that.
+  await as('u-s01');
+  assert.match(await told('assignmentId', essay.id), /English 10 – Period 3 Persuasive essay · due/);
+  const mine = await one(`select * from assignment_add('Read chapter 4', '', app.school_today() + 1)`);
+  assert.deepEqual((await rows(`select title from assignments order by title`)).map((a) => a.title), ['Persuasive essay', 'Read chapter 4']);
+  await one(`select assignment_check('${essay.id}', true)`);
+  await one(`select assignment_check('${essay.id}', true)`);
+  assert.equal((await rows(`select 1 from assignment_done`)).length, 1);
+  await as('u-s02');
+  assert.deepEqual((await rows(`select title from assignments`)).map((a) => a.title), ['Persuasive essay'], "not Ava's own");
+  assert.equal((await rows(`select 1 from assignment_done`)).length, 0);
+  await as('u-s05');
+  assert.equal((await rows(`select 1 from assignments`)).length, 0, 'not in the class');
+  await rejects(`select assignment_check('${essay.id}', true)`, /isn't yours/);
+  await as('u-eng');
+  assert.deepEqual((await rows(`select title from assignments`)).map((a) => a.title), ['Persuasive essay']);
+  assert.equal((await rows(`select 1 from assignment_done`)).length, 0, "teachers don't see who's done");
+  await rejects(`select assignment_delete('${mine.id}')`, /Only whoever added/);
+  await one(`select assignment_delete('${essay.id}')`);
+  await as('u-s01');
+  assert.deepEqual((await rows(`select title from assignments`)).map((a) => a.title), ['Read chapter 4']);
+
+  // Classes in the admin portal: the office sets a section's teacher and students.
+  await as('u-eng');
+  await rejects(`select * from admin_list_sections()`, /permission|MFA/);
+  await as('u-ap', true);
+  await one(`select admin_set_roster('bio9-p1', 'section', 'Biology – Period 1', ${id('u-sci')})`);
+  await one(`select admin_roster_member('bio9-p1', ${id('u-s05')}, true)`);
+  const bio = (await rows(`select * from admin_list_sections()`)).find((s) => s.id === 'bio9-p1');
+  assert.deepEqual([bio.lead_name, Number(bio.students)], ['Jessica Allen', 1]);
+  assert.equal((await rows(`select * from admin_section_students('bio9-p1')`)).length, 1);
+  await as('u-s05');
+  assert.deepEqual((await rows(`select teacher_name from my_teachers()`)).map((x) => x.teacher_name), ['Jessica Allen']);
+  await as('u-ap', true);
+  await one(`select admin_delete_roster('bio9-p1')`);
+  await as('u-s05');
+  assert.equal((await rows(`select 1 from my_teachers()`)).length, 0);
+});
+
 test('ask the school: private questions, routed by the office, answered by staff, with follow-ups', async () => {
   const told = async (who: string, q: string, mfa = false) => {
     await as(who, mfa);

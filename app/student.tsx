@@ -1,5 +1,6 @@
 /**
- * Student app. Shows a parent's linked children (or a student themselves).
+ * Student app. Shows a parent's linked children (or a student themselves), with a way
+ * for parents to read each child's Ask the Teacher conversations.
  * Grades, report cards and schedules live in the school's FACTS Family Portal
  * until the app can read them from FACTS directly.
  */
@@ -57,6 +58,12 @@ export default function Student() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 17, fontWeight: '700', color: C.ink }}>{k.firstName} {k.lastName}</Text>
             {!!gradeLabel(k.grade) && <P muted>{gradeLabel(k.grade)}</P>}
+            {person?.schoolRole !== 'student' && (
+              <Text style={{ color: C.primary, fontWeight: '700', marginTop: 4 }} accessibilityRole="link"
+                onPress={() => router.push({ pathname: '/teachers', params: { child: k.id } })}>
+                Messages with teachers ›
+              </Text>
+            )}
           </View>
         </Card>
       ))}

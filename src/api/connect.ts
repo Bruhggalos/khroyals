@@ -1321,3 +1321,130 @@ export async function myPickupChildren(): Promise<Person[]> {
   const rows: any[] = await run(sb().rpc('my_pickup_children'));
   return rows.map((r) => directory.get(typeof r === 'string' ? r : Object.values(r)[0] as string)).filter(Boolean) as Person[];
 }
+
+// ======================================================================
+// Students: Ask the Teacher, Assignments, and the class sections they use
+// ======================================================================
+
+/** For a student: one of their teachers (from their class sections), and their conversation if it's started. */
+export type TeacherContact = {
+  teacherId: string; teacherName: string; classes: string;
+  threadId: string | null; lastMessageAt: string | null; lastBody: string | null; unread: boolean;
+};
+/** A student–teacher conversation: the person's own, their child's (parents), or any (messages.review). */
+export type TeacherConversation = {
+  id: string; studentId: string; studentName: string; teacherId: string; teacherName: string;
+  lastMessageAt: string; lastBody: string | null; unread: boolean;
+};
+export type ClassStudent = { studentId: string; studentName: string; grade: number | null; classes: string };
+export type TeacherMessage = { id: string; authorId: string | null; body: string; createdAt: string };
+export type TeacherThread = {
+  id: string; studentId: string; teacherId: string; studentName: string; teacherName: string;
+  /** Only the student and the teacher write; parents and reviewers read. */
+  canWrite: boolean; messages: TeacherMessage[];
+};
+
+export async function myTeachers(): Promise<TeacherContact[]> {
+  if (!live || !current) return [];
+  return ((await rpc('my_teachers')) as any[]).map((r) => ({
+    teacherId: r.teacher_id, teacherName: r.teacher_name, classes: r.classes, threadId: r.thread_id,
+    lastMessageAt: r.last_message_at, lastBody: r.last_body, unread: !!r.unread,
+  }));
+}
+export async function teacherConversations(studentId?: string): Promise<TeacherConversation[]> {
+  if (!live || !current) return [];
+  return ((await rpc('teacher_conversations', { p_student: studentId ?? null })) as any[]).map((r) => ({
+    id: r.id, studentId: r.student_id, studentName: r.student_name, teacherId: r.teacher_id, teacherName: r.teacher_name,
+    lastMessageAt: r.last_message_at, lastBody: r.last_body, unread: !!r.unread,
+  }));
+}
+/** For a teacher: the students in the class sections they lead. */
+export async function myClassStudents(): Promise<ClassStudent[]> {
+  if (!live || !current) return [];
+  return ((await rpc('my_class_students')) as any[]).map((r) => ({ studentId: r.student_id, studentName: r.student_name, grade: r.grade, classes: r.classes }));
+}
+export async function teacherThread(id: string): Promise<TeacherThread | null> {
+  return ((await rpc('teacher_thread', { p_thread: id })) as TeacherThread | null) ?? null;
+}
+/** The conversation between this student and teacher, if it has started. */
+export async function teacherThreadFor(studentId: string, teacherId: string): Promise<string | null> {
+  return ((await rpc('teacher_thread_for', { p_student: studentId, p_teacher: teacherId })) as string | null) ?? null;
+}
+/** Write to the other side (it starts the conversation the first time); returns the conversation's id. */
+export async function teacherSend(studentId: string, teacherId: string, body: string): Promise<string> {
+  return ((await rpc('teacher_send', { p_student: studentId, p_teacher: teacherId, p_body: body })) as any).thread_id;
+}
+export async function teacherThreadRead(id: string) { await rpc('teacher_thread_read', { p_thread: id }); }
+export function subscribeTeacherMessages(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`teachers-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'teacher_threads' }, onChange)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'teacher_messages' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
+/** A class assignment (`rosterId`, from its teacher) or a student's own; `done` is the student's own check. */
+export type Assignment = {
+  id: string; rosterId: string | null; className: string | null; ownerId: string; title: string; details: string;
+  dueOn: string | null; createdAt: string; done: boolean;
+};
+export type Section = { id: string; name: string; students: number };
+
+export async function listAssignments(): Promise<Assignment[]> {
+  if (!live || !current) return [];
+  const [a, d, r] = await Promise.all([
+    run(sb().from('assignments').select('*').order('due_on', { nullsFirst: false }).order('created_at')),
+    run(sb().from('assignment_done').select('assignment_id')),
+    run(sb().from('rosters').select('id, name')),
+  ]);
+  const done = new Set((d as any[]).map((x) => x.assignment_id));
+  const names = new Map((r as any[]).map((x) => [x.id, x.name]));
+  return (a as any[]).map((x) => ({
+    id: x.id, rosterId: x.roster_id, className: x.roster_id ? names.get(x.roster_id) ?? null : null, ownerId: x.owner_id,
+    title: x.title, details: x.details, dueOn: x.due_on, createdAt: x.created_at, done: done.has(x.id),
+  }));
+}
+/** With `rosterId`, a teacher assigns it to that class; without, a student adds their own. */
+export async function addAssignment(a: { title: string; details: string; dueOn: string | null; rosterId: string | null }) {
+  await rpc('assignment_add', { p_title: a.title, p_details: a.details, p_due_on: a.dueOn, p_roster: a.rosterId });
+}
+export async function deleteAssignment(id: string) { await rpc('assignment_delete', { p_assignment: id }); }
+export async function checkAssignment(id: string, done: boolean) { await rpc('assignment_check', { p_assignment: id, p_done: done }); }
+/** For a teacher: the class sections they lead. */
+export async function mySections(): Promise<Section[]> {
+  if (!live || !current) return [];
+  return ((await rpc('my_sections')) as any[]).map((r) => ({ id: r.id, name: r.name, students: Number(r.students) }));
+}
+export function subscribeAssignments(onChange: () => void): () => void {
+  if (!live) return () => {};
+  const ch: RealtimeChannel = sb().channel(`assignments-${Math.random().toString(36).slice(2)}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'assignment_done' }, onChange)
+    .subscribe();
+  return () => { sb().removeChannel(ch); };
+}
+
+/** Class sections in the admin portal (people.family). */
+export type AdminSection = { id: string; name: string; leadId: string | null; leadName: string | null; students: number };
+export type SectionStudent = { id: string; firstName: string; lastName: string; grade: number | null; hasLogin: boolean };
+export async function adminListSections(): Promise<AdminSection[]> {
+  return ((await rpc('admin_list_sections')) as any[]).map((r) => ({
+    id: r.id, name: r.name, leadId: r.lead_id, leadName: r.lead_name, students: Number(r.students),
+  }));
+}
+export async function adminSectionStudents(id: string): Promise<SectionStudent[]> {
+  return ((await rpc('admin_section_students', { p_roster: id })) as any[]).map((r) => ({
+    id: r.id, firstName: r.first_name, lastName: r.last_name, grade: r.grade, hasLogin: !!r.has_login,
+  }));
+}
+/** Add or rename a class section and set its teacher (`id` is kept; new ones get one from the name). */
+export async function adminSaveSection(s: { id?: string; name: string; leadId: string | null }): Promise<string> {
+  const id = s.id ?? `sec-${s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
+  await rpc('admin_set_roster', { p_roster: id, p_kind: 'section', p_name: s.name, p_lead: s.leadId });
+  return id;
+}
+export async function adminSectionMember(id: string, userId: string, add: boolean) {
+  await rpc('admin_roster_member', { p_roster: id, p_user: userId, p_add: add });
+}
+export async function adminDeleteSection(id: string) { await rpc('admin_delete_roster', { p_roster: id }); }
