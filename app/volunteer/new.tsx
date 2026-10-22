@@ -6,6 +6,7 @@ import { isVolunteerLead, volunteerPost } from '../../src/api/connect';
 import { todayIso } from '../../src/volunteer/format';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, Card, Field, P, s } from '../../src/ui';
+import { DateField, TimeField } from '../../src/forms/DateTimeField';
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 const isTime = (v: string) => /^\d{1,2}:\d{2}$/.test(v);
@@ -32,10 +33,11 @@ function Form() {
   const post = async () => {
     const n = spots.trim() ? Number.parseInt(spots, 10) : null;
     const problem = !title.trim() ? 'Add a title.'
-      : !isDate(date) ? 'Enter the date as YYYY-MM-DD.'
+      : !isDate(date) ? 'Choose a date.'
       : date < todayIso() ? "The date can't be in the past."
-      : endDate && (!isDate(endDate) || endDate < date) ? 'The end date must be YYYY-MM-DD, on or after the start.'
-      : (start && !isTime(start)) || (end && !isTime(end)) ? 'Enter times like 15:00.'
+      : endDate && (!isDate(endDate) || endDate < date) ? 'The end date must be on or after the start.'
+      : (start && !isTime(start)) || (end && !isTime(end)) ? 'Choose the times again.'
+      : start && end && !endDate && end <= start ? 'The end time must be after the start time.'
       : n !== null && !(n >= 1) ? 'Spots must be a number, or leave it empty for no limit.' : null;
     if (problem) return Alert.alert('Almost there', problem);
     setBusy(true);
@@ -62,12 +64,12 @@ function Form() {
       </Card>
       <Card>
         <View style={s.row}>
-          <Field label="Date" placeholder="YYYY-MM-DD" value={date} onChangeText={setDate} style={{ flex: 1 }} />
-          <Field label="End date (optional)" placeholder="YYYY-MM-DD" value={endDate} onChangeText={setEndDate} style={{ flex: 1 }} />
+          <DateField label="Date" value={date} min={todayIso()} onChange={(d) => { setDate(d); if (endDate && endDate < d) setEndDate(''); }} style={{ flex: 1 }} />
+          <DateField label="End date (optional)" optional value={endDate} onChange={setEndDate} min={date} initial={date} placeholder="Same day" style={{ flex: 1 }} />
         </View>
         <View style={s.row}>
-          <Field label="Start time (optional)" placeholder="15:00" value={start} onChangeText={setStart} style={{ flex: 1 }} />
-          <Field label="End time" placeholder="17:00" value={end} onChangeText={setEnd} style={{ flex: 1 }} />
+          <TimeField label="Start time (optional)" optional value={start} onChange={setStart} initial="15:00" style={{ flex: 1 }} />
+          <TimeField label="End time (optional)" optional value={end} onChange={setEnd} initial={start || '16:00'} style={{ flex: 1 }} />
         </View>
         <Field label="Where (optional)" placeholder="e.g. Library" value={location} onChangeText={setLocation} maxLength={120} />
         <Field label="Volunteers needed (optional)" placeholder="No limit if empty" keyboardType="number-pad" value={spots} onChangeText={setSpots} />

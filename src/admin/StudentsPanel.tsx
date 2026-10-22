@@ -6,11 +6,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, Text, View } from 'react-native';
 import {
   ROLE_LABELS, adminCreateStudent, adminDecideFamilyRequest, adminDeleteStudent, adminFamilyRequests, adminLinkGuardian, adminListPeople,
-  adminListStudents, adminUpdateStudent, pickupNumbers, setPickupNumber, type AdminFamilyRequest, type AdminPerson, type AdminStudent,
+  adminListStudents, adminSimilarStudents, adminUpdateStudent, pickupNumbers, setPickupNumber, type AdminFamilyRequest, type AdminPerson, type AdminStudent, type SimilarStudent,
 } from '../api/connect';
 import { GradePicker } from '../comms/GradePicker';
 import { gradeLabel } from '../comms/grades';
 import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../ui';
+import { DateField, birthdayMax, birthdayMin, birthdayStart, dateLabel } from '../forms/DateTimeField';
+import { PickupPeople } from '../carline/PickupPeople';
 
 const PAGE = 20;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -74,8 +76,9 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
   const [note, setNote] = useState('');
   const [linking, setLinking] = useState(false);
   const d = r.details;
-  const decide = (approve: boolean, existing?: AdminStudent) =>
-    adminDecideFamilyRequest(r.id, approve, { existingStudentId: existing?.id, note }).then(onDone).catch(fail);
+  const decide = (approve: boolean, existing?: { id: string }, notDuplicate = false) =>
+    adminDecideFamilyRequest(r.id, approve, { existingStudentId: existing?.id, note, notDuplicate }).then(onDone).catch(fail);
+  const strong = r.matches.some((m) => m.strong);
   return (
     <Card style={{ borderColor: '#B45309' }}>
       <Text style={{ fontWeight: '700', color: C.ink }}>
@@ -84,12 +87,35 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
       </Text>
       <P muted>From {r.requestedBy.name} ({r.requestedBy.role}) · {new Date(r.createdAt).toLocaleDateString()}</P>
       {r.kind === 'edit_child' && r.student && <P muted>Now: {name(r.student)}, {gradeLabel(r.student.grade)}</P>}
-      {!!d.birthday && <P muted>Birthday: {d.birthday}</P>}
+      {!!d.birthday && <P muted>Birthday: {dateLabel(d.birthday)}</P>}
       {!!d.note && <P>“{d.note}”</P>}
+      {r.matches.length > 0 && (
+        <View style={{ gap: 6, padding: 10, borderRadius: 10, backgroundColor: '#FEF3C7' }}>
+          <Text style={{ fontWeight: '700', color: '#92400E' }}>⚠️ {strong ? 'This child may already be a student' : 'Similar students'}</Text>
+          {r.matches.map((m) => (
+            <View key={m.id} style={{ gap: 4 }}>
+              <Text style={{ color: C.ink }}>
+                {m.name} · {m.gradeLabel ?? 'no grade'}{m.birthday ? ` · born ${dateLabel(m.birthday)}` : ''}
+                {m.parents.length ? ` · ${m.parents.map((p) => `${p.name}${p.relation ? ` (${p.relation})` : ''}`).join(', ')}` : ' · no parents yet'}
+              </Text>
+              <Button kind="ghost" label={`Same child: link ${r.requestedBy.name} to ${m.name}`}
+                onPress={() => confirm('Link to existing student?', `${r.requestedBy.name} becomes ${m.name}'s ${d.relation ?? 'parent'}. No new student is created.`,
+                  () => decide(true, m))} />
+            </View>
+          ))}
+        </View>
+      )}
+      {r.similarRequests.length > 0 && (
+        <P muted>Also asked for: {r.similarRequests.map((o) => `${o.name} by ${o.from}${o.relation ? ` (${o.relation})` : ''}`).join('; ')}.
+          Approve one as a new student, then link the other to it.</P>
+      )}
       <Field label="Note to the parent (optional)" value={note} onChangeText={setNote} />
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         <View style={{ flex: 1, minWidth: 140 }}>
-          <Button label={r.kind === 'add_child' ? 'Approve: new student' : 'Approve change'} onPress={() => decide(true)} />
+          <Button label={r.kind !== 'add_child' ? 'Approve change' : strong ? "Different child: add as new" : 'Approve: new student'}
+            onPress={() => (strong
+              ? confirm('Add as a new student?', 'Only do this if you\'re sure it isn\'t the student shown above.', () => decide(true, undefined, true))
+              : decide(true))} />
         </View>
         <View style={{ flex: 1, minWidth: 100 }}><Button kind="ghost" label="Decline" onPress={() => decide(false)} /></View>
       </View>
@@ -102,6 +128,7 @@ function RequestCard({ r, onDone }: { r: AdminFamilyRequest; onDone: () => void 
 }
 
 function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string; onChange: () => void }) {
+  const [linking, setLinking] = useState<AdminPerson | null>(null);
   const [pickup, setPickup] = useState(number ?? '');
   const [open, setOpen] = useState(false);
   const [first, setFirst] = useState(x.firstName);
@@ -142,8 +169,25 @@ function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string
             </Text>
           ))}
           <P muted>Family accounts (grandparents and other relatives) only get car line pickup for the children linked here.</P>
-          <AdultSearch label="Link a parent or family member" exclude={x.parents.map((p) => p.id)}
-            onPick={(p) => adminLinkGuardian(p.id, x.id, true).then(onChange).catch(fail)} />
+          {linking ? (
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: C.ink }}>Link {name(linking)} as {x.firstName}'s:</Text>
+              <View style={[s.row, { gap: 8 }]}>
+                {(['mother', 'father'] as const).map((r) => (
+                  <View key={r} style={{ flex: 1 }}>
+                    <Button label={r === 'mother' ? 'Mother' : 'Father'}
+                      onPress={() => adminLinkGuardian(linking.id, x.id, true, r).then(() => { setLinking(null); onChange(); }).catch(fail)} />
+                  </View>
+                ))}
+              </View>
+              <Text style={{ color: C.muted }} onPress={() => setLinking(null)}>Cancel</Text>
+            </View>
+          ) : (
+            <AdultSearch label="Link a parent or family member" exclude={x.parents.map((p) => p.id)}
+              onPick={(p) => (p.schoolRole === 'family' ? adminLinkGuardian(p.id, x.id, true).then(onChange).catch(fail) : setLinking(p))} />
+          )}
+          <P muted>A child has at most one mother and one father. Anyone else who picks up goes on the approved list below.</P>
+          <PickupPeople studentId={x.id} childName={x.firstName} office />
           <View style={[s.row, { justifyContent: 'space-between' }]}>
             {x.managed ? (
               <Text style={{ color: C.danger, fontWeight: '600' }}
@@ -164,10 +208,25 @@ function AddStudent({ onDone }: { onDone: () => void }) {
   const [grade, setGrade] = useState<number | null>(null);
   const [birthday, setBirthday] = useState('');
   const [parent, setParent] = useState<AdminPerson | null>(null);
-  const save = () => {
-    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Use the format YYYY-MM-DD.');
-    adminCreateStudent({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, guardianId: parent?.id ?? null })
+  const [relation, setRelation] = useState<'mother' | 'father' | null>(null);
+  // Likely duplicates found for the details as they were when checked (cleared when they change).
+  const [matches, setMatches] = useState<SimilarStudent[] | null>(null);
+  useEffect(() => setMatches(null), [first, last, grade, birthday]);
+  const create = (notDuplicate: boolean) =>
+    adminCreateStudent({ firstName: first, lastName: last, grade: grade!, birthday: birthday || null, guardianId: parent?.id ?? null, relation, notDuplicate })
       .then(() => { Alert.alert('Added', `${first} is set up${parent ? ` and linked to ${name(parent)}` : ''}.`); onDone(); }).catch(fail);
+  const save = async () => {
+    if (birthday && !DATE.test(birthday)) return Alert.alert('Birthday', 'Choose the birthday again.');
+    if (parent && parent.schoolRole !== 'family' && !relation) return Alert.alert('Parent', `Is ${name(parent)} the mother or the father?`);
+    const found = await adminSimilarStudents({ firstName: first, lastName: last, birthday: birthday || null, grade }).catch(() => []);
+    if (found.length) return setMatches(found);
+    create(false);
+  };
+  const linkInstead = (m: SimilarStudent) => {
+    if (!parent) return Alert.alert('Already a student', `${m.name} is already set up. Find them in the list below to make changes.`);
+    if (parent.schoolRole !== 'family' && !relation) return Alert.alert('Parent', `Is ${name(parent)} the mother or the father?`);
+    adminLinkGuardian(parent.id, m.id, true, parent.schoolRole === 'family' ? null : relation)
+      .then(() => { Alert.alert('Linked', `${name(parent)} is linked to ${m.name}. No new student was added.`); onDone(); }).catch(fail);
   };
   return (
     <Card>
@@ -178,11 +237,43 @@ function AddStudent({ onDone }: { onDone: () => void }) {
         <Field label="Last name" value={last} onChangeText={setLast} style={{ flex: 1, minWidth: 0 }} />
       </View>
       <GradePicker value={grade} onChange={setGrade} label="Grade this school year" />
-      <Field label="Birthday (optional)" placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" maxLength={10} value={birthday} onChangeText={setBirthday} />
+      <DateField label="Birthday (optional)" optional value={birthday} onChange={setBirthday} min={birthdayMin()} max={birthdayMax()} initial={birthdayStart()} />
       {parent
-        ? <Text style={{ color: C.ink }}>👪 Parent: {name(parent)}  <Text style={{ color: C.danger }} onPress={() => setParent(null)}>change</Text></Text>
+        ? (
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: C.ink }}>👪 Parent: {name(parent)}  <Text style={{ color: C.danger }} onPress={() => { setParent(null); setRelation(null); }}>change</Text></Text>
+            {parent.schoolRole !== 'family' && (
+              <View style={[s.row, { gap: 6 }]}>
+                {(['mother', 'father'] as const).map((r) => (
+                  <Text key={r} onPress={() => setRelation(r)} accessibilityRole="button"
+                    style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1,
+                      borderColor: relation === r ? C.primary : C.line, backgroundColor: relation === r ? C.primary : '#fff',
+                      color: relation === r ? '#fff' : C.ink, fontWeight: '600' }}>{r === 'mother' ? 'Mother' : 'Father'}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+        )
         : <AdultSearch label="Parent (optional; you can link more later)" onPick={setParent} />}
-      <Button label="Add student" disabled={!first.trim() || !last.trim() || grade === null} onPress={save} />
+      {matches && (
+        <View style={{ gap: 6, padding: 10, borderRadius: 10, backgroundColor: '#FEF3C7' }}>
+          <Text style={{ fontWeight: '700', color: '#92400E' }}>
+            ⚠️ {matches.some((m) => m.strong) ? 'This child may already be a student' : 'Check these similar students first'}
+          </Text>
+          {matches.map((m) => (
+            <View key={m.id} style={{ gap: 4 }}>
+              <Text style={{ color: C.ink }}>
+                {m.name} · {m.gradeLabel ?? 'no grade'}{m.birthday ? ` · born ${dateLabel(m.birthday)}` : ''}
+                {m.parents.length ? ` · ${m.parents.map((p) => `${p.name}${p.relation ? ` (${p.relation})` : ''}`).join(', ')}` : ' · no parents yet'}
+              </Text>
+              <Button kind="ghost" label={parent ? `Same child: link ${name(parent)} to ${m.name}` : `Same child: don't add`} onPress={() => linkInstead(m)} />
+            </View>
+          ))}
+          <Button label="It's a different child: add anyway"
+            onPress={() => confirm('Add as a new student?', 'Only do this if you\'re sure it isn\'t a student shown above.', () => create(true))} />
+        </View>
+      )}
+      {!matches && <Button label="Add student" disabled={!first.trim() || !last.trim() || grade === null} onPress={save} />}
     </Card>
   );
 }

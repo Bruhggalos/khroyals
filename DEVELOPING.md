@@ -181,6 +181,19 @@ that can only show and check in that parent's children.
   (developer.apple.com/contact/carplay). The server calls (`car_carline_status`,
   `car_carline_check_in`) are ready for it; the iPhone app has no CarPlay code yet.
 
+### Emails from the app (car line pickups)
+
+When staff mark a child picked up, each parent gets an email a minute later (an undo
+cancels it). They're sent by the `send-email` Edge Function through **Resend**:
+
+1. Supabase → Edge Functions → **Secrets**: add `RESEND_API_KEY` (a Resend key for a
+   verified domain). Never put it in the repo.
+2. The sender is `app.settings.email_from` (default
+   `Kingdom Heights Car Line <noreply@keytrainlearning.com>`; change it to an address on
+   the verified domain).
+3. `node scripts/supabase_setup.mjs` deploys the function; pg_cron (`send-email` job)
+   runs it every minute.
+
 ## 6. Refresh the school website content
 
 ```bash

@@ -12,6 +12,7 @@ import {
 import { categoryInfo, hasHomeAway, KIND_LABELS, titleHint, type Category } from '../../src/sports/categories';
 import { activeSeasons, parseTime, schoolToday, timeLabel } from '../../src/sports/seasons';
 import { Button, C, Card, Field, Loading, P, s } from '../../src/ui';
+import { DateField, TimeField, toTimeString } from '../../src/forms/DateTimeField';
 
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 /** A date and a typed time on the phone's clock → ISO. */
@@ -22,7 +23,7 @@ const toIso = (date: string, time: string) => {
   return new Date(y, m - 1, d, t.h, t.m).toISOString();
 };
 const localDate = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const localTime = (iso: string) => { const d = new Date(iso); return timeLabel(d.getHours(), d.getMinutes()); };
+const localTime = (iso: string) => toTimeString(new Date(iso));
 
 export default function EditSportEvent() {
   const { sport, id } = useLocalSearchParams<{ sport: string; id?: string }>();
@@ -100,10 +101,10 @@ export default function EditSportEvent() {
         </View>
         <Field label="Title" placeholder={titleHint(kind)}
           value={title} onChangeText={setTitle} maxLength={120} />
-        <Field label="Date" hint="YYYY-MM-DD" value={date} onChangeText={setDate} autoCapitalize="none" />
+        <DateField label="Date" value={date} onChange={setDate} />
         <View style={[s.row, { alignItems: 'flex-start' }]}>
-          <Field label="Starts" placeholder="4:30 PM" value={start} onChangeText={setStart} autoCapitalize="none" style={{ flex: 1 }} />
-          <Field label="Ends (optional)" placeholder="6:00 PM" value={end} onChangeText={setEnd} autoCapitalize="none" style={{ flex: 1 }} />
+          <TimeField label="Starts" value={start} onChange={setStart} initial="16:30" style={{ flex: 1 }} />
+          <TimeField label="Ends (optional)" optional value={end} onChange={setEnd} initial={start || '18:00'} style={{ flex: 1 }} />
         </View>
         <Field label="Where" placeholder={category === 'theater' || category === 'music' ? 'Dream Theatre' : 'KH Gym'} value={location} onChangeText={setLocation} />
         <Field label="Address (optional)" placeholder="429 Taylor Road, Huntsville, AL 35763" hint="For away games and other venues; Directions opens Maps."

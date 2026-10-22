@@ -5968,6 +5968,816 @@ grant execute on function public.set_sport_photo(uuid, text), public.sport_rsvp(
 
 insert into app.applied_migrations (name) values ('20261019000023_activity_rsvps_photos.sql') on conflict do nothing;
 
+-- ===== 20261021000024_carline_pickup_emails.sql =====
+-- Email parents when their child is picked up from the car line.
+--
+-- When staff mark a pickup, every parent of the child gets an email saying who
+-- picked the child up (the parent or family member who announced, with their
+-- vehicle when one was saved), which staff member released them, and when.
+-- The other parents also get it in the app (bell + push).
+--
+-- Emails wait a minute before going out, so a mis-tap that staff undo
+-- (carline_reopen) cancels the email instead of alarming a parent. They are
+-- sent by the send-email Edge Function through Resend (RESEND_API_KEY is a
+-- Supabase function secret, never in the repo); pg_cron runs it every minute.
+
+insert into app.settings values
+  ('email_from', 'Kingdom Heights Car Line <noreply@keytrainlearning.com>'),
+  ('school_phone', '(256) 210-1343')
+on conflict (key) do nothing;
+
+create table app.email_queue (
+  id         uuid primary key default gen_random_uuid(),
+  to_email   text not null,
+  subject    text not null,
+  body       text not null,                       -- plain text; the function also sends it as simple HTML
+  pickup_id  uuid references public.carline_pickups (id) on delete cascade,
+  send_after timestamptz not null default now(),
+  status     text not null default 'queued' check (status in ('queued', 'sending', 'sent', 'failed', 'cancelled')),
+  error      text,
+  created_at timestamptz not null default now(),
+  sent_at    timestamptz
+);
+create index on app.email_queue (status, send_after);
+revoke all on app.email_queue from public, anon, authenticated;
+grant all on app.email_queue to service_role;
+
+/** "3:12 PM" in the school's time zone. */
+create function app.school_clock(t timestamptz) returns text
+language sql stable as $$ select trim(to_char(t at time zone 'America/Chicago', 'FMHH12:MI AM')) $$;
+
+/** A pickup was confirmed: queue the parents' emails and tell the other parents in the app. */
+create function app.pickup_confirmed() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  kid profiles%rowtype; by_name text; by_role text; staff text; num text; vehicle text; line text; g record;
+begin
+  if new.status <> 'picked_up' or old.status = 'picked_up' then return new; end if;
+  select * into kid from profiles where id = new.student_id;
+  select number into num from pickup_numbers where student_id = new.student_id;
+  select nullif(trim(first_name || ' ' || last_name), ''),
+         case when exists (select 1 from guardians where guardian_id = new.guardian_id and student_id = new.student_id) then 'parent'
+              when school_role = 'family' then 'family member' else school_role end
+    into by_name, by_role from profiles where id = new.guardian_id;
+  select nullif(trim(first_name || ' ' || last_name), '') into staff from profiles where id = new.picked_up_by;
+  vehicle := new.vehicle->>'label';
+  line := coalesce(kid.first_name, 'Your child') || ' was picked up at ' || app.school_clock(coalesce(new.picked_up_at, now()))
+          || coalesce(' by ' || by_name, '') || '.';
+
+  for g in
+    select gg.guardian_id, pp.email from guardians gg left join profile_private pp on pp.id = gg.guardian_id
+    where gg.student_id = new.student_id
+  loop
+    if g.email is not null and g.email like '%@%' then
+      insert into app.email_queue (to_email, subject, body, pickup_id, send_after)
+      values (g.email,
+        trim(kid.first_name) || ' was picked up at ' || app.school_clock(coalesce(new.picked_up_at, now())),
+        concat_ws(E'\n\n',
+          trim(kid.first_name || ' ' || kid.last_name) || ' was picked up from the Kingdom Heights car line at '
+            || app.school_clock(coalesce(new.picked_up_at, now())) || ' on '
+            || to_char(coalesce(new.picked_up_at, now()) at time zone 'America/Chicago', 'FMDay, FMMonth FMDD') || '.',
+          'Picked up by: ' || coalesce(by_name || ' (' || by_role || ')', 'not recorded')
+            || coalesce(E'\nVehicle: ' || vehicle, '')
+            || coalesce(E'\nReleased by: ' || staff || ' (school staff)', '')
+            || coalesce(E'\nPickup number: ' || num, ''),
+          'If you weren''t expecting this, call the school office right away at '
+            || coalesce(app.setting('school_phone'), 'the school') || '.',
+          'Kingdom Heights Preparatory School · Royals Connect'),
+        new.id, now() + interval '1 minute');
+    end if;
+    if g.guardian_id is distinct from new.guardian_id then
+      perform app.notify_user(g.guardian_id, '🚗 ' || coalesce(kid.first_name, 'Your child') || ' was picked up', line,
+                              jsonb_build_object('carline', 'picked-up', 'pickupId', new.id));
+    end if;
+  end loop;
+  return new;
+end $$;
+create trigger pickup_confirmed after update of status on public.carline_pickups
+  for each row execute function app.pickup_confirmed();
+
+/** Undone within the minute: the email never goes out. */
+create function app.pickup_reopened() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.status = 'picked_up' and new.status <> 'picked_up' then
+    update app.email_queue set status = 'cancelled' where pickup_id = new.id and status = 'queued';
+  end if;
+  return new;
+end $$;
+create trigger pickup_reopened after update of status on public.carline_pickups
+  for each row execute function app.pickup_reopened();
+
+-- ======================================================================
+-- Sending (send-email Edge Function, service role only)
+-- ======================================================================
+
+/** Claim the emails that are due (oldest first) so two runs never send one twice. */
+create function public.email_claim(p_limit int default 20)
+returns table (id uuid, to_email text, subject text, body text, sender text)
+language sql security definer set search_path = public as $$
+  update app.email_queue q set status = 'sending'
+  where q.id in (select x.id from app.email_queue x where x.status = 'queued' and x.send_after <= now()
+                 order by x.send_after limit greatest(1, least(coalesce(p_limit, 20), 100)) for update skip locked)
+  returning q.id, q.to_email, q.subject, q.body, coalesce(app.setting('email_from'), 'Royals Connect <noreply@keytrainlearning.com>')
+$$;
+
+create function public.email_done(p_id uuid, p_error text default null) returns void
+language sql security definer set search_path = public as $$
+  update app.email_queue set status = case when p_error is null then 'sent' else 'failed' end,
+    error = p_error, sent_at = case when p_error is null then now() end
+  where id = p_id
+$$;
+
+/** Run every minute: wake the send-email function when something is due. */
+create function app.kick_email() returns void
+language plpgsql security definer set search_path = public as $$
+declare url text := app.setting('functions_url');
+begin
+  if url is null or not exists (select 1 from app.email_queue where status = 'queued' and send_after <= now()) then return; end if;
+  begin
+    perform net.http_post(url := url || '/send-email', body := '{}'::jsonb, headers := '{"Content-Type": "application/json"}'::jsonb);
+  exception when others then
+    raise warning 'email kick failed: %', sqlerrm;
+  end;
+end $$;
+
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    perform cron.schedule('send-email', '* * * * *', 'select app.kick_email()');
+  end if;
+exception when others then
+  raise notice 'could not schedule send-email: %', sqlerrm;
+end $$;
+
+revoke all on function app.pickup_confirmed(), app.pickup_reopened(), app.kick_email() from public, anon, authenticated;
+revoke all on function public.email_claim(int), public.email_done(uuid, text) from public, anon, authenticated;
+grant execute on function public.email_claim(int), public.email_done(uuid, text) to service_role;
+
+insert into app.applied_migrations (name) values ('20261021000024_carline_pickup_emails.sql') on conflict do nothing;
+
+-- ===== 20261021000025_parents_and_pickup_people.sql =====
+-- Parents and the people allowed to pick a child up.
+--
+-- Parents: a child has at most two parents, one mother and one father
+-- (guardians.relation). Links made before this have no relation yet; the
+-- office sets it (admin_set_parent_relation). New links need one.
+--
+-- Approved pickup people: anyone else who picks a child up (grandparent, sitter,
+-- carpool, older sibling) must have a Royals Connect account. The child's
+-- parents or the office add them by the email of that account, optionally for
+-- a date range; they then get the car line for that child, and only that. They
+-- are told, and so are the parents. Removing them ends it at once.
+
+-- ======================================================================
+-- At most two parents: one mother, one father
+-- ======================================================================
+
+alter table public.guardians add column relation text check (relation in ('mother', 'father'));
+create unique index guardians_one_mother_one_father on public.guardians (student_id, relation) where relation is not null;
+
+create function app.parent_label(r text) returns text
+language sql immutable as $$ select case r when 'mother' then 'mother' when 'father' then 'father' else 'parent' end $$;
+
+/** Keep it to two parents, one of each. */
+create function app.check_parents() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare kid text; other text;
+begin
+  select trim(first_name) into kid from profiles where id = new.student_id;
+  if (select count(*) from guardians where student_id = new.student_id
+        and guardian_id <> new.guardian_id) >= 2 then
+    raise exception '% already has two parents. Remove one first, or add this person as an approved pickup instead.', kid;
+  end if;
+  if new.relation is not null then
+    select trim(q.first_name || ' ' || q.last_name) into other from guardians g join profiles q on q.id = g.guardian_id
+    where g.student_id = new.student_id and g.relation = new.relation and g.guardian_id <> new.guardian_id;
+    if other is not null then
+      raise exception '% already has a % (%).', kid, new.relation, other;
+    end if;
+  end if;
+  return new;
+end $$;
+create trigger check_parents before insert or update on public.guardians
+  for each row execute function app.check_parents();
+
+drop function public.admin_link_guardian(uuid, uuid, boolean);
+/**
+ * The office (people.family): link a parent (mother or father) to a student,
+ * or a Family account to a child they may pick up; or unlink.
+ */
+create function public.admin_link_guardian(p_guardian uuid, p_student uuid, p_link boolean default true, p_relation text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  if p_link then
+    if coalesce(app.school_role(p_student), '') <> 'student' then raise exception 'Children must be students at the school.'; end if;
+    if coalesce(app.school_role(p_guardian), 'student') = 'student' then
+      raise exception 'Parents and family must be approved adults (not students).';
+    end if;
+    if app.is_family(p_guardian) then
+      insert into family_pickups (family_id, student_id) values (p_guardian, p_student) on conflict do nothing;
+    else
+      if p_relation is null or p_relation not in ('mother', 'father') then raise exception 'Choose mother or father.'; end if;
+      insert into guardians (guardian_id, student_id, relation) values (p_guardian, p_student, p_relation)
+      on conflict (guardian_id, student_id) do update set relation = excluded.relation;
+      delete from pickup_authorizations where student_id = p_student and person_id = p_guardian;  -- a parent now
+    end if;
+  else
+    delete from guardians where guardian_id = p_guardian and student_id = p_student;
+    delete from family_pickups where family_id = p_guardian and student_id = p_student;
+  end if;
+  perform app.audit(null, case when p_link then 'family.linked' else 'family.unlinked' end, p_guardian::text,
+                    jsonb_build_object('student', p_student, 'pickupOnly', app.is_family(p_guardian), 'relation', p_relation));
+end $$;
+
+/** The office: say whether an existing parent link is the mother or the father. */
+create function public.admin_set_parent_relation(p_guardian uuid, p_student uuid, p_relation text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  if p_relation is null or p_relation not in ('mother', 'father') then raise exception 'Choose mother or father.'; end if;
+  update guardians set relation = p_relation where guardian_id = p_guardian and student_id = p_student;
+  if not found then raise exception 'That person isn''t linked as a parent.'; end if;
+end $$;
+
+drop function public.admin_create_student(text, text, int, date, uuid);
+/** Add a child (no login) and optionally link a parent (mother or father). Returns the child's id. */
+create function public.admin_create_student(
+  p_first text, p_last text, p_grade int, p_birthday date default null, p_guardian uuid default null, p_relation text default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare sid uuid;
+begin
+  perform app.require_permission('people.family');
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  insert into profiles (first_name, last_name, school_role, grade, managed)
+  values (trim(p_first), trim(p_last), 'student', p_grade, true) returning id into sid;
+  if p_birthday is not null then
+    insert into student_details (student_id, birthday, updated_by) values (sid, p_birthday, auth.uid());
+  end if;
+  if p_guardian is not null then perform public.admin_link_guardian(p_guardian, sid, true, p_relation); end if;
+  perform app.audit(null, 'student.created', sid::text, jsonb_build_object('name', trim(p_first) || ' ' || trim(p_last), 'grade', p_grade));
+  return sid;
+end $$;
+
+-- Parents asking to add a child say which parent they are.
+drop function public.request_child(text, text, int, date, text);
+create function public.request_child(p_first text, p_last text, p_grade int, p_birthday date default null, p_note text default null,
+                                     p_relation text default null)
+returns public.family_requests
+language plpgsql security definer set search_path = public as $$
+declare row family_requests%rowtype;
+begin
+  if coalesce(app.school_role(), 'student') in ('student', 'family') then
+    raise exception 'Only approved parents and staff can add children.' using errcode = '42501';
+  end if;
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  if p_relation is null or p_relation not in ('mother', 'father') then raise exception 'Say whether you''re the mother or the father.'; end if;
+  insert into family_requests (requested_by, kind, details)
+  values (auth.uid(), 'add_child', jsonb_build_object('firstName', trim(p_first), 'lastName', trim(p_last), 'grade', p_grade,
+                                                     'birthday', p_birthday, 'note', nullif(trim(p_note), ''), 'relation', p_relation))
+  returning * into row;
+  return row;
+end $$;
+
+create or replace function public.admin_decide_family_request(
+  p_request uuid, p_approve boolean, p_existing uuid default null, p_note text default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare r family_requests%rowtype; sid uuid; d jsonb;
+begin
+  perform app.require_permission('people.family');
+  select * into r from family_requests where id = p_request and status = 'pending' for update;
+  if not found then raise exception 'That request was already handled.'; end if;
+  d := r.details;
+  if p_approve then
+    if r.kind = 'add_child' then
+      sid := coalesce(p_existing, public.admin_create_student(d->>'firstName', d->>'lastName', (d->>'grade')::int,
+                                                               nullif(d->>'birthday', '')::date));
+      perform public.admin_link_guardian(r.requested_by, sid, true, coalesce(d->>'relation', 'mother'));
+    else
+      sid := r.student_id;
+      perform public.admin_update_student(sid, d->>'firstName', d->>'lastName', (d->>'grade')::int);
+    end if;
+  end if;
+  update family_requests set status = case when p_approve then 'approved' else 'declined' end,
+    decided_by = auth.uid(), decided_at = now(), decision_note = nullif(trim(p_note), ''),
+    student_id = coalesce(sid, student_id)
+  where id = r.id;
+  perform app.notify_user(r.requested_by,
+    case when p_approve then '✅ ' else '' end || case r.kind when 'add_child' then 'Adding ' else 'Changes for ' end
+      || (d->>'firstName') || case when p_approve then ': approved' else ': not approved' end,
+    coalesce(nullif(trim(p_note), ''), case when p_approve then 'The school office approved your request.'
+                                            else 'The school office couldn''t approve this request. Contact the office with questions.' end),
+    jsonb_build_object('children', true));
+  return sid;
+end $$;
+
+-- ======================================================================
+-- Approved pickup people
+-- ======================================================================
+
+create table public.pickup_authorizations (
+  id           uuid primary key default gen_random_uuid(),
+  student_id   uuid not null references public.profiles (id) on delete cascade,
+  person_id    uuid not null references public.profiles (id) on delete cascade,
+  relationship text not null check (relationship in ('grandparent', 'aunt_uncle', 'sibling', 'stepparent', 'family_friend',
+                                                    'nanny', 'carpool', 'other')),
+  starts_on    date not null default app.school_today(),
+  ends_on      date,                                   -- null = until a parent removes them
+  granted_by   uuid references public.profiles (id) on delete set null,
+  created_at   timestamptz not null default now(),
+  unique (student_id, person_id),
+  check (ends_on is null or ends_on >= starts_on)
+);
+alter table public.pickup_authorizations enable row level security;
+create policy "the person, the child's parents, or staff" on public.pickup_authorizations for select to authenticated
+  using (person_id = auth.uid() or app.is_guardian_of(student_id) or app.is_staff());
+grant select on public.pickup_authorizations to authenticated;
+revoke insert, update, delete on public.pickup_authorizations from anon, authenticated;
+grant all on public.pickup_authorizations to service_role;
+
+create function app.relationship_label(r text) returns text
+language sql immutable as $$
+  select case r when 'grandparent' then 'grandparent' when 'aunt_uncle' then 'aunt or uncle' when 'sibling' then 'older sibling'
+    when 'stepparent' then 'stepparent' when 'family_friend' then 'family friend' when 'nanny' then 'nanny or sitter'
+    when 'carpool' then 'carpool' else 'approved pickup' end
+$$;
+
+/** Children someone may pick up: their own, Family links from the office, and approvals that cover today. */
+create or replace function app.pickup_children(u uuid default auth.uid()) returns setof uuid
+language sql stable security definer set search_path = public as $$
+  select student_id from guardians where guardian_id = u and not app.is_family(u)
+  union
+  select student_id from family_pickups where family_id = u and app.is_family(u)
+  union
+  select student_id from pickup_authorizations
+  where person_id = u and app.school_today() between starts_on and coalesce(ends_on, app.school_today())
+    and coalesce(app.school_role(u), 'student') <> 'student'
+$$;
+
+create function app.can_manage_pickups(s uuid, u uuid default auth.uid()) returns boolean
+language sql stable security definer set search_path = public as $$
+  select app.is_guardian_of(s, u) or app.has_permission('people.family', u)
+$$;
+
+/**
+ * A child's parent (or the office): allow the account with this email to pick
+ * the child up, from p_starts (default today) until p_ends (null = until removed).
+ */
+create function public.add_pickup_person(p_student uuid, p_email text, p_relationship text,
+                                         p_starts date default null, p_ends date default null)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare who profiles%rowtype; kid text; me_name text; row pickup_authorizations%rowtype; g uuid; span text;
+begin
+  if not app.can_manage_pickups(p_student) then
+    raise exception 'Only this child''s parents or the school office can choose who picks them up.' using errcode = '42501';
+  end if;
+  select p.* into who from profiles p join profile_private pp on pp.id = p.id
+  where lower(pp.email) = lower(trim(coalesce(p_email, '')));
+  if not found then
+    raise exception 'No Royals Connect account uses that email. Ask them to download the app and create an account, then add them.';
+  end if;
+  if who.school_role = 'student' or who.managed then raise exception 'Students can''t be approved to pick up children.'; end if;
+  if exists (select 1 from guardians where guardian_id = who.id and student_id = p_student) then
+    raise exception '% is already a parent of this child.', trim(who.first_name);
+  end if;
+  if p_ends is not null and p_ends < coalesce(p_starts, app.school_today()) then raise exception 'The end date must be on or after the start.'; end if;
+  insert into pickup_authorizations (student_id, person_id, relationship, starts_on, ends_on, granted_by)
+  values (p_student, who.id, p_relationship, coalesce(p_starts, app.school_today()), p_ends, auth.uid())
+  on conflict (student_id, person_id) do update set relationship = excluded.relationship, starts_on = excluded.starts_on,
+    ends_on = excluded.ends_on, granted_by = excluded.granted_by
+  returning * into row;
+
+  select trim(first_name) into kid from profiles where id = p_student;
+  select trim(first_name || ' ' || last_name) into me_name from profiles where id = auth.uid();
+  span := case when row.ends_on is null then '' when row.ends_on = row.starts_on then ' on ' || to_char(row.starts_on, 'FMMon FMDD')
+               else ' until ' || to_char(row.ends_on, 'FMMon FMDD') end;
+  perform app.notify_user(who.id, '🚗 You can pick up ' || kid,
+    coalesce(me_name, 'The school') || ' added you to pick up ' || kid || ' from the car line' || span || '.',
+    jsonb_build_object('carline', 'pickup-added', 'studentId', p_student));
+  for g in select guardian_id from guardians where student_id = p_student and guardian_id <> auth.uid() loop
+    perform app.notify_user(g, 'Pickup added for ' || kid,
+      coalesce(me_name, 'The school') || ' allowed ' || trim(who.first_name || ' ' || who.last_name)
+        || ' (' || app.relationship_label(p_relationship) || ') to pick up ' || kid || span || '.',
+      jsonb_build_object('children', true));
+  end loop;
+  perform app.audit(null, 'pickup.added', p_student::text, jsonb_build_object('person', who.id, 'relationship', p_relationship,
+                    'starts', row.starts_on, 'ends', row.ends_on));
+  return jsonb_build_object('id', row.id, 'name', trim(who.first_name || ' ' || who.last_name), 'pending', who.school_role is null);
+end $$;
+
+/** A child's parent (or the office): stop someone picking the child up. */
+create function public.remove_pickup_person(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare row pickup_authorizations%rowtype; kid text;
+begin
+  select * into row from pickup_authorizations where id = p_id;
+  if not found or not app.can_manage_pickups(row.student_id) then
+    raise exception 'Only this child''s parents or the school office can change who picks them up.' using errcode = '42501';
+  end if;
+  delete from pickup_authorizations where id = p_id;
+  select trim(first_name) into kid from profiles where id = row.student_id;
+  perform app.notify_user(row.person_id, 'Pickup for ' || kid || ' removed',
+    'You''re no longer on the pickup list for ' || kid || '.', jsonb_build_object('carline', 'pickup-removed'));
+  perform app.audit(null, 'pickup.removed', row.student_id::text, jsonb_build_object('person', row.person_id));
+end $$;
+
+/** Who can pick up a child, for its parents and the office: parents (with mother/father), Family links and approvals. */
+create function public.child_pickup_people(p_student uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not (app.can_manage_pickups(p_student) or app.is_staff()) then
+    raise exception 'Only this child''s parents and school staff can see who picks them up.' using errcode = '42501';
+  end if;
+  return jsonb_build_object(
+    'parents', coalesce((select jsonb_agg(jsonb_build_object('id', q.id, 'name', trim(q.first_name || ' ' || q.last_name),
+                                                             'relation', g.relation) order by g.relation nulls last, q.first_name)
+                         from guardians g join profiles q on q.id = g.guardian_id where g.student_id = p_student), '[]'::jsonb),
+    'family', coalesce((select jsonb_agg(jsonb_build_object('id', q.id, 'name', trim(q.first_name || ' ' || q.last_name)) order by q.first_name)
+                        from family_pickups f join profiles q on q.id = f.family_id where f.student_id = p_student), '[]'::jsonb),
+    'approved', coalesce((select jsonb_agg(jsonb_build_object(
+                            'id', a.id, 'personId', q.id, 'name', trim(q.first_name || ' ' || q.last_name),
+                            'relationship', a.relationship, 'label', app.relationship_label(a.relationship),
+                            'startsOn', a.starts_on, 'endsOn', a.ends_on, 'pending', q.school_role is null,
+                            'active', app.school_today() between a.starts_on and coalesce(a.ends_on, app.school_today()),
+                            'grantedBy', trim(coalesce(b.first_name, '') || ' ' || coalesce(b.last_name, '')))
+                            order by a.starts_on, q.first_name)
+                          from pickup_authorizations a join profiles q on q.id = a.person_id
+                          left join profiles b on b.id = a.granted_by
+                          where a.student_id = p_student and coalesce(a.ends_on, app.school_today()) >= app.school_today()), '[]'::jsonb));
+end $$;
+
+/** The children this person may pick up today (car line, Android Auto, CarPlay). */
+create function public.my_pickup_children() returns setof uuid
+language sql stable security definer set search_path = public as $$ select * from app.pickup_children(auth.uid()) $$;
+
+-- The pickup email says how the person is related ("Picked up by: Dana Ortiz (grandparent)").
+create or replace function app.pickup_confirmed() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  kid profiles%rowtype; by_name text; by_role text; staff text; num text; vehicle text; line text; g record;
+begin
+  if new.status <> 'picked_up' or old.status = 'picked_up' then return new; end if;
+  select * into kid from profiles where id = new.student_id;
+  select number into num from pickup_numbers where student_id = new.student_id;
+  select nullif(trim(p.first_name || ' ' || p.last_name), ''),
+         coalesce((select app.parent_label(relation) from guardians where guardian_id = new.guardian_id and student_id = new.student_id),
+                  (select app.relationship_label(relationship) from pickup_authorizations
+                    where person_id = new.guardian_id and student_id = new.student_id),
+                  case when p.school_role = 'family' then 'family member' else p.school_role end)
+    into by_name, by_role from profiles p where p.id = new.guardian_id;
+  select nullif(trim(first_name || ' ' || last_name), '') into staff from profiles where id = new.picked_up_by;
+  vehicle := new.vehicle->>'label';
+  line := coalesce(kid.first_name, 'Your child') || ' was picked up at ' || app.school_clock(coalesce(new.picked_up_at, now()))
+          || coalesce(' by ' || by_name, '') || '.';
+
+  for g in
+    select gg.guardian_id, pp.email from guardians gg left join profile_private pp on pp.id = gg.guardian_id
+    where gg.student_id = new.student_id
+  loop
+    if g.email is not null and g.email like '%@%' then
+      insert into app.email_queue (to_email, subject, body, pickup_id, send_after)
+      values (g.email,
+        trim(kid.first_name) || ' was picked up at ' || app.school_clock(coalesce(new.picked_up_at, now())),
+        concat_ws(E'\n\n',
+          trim(kid.first_name || ' ' || kid.last_name) || ' was picked up from the Kingdom Heights car line at '
+            || app.school_clock(coalesce(new.picked_up_at, now())) || ' on '
+            || to_char(coalesce(new.picked_up_at, now()) at time zone 'America/Chicago', 'FMDay, FMMonth FMDD') || '.',
+          'Picked up by: ' || coalesce(by_name || ' (' || by_role || ')', 'not recorded')
+            || coalesce(E'\nVehicle: ' || vehicle, '')
+            || coalesce(E'\nReleased by: ' || staff || ' (school staff)', '')
+            || coalesce(E'\nPickup number: ' || num, ''),
+          'If you weren''t expecting this, call the school office right away at '
+            || coalesce(app.setting('school_phone'), 'the school') || '.',
+          'Kingdom Heights Preparatory School · Royals Connect'),
+        new.id, now() + interval '1 minute');
+    end if;
+    if g.guardian_id is distinct from new.guardian_id then
+      perform app.notify_user(g.guardian_id, '🚗 ' || coalesce(kid.first_name, 'Your child') || ' was picked up', line,
+                              jsonb_build_object('carline', 'picked-up', 'pickupId', new.id));
+    end if;
+  end loop;
+  return new;
+end $$;
+
+revoke all on function app.check_parents(), app.can_manage_pickups(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.admin_create_student(text, text, int, date, uuid, text), public.admin_link_guardian(uuid, uuid, boolean, text), public.admin_set_parent_relation(uuid, uuid, text),
+  public.request_child(text, text, int, date, text, text), public.add_pickup_person(uuid, text, text, date, date),
+  public.remove_pickup_person(uuid), public.child_pickup_people(uuid), public.my_pickup_children() from public, anon;
+grant execute on function public.admin_create_student(text, text, int, date, uuid, text), public.admin_link_guardian(uuid, uuid, boolean, text), public.admin_set_parent_relation(uuid, uuid, text),
+  public.request_child(text, text, int, date, text, text), public.add_pickup_person(uuid, text, text, date, date),
+  public.remove_pickup_person(uuid), public.child_pickup_people(uuid), public.my_pickup_children() to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261021000025_parents_and_pickup_people.sql') on conflict do nothing;
+
+-- ===== 20261021000026_duplicate_children.sql =====
+-- Duplicate children.
+--
+-- Two parents (or a parent and the office) can each try to add the same
+-- child. The school only ever wants one record per child, so:
+--
+-- * Never the same child twice: no two students may share the same first and
+--   last name (ignoring case, accents, spaces and hyphens) and birthday. The
+--   database refuses it however the record is made or edited.
+-- * Likely duplicates are caught before a student is created: names (with
+--   nicknames like Matt/Matthew and hyphenated last names), birthday and grade
+--   are scored against every student and every waiting request. A different
+--   first name counts strongly against a match, so twins aren't flagged.
+--   Strong matches (score 6+) need the office to confirm it's a different child
+--   (p_force); weaker ones are shown for the office to check.
+-- * Parents never see other families' children. A parent's request that looks
+--   like an existing child goes to the office with the match attached, and the
+--   office links the parent to the existing child in one tap.
+
+/** Lower case, common accents removed, letters only: "José Kim-Lee" → "josekimlee". */
+create function app.norm_name(t text) returns text
+language sql immutable as $$
+  select regexp_replace(translate(lower(coalesce(t, '')), 'áàâäãåāéèêëēíìîïīóòôöõøōúùûüūñçýÿ', 'aaaaaaaeeeeeiiiiioooooooouuuuuncyy'),
+                        '[^a-z]', '', 'g')
+$$;
+
+/** Edit distance between two short strings (letters added, removed or changed). */
+create function app.edit_distance(a text, b text) returns int
+language plpgsql immutable as $$
+declare prev int[]; cur int[]; i int; j int; la int := length(a); lb int := length(b);
+begin
+  if la = 0 then return lb; end if;
+  if lb = 0 then return la; end if;
+  prev := array(select generate_series(0, lb));
+  for i in 1 .. la loop
+    cur := array[i];
+    for j in 1 .. lb loop
+      cur := cur || least(prev[j + 1] + 1, cur[j] + 1, prev[j] + case when substr(a, i, 1) = substr(b, j, 1) then 0 else 1 end);
+    end loop;
+    prev := cur;
+  end loop;
+  return prev[lb + 1];
+end $$;
+
+/** Same name allowing a typo: one letter off (two for long names). */
+create function app.near_name(x text, y text) returns boolean
+language sql immutable as $$
+  select length(app.norm_name(x)) >= 3 and length(app.norm_name(y)) >= 3
+     and app.edit_distance(app.norm_name(x), app.norm_name(y))
+         <= case when least(length(app.norm_name(x)), length(app.norm_name(y))) >= 7 then 2 else 1 end
+$$;
+
+/**
+ * How much a student looks like the child described (higher = more alike).
+ * Same full name = 6 (a typo or a nickname a little less); + birthday 4; + grade 1. Different birthday −4, grades two
+ * or more apart −2, a different first name −4 (twins).
+ */
+create function app.child_match_score(s_first text, s_last text, s_birthday date, s_grade int,
+                                      first text, last text, birthday date, grade int) returns int
+language sql immutable as $$
+  select
+    (case when app.norm_name(s_last) = app.norm_name(last) then 3
+          when app.near_name(s_last, last) then 2
+          when app.norm_name(s_last) <> '' and app.norm_name(last) <> ''
+               and (position(app.norm_name(s_last) in app.norm_name(last)) > 0
+                    or position(app.norm_name(last) in app.norm_name(s_last)) > 0) then 2
+          else 0 end)
+  + (case when app.norm_name(s_first) = app.norm_name(first) then 3
+          when app.near_name(s_first, first) then 2
+          when least(length(app.norm_name(s_first)), length(app.norm_name(first))) >= 3
+               and (starts_with(app.norm_name(s_first), app.norm_name(first)) or starts_with(app.norm_name(first), app.norm_name(s_first))) then 1
+          else -4 end)
+  + (case when s_birthday is null or birthday is null then 0 when s_birthday = birthday then 4 else -4 end)
+  + (case when s_grade is null or grade is null then 0 when s_grade = grade then 1 when abs(s_grade - grade) >= 2 then -2 else 0 end)
+$$;
+
+/** Students that look like this child (score ≥ 4), best first, with why. Office use only (callers check). */
+create function app.similar_students(p_first text, p_last text, p_birthday date, p_grade int, p_except uuid default null)
+returns table (id uuid, score int, first_name text, last_name text, grade int, birthday date, parents jsonb)
+language sql stable security definer set search_path = public as $$
+  select * from (
+    select p.id, app.child_match_score(p.first_name, p.last_name, d.birthday, p.grade, p_first, p_last, p_birthday, p_grade) as score,
+           p.first_name, p.last_name, p.grade, d.birthday,
+           (select coalesce(jsonb_agg(jsonb_build_object('name', trim(q.first_name || ' ' || q.last_name), 'relation', g.relation)), '[]'::jsonb)
+            from guardians g join profiles q on q.id = g.guardian_id where g.student_id = p.id)
+    from profiles p left join student_details d on d.student_id = p.id
+    where p.school_role = 'student' and p.id is distinct from p_except
+  ) x where x.score >= 4
+  order by x.score desc, x.last_name, x.first_name
+  limit 5
+$$;
+
+-- ----------------------------------------------------------------------
+-- Never the same child twice
+-- ----------------------------------------------------------------------
+
+/** Raise if another student has the same name and birthday. */
+create function app.require_unique_child(p_id uuid, p_first text, p_last text, p_birthday date) returns void
+language plpgsql stable security definer set search_path = public as $$
+declare other text;
+begin
+  if p_birthday is null then return; end if;
+  select trim(p.first_name || ' ' || p.last_name) into other
+  from profiles p join student_details d on d.student_id = p.id
+  where p.school_role = 'student' and p.id <> p_id and d.birthday = p_birthday
+    and app.norm_name(p.first_name) = app.norm_name(p_first) and app.norm_name(p.last_name) = app.norm_name(p_last)
+  limit 1;
+  if other is not null then
+    raise exception '% (born %) is already a student. Link the parent to the existing record instead of adding another.',
+      other, to_char(p_birthday, 'FMMon FMDD, YYYY') using errcode = '23505';
+  end if;
+end $$;
+
+create function app.unique_child_details() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare p profiles%rowtype;
+begin
+  select * into p from profiles where id = new.student_id;
+  perform app.require_unique_child(new.student_id, p.first_name, p.last_name, new.birthday);
+  return new;
+end $$;
+create trigger unique_child_details before insert or update of birthday on public.student_details
+  for each row execute function app.unique_child_details();
+
+create function app.unique_child_name() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.school_role = 'student' then
+    perform app.require_unique_child(new.id, new.first_name, new.last_name,
+                                     (select birthday from student_details where student_id = new.id));
+  end if;
+  return new;
+end $$;
+create trigger unique_child_name before update of first_name, last_name, school_role on public.profiles
+  for each row execute function app.unique_child_name();
+
+-- ----------------------------------------------------------------------
+-- The office: check before creating
+-- ----------------------------------------------------------------------
+
+/** The office: students that look like the child about to be added. */
+create function public.admin_similar_students(p_first text, p_last text, p_birthday date default null, p_grade int default null)
+returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  return coalesce((select jsonb_agg(jsonb_build_object('id', id, 'score', score, 'strong', score >= 6,
+                     'name', trim(first_name || ' ' || last_name), 'grade', grade, 'gradeLabel', app.grade_label(grade),
+                     'birthday', birthday, 'parents', parents) order by score desc)
+                   from app.similar_students(p_first, p_last, p_birthday, p_grade)), '[]'::jsonb);
+end $$;
+
+/** Raise when a strong match exists, unless the office confirmed it's a different child. */
+create function app.require_no_strong_match(p_first text, p_last text, p_birthday date, p_grade int, p_force boolean) returns void
+language plpgsql stable security definer set search_path = public as $$
+declare m record;
+begin
+  if coalesce(p_force, false) then return; end if;
+  select * into m from app.similar_students(p_first, p_last, p_birthday, p_grade) where score >= 6 limit 1;
+  if found then
+    raise exception 'This looks like % (%), who is already a student. Link to that record, or confirm it''s a different child.',
+      trim(m.first_name || ' ' || m.last_name), coalesce(app.grade_label(m.grade), 'no grade') using errcode = '23505';
+  end if;
+end $$;
+
+drop function public.admin_create_student(text, text, int, date, uuid, text);
+/** Add a child (no login) and optionally link a parent. Refuses likely duplicates unless p_force. */
+create function public.admin_create_student(
+  p_first text, p_last text, p_grade int, p_birthday date default null, p_guardian uuid default null, p_relation text default null,
+  p_force boolean default false
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare sid uuid;
+begin
+  perform app.require_permission('people.family');
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  perform app.require_no_strong_match(p_first, p_last, p_birthday, p_grade, p_force);
+  insert into profiles (first_name, last_name, school_role, grade, managed)
+  values (trim(p_first), trim(p_last), 'student', p_grade, true) returning id into sid;
+  if p_birthday is not null then
+    insert into student_details (student_id, birthday, updated_by) values (sid, p_birthday, auth.uid());
+  end if;
+  if p_guardian is not null then perform public.admin_link_guardian(p_guardian, sid, true, p_relation); end if;
+  perform app.audit(null, 'student.created', sid::text, jsonb_build_object('name', trim(p_first) || ' ' || trim(p_last), 'grade', p_grade,
+                    'confirmedNotDuplicate', coalesce(p_force, false)));
+  return sid;
+end $$;
+
+-- ----------------------------------------------------------------------
+-- Parents' requests
+-- ----------------------------------------------------------------------
+
+drop function public.request_child(text, text, int, date, text, text);
+create function public.request_child(p_first text, p_last text, p_grade int, p_birthday date default null, p_note text default null,
+                                     p_relation text default null)
+returns public.family_requests
+language plpgsql security definer set search_path = public as $$
+declare row family_requests%rowtype; mine text;
+begin
+  if coalesce(app.school_role(), 'student') in ('student', 'family') then
+    raise exception 'Only approved parents and staff can add children.' using errcode = '42501';
+  end if;
+  perform app.check_child_fields(p_first, p_last, p_grade);
+  if p_relation is null or p_relation not in ('mother', 'father') then raise exception 'Say whether you''re the mother or the father.'; end if;
+  -- Already yours?
+  select trim(p.first_name) into mine from guardians g join profiles p on p.id = g.student_id left join student_details d on d.student_id = p.id
+  where g.guardian_id = auth.uid()
+    and app.child_match_score(p.first_name, p.last_name, d.birthday, p.grade, p_first, p_last, p_birthday, p_grade) >= 6
+  limit 1;
+  if mine is not null then raise exception '% is already linked to your account.', mine; end if;
+  -- Already asked?
+  if exists (select 1 from family_requests where requested_by = auth.uid() and kind = 'add_child' and status = 'pending'
+             and app.norm_name(details->>'firstName') = app.norm_name(p_first) and app.norm_name(details->>'lastName') = app.norm_name(p_last)) then
+    raise exception 'You already asked to add %. The office will get back to you.', trim(p_first);
+  end if;
+  insert into family_requests (requested_by, kind, details)
+  values (auth.uid(), 'add_child', jsonb_build_object('firstName', trim(p_first), 'lastName', trim(p_last), 'grade', p_grade,
+                                                     'birthday', p_birthday, 'note', nullif(trim(p_note), ''), 'relation', p_relation))
+  returning * into row;
+  return row;
+end $$;
+
+/** Pending requests, each "add a child" with the students and other requests it looks like. */
+create or replace function public.admin_family_requests() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform app.require_permission('people.family');
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', r.id, 'kind', r.kind, 'details', r.details, 'createdAt', r.created_at,
+      'requestedBy', jsonb_build_object('id', p.id, 'name', trim(p.first_name || ' ' || p.last_name), 'role', p.school_role),
+      'student', case when s.id is null then null else jsonb_build_object('id', s.id, 'firstName', s.first_name,
+                   'lastName', s.last_name, 'grade', s.grade) end,
+      'matches', case when r.kind <> 'add_child' then '[]'::jsonb else coalesce((
+        select jsonb_agg(jsonb_build_object('id', m.id, 'score', m.score, 'strong', m.score >= 6,
+                 'name', trim(m.first_name || ' ' || m.last_name), 'gradeLabel', app.grade_label(m.grade),
+                 'birthday', m.birthday, 'parents', m.parents) order by m.score desc)
+        from app.similar_students(r.details->>'firstName', r.details->>'lastName', nullif(r.details->>'birthday', '')::date,
+                                  (r.details->>'grade')::int) m), '[]'::jsonb) end,
+      'similarRequests', case when r.kind <> 'add_child' then '[]'::jsonb else coalesce((
+        select jsonb_agg(jsonb_build_object('id', o.id, 'from', trim(q.first_name || ' ' || q.last_name),
+                 'relation', o.details->>'relation', 'name', trim((o.details->>'firstName') || ' ' || (o.details->>'lastName'))))
+        from family_requests o join profiles q on q.id = o.requested_by
+        where o.id <> r.id and o.kind = 'add_child' and o.status = 'pending'
+          and app.child_match_score(o.details->>'firstName', o.details->>'lastName', nullif(o.details->>'birthday', '')::date,
+                                    (o.details->>'grade')::int, r.details->>'firstName', r.details->>'lastName',
+                                    nullif(r.details->>'birthday', '')::date, (r.details->>'grade')::int) >= 6), '[]'::jsonb) end)
+      order by r.created_at)
+    from family_requests r join profiles p on p.id = r.requested_by left join profiles s on s.id = r.student_id
+    where r.status = 'pending'), '[]'::jsonb);
+end $$;
+
+drop function public.admin_decide_family_request(uuid, boolean, uuid, text);
+/**
+ * Approve or decline a parent's request. Approving "add a child" links the
+ * parent to an existing student (p_existing) or creates one; creating refuses
+ * a likely duplicate unless the office confirms it's a different child (p_force).
+ */
+create function public.admin_decide_family_request(
+  p_request uuid, p_approve boolean, p_existing uuid default null, p_note text default null, p_force boolean default false
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare r family_requests%rowtype; sid uuid; d jsonb;
+begin
+  perform app.require_permission('people.family');
+  select * into r from family_requests where id = p_request and status = 'pending' for update;
+  if not found then raise exception 'That request was already handled.'; end if;
+  d := r.details;
+  if p_approve then
+    if r.kind = 'add_child' then
+      sid := coalesce(p_existing, public.admin_create_student(d->>'firstName', d->>'lastName', (d->>'grade')::int,
+                                                               nullif(d->>'birthday', '')::date, null, null, p_force));
+      perform public.admin_link_guardian(r.requested_by, sid, true, coalesce(d->>'relation', 'mother'));
+    else
+      sid := r.student_id;
+      perform public.admin_update_student(sid, d->>'firstName', d->>'lastName', (d->>'grade')::int);
+    end if;
+  end if;
+  update family_requests set status = case when p_approve then 'approved' else 'declined' end,
+    decided_by = auth.uid(), decided_at = now(), decision_note = nullif(trim(p_note), ''),
+    student_id = coalesce(sid, student_id)
+  where id = r.id;
+  perform app.notify_user(r.requested_by,
+    case when p_approve then '✅ ' else '' end || case r.kind when 'add_child' then 'Adding ' else 'Changes for ' end
+      || (d->>'firstName') || case when p_approve then ': approved' else ': not approved' end,
+    coalesce(nullif(trim(p_note), ''), case when p_approve then 'The school office approved your request.'
+                                            else 'The school office couldn''t approve this request. Contact the office with questions.' end),
+    jsonb_build_object('children', true));
+  return sid;
+end $$;
+
+revoke all on function app.similar_students(text, text, date, int, uuid), app.require_unique_child(uuid, text, text, date),
+  app.require_no_strong_match(text, text, date, int, boolean), app.unique_child_details(), app.unique_child_name()
+  from public, anon, authenticated;
+grant execute on function app.edit_distance(text, text), app.near_name(text, text), app.norm_name(text), app.child_match_score(text, text, date, int, text, text, date, int) to authenticated, service_role;
+revoke all on function public.admin_similar_students(text, text, date, int), public.request_child(text, text, int, date, text, text),
+  public.admin_create_student(text, text, int, date, uuid, text, boolean),
+  public.admin_decide_family_request(uuid, boolean, uuid, text, boolean) from public, anon;
+grant execute on function public.admin_similar_students(text, text, date, int), public.request_child(text, text, int, date, text, text),
+  public.admin_create_student(text, text, int, date, uuid, text, boolean),
+  public.admin_decide_family_request(uuid, boolean, uuid, text, boolean) to authenticated, service_role;
+
+insert into app.applied_migrations (name) values ('20261021000026_duplicate_children.sql') on conflict do nothing;
+
 -- ===== seed =====
 -- Generated by scripts/gen_seed.py — demo data for Royals Connect + the 2026–27 school calendar.
 begin;

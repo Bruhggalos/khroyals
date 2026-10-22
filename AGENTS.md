@@ -60,6 +60,24 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   how loud the push is (`app.alert_level()`, the `critical_alerts` setting). Alert kinds are
   in both `src/alerts/kinds.ts` and the database checks. Keep the full-screen alert
   (`src/alerts/AlertTakeover.tsx`) mounted in `app/_layout.tsx`.
+- **Parents and pickup people:** a child has at most two parents, one mother and one
+  father (`guardians.relation`, enforced by `app.check_parents`); links made before that
+  may have no relation until the office sets it. Anyone else who picks up must have an
+  account and is added by the child's parents or the office (`pickup_authorizations`,
+  `add_pickup_person`, optionally for a date range); they get the car line for that child
+  only, through `app.pickup_children()`, never `guardians`.
+- **No duplicate children.** Two students can never share a normalized first + last name
+  and birthday (`app.require_unique_child`, enforced by triggers). Creating a student
+  (`admin_create_student`, or approving a parent's request) refuses a likely duplicate
+  (`app.child_match_score` ≥ 6: names with typos/nicknames/hyphens, birthday, grade;
+  a different first name counts against, so twins pass) unless the office confirms it's a
+  different child (`p_force`). Parents never see other families' children; matches are
+  shown to the office only (`admin_family_requests().matches`).
+- **Car line pickup emails:** confirming a pickup queues an email to every parent of the
+  child (`app.pickup_confirmed` → `app.email_queue`, sent a minute later by the
+  `send-email` Edge Function through Resend; `carline_reopen` cancels it). The Resend key
+  is the `RESEND_API_KEY` function secret, never in the repo; the sender is
+  `app.settings.email_from`.
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.
@@ -76,6 +94,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   "Are you going?" answers (`sport_event_rsvps`, `sport_rsvp`) are only for registered
   participants, given by their parents (`app.my_students()`, so never Family accounts) or
   themselves; only the activity's leaders see attendance.
+- **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
+  (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
+  browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`
+  (`src/forms/dates.ts`). `tests/datetime.test.ts` fails on a typed date or time box.
 - **Calendars hide the past.** Every list of dated events (the Calendar app, activity
   schedules, Volunteer) shows what's still to come; past events stay out of view behind
   `PastToggle` and look greyed out (`PAST_STYLE`) when shown. Track it with
