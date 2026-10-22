@@ -43,7 +43,7 @@ only the apps they'll have.
 | Replace the More tab with a Profile tab | Ben | Not started | One tab for every setting: profile, notifications, My children, My vehicles, sign out (plus Car line settings and Admin portal for staff). More's contents (site menu, contact, social, quick links) move to the Info tab. |
 | Info tab: school life essentials | Ben | Not started | Address with directions, office phone and email, bullying policy and reporting (the Bullying page is already imported), report an issue. Built from the website's content; extra items are confirmed with the school in Phase 2. |
 | Chat look and feel | Ben | Not started | Texting-style Group Chat: bubbles (yours on the right), newest at the bottom, sender and time grouped. Same style for Volunteer chat. Today messages are cards like board posts. |
-| Volunteer app redesign to match Activities | Ben | In progress | Same style and feel as Activities: category pills (e.g. classroom help, events, fundraising, carpool), search, carousels (Your sign-ups, Upcoming opportunities with countdowns), venue with Directions. Done: banner art on every opportunity, details split into section cards, and the clapping celebration on Say Yes!. |
+| Volunteer app redesign to match Activities | Ben | In progress | Same style and feel as Activities: category pills (e.g. classroom help, events, fundraising, carpool), search, carousels (Your sign-ups, Upcoming opportunities with countdowns), venue with Directions. Done: banner art on every opportunity, details split into section cards, the clapping celebration on Say Yes!, and item requests ("24 boxes of tissues") with pledges and quantity progress. |
 | App tutorial | Ben | Not started | Walkthrough that highlights each feature with a one-sentence explanation and Next and Back buttons. |
 | Demo data for the presentation | Ben | Not started | Realistic sample families, groups and car line so every user type can be shown. Demo accounts never get admin powers. |
 | Proposal package | Ben | Not started | What it costs to run and who supports it: Apple Developer ($99/year), Google Play ($25 one-time), a paid Supabase plan, a possible FACTS API fee, hosting and post-launch support. |
@@ -154,7 +154,7 @@ Working in the app and on the server today.
 | Activities | Sports, theater, music, art, clubs | Seasons, schedules, follow, sign-ups with coach approval |
 | Activities | Events and RSVPs | Countdown carousel, directions, Going / Not going, attendance for coaches, team photos |
 | Marketplace | Buy and sell | Terms gate, photos, Dibs or Offer with one counter, deal card |
-| Volunteer | Opportunities | Leaders post, "Say Yes!" sign-ups with spot limits, chat per opportunity |
+| Volunteer | Opportunities and item requests | Leaders post, "Say Yes!" sign-ups with spot limits, item requests people pledge toward with quantity progress, chat per opportunity |
 | Ask the School | Questions | Ask and follow up; routers assign to staff; ages turn amber and red |
 | Student | Student app | Lists your children; links to the FACTS Family Portal for grades |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |

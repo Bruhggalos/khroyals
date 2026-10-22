@@ -1,7 +1,7 @@
 /** src/volunteer/details.ts: banner art, lengths, countdowns and detail sections. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dateTile, detailSections, durationLabel, HELPING_HANDS, sectionIcon, spotsLeft, startsLabel, themeOf } from '../src/volunteer/details';
+import { dateTile, detailSections, durationLabel, HELPING_HANDS, pledgedTotal, sectionIcon, spotsLeft, startsLabel, stillNeeded, themeOf } from '../src/volunteer/details';
 
 const day = (startsOn: string, endsOn: string | null = null, startTime: string | null = null, endTime: string | null = null) =>
   ({ startsOn, endsOn, startTime, endTime });
@@ -73,4 +73,13 @@ test('a sentence with a colon in it is not a heading', () => {
   assert.deepEqual(detailSections('Where to meet: the front office'), [{ heading: 'Where to meet', paragraphs: ['the front office'] }]);
   assert.deepEqual(detailSections('Things you might want to bring along:\nWater'), [{ heading: 'Things you might want to bring along', paragraphs: ['Water'] }],
     'a longer heading on a line of its own');
+});
+
+test('item requests: "Items needed" art, pledge totals and what is still needed', () => {
+  assert.deepEqual(themeOf({ title: 'Classroom tissues', description: '', kind: 'items', item: 'boxes of tissues' }),
+    { glyph: 'package-variant-closed', label: 'Items needed' }, 'the title matching Classroom help does not count');
+  assert.equal(themeOf({ title: 'Snack drive', description: '', kind: 'items', item: 'bags of snacks' }).glyph, 'food-apple');
+  assert.equal(pledgedTotal([{ quantity: 10 }, { quantity: 2 }, { quantity: null }]), 12);
+  assert.equal(stillNeeded(14, 24), '10 still needed');
+  assert.equal(stillNeeded(24, 24), 'All pledged!');
 });

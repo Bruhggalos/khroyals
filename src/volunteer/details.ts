@@ -28,10 +28,19 @@ const THEMES: [RegExp, Theme][] = [
   [/photo|picture|yearbook/i, { glyph: 'camera', label: 'Photos' }],
 ];
 export const HELPING_HANDS: Theme = { glyph: 'hand-heart', label: 'Helping hands' };
+const PACKAGE: Glyph = 'package-variant-closed';
 
-export function themeOf(o: { title: string; description: string }): Theme {
+/** Item requests are always "Items needed", with art for the item when it matches (books, snacks…), else a package. */
+export function themeOf(o: { title: string; description: string; kind?: 'help' | 'items'; item?: string | null }): Theme {
+  if (o.kind === 'items') return { glyph: THEMES.find(([re]) => re.test(o.item ?? ''))?.[1].glyph ?? PACKAGE, label: 'Items needed' };
   return (THEMES.find(([re]) => re.test(o.title)) ?? THEMES.find(([re]) => re.test(o.description)))?.[1] ?? HELPING_HANDS;
 }
+
+/** How many items are pledged in these sign-ups. */
+export const pledgedTotal = (signups: { quantity: number | null }[]) => signups.reduce((n, s) => n + (s.quantity ?? 0), 0);
+
+/** "10 still needed" or "All pledged!". */
+export const stillNeeded = (pledged: number, quantity: number) => (pledged >= quantity ? 'All pledged!' : `${quantity - pledged} still needed`);
 
 const dayNumber = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86_400_000;
 const daysBetween = (from: string, to: string) => Math.round(dayNumber(to) - dayNumber(from));

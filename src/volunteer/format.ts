@@ -9,8 +9,9 @@ export const isPast = (o: Opportunity) => (o.endsOn ?? o.startsOn) < todayIso();
 const day = (iso: string) => new Date(`${iso}T12:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const time = (hm: string) => { const [h, m] = hm.split(':').map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`; };
 
-/** "Thu, Oct 22 · 3:00 PM–5:00 PM" */
+/** "Thu, Oct 22 · 3:00 PM–5:00 PM", or "Bring by Thu, Oct 22" for an item request. */
 export const whenLabel = (o: Opportunity) => {
+  if (o.kind === 'items') return `Bring by ${day(o.startsOn)}`;
   const days = o.endsOn && o.endsOn !== o.startsOn ? `${day(o.startsOn)} – ${day(o.endsOn)}` : day(o.startsOn);
   const hours = o.startTime ? ` · ${time(o.startTime)}${o.endTime ? `–${time(o.endTime)}` : ''}` : '';
   return days + hours;

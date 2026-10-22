@@ -656,6 +656,66 @@ test('volunteers: leaders post, parents and staff say yes until it fills, chat, 
   await rejects(`select * from volunteer_opportunities`, /permission denied/);
 });
 
+test('volunteer item requests: leaders ask for things, people pledge up to what is needed, change or take back pledges', async () => {
+  const told = async (who: string, opp: string) => {
+    await as(who);
+    return (await rows(`select title || ' ' || body as t from my_notifications() where data->>'opportunityId' = '${opp}'`)).map((n) => n.t).join('\n');
+  };
+  const request = (item: string, quantity: string) =>
+    `select * from volunteer_post('Classroom tissues', 'For every homeroom.', app.school_today() + 5, null, null, null, 'Front office', 3, 'items', ${item}, ${quantity})`;
+  const pledged = async (opp: string) => Number((await one(`select coalesce(sum(quantity), 0) as n from volunteer_signups where opportunity_id = '${opp}'`)).n);
+
+  // The demo Teacher (a Volunteer Leader in the seed) asks for 24 boxes; a request has no spots.
+  await as('u-eng');
+  await rejects(request(`'  '`, '24'), /Say what you need/);
+  await rejects(request(`'boxes of tissues'`, 'null'), /how many you need/);
+  const req = await one(request(`'boxes of tissues'`, '24'));
+  assert.deepEqual([req.kind, req.item, req.quantity, req.spots], ['items', 'boxes of tissues', 24, null]);
+  await rejects(`select volunteer_pledge('${req.id}', 2)`, /leading this one/);
+
+  // Rosa pledges 10, then changes it to 12; it's one pledge, not two.
+  await as('u-p01');
+  await rejects(`select volunteer_say_yes('${req.id}')`, /how many you'll bring/);
+  await rejects(`select volunteer_pledge('${req.id}', 0)`, /how many you'll bring/);
+  await one(`select volunteer_pledge('${req.id}', 10)`);
+  await one(`select volunteer_pledge('${req.id}', 12)`);
+  assert.equal(await pledged(req.id), 12);
+  assert.equal((await rows(`select 1 from volunteer_signups where opportunity_id = '${req.id}'`)).length, 1);
+
+  // Wei can't pledge more than is still needed; then it's all pledged.
+  await as('u-p02');
+  await rejects(`select volunteer_pledge('${req.id}', 13)`, /Only 12 more needed/);
+  await one(`select volunteer_pledge('${req.id}', 12)`);
+  await as('u-p03');
+  await rejects(`select volunteer_pledge('${req.id}', 1)`, /Everything's been pledged/);
+  const leader = await told('u-eng', req.id);
+  assert.match(leader, /will bring 10 boxes of tissues for Classroom tissues · 10 of 24 pledged/);
+  assert.match(leader, /changed their pledge to 12/);
+  assert.match(leader, /24 of 24 pledged/);
+
+  // People who pledged get the chat.
+  await as('u-p02');
+  await one(`select * from volunteer_send('${req.id}', 'Dropping mine off Monday.')`);
+
+  // Rosa takes hers back (the leader is told), which frees 12 for Dana.
+  await as('u-p01');
+  await one(`select volunteer_withdraw('${req.id}')`);
+  assert.match(await told('u-eng', req.id), /won't bring the 12 boxes of tissues for Classroom tissues/);
+  await as('u-p03');
+  await one(`select volunteer_pledge('${req.id}', 5)`);
+  assert.equal(await pledged(req.id), 17);
+
+  // Opportunities for people's time don't take pledges, and a request needs its item and quantity.
+  await as('u-eng');
+  const help = await one(`select * from volunteer_post('Field day helpers', '', app.school_today() + 5)`);
+  assert.equal(help.kind, 'help');
+  await as('u-p01');
+  await rejects(`select volunteer_pledge('${help.id}', 2)`, /takes sign-ups, not items/);
+  await asSuper();
+  await rejects(`insert into volunteer_opportunities (lead_id, title, starts_on, kind) values (${id('u-eng')}, 'Pens', app.school_today(), 'items')`,
+    /volunteer_items_shape/);
+});
+
 test('ask the school: private questions, routed by the office, answered by staff, with follow-ups', async () => {
   const told = async (who: string, q: string, mfa = false) => {
     await as(who, mfa);

@@ -1,6 +1,7 @@
 /**
  * The "Say Yes!" celebration: big clapping hands pop in and clap, a ring and a burst of
- * confetti in the school colors fly out, and a thank-you says what you signed up for.
+ * confetti in the school colors fly out, and a thank-you says what you signed up for
+ * (or, for an item request, what you're bringing).
  * It closes by itself after a few seconds, or with a tap. With Reduce Motion on, it's
  * just the hands and the thank-you.
  */
@@ -31,10 +32,10 @@ const PIECES = Array.from({ length: 22 }, (_, i) => {
 /** The three little lines that flash above the hands on every clap. */
 const SPARKS = [-38, 0, 38];
 
-export function Cheer({ title, onDone }: { title: string | null; onDone: () => void }) {
+export function Cheer({ title, bringing, onDone }: { title: string | null; bringing?: string; onDone: () => void }) {
   const [still, setStill] = useState(false);
-  const last = useRef(title);
-  if (title) last.current = title;
+  const last = useRef({ title, bringing });
+  if (title) last.current = { title, bringing };
   const v = useRef({ pop: new Animated.Value(0), burst: new Animated.Value(0), clap: new Animated.Value(0), words: new Animated.Value(0) }).current;
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function Cheer({ title, onDone }: { title: string | null; onDone: () => v
 
   useEffect(() => {
     if (!title) return;
-    AccessibilityInfo.announceForAccessibility?.(`Thank you! You said yes to ${title}.`);
+    AccessibilityInfo.announceForAccessibility?.(bringing ? `Thank you! You're bringing ${bringing} for ${title}.` : `Thank you! You said yes to ${title}.`);
     Object.values(v).forEach((x) => x.setValue(0));
     const clap = Animated.sequence([
       Animated.timing(v.clap, { toValue: 1, duration: 110, easing: Easing.out(Easing.quad), useNativeDriver: native }),
@@ -108,9 +109,13 @@ export function Cheer({ title, onDone }: { title: string | null; onDone: () => v
           transform: [{ translateY: v.words.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>
           <Text style={{ fontSize: 36, fontWeight: '900', color: '#fff' }}>Thank you!</Text>
           <Text style={{ fontSize: 17, color: 'rgba(255,255,255,0.9)', textAlign: 'center' }}>
-            You said yes to <Text style={{ fontWeight: '800', color: GOLD }}>{last.current}</Text>.
+            {last.current.bringing
+              ? <>You're bringing <Text style={{ fontWeight: '800', color: GOLD }}>{last.current.bringing}</Text> for {last.current.title}.</>
+              : <>You said yes to <Text style={{ fontWeight: '800', color: GOLD }}>{last.current.title}</Text>.</>}
           </Text>
-          <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', textAlign: 'center' }}>You've joined its chat with the other volunteers.</Text>
+          <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', textAlign: 'center' }}>
+            You've joined its chat with the other {last.current.bringing ? 'people bringing items' : 'volunteers'}.
+          </Text>
         </Animated.View>
       </Pressable>
     </Modal>

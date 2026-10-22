@@ -2,22 +2,23 @@
  * A volunteer opportunity: a banner with its title, then one card per part (When,
  * Where, About and any sections its details have, Volunteers), Say Yes! / Remove me,
  * and a chat for its volunteers and leader, where the leader's messages stand out.
- * Saying yes is celebrated with clapping hands. The leader can delete it with a
- * reason that every volunteer is sent.
+ * An item request has Bring by / Drop off at, how much is pledged, and a quantity
+ * picker to pledge, change or take back. Saying yes or pledging is celebrated with
+ * clapping hands. The leader can delete it with a reason that every volunteer is sent.
  */
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  getOpportunity, subscribeVolunteer, volunteerDelete, volunteerSayYes, volunteerSend, volunteerWithdraw,
+  getOpportunity, subscribeVolunteer, volunteerDelete, volunteerPledge, volunteerSayYes, volunteerSend, volunteerWithdraw,
   type Opportunity, type Person, type Signup, type VolunteerMessage,
 } from '../../src/api/connect';
 import { NAVY } from '../../src/sports/ui';
 import { Cheer } from '../../src/volunteer/Cheer';
-import { detailSections, durationLabel, sectionIcon, spotsLeft, startsLabel } from '../../src/volunteer/details';
+import { detailSections, durationLabel, pledgedTotal, sectionIcon, spotsLeft, startsLabel, stillNeeded } from '../../src/volunteer/details';
 import { countLabel, isPast, longDayLabel, nameOf, timeLabel } from '../../src/volunteer/format';
-import { GREEN, OpportunityBanner, Section, SectionTitle, SpotsBar } from '../../src/volunteer/parts';
+import { GREEN, OpportunityBanner, QuantityStepper, Section, SectionTitle, SpotsBar } from '../../src/volunteer/parts';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Chip, Field, H, Input, Loading, P, s, ask, useBottomInset } from '../../src/ui';
 
@@ -32,7 +33,8 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const [deleting, setDeleting] = useState<string | null>(null);   // the reason, while the leader is deleting
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [cheer, setCheer] = useState<string | null>(null);   // the title being celebrated after Say Yes!
+  const [cheer, setCheer] = useState<{ title: string; bringing?: string } | null>(null);   // celebrated after Say Yes! or a pledge
+  const [amount, setAmount] = useState<number | null>(null);   // the quantity picker, while it differs from your pledge
   const bottomInset = useBottomInset();
   const scroll = useRef<ScrollView>(null);
 
@@ -49,14 +51,25 @@ function Detail({ id, me }: { id: string; me: Person }) {
   if (!o) return <View style={[s.screen, s.pad]}><Card><P muted>This opportunity isn't available.</P></Card></View>;
 
   const leading = o.leadId === me.id;
-  const signedUp = data.signups.some((x) => x.userId === me.id);
-  const n = data.signups.length;
-  const full = !!o.spots && n >= o.spots;
+  const items = o.kind === 'items';
+  const myRow = data.signups.find((x) => x.userId === me.id);
+  const signedUp = !!myRow;
+  const people = data.signups.length;
+  // Volunteers count people; item requests count what's pledged, and you can pledge up to what the others left.
+  const n = items ? pledgedTotal(data.signups) : people;
+  const goal = items ? o.quantity : o.spots;
+  const full = !!goal && n >= goal;
+  const room = (o.quantity ?? 0) - (n - (myRow?.quantity ?? 0));
+  const pick = Math.min(Math.max(amount ?? myRow?.quantity ?? 1, 1), Math.max(room, 1));
   const past = isPast(o);
   const inChat = leading || signedUp;
   const length = durationLabel(o);
   const soon = o.status === 'open' ? startsLabel(o) : null;
-  const left = spotsLeft(n, o.spots);
+  const left = items ? stillNeeded(n, o.quantity ?? 0) : spotsLeft(n, o.spots);
+  const pledge = (q: number) => act(() => volunteerPledge(o.id, q), () => {
+    setAmount(null);
+    if (!myRow) setCheer({ title: o.title, bringing: `${q} ${o.item}` });
+  });
   const send = () => {
     const body = draft.trim();
     if (!body) return;
@@ -70,7 +83,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
         <OpportunityBanner o={o} hero leader={leading ? 'You lead this opportunity' : `Led by ${nameOf(o.leadId)}`}
           style={{ borderRadius: 18, borderBottomWidth: 4 }} />
 
-        <Section icon="calendar-outline" title="When">
+        <Section icon="calendar-outline" title={items ? 'Bring by' : 'When'}>
           <Text style={big}>{longDayLabel(o)}</Text>
           {!!timeLabel(o) && <Text style={sub}>{timeLabel(o)}</Text>}
           {(!!length || !!soon) && (
@@ -82,7 +95,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
         </Section>
 
         {!!o.location && (
-          <Section icon="location-outline" title="Where">
+          <Section icon="location-outline" title={items ? 'Drop off at' : 'Where'}>
             <Text style={big}>{o.location}</Text>
           </Section>
         )}
@@ -94,19 +107,21 @@ function Detail({ id, me }: { id: string; me: Person }) {
           </Section>
         ))}
 
-        {/* Who's volunteering: everyone can see the names and the count. */}
-        <Section icon="people-outline" title="Volunteers" tint={GREEN}>
+        {/* Who's volunteering (or bringing what): everyone can see the names and the count. */}
+        <Section icon={items ? 'gift-outline' : 'people-outline'} title={items ? 'Pledged' : 'Volunteers'} tint={GREEN}>
           <View style={[s.row, { alignItems: 'baseline', gap: 8 }]}>
-            <Text style={{ fontSize: 26, fontWeight: '900', color: C.ink }}>{countLabel(n, o.spots)}</Text>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: C.ink }}>{items ? `${n} of ${o.quantity}` : countLabel(n, o.spots)}</Text>
             <Text style={{ flex: 1, fontSize: 16, color: C.muted, fontWeight: '600' }}>
-              {o.spots ? 'spots filled' : n === 1 ? 'volunteer' : 'volunteers'}
+              {items ? o.item : o.spots ? 'spots filled' : n === 1 ? 'volunteer' : 'volunteers'}
             </Text>
             {!!left && o.status === 'open' && !past && <Text style={{ fontWeight: '800', color: full ? C.muted : GREEN }}>{left}</Text>}
           </View>
-          <SpotsBar n={n} spots={o.spots} />
+          <SpotsBar n={n} spots={goal} />
           <Pressable onPress={() => setShowPeople(!showPeople)} accessibilityRole="button" accessibilityState={{ expanded: showPeople }}
             style={[s.row, { gap: 4, paddingVertical: 4 }]}>
-            <Text style={{ color: C.primary, fontWeight: '700' }}>{showPeople ? "Hide who's coming" : "See who's coming"}</Text>
+            <Text style={{ color: C.primary, fontWeight: '700' }}>
+              {showPeople ? (items ? "Hide who's bringing" : "Hide who's coming") : (items ? "See who's bringing" : "See who's coming")}
+            </Text>
             <Ionicons name={showPeople ? 'chevron-up' : 'chevron-down'} size={16} color={C.primary} />
           </Pressable>
           {showPeople && (
@@ -116,11 +131,12 @@ function Detail({ id, me }: { id: string; me: Person }) {
                 <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{nameOf(o.leadId)}</Text>
                 <Chip label="Leader" color={C.accent} />
               </View>
-              {data.signups.length === 0 && <P muted>No volunteers yet.</P>}
+              {data.signups.length === 0 && <P muted>{items ? 'No pledges yet.' : 'No volunteers yet.'}</P>}
               {data.signups.map((x) => (
                 <View key={x.userId} style={s.row}>
                   <Ionicons name="person-circle-outline" size={18} color={C.muted} />
                   <Text style={{ flex: 1, color: C.ink }}>{x.userId === me.id ? 'You' : nameOf(x.userId)}</Text>
+                  {items && <Text style={{ fontWeight: '800', color: GREEN }}>{x.quantity}</Text>}
                 </View>
               ))}
             </View>
@@ -144,13 +160,31 @@ function Detail({ id, me }: { id: string; me: Person }) {
               <View style={s.row}>
                 <View style={{ flex: 1 }}>
                   <Button label="Delete and notify" disabled={busy || !deleting.trim()}
-                    onPress={() => ask('Delete this opportunity?', `${n} volunteer${n === 1 ? '' : 's'} will get your reason.`, 'Delete',
+                    onPress={() => ask('Delete this opportunity?', `${people} ${items ? 'pledging' : `volunteer${people === 1 ? '' : 's'}`} will get your reason.`, 'Delete',
                       () => act(() => volunteerDelete(o.id, deleting), () => setDeleting(null)))} />
                 </View>
                 <View style={{ flex: 1 }}><Button kind="ghost" label="Keep it" onPress={() => setDeleting(null)} /></View>
               </View>
             </Card>
           )
+        ) : items && myRow ? (
+          <Card style={{ borderColor: GREEN, borderWidth: 2, gap: 12 }}>
+            <View style={s.row}>
+              <Ionicons name="checkmark-circle" size={24} color={GREEN} />
+              <Text style={{ flex: 1, fontSize: 17, fontWeight: '800', color: GREEN }}>You're bringing {myRow.quantity} {o.item}</Text>
+            </View>
+            {!past && (
+              <>
+                <QuantityStepper value={pick} max={Math.max(room, 1)} onChange={setAmount} />
+                {pick !== myRow.quantity && <Button label={busy ? 'Saving…' : `Change to ${pick}`} disabled={busy} onPress={() => pledge(pick)} />}
+                <Text style={{ color: C.danger, fontWeight: '600' }}
+                  onPress={() => ask('Take back your pledge?', `${nameOf(o.leadId)} will be told you won't bring them.`, 'Take it back',
+                    () => act(() => volunteerWithdraw(o.id), () => setAmount(null)))}>
+                  Take back my pledge
+                </Text>
+              </>
+            )}
+          </Card>
         ) : signedUp ? (
           <Card style={{ borderColor: GREEN, borderWidth: 2, gap: 8 }}>
             <View style={s.row}>
@@ -165,11 +199,22 @@ function Detail({ id, me }: { id: string; me: Person }) {
             )}
           </Card>
         ) : past ? (
-          <Card><P muted>This opportunity is over.</P></Card>
+          <Card><P muted>{items ? 'This request is over.' : 'This opportunity is over.'}</P></Card>
         ) : full ? (
-          <Card><P muted>All spots are filled. Thank you to everyone who said yes!</P></Card>
+          <Card><P muted>{items ? "Everything's been pledged. Thank you to everyone who's bringing something!" : 'All spots are filled. Thank you to everyone who said yes!'}</P></Card>
+        ) : items ? (
+          <Card style={{ gap: 12 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink, textAlign: 'center' }}>How many will you bring?</Text>
+            <QuantityStepper value={pick} max={Math.max(room, 1)} onChange={setAmount} />
+            <Pressable disabled={busy} onPress={() => pledge(pick)} accessibilityRole="button"
+              style={({ pressed }) => [s.btn, { backgroundColor: GREEN, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10 },
+                (pressed || busy) && { opacity: 0.75 }]}>
+              <Ionicons name="gift" size={22} color="#fff" />
+              <Text style={[s.btnT, { fontSize: 19 }]}>I'll bring {pick}</Text>
+            </Pressable>
+          </Card>
         ) : (
-          <Pressable disabled={busy} onPress={() => act(() => volunteerSayYes(o.id), () => setCheer(o.title))} accessibilityRole="button"
+          <Pressable disabled={busy} onPress={() => act(() => volunteerSayYes(o.id), () => setCheer({ title: o.title }))} accessibilityRole="button"
             style={({ pressed }) => [s.btn, { backgroundColor: GREEN, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10 },
               (pressed || busy) && { opacity: 0.75 }]}>
             <Ionicons name="hand-left" size={22} color="#fff" />
@@ -179,7 +224,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
 
         <View style={{ marginTop: 8 }}><SectionTitle icon="chatbubbles-outline" title="Chat" /></View>
         {!inChat ? (
-          <Card><P muted>Say Yes! to join the conversation with the other volunteers and {nameOf(o.leadId)}.</P></Card>
+          <Card><P muted>{items ? 'Pledge' : 'Say Yes!'} to join the conversation with the other {items ? 'people bringing items' : 'volunteers'} and {nameOf(o.leadId)}.</P></Card>
         ) : (
           <View style={{ gap: 8 }}>
             {data.messages.length === 0 && <P muted>No messages yet. Say hello!</P>}
@@ -198,7 +243,7 @@ function Detail({ id, me }: { id: string; me: Person }) {
           </View>
         )}
       </ScrollView>
-      <Cheer title={cheer} onDone={() => setCheer(null)} />
+      <Cheer title={cheer?.title ?? null} bringing={cheer?.bringing} onDone={() => setCheer(null)} />
     </KeyboardAvoidingView>
   );
 }

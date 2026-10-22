@@ -634,19 +634,27 @@ export function subscribeMarket(onChange: () => void): () => void {
 
 // ---------------------------------------------------------------- volunteers
 
+/**
+ * A volunteer opportunity. `kind` 'help' asks for people's time (sign-ups, optional
+ * `spots`); 'items' asks for things: `quantity` of `item` ("24 boxes of tissues"),
+ * brought by `startsOn`, which people pledge toward.
+ */
 export type Opportunity = {
   id: string; leadId: string; title: string; description: string; startsOn: string; endsOn: string | null;
   startTime: string | null; endTime: string | null; location: string | null; spots: number | null;
+  kind: 'help' | 'items'; item: string | null; quantity: number | null;
   status: 'open' | 'deleted'; deleteReason: string | null; createdAt: string;
 };
-export type Signup = { opportunityId: string; userId: string; createdAt: string };
+/** Someone who said yes, or (for item requests) pledged `quantity`. */
+export type Signup = { opportunityId: string; userId: string; createdAt: string; quantity: number | null };
 export type VolunteerMessage = { id: string; opportunityId: string; authorId: string | null; body: string; createdAt: string };
 const toOpportunity = (r: any): Opportunity => ({
   id: r.id, leadId: r.lead_id, title: r.title, description: r.description, startsOn: r.starts_on, endsOn: r.ends_on,
   startTime: r.start_time?.slice(0, 5) ?? null, endTime: r.end_time?.slice(0, 5) ?? null, location: r.location,
-  spots: r.spots, status: r.status, deleteReason: r.delete_reason, createdAt: r.created_at,
+  spots: r.spots, kind: r.kind ?? 'help', item: r.item ?? null, quantity: r.quantity ?? null,
+  status: r.status, deleteReason: r.delete_reason, createdAt: r.created_at,
 });
-const toSignup = (r: any): Signup => ({ opportunityId: r.opportunity_id, userId: r.user_id, createdAt: r.created_at });
+const toSignup = (r: any): Signup => ({ opportunityId: r.opportunity_id, userId: r.user_id, createdAt: r.created_at, quantity: r.quantity ?? null });
 const toMessage = (r: any): VolunteerMessage => ({ id: r.id, opportunityId: r.opportunity_id, authorId: r.author_id, body: r.body, createdAt: r.created_at });
 
 /** Parents, staff and Family accounts volunteer; the office picks Volunteer Leaders (the database checks the same). */
@@ -685,13 +693,18 @@ export async function getOpportunity(id: string): Promise<{ opportunity: Opportu
 export async function volunteerPost(o: {
   title: string; description: string; startsOn: string; endsOn: string | null; startTime: string | null;
   endTime: string | null; location: string | null; spots: number | null;
+  /** An item request: what's needed and how many (no spots). */
+  items?: { item: string; quantity: number };
 }): Promise<Opportunity> {
   return toOpportunity(await rpc('volunteer_post', {
     p_title: o.title, p_description: o.description, p_starts_on: o.startsOn, p_ends_on: o.endsOn,
-    p_start_time: o.startTime, p_end_time: o.endTime, p_location: o.location, p_spots: o.spots,
+    p_start_time: o.startTime, p_end_time: o.endTime, p_location: o.location, p_spots: o.items ? null : o.spots,
+    p_kind: o.items ? 'items' : 'help', p_item: o.items?.item ?? null, p_quantity: o.items?.quantity ?? null,
   }));
 }
 export async function volunteerSayYes(id: string) { await rpc('volunteer_say_yes', { p_opportunity: id }); }
+/** Pledge (or change) how many of a request's items you'll bring; volunteerWithdraw takes it back. */
+export async function volunteerPledge(id: string, quantity: number) { await rpc('volunteer_pledge', { p_opportunity: id, p_quantity: quantity }); }
 export async function volunteerWithdraw(id: string) { await rpc('volunteer_withdraw', { p_opportunity: id }); }
 /** The leader deletes it; the reason goes to every volunteer. */
 export async function volunteerDelete(id: string, reason: string) { await rpc('volunteer_delete', { p_opportunity: id, p_reason: reason }); }

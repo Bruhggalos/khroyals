@@ -1,8 +1,9 @@
 /**
  * Pieces the Volunteer screens share, in the Kingdom Heights colors (navy and gold, like
- * the Activities event banners): an opportunity's banner, section cards and the spots bar.
+ * the Activities event banners): an opportunity's banner, section cards, the spots bar
+ * and the quantity picker for item pledges.
  */
-import { StyleProp, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { Opportunity } from '../api/connect';
 import { GOLD, NAVY } from '../sports/ui';
@@ -104,6 +105,27 @@ export function SpotsBar({ n, spots }: { n: number; spots: number | null }) {
     <View accessible accessibilityLabel={`${n} of ${spots} spots filled`}
       style={{ height: 8, borderRadius: 4, backgroundColor: `${C.primary}1A`, overflow: 'hidden' }}>
       <View style={{ width: `${share * 100}%`, height: '100%', borderRadius: 4, backgroundColor: share >= 1 ? C.muted : GREEN }} />
+    </View>
+  );
+}
+
+/** − 3 + : how many items to pledge, from 1 up to what's still needed. */
+export function QuantityStepper({ value, max, onChange }: { value: number; max: number; onChange: (n: number) => void }) {
+  const step = (d: number) => onChange(Math.min(max, Math.max(1, value + d)));
+  const round = (icon: 'remove' | 'add', d: number, disabled: boolean) => (
+    <Pressable onPress={() => step(d)} disabled={disabled} accessibilityRole="button" accessibilityLabel={d < 0 ? 'One fewer' : 'One more'}
+      hitSlop={6} style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
+        borderWidth: 2, borderColor: disabled ? C.line : C.primary, opacity: pressed ? 0.6 : 1 })}>
+      <Ionicons name={icon} size={24} color={disabled ? C.line : C.primary} />
+    </Pressable>
+  );
+  return (
+    <View style={[s.row, { justifyContent: 'center', gap: 22 }]} accessibilityRole="adjustable" accessibilityValue={{ min: 1, max, now: value }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(e) => step(e.nativeEvent.actionName === 'increment' ? 1 : -1)}>
+      {round('remove', -1, value <= 1)}
+      <Text style={{ fontSize: 34, fontWeight: '900', color: C.ink, minWidth: 56, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{value}</Text>
+      {round('add', 1, value >= max)}
     </View>
   );
 }
