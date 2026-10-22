@@ -1,5 +1,5 @@
 /**
- * Car Line app (like PikMyKid). Parents announce "I'm here" from school (the
+ * Car Line app (like PikMyKid). Parents tap Check In from school (the
  * app checks they're within the pickup radius); all staff see the line live
  * with pickup numbers and confirm each pickup. That's the staff version, on the Main
  * Page's Staff view; staff who are also parents can switch to their children there, and

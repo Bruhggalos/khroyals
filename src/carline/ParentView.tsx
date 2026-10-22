@@ -1,10 +1,12 @@
 /**
  * Parent side of the car line: each child's pickup number, the vehicle you're
- * arriving in, then "I'm here" once you're at school. The app sends your location
- * and the school checks you're within the pickup radius.
+ * arriving in, then Check In once you're at school. The app sends your location
+ * and the school checks you're within the pickup radius. The button never hides:
+ * it's greyed out outside pickup hours and turns green ("Checked In!") once you're
+ * in line (src/carline/checkInButton.ts).
  */
-import { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { carlineAnnounce, carlineCancel, type CarlineConfig, type Person, type Pickup, type Vehicle } from '../api/connect';
@@ -12,6 +14,7 @@ import { Button, C, Card, H, P, s } from '../ui';
 import { VehicleIcon } from './VehicleIcon';
 import { vehicleLabel } from './vehicles';
 import { AutoCheckInCard } from './AutoCheckInCard';
+import { checkInButton } from './checkInButton';
 import { clock, gradeLabel, hoursLabel } from './format';
 import { LocationError, currentSpot, distanceLabel } from './location';
 
@@ -80,6 +83,17 @@ export function ParentView({ kids, family, vehicles, pickups, numbers, config, o
   const chosen = ready.filter((k) => !skip.has(k.id));
   const waiting = kids.filter((k) => status(k.id)?.status === 'waiting');
   const closed = config?.line.state === 'closed';
+  const button = checkInButton(config?.line, waiting.length, ready.length);
+  const canCheckIn = button.kind === 'ready';
+
+  // A little pop when the button turns into "Checked In!".
+  const pop = useRef(new Animated.Value(1)).current;
+  const checkedIn = button.kind === 'checked-in';
+  useEffect(() => {
+    if (!checkedIn) return;
+    pop.setValue(0.88);
+    Animated.spring(pop, { toValue: 1, friction: 4, tension: 160, useNativeDriver: Platform.OS !== 'web' }).start();
+  }, [checkedIn, pop]);
 
   const toggle = (id: string) => setSkip((cur) => { const n = new Set(cur); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const announce = async () => {
@@ -110,7 +124,7 @@ export function ParentView({ kids, family, vehicles, pickups, numbers, config, o
           ? 'Staff can see you and your pickup numbers. Pull forward when you\'re waved up.'
           : closed
             ? `It's open on school days${config ? `, ${hoursLabel(config.start, config.end)}` : ''}.`
-            : `When you get to school${config ? ` (within ${distanceLabel(config.radius)} of the pickup spot)` : ''}, choose who you're picking up and tap I'm here. Staff see it right away.`}</P>
+            : `When you get to school${config ? ` (within ${distanceLabel(config.radius)} of the pickup spot)` : ''}, choose who you're picking up and tap Check In. Staff see it right away.`}</P>
       </Card>
 
       {kids.map((k) => {
@@ -145,19 +159,45 @@ export function ParentView({ kids, family, vehicles, pickups, numbers, config, o
         );
       })}
 
-      {ready.length > 0 && !closed && <ArrivingIn vehicles={vehicles} value={vehicle} onChange={(v) => setVehicleId(v.id)} />}
-      {ready.length > 0 && !closed && (
-        <Pressable disabled={busy || chosen.length === 0} onPress={announce} accessibilityRole="button"
-          style={({ pressed }) => [s.btn, { paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10 },
-            (busy || chosen.length === 0) && { opacity: 0.4 }, pressed && { opacity: 0.8 }]}>
-          <Ionicons name="car" size={22} color="#fff" />
-          <Text style={[s.btnT, { fontSize: 18 }]}>{busy ? 'Checking your location…' : "I'm here"}</Text>
-        </Pressable>
+      {ready.length > 0 && canCheckIn && <ArrivingIn vehicles={vehicles} value={vehicle} onChange={(v) => setVehicleId(v.id)} />}
+      <CheckInPressable button={button} busy={busy} none={chosen.length === 0} pop={pop} onPress={announce} />
+      {button.kind === 'outside' && (
+        <P muted>{button.opensAt
+          ? `Check-in opens at ${clock(button.opensAt)}.`
+          : `Check-in opens during pickup hours${config ? `, ${hoursLabel(config.start, config.end)} on school days` : ''}.`}</P>
       )}
       {problem && <Text style={{ color: C.danger, fontWeight: '600' }}>{problem}</Text>}
-      {ready.length > 0 && chosen.length === 0 && <P muted>Choose at least one child.</P>}
-      <P muted>Show your pickup number in your windshield. Uses your location only when you tap I'm here.</P>
+      {canCheckIn && chosen.length === 0 && <P muted>Choose at least one child.</P>}
+      <P muted>Show your pickup number in your windshield. Uses your location only when you tap Check In.</P>
       <AutoCheckInCard />
     </View>
+  );
+}
+
+const GREEN = '#15803D';
+const GREY = '#DDE2EB';
+
+/** The check-in button in each of its looks (see src/carline/checkInButton.ts). */
+function CheckInPressable({ button, busy, none, pop, onPress }: {
+  button: ReturnType<typeof checkInButton>; busy: boolean; none: boolean; pop: Animated.Value; onPress: () => void;
+}) {
+  const look = {
+    ready: { label: busy ? 'Checking your location…' : 'Check In', icon: 'car', bg: C.primary, fg: '#fff' },
+    'checked-in': { label: 'Checked In!', icon: 'checkmark-circle', bg: GREEN, fg: '#fff' },
+    outside: { label: 'Check In', icon: 'car', bg: GREY, fg: C.muted },
+    done: { label: 'All picked up', icon: 'checkmark-done', bg: GREY, fg: C.muted },
+  }[button.kind] as { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; bg: string; fg: string };
+  const ready = button.kind === 'ready';
+  const disabled = !ready || busy || none;
+  return (
+    <Animated.View style={{ transform: [{ scale: pop }] }}>
+      <Pressable disabled={disabled} onPress={onPress} accessibilityRole="button" accessibilityState={{ disabled }}
+        accessibilityLabel={button.kind === 'outside' ? 'Check In, not available outside pickup hours' : look.label}
+        style={({ pressed }) => [s.btn, { paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', gap: 10, backgroundColor: look.bg },
+          ready && (busy || none) && { opacity: 0.4 }, ready && pressed && { opacity: 0.8 }]}>
+        <Ionicons name={look.icon} size={22} color={look.fg} />
+        <Text style={[s.btnT, { fontSize: 18, color: look.fg }]}>{look.label}</Text>
+      </Pressable>
+    </Animated.View>
   );
 }
