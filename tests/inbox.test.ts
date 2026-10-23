@@ -72,3 +72,12 @@ test('every notification the phone shows by itself goes through notifyLocal (so 
     .map((f) => relative(root, f));
   assert.deepEqual(direct, ['src/comms/localInbox.ts']);
 });
+
+test('alertChanges finds new alerts and all clears, not ones already known', async () => {
+  const { alertChanges } = await import('../src/alerts/changes');
+  const a = (id: string, endedAt: string | null) => ({ id, kind: 'weather', title: id, body: '', createdBy: null, createdAt: '', endedAt, endedBy: null, endNote: null }) as any;
+  const known = new Map([['old', false], ['over', true]]);
+  const r = alertChanges(known, [a('new', null), a('old', '2026-10-23'), a('over', '2026-10-22')]);
+  assert.deepEqual(r.started.map((x) => x.id), ['new']);
+  assert.deepEqual(r.cleared.map((x) => x.id), ['old']);
+});

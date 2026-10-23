@@ -1,3 +1,4 @@
+import { isDate } from '../../src/forms/dates';
 /**
  * Add or edit a season (coaches/directors and activity managers): dates, an online sign-up window,
  * eligible grades, details and an info link. Followers are told when sign-ups open.
@@ -10,7 +11,6 @@ import { GradePicker } from '../../src/comms/GradePicker';
 import { Button, C, Card, Field, Loading, P, s } from '../../src/ui';
 import { DateField, toDateString } from '../../src/forms/DateTimeField';
 
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export default function EditSeason() {
   const { sport, id } = useLocalSearchParams<{ sport: string; id?: string }>();

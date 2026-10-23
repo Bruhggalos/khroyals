@@ -4,6 +4,7 @@ import { Stack, router } from 'expo-router';
 import { createGroup } from '../../src/api/connect';
 import { defaultSettings } from '../../src/comms/presets';
 import { SettingsForm } from '../../src/comms/SettingsForm';
+import { parseGrades } from '../../src/comms/groupRules';
 import type { AssignmentRule, Group, SchoolRole } from '../../src/comms/types';
 import { Button, C, Card, Field, H, P, s } from '../../src/ui';
 
@@ -18,9 +19,12 @@ export default function NewGroup() {
   const [grades, setGrades] = useState('');
 
   const create = () => {
+    let selectedGrades: number[] | undefined;
+    try { selectedGrades = parseGrades(grades); }
+    catch (error) { Alert.alert('Grades', error instanceof Error ? error.message : String(error)); return; }
     const rules: AssignmentRule[] = roles.length || grades
       ? [{ id: 'r-1', schoolRoles: roles.length ? roles : undefined,
-           grades: grades ? grades.split(',').map((g) => Number(g.trim())).filter(Boolean) : undefined,
+           grades: selectedGrades,
            assignAs: settings.mode === 'broadcast' ? 'subscriber' : 'member' }]
       : [];
     const g: Omit<Group, 'id' | 'createdAt' | 'createdBy'> = {

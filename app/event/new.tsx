@@ -1,3 +1,4 @@
+import { isDate, isTime } from '../../src/forms/dates';
 /** Add an event to the school calendar (admins) or a group calendar (group moderators). */
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
@@ -7,8 +8,6 @@ import { Button, C, Card, Field, H, Loading, P, s } from '../../src/ui';
 import { DateField, TimeField, toDateString } from '../../src/forms/DateTimeField';
 
 const CATEGORIES = ['Event', 'No School', 'Academic', 'Special Student Day', 'Teacher In-Service', 'E-Learning', 'Athletics', 'Fine Arts'];
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
-const isTime = (v: string) => v === '' || /^\d{1,2}:\d{2}$/.test(v);
 
 export default function NewEvent() {
   const [cals, setCals] = useState<{ groupId: string | null; name: string }[] | null>(null);
@@ -24,7 +23,7 @@ export default function NewEvent() {
   if (!cals) return <Loading />;
   if (!cals.length) return <View style={s.center}><P>You can't add events to any calendar.</P></View>;
 
-  const valid = title.trim() && isDate(date) && (endDate === '' || (isDate(endDate) && endDate >= date)) && isTime(start) && isTime(end)
+  const valid = title.trim() && isDate(date) && (endDate === '' || (isDate(endDate) && endDate >= date)) && (!start || isTime(start)) && (!end || isTime(end))
     && (!start || !end || endDate > date || end > start);
   const save = () => createEvent({
     groupId: cals[cal].groupId, title: title.trim(), date, endDate: endDate || null, startTime: start || null, endTime: end || null,

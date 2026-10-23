@@ -1,3 +1,4 @@
+import { isDate } from '../../src/forms/dates';
 /**
  * Add or edit a schedule item (coaches/directors and activity managers): games and practices
  * for sports, rehearsals, auditions and performances for theater and music, meetings and
@@ -14,7 +15,6 @@ import { activeSeasons, parseTime, schoolToday, timeLabel } from '../../src/spor
 import { Button, C, Card, Field, Loading, P, s } from '../../src/ui';
 import { DateField, TimeField, toTimeString } from '../../src/forms/DateTimeField';
 
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 /** A date and a typed time on the phone's clock → ISO. */
 const toIso = (date: string, time: string) => {
   const t = parseTime(time);

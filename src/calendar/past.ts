@@ -14,6 +14,15 @@ export function schoolToday(now = new Date()): string {
   }
 }
 
+/** Minutes after midnight on the school's clock, including daylight saving time. */
+export function schoolMinutes(now = new Date()): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(now);
+  return Number(parts.find((p) => p.type === 'hour')?.value) * 60
+    + Number(parts.find((p) => p.type === 'minute')?.value);
+}
+
 /** An all-day (or multi-day) event is past once its last day is before today. */
 export const isPastDay = (lastDay: string, today = schoolToday()) => lastDay < today;
 

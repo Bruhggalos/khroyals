@@ -5,8 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import { pickSquarePhoto } from '../src/photos';
 import {
   live, myGroupPrefs, mySettings, removeMyAvatar, session, setNotificationPref, signOut, updateMyName, updateMySettings,
   uploadMyAvatar, type GroupPref, type MySettings, type Person,
@@ -18,7 +17,6 @@ import { disablePush, enablePush } from '../src/comms/push';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
 import { TimeField } from '../src/forms/DateTimeField';
 
-const PHOTO_SIZE = 512;
 const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
 const LEVELS: [GroupPref['pref'], string][] = [['all', 'Everything'], ['mentions', 'Important only'], ['none', 'Off']];
 
@@ -87,21 +85,9 @@ export default function Profile() {
   };
 
   const pickPhoto = (camera: boolean) => step('photo', async () => {
-    if (camera && !(await ImagePicker.requestCameraPermissionsAsync()).granted) {
-      return Alert.alert('Camera is off', 'Allow camera access for KH Royals in Settings to take a photo.');
-    }
-    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 1 };
-    const result = camera ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
-    const asset = result.canceled ? null : result.assets[0];
-    if (!asset) return;
-    // Square and small: profile photos only show as circles.
-    const ctx = ImageManipulator.manipulate(asset.uri);
-    const side = Math.min(asset.width, asset.height);
-    if (asset.width !== asset.height) ctx.crop({ originX: (asset.width - side) / 2, originY: (asset.height - side) / 2, width: side, height: side });
-    if (side > PHOTO_SIZE) ctx.resize({ width: PHOTO_SIZE, height: PHOTO_SIZE });
-    const out = await (await ctx.renderAsync()).saveAsync({ compress: 0.75, format: SaveFormat.JPEG, base64: true });
-    if (!out.base64) return;
-    await uploadMyAvatar(out.base64);
+    const base64 = await pickSquarePhoto(camera);
+    if (!base64) return;
+    await uploadMyAvatar(base64);
     setPerson(await session());
   });
   const removePhoto = () => step('photo', async () => { await removeMyAvatar(); setPerson(await session()); });

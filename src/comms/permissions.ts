@@ -1,6 +1,7 @@
 import type {
   Audience, Group, GroupPermissions, GroupRole, Membership, Post, User,
 } from './types';
+import { schoolMinutes } from '../calendar/past';
 
 /** Lower number = more privileged. */
 const ROLE_RANK: Record<GroupRole, number> = { owner: 0, moderator: 1, member: 2, subscriber: 3 };
@@ -48,7 +49,7 @@ function inQuietHours(ctx: Context, role: GroupRole): boolean {
   const q = ctx.group.settings.quietHours;
   if (!q || !q.appliesTo.includes(role)) return false;
   const now = ctx.now ?? new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
+  const mins = schoolMinutes(now);
   const [sh, sm] = q.start.split(':').map(Number);
   const [eh, em] = q.end.split(':').map(Number);
   const s = sh * 60 + sm, e = eh * 60 + em;

@@ -27,6 +27,9 @@ Notifications.setNotificationHandler({
 
 let token: string | null = null;
 
+/** True once this phone is registered for the school's pushes (they ring for alerts, so the app needn't). */
+export const pushRegistered = (): boolean => token !== null;
+
 export type PushState = 'on' | 'denied' | 'unsupported' | 'not-configured' | 'error';
 export type Permission = 'granted' | 'denied' | 'undetermined' | 'unsupported';
 

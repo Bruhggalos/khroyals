@@ -6,19 +6,20 @@
  */
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 // Read straight from app.json so web, Android and iOS builds all get it.
 import appJson from '../../app.json';
 
-const extra = ((appJson as any).expo?.extra ?? {}) as { supabaseUrl?: string; supabaseKey?: string };
+const extra = appJson.expo.extra;
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || extra.supabaseUrl;
 const key = process.env.EXPO_PUBLIC_SUPABASE_KEY || extra.supabaseKey;
 /** For native code that calls the database itself (the Android Auto car line screen). */
 export const supabaseUrl = url ?? null;
 export const supabaseKey = key ?? null;
 
-export const supabase: SupabaseClient | null = url && key
-  ? createClient(url, key, {
+export const supabase = url && key
+  ? createClient<Database>(url, key, {
       auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     })
   : null;
