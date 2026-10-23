@@ -174,7 +174,7 @@ export function BlockView({ b }: { b: Block }) {
           {b.images.map((src) => {
             const logo = /\.png/i.test(src);
             return <Image key={src} source={{ uri: src }} resizeMode={logo ? 'contain' : 'cover'}
-              style={{ width: logo ? 150 : width * 0.7, height: logo ? 80 : 200, borderRadius: 10, backgroundColor: logo ? '#fff' : C.line }} />;
+              style={{ width: logo ? 150 : Math.min(width * 0.7, 420), height: logo ? 80 : 200, borderRadius: 10, backgroundColor: logo ? '#fff' : C.line }} />;
           })}
         </ScrollView>
       );

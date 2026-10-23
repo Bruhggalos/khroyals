@@ -5,18 +5,25 @@
  * part (`TabBarEdge`), so the line still runs around the very edge of the phone.
  */
 import type { ReactElement, ReactNode } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from './ui';
 
 const WIDTH = 4;
 
-/** About the phone screen's own corner radius, so the line follows the glass instead of being cut off at the corners. */
+/**
+ * About the screen's own corner radius, so the line follows the glass instead of being cut
+ * off at the corners. Large screens (iPads, the iPhone Duo's inner display, which is an
+ * iPhone but tablet-sized) have gentler corners than phones; an iPhone Duo switches as it
+ * folds and unfolds.
+ */
 function useCornerRadius() {
   const { bottom } = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const large = Math.min(width, height) >= 600;
   if (Platform.OS === 'web') return 0;
-  if (Platform.OS === 'ios') return bottom === 0 ? 0 : Platform.isPad ? 18 : 62; // Home-button iPhones are square
-  return 32; // Android phones vary; a curve a little rounder than the glass still shows
+  if (Platform.OS === 'ios') return bottom === 0 ? 0 : Platform.isPad || large ? 18 : 62; // Home-button iPhones are square
+  return large ? 20 : 32; // Android phones vary; a curve a little rounder than the glass still shows
 }
 
 /** The line itself, laid over the screen (taps go through). `bottom` closes it along the bottom of the phone. */

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Alert, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions, type TextInputProps, type ViewStyle } from 'react-native';
 import site from '../content/site/site.json';
 
 export const C = {
@@ -103,9 +103,24 @@ export function Field({ label, hint, error, style, ...input }: TextInputProps & 
   );
 }
 
+/**
+ * Pages are a readable column at most this wide, centered on iPads, tablets and computers
+ * (phones are narrower, so they use their whole width). The headers and tab bar stay full width.
+ */
+export const CONTENT_MAX = 760;
+
+/** The width a page's content has to work with: the column inside its 16px side padding. */
+export function useContentWidth() {
+  const { width } = useWindowDimensions();
+  return Math.min(width, CONTENT_MAX) - 32;
+}
+
 export const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
-  pad: { padding: 16, paddingBottom: 48, gap: 12 },   // room to scroll the last item above the Android nav bar / iPhone home indicator
+  // Room at the bottom to scroll the last item above the Android nav bar / iPhone home indicator.
+  pad: { padding: 16, paddingBottom: 48, gap: 12, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' },
+  /** A bottom sheet's panel: full width on phones, a centered panel on iPads and tablets. */
+  sheet: { width: '100%', maxWidth: 560, alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { backgroundColor: C.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: C.line, gap: 6 },
   h: { fontSize: 18, fontWeight: '700', color: C.ink },

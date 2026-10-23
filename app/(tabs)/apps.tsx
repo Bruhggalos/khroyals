@@ -15,7 +15,7 @@ import { visibleTiles, type TileRules } from '../../src/appTiles';
 import { NewsCarousel } from '../../src/site/NewsCarousel';
 import { GOLD, NAVY } from '../../src/sports/ui';
 import { useStaffViewSetting } from '../../src/staffView';
-import { C, P, s } from '../../src/ui';
+import { CONTENT_MAX, C, P, s, useContentWidth } from '../../src/ui';
 
 /** A tile shows its own artwork or an Ionicons glyph; who sees it is in src/appTiles.ts. */
 type App = { label: string; color: string; href: Href } & TileRules
@@ -82,10 +82,12 @@ export default function Apps() {
   const staffView = staff && staffSetting;
   const student = !!person && !person.pending && person.schoolRole === 'student';
   const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin, student });
+  // Three tiles across on phones, up to five on iPads and tablets.
+  const columns = Math.max(3, Math.min(5, Math.floor(useContentWidth() / 140)));
   return (
     <View style={s.screen}>
       {/* Headlines stay put under the banner; the apps scroll below them. */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}><NewsCarousel /></View>
+      <View style={{ paddingHorizontal: 16, paddingTop: 16, width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }}><NewsCarousel /></View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.pad, { paddingTop: 12 }]}>
       {staff && <ViewSwitch staffView={staffSetting} onChange={setStaffSetting} />}
       {active.map((a) => (
@@ -104,7 +106,7 @@ export default function Apps() {
         {apps.map((a) => (
           <Pressable key={a.label} onPress={() => router.push(a.href)} accessibilityRole="button"
             accessibilityLabel={a.elevated ? `${a.label}, staff version` : a.label}
-            style={({ pressed }) => [{ width: '33.33%', alignItems: 'center', gap: 8, paddingVertical: 14 }, pressed && { opacity: 0.6 }]}>
+            style={({ pressed }) => [{ width: `${100 / columns}%`, alignItems: 'center', gap: 8, paddingVertical: 14 }, pressed && { opacity: 0.6 }]}>
             <View>
               <View style={{ width: 84, height: 84, borderRadius: 24, overflow: 'hidden', backgroundColor: a.color, alignItems: 'center', justifyContent: 'center',
                 borderWidth: a.elevated ? 3 : 0, borderColor: GOLD }}>

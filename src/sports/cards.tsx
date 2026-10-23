@@ -96,7 +96,7 @@ export function RsvpButton({ e, people, answers, onChange }: {
       </Pressable>
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' }} onPress={() => setOpen(false)} accessibilityLabel="Close" />
-        <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36, gap: 14 }}>
+        <View style={[s.sheet, { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 36, gap: 14 }]}>
           <View style={{ gap: 2 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: C.ink }}>Are you going?</Text>
             <P muted>{e.title} · {when(e.startsAt)}</P>

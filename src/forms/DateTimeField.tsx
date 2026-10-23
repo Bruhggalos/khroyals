@@ -95,7 +95,7 @@ function PickerField({ mode, label, value, onChange, placeholder, hint, error, o
       {Platform.OS === 'ios' && (
         <Modal visible={!!sheet} transparent animationType="slide" onRequestClose={() => setSheet(null)}>
           <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setSheet(null)} accessibilityLabel="Close" />
-          <View style={{ backgroundColor: '#fff', paddingBottom: 28, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+          <View style={[s.sheet, { backgroundColor: '#fff', paddingBottom: 28, borderTopLeftRadius: 16, borderTopRightRadius: 16 }]}>
             <View style={[s.row, { justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: C.line }]}>
               <Text style={{ color: C.muted, fontSize: 16 }} onPress={() => setSheet(null)}>Cancel</Text>
               <Text style={{ color: C.ink, fontWeight: '700', fontSize: 16 }}>{label}</Text>

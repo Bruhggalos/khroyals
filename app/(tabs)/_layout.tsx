@@ -68,6 +68,8 @@ export default function TabsLayout() {
       headerRight: () => <View style={{ flexDirection: 'row' }}><ProfileButton /><NotificationsButton /></View>,
       tabBarActiveTintColor: C.primary,
       tabBarBackground: TabBarEdge,
+      // The page color around the centered content column on iPads and tablets.
+      sceneStyle: { backgroundColor: C.bg },
     }}
       // The red edge line runs down the sides of each tab and on around the tab bar.
       screenLayout={edgeLayout({ bottom: false })}>

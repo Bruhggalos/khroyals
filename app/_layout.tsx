@@ -31,6 +31,8 @@ export default function Root() {
       headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' },
       // Back arrow only; otherwise iOS labels it with the tab group's route name, "(tabs)".
       headerBackButtonDisplayMode: 'minimal',
+      // The page color around the centered content column on iPads and tablets.
+      contentStyle: { backgroundColor: C.bg },
     }}
       // The red edge line under the header; the tabs draw their own, and the video player is black.
       screenLayout={edgeLayout({ bottom: true, skip: ['(tabs)', 'video'] })}>

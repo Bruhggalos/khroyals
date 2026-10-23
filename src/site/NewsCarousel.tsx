@@ -1,7 +1,9 @@
 /**
  * Latest news headlines, one at a time. Slides to the next every 5 seconds
  * (paused while someone is swiping, off when Reduce Motion is on); swipe to move
- * yourself. The dots show which headline is up; tap a headline to read it.
+ * yourself. The dots show which headline is up; tap a headline to read it. When the
+ * screen changes size (an iPad turned, an iPhone Duo folded or unfolded), the same
+ * headline stays lined up.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -43,6 +45,10 @@ export function NewsCarousel() {
     }, EVERY_MS);
   }, [items.length, width]);
   useFocusEffect(useCallback(() => { start(); return stop; }, [start]));
+  // A new width moves every headline, so line the current one up again.
+  useEffect(() => {
+    if (width) list.current?.scrollToOffset({ offset: page.current * width, animated: false });
+  }, [width]);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (!width) return;

@@ -4,7 +4,7 @@ import { FlatList, Linking, Pressable, Text, TextInput, View } from 'react-nativ
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { HANDBOOK_SOURCE, PAGES, pattern, search, type Page } from '../src/handbook/handbook';
-import { C, Card, P, s } from '../src/ui';
+import { CONTENT_MAX, C, Card, P, s } from '../src/ui';
 
 const BLUE = '#0369A1';
 const MARK = '#FDE68A';
@@ -42,7 +42,7 @@ export default function Handbook() {
     <View style={s.screen}>
       <Stack.Screen options={{ title: 'Handbook' }} />
       <View style={{ padding: 12, gap: 8, borderBottomWidth: 1, borderColor: C.line, backgroundColor: C.card }}>
-        <View style={[s.row, s.input, { paddingVertical: 8 }]}>
+        <View style={[s.row, s.input, { paddingVertical: 8, width: '100%', maxWidth: CONTENT_MAX - 32, alignSelf: 'center' }]}>
           <Ionicons name="search" size={18} color={C.muted} />
           <TextInput style={{ flex: 1, fontSize: 15, color: C.ink }} placeholder="Search the handbook" value={query}
             onChangeText={(t) => { setQuery(t); setBrowsing(false); if (!t) setMark(''); }}
@@ -54,7 +54,7 @@ export default function Handbook() {
           )}
         </View>
         {!!pattern(query) && (
-          <View style={[s.row, { justifyContent: 'space-between' }]}>
+          <View style={[s.row, { justifyContent: 'space-between', width: '100%', maxWidth: CONTENT_MAX - 32, alignSelf: 'center' }]}>
             <Text style={{ color: C.muted }}>
               {matches.length ? `${matches.length} match${matches.length === 1 ? '' : 'es'} on ${pagesHit} page${pagesHit === 1 ? '' : 's'}` : 'No matches'}
             </Text>

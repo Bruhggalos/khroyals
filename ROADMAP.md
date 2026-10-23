@@ -86,6 +86,7 @@ feedback comes in.
 | iPhone app on TestFlight | Ben | In progress | First build (0.1.0, 2026.1021.1932) uploaded Oct 21, 2026. Next: internal testers, then an external group through Beta App Review ([DEVELOPING §9](DEVELOPING.md#9-testflight-iphone-testers)). |
 | Google Play release signing | — | Not started | The APK uses the development key; needs an upload keystore or EAS Build, then a Play testing track. |
 | Build the iPhone app in CI | — | Not started | GitHub Actions builds Android only; iPhone builds are made on a Mac. |
+| Check the app on iPhone Duo | — | Not started | The inner display runs it in both orientations (iPhone Duo ignores the portrait lock), and the app resizes as it folds. Built for it but never seen: needs an iPhone Duo simulator (not in Xcode 27.0) or a device. |
 | Penetration testing | — | Not started | Must pass before Full release. Run on the integrated beta build: phone apps, admin web portal, database permissions and API functions, sign-in, and the FACTS connection. Fix and retest any findings before Phase 4. |
 | Account deletion in the app | Ben | Not started | Apple requires it for any app that lets people create accounts; App Store review rejects the app without it. None exists today. |
 | Beta plan | Ben | Not started | Who's in the beta, how testers send feedback, and what has to be true to go ahead with release. |
@@ -99,7 +100,7 @@ and publishes the app to every family.
 |---|---|---|---|
 | Remove test data from live | — | Not started | Ben's test family (two test children linked to his account), the sample Soccer and Volleyball seasons and schedule, and the "Test Leader" account (no login) with its four Volunteer opportunities. Also decide whether Ben's account stays a director (made Admin + director on Oct 21, 2026 to test the staff view). |
 | Remove demo roles | — | Not started | The demo Teacher's Car line lead and Volunteer Leader roles must go with the demo accounts before real families use the app. |
-| Publish to the App Store and Google Play | Ben | Not started | Privacy policy URL, Apple's privacy labels, store listings and screenshots; allow time for App Store review, then public release. |
+| Publish to the App Store and Google Play | Ben | Not started | Privacy policy URL, Apple’s privacy labels, store listings and screenshots (iPad screenshots too, since the app runs on iPad); allow time for App Store review, then public release. |
 | Staff training and parent rollout | — | Not started | A short guide, an announcement to families and a support contact. |
 
 ## Phase 5 — Future features and bug fixes
@@ -166,4 +167,4 @@ Working in the app and on the server today.
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |
 | Admin portal | Students, questions, push | Add children, approve family requests, route questions, send pushes |
-| Builds | Web and Android | Web app on GitHub Pages and an Android APK built on every push |
+| Builds | Web, Android and iPad | Web app on GitHub Pages and an Android APK built on every push; on iPads and tablets pages sit in a centered column with five Main Page tiles across |

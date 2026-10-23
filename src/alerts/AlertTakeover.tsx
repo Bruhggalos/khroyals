@@ -55,7 +55,8 @@ export function AlertTakeover() {
       {/* Keeps "Send for help" above the keyboard while they type where they are. */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1, backgroundColor: kind.color, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }}>
-        <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 20, gap: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scroll} contentContainerStyle={{ paddingHorizontal: 20, gap: 16, paddingBottom: 24, width: '100%', maxWidth: 640, alignSelf: 'center' }}
+          keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <MaterialCommunityIcons name={kind.icon} size={40} color="#fff" />
             <Text style={{ color: '#fff', fontWeight: '900', letterSpacing: 1.5, fontSize: 14, flexShrink: 1 }}>
