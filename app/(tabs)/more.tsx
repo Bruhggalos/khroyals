@@ -3,9 +3,10 @@ import { Linking, ScrollView, Text, View } from 'react-native';
 import { getSite } from '../../src/api/mockApi';
 import { AutoImage } from '../../src/site/Blocks';
 import { openLink, routeFor } from '../../src/site/links';
+import { moreMenu } from '../../src/site/moreMenu';
 import { C, Card, H, Loading, P, s, useLoad } from '../../src/ui';
 
-/** The website's menu, contact details and footer. */
+/** The website's menu (shaped for the app in src/site/moreMenu.ts), contact details and footer. */
 export default function More() {
   const { data } = useLoad(getSite);
   const [open, setOpen] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export default function More() {
     <ScrollView style={s.screen} contentContainerStyle={s.pad}>
       {school.logo && <AutoImage uri={school.logo} contain maxHeight={110} />}
 
-      {navigation.map((n) => n.items ? (
+      {moreMenu(navigation, footer).map((n) => n.items ? (
         <Card key={n.label} onPress={() => setOpen(open === n.label ? null : n.label)}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{n.label}  {open === n.label ? '▾' : '▸'}</Text>
           {open === n.label && n.items.map((it) => (
@@ -32,13 +33,6 @@ export default function More() {
         </Card>
       ))}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {footer.actions.map((a) => (
-          <Text key={a.label} onPress={() => openLink(a.url)} style={{ backgroundColor: C.primary, color: '#fff', fontWeight: '700',
-            paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, overflow: 'hidden' }}>{a.label}</Text>
-        ))}
-      </View>
-
       <Card>
         <H>Contact</H>
         <P>{school.address.line1}{'\n'}{school.address.city}, {school.address.state} {school.address.zip}</P>
@@ -48,13 +42,6 @@ export default function More() {
         <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
           {social.map((x) => <Text key={x.service} style={{ color: C.primary, fontWeight: '700' }} onPress={() => Linking.openURL(x.url)}>{x.service}</Text>)}
         </View>
-      </Card>
-
-      <Card>
-        <H>Quick Links</H>
-        {footer.quickLinks.map((l) => (
-          <Text key={l.label} onPress={() => openLink(l.url)} style={{ paddingVertical: 6, color: C.primary }}>{l.label}</Text>
-        ))}
       </Card>
 
       <P muted>{footer.about}</P>
