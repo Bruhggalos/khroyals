@@ -299,9 +299,18 @@ Technology, Inc.** (`NH4U6X4G8C`). iPhone builds are uploaded from a Mac (CI onl
 builds Android):
 
 ```bash
-APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh
+APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh "What to test in this build"
 ```
 
+- **Handing builds to testers:** with an App Store Connect API key in the
+  environment (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH` = the `.p8` file, kept
+  outside the repo), the script then waits for Apple to process the build, sets the
+  optional "What to Test" note, adds it to every external tester group and submits
+  it for Beta App Review when Apple asks. Make the key under **Users and Access →
+  Integrations → App Store Connect API** (App Manager access is enough). For a build
+  already uploaded: `node scripts/testflight_distribute.mjs <build number> [--note
+  "…"] [--groups "Core 4"]`. Without a key, add the build to the groups in App
+  Store Connect yourself.
 - Xcode must be signed in (**Settings → Accounts**) to an account on that team with
   the Admin or App Manager role; it makes the distribution certificate and profile.
 - The script runs a clean prebuild with the real app ID, archives, and uploads. Each
