@@ -10,7 +10,7 @@
  * scripts/testflight.sh runs this after each upload when those three variables are set.
  *
  * 1. Waits for Apple to finish processing the build (up to an hour).
- * 2. Sets its "What to Test" note, if one is given.
+ * 2. Sets its "What to Test" note, if one is given (without emoji, which Apple turns down).
  * 3. Adds it to the external tester groups (all of them, or the ones named). Internal
  *    groups that get every build need nothing.
  * 4. Submits it for Beta App Review if Apple wants that; external testers get it once
@@ -24,7 +24,13 @@ const BUNDLE_ID = 'com.khroyals.app';
 const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
 const build = args.find((a, i) => !a.startsWith('--') && !['--note', '--groups'].includes(args[i - 1]));
-const note = flag('--note') ?? process.env.WHAT_TO_TEST;
+/** Apple turns "What to Test" notes with emoji away (409, "invalid characters"), so they're left out. */
+const plain = (s) => s
+  .replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}\u{FE0F}\u{200D}\u{20E3}\u{1F3FB}-\u{1F3FF}]/gu, '')
+  .replace(/\(\s*\)/g, '').replace(/[ \t]+([.,;:!?)])/g, '$1').replace(/[ \t]{2,}/g, ' ');
+const given = flag('--note') ?? process.env.WHAT_TO_TEST;
+const note = given && plain(given);
+if (given && note !== given) console.warn('Left the emoji out of the What to Test note (Apple doesn\'t accept them).');
 const only = (flag('--groups') ?? process.env.TESTFLIGHT_GROUPS)?.split(',').map((g) => g.trim()).filter(Boolean);
 
 const need = (k) => process.env[k] || (console.error(`Set ${k} (App Store Connect API key; see the top of this file).`), process.exit(1));

@@ -11,9 +11,11 @@
 # (2026.1019.1432), unless IOS_BUILD_NUMBER is set. Apple takes 10–30 minutes to
 # process a build before it shows up under TestFlight.
 #
-# With an App Store Connect API key (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH), it then
-# waits for that processing and hands the build to the external tester groups
-# (scripts/testflight_distribute.mjs), with the optional "What to Test" note.
+# With an App Store Connect API key (ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH), Xcode signs
+# and uploads with the key instead of its signed-in account (whose session lapses:
+# "Failed to Use Accounts"), and the script then waits for that processing and hands
+# the build to the external tester groups (scripts/testflight_distribute.mjs; all of
+# them, or TESTFLIGHT_GROUPS="Core 4"), with the optional "What to Test" note.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -23,6 +25,11 @@ export IOS_BUILD_NUMBER="${IOS_BUILD_NUMBER:-$year.$((10#$monthday)).$((10#$time
 export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8   # CocoaPods fails without a UTF-8 locale
 unset IOS_BUNDLE_ID                          # the real app ID, com.khroyals.app
 
+key=""
+[ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_PATH:-}" ] && key=1
+auth=()
+[ -n "$key" ] && auth=(-authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+
 echo "Building KH Royals $(node -p "require('./app.json').expo.version") ($IOS_BUILD_NUMBER) for team $APPLE_TEAM_ID"
 CI=1 npx expo prebuild --platform ios --clean
 [ -d ios/Pods ] || { echo "pod install failed (prebuild doesn't stop for it); see above" >&2; exit 1; }
@@ -31,7 +38,7 @@ out=ios/build/testflight
 mkdir -p "$out"
 xcodebuild -workspace ios/KHRoyals.xcworkspace -scheme KHRoyals -configuration Release \
   -destination 'generic/platform=iOS' -archivePath "$out/KHRoyals.xcarchive" \
-  -allowProvisioningUpdates archive
+  -allowProvisioningUpdates ${auth[@]+"${auth[@]}"} archive
 
 cat > "$out/ExportOptions.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -48,10 +55,10 @@ cat > "$out/ExportOptions.plist" <<EOF
 </plist>
 EOF
 xcodebuild -exportArchive -archivePath "$out/KHRoyals.xcarchive" \
-  -exportOptionsPlist "$out/ExportOptions.plist" -exportPath "$out/export" -allowProvisioningUpdates
+  -exportOptionsPlist "$out/ExportOptions.plist" -exportPath "$out/export" -allowProvisioningUpdates ${auth[@]+"${auth[@]}"}
 
 echo "Uploaded build $IOS_BUILD_NUMBER."
-if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_PATH:-}" ]; then
+if [ -n "$key" ]; then
   if [ -n "${1:-}" ]; then node scripts/testflight_distribute.mjs "$IOS_BUILD_NUMBER" --note "$1"
   else node scripts/testflight_distribute.mjs "$IOS_BUILD_NUMBER"; fi
 else

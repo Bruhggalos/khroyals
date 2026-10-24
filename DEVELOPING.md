@@ -309,10 +309,14 @@ APPLE_TEAM_ID=NH4U6X4G8C scripts/testflight.sh "What to test in this build"
   it for Beta App Review when Apple asks. Make the key under **Users and Access →
   Integrations → App Store Connect API** (App Manager access is enough). For a build
   already uploaded: `node scripts/testflight_distribute.mjs <build number> [--note
-  "…"] [--groups "Core 4"]`. Without a key, add the build to the groups in App
-  Store Connect yourself.
-- Xcode must be signed in (**Settings → Accounts**) to an account on that team with
-  the Admin or App Manager role; it makes the distribution certificate and profile.
+  "…"] [--groups "Core 4"]` (or `TESTFLIGHT_GROUPS="Core 4"` for the script). Without a
+  key, add the build to the groups in App Store Connect yourself. Apple won't take
+  emoji in the note, so the script leaves them out.
+- **Signing and uploading:** with the key set, Xcode signs and uploads with it (an
+  Admin key also lets it make the distribution certificate and profile). Without
+  one, Xcode must be signed in (**Settings → Accounts**) to an account on that team
+  with the Admin or App Manager role; when that sign-in lapses, the upload fails with
+  "Failed to Use Accounts".
 - The script runs a clean prebuild with the real app ID, archives, and uploads. Each
   upload gets a new build number from the date and time (`2026.1019.1432`); set
   `IOS_BUILD_NUMBER` to choose one. Bump `version` in `app.json` for a new release.
