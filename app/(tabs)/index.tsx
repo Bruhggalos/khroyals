@@ -2,22 +2,24 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
 import {
-  canVolunteer, carlineConfig, isSchoolStaff, listAssignments, listSports, listVolunteer, live, me, myPickupChildren,
-  mySportSchedule, onAuthChange, session, type Person,
+  canVolunteer, carlineConfig, checkAssignment, isSchoolStaff, listAssignments, listSports, listVolunteer, live, me, myPickupChildren,
+  mySportSchedule, onAuthChange, session, subscribeAssignments, type Assignment, type Person,
 } from '../../src/api/connect';
 import { getCalendar, getNews } from '../../src/api/mockApi';
-import { dueLabel, groupAssignments } from '../../src/assignments/groups';
 import { schoolToday } from '../../src/calendar/past';
 import { clock, hoursLabel } from '../../src/carline/format';
-import { eventsToday, greeting, headerDate, nextTwoWeeks, noSchool, schoolHour, uniformFor } from '../../src/info/today';
+import type { TodayAssignments } from '../../src/info/AssignmentsCard';
+import {
+  assignmentsAround, dayHeading, eventsToday, greeting, headerDate, nextSchoolDay, nextTwoWeeks, noSchool, schoolHour, uniformFor,
+} from '../../src/info/today';
 import { TodaySection, type TodayItem } from '../../src/info/TodaySection';
 import { ArticleCard } from '../../src/site/Blocks';
 import { C, Card, H, Loading, P, s, useLoad } from '../../src/ui';
 import { dateRange } from '../../src/site/calendar';
 
 /**
- * Info: today's date in the header, a greeting, what's going on today (the uniform, the
- * day's events, assignments, activities, volunteer sign-ups and car line hours), the
+ * Info: today's date in the header, a greeting, what's going on today (the uniform,
+ * assignments, and the day's events, activities, volunteer sign-ups and car line hours), the
  * next two weeks on the school calendar, and the latest news. (The khroyals.com home
  * page's other sections aren't shown here; its F.A.Q.s are in Ask the School.)
  */
@@ -29,10 +31,10 @@ export default function Home() {
 
   const person = usePerson();
   const { data } = useLoad(async () => ({ news: await getNews(), cal: await getCalendar() }));
-  const day = useDay(person, today);
-  if (!data) return <Loading />;
+  const events = data?.cal.events;
+  const day = useDay(person, today, events ? nextSchoolDay(today, events) : null);
+  if (!data || !events) return <Loading />;
 
-  const events = data.cal.events;
   const dayOff = noSchool(today, events);
   const uniform = uniformFor(today, events, day.grades);
   const items: TodayItem[] = [
@@ -47,7 +49,7 @@ export default function Home() {
 
       <View style={{ gap: 8 }}>
         <H>Today</H>
-        <TodaySection dayOff={dayOff} uniform={uniform} items={items} />
+        <TodaySection dayOff={dayOff} uniform={uniform} assignments={day.assignments} onToggle={day.toggle} items={items} />
       </View>
 
       <View style={{ gap: 8 }}>
@@ -98,19 +100,21 @@ function usePerson() {
   return person;
 }
 
-const NONE = { items: [] as TodayItem[], grades: [] as (number | null | undefined)[] };
+type Day = { items: TodayItem[]; grades: (number | null | undefined)[]; assignments: TodayAssignments | null };
+const NONE: Day = { items: [], grades: [], assignments: null };
 
 /**
- * The signed-in person's day: assignments due (students; teachers see their classes'),
- * activities, volunteer sign-ups and car line hours (for whoever picks children up), and
- * the grades whose Chapel uniform to show. Each part loads on its own and is left out if
- * it fails. Reloads when the screen comes back into view.
+ * The signed-in person's day: assignments around today and `next` (the next school day;
+ * students, and teachers for their classes), activities, volunteer sign-ups and car line
+ * hours (for whoever picks children up), and the grades whose Chapel uniform to show. Each
+ * part loads on its own and is left out if it fails. Reloads when the screen comes back
+ * into view and when assignments change.
  */
-function useDay(person: Person | null, today: string) {
+function useDay(person: Person | null, today: string, next: string | null) {
   const [day, setDay] = useState(NONE);
   const id = person && !person.pending ? person.id : null;
   const load = useCallback(async () => {
-    if (!live || !person || !id) { setDay({ ...NONE, grades: person?.grade != null ? [person.grade] : [] }); return; }
+    if (!live || !person || !id || !next) { setDay({ ...NONE, grades: person?.grade != null ? [person.grade] : [] }); return; }
     const student = person.schoolRole === 'student';
     const staff = isSchoolStaff(person);
     const quiet = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback);
@@ -123,18 +127,11 @@ function useDay(person: Person | null, today: string) {
     ]);
     const config = kids.length ? await quiet(carlineConfig(), null) : null;
 
-    const items: TodayItem[] = [];
-    const g = groupAssignments(assignments, today);
-    if (student) {
-      for (const a of g.today) items.push({ key: `asg-${a.id}`, icon: 'checkbox-outline', title: a.title, detail: [a.className, 'Due today'].filter(Boolean).join(' · '), href: '/assignments' });
-      if (g.overdue.length) {
-        items.push({ key: 'asg-overdue', icon: 'alert-circle-outline', tint: C.danger, href: '/assignments',
-          title: `${g.overdue.length} overdue assignment${g.overdue.length === 1 ? '' : 's'}`, detail: g.overdue.length === 1 ? `${g.overdue[0].title} · ${dueLabel(g.overdue[0].dueOn, today)}` : undefined });
-      }
-    } else if (staff) {
-      for (const a of g.today) items.push({ key: `asg-${a.id}`, icon: 'checkbox-outline', title: a.title, detail: `Due today · ${a.className ?? 'your class'}`, href: '/assignments' });
-    }
+    // Teachers see what they've assigned to their classes, like in the Assignments app.
+    const mine = student ? assignments : assignments.filter((a) => a.ownerId === id && a.rosterId);
+    const assigned = student || (staff && mine.length) ? { teacher: !student, nextLabel: dayHeading(next, today), ...assignmentsAround(mine, today, next) } : null;
 
+    const items: TodayItem[] = [];
     const sportOf = (seasonId: string) => sports.sports.find((x) => x.id === sports.seasons.find((se) => se.id === seasonId)?.sportId);
     for (const e of schedule.filter((x) => schoolToday(new Date(x.startsAt)) === today)) {
       const sport = sportOf(e.seasonId);
@@ -160,8 +157,16 @@ function useDay(person: Person | null, today: string) {
     }
 
     const grades = student ? [person.grade] : kids.map((k) => k.grade);
-    setDay({ items, grades });
-  }, [person, id, today]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-  return day;
+    setDay({ items, grades, assignments: assigned });
+  }, [person, id, today, next]);
+  const tracks = !!id && (person?.schoolRole === 'student' || isSchoolStaff(person));
+  useFocusEffect(useCallback(() => { load(); return tracks ? subscribeAssignments(load) : undefined; }, [load, tracks]));
+
+  /** A student checks one off (or back on): show it at once, then save. */
+  const toggle = useCallback((a: Assignment) => {
+    const flip = (list: Assignment[]) => list.map((x) => (x.id === a.id ? { ...x, done: !a.done } : x));
+    setDay((d) => d.assignments ? { ...d, assignments: { ...d.assignments, overdue: flip(d.assignments.overdue), today: flip(d.assignments.today), next: flip(d.assignments.next) } } : d);
+    checkAssignment(a.id, !a.done).catch(() => {}).finally(load);
+  }, [load]);
+  return { ...day, toggle };
 }

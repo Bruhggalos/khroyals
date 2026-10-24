@@ -48,6 +48,34 @@ export function noSchool(today: string, events: Day[]): string | null {
 export const eventsToday = <T extends Day>(today: string, events: T[]) =>
   events.filter((e) => covers(e, today) && !['No School', 'Teacher In-Service'].includes(e.category));
 
+/** The next school day after today, skipping weekends and days off. */
+export function nextSchoolDay(today: string, events: Day[]) {
+  let d = addDays(today, 1);
+  for (let i = 0; i < 60 && noSchool(d, events); i++) d = addDays(d, 1);
+  return d;
+}
+
+/** How a day after today reads in a heading: "Tomorrow", "Monday", or "Monday, Nov 30" a week or more out. */
+export function dayHeading(day: string, today: string) {
+  const days = Math.round((noon(day).getTime() - noon(today).getTime()) / 86_400_000);
+  if (days === 1) return 'Tomorrow';
+  return noon(day).toLocaleDateString('en-US', days < 7 ? { weekday: 'long' } : { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+type Due = { dueOn: string | null; done: boolean; title: string };
+/**
+ * The assignments the Info tab shows: still overdue (not done), due today (done ones too,
+ * checked off), and due after today through the next school day. Soonest first.
+ */
+export function assignmentsAround<T extends Due>(list: T[], today: string, next: string) {
+  const sorted = [...list].sort((a, b) => (a.dueOn ?? '').localeCompare(b.dueOn ?? '') || a.title.localeCompare(b.title));
+  return {
+    overdue: sorted.filter((a) => !a.done && !!a.dueOn && a.dueOn < today),
+    today: sorted.filter((a) => a.dueOn === today),
+    next: sorted.filter((a) => !!a.dueOn && a.dueOn > today && a.dueOn <= next),
+  };
+}
+
 /** What's on the calendar after today through the next two weeks, soonest first. */
 export const nextTwoWeeks = <T extends Day>(events: T[], today = schoolToday(), days = 14) => {
   const from = addDays(today, 1);

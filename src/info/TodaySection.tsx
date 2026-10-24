@@ -1,12 +1,14 @@
 /**
  * The Info tab's Today section: whether there's school, the uniform to wear (with boys'
- * and girls' photos, placeholders until the school adds them), and the day's school
- * events, assignments, activities, volunteer sign-ups and car line hours.
+ * and girls' photos, placeholders until the school adds them), assignments, and the
+ * day's school events, activities, volunteer sign-ups and car line hours.
  */
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import type { Assignment } from '../api/connect';
 import { C, Card, P, s } from '../ui';
+import { AssignmentsCard, type TodayAssignments } from './AssignmentsCard';
 import { UNIFORM_GUIDE, type Uniform } from './today';
 import { UNIFORM_IMAGES } from './uniformImages';
 
@@ -14,7 +16,9 @@ type Icon = React.ComponentProps<typeof Ionicons>['name'];
 /** One thing happening today: what, a detail line, and where tapping it goes. */
 export type TodayItem = { key: string; icon: Icon; title: string; detail?: string; href?: Href; tint?: string };
 
-export function TodaySection({ dayOff, uniform, items }: { dayOff: string | null; uniform: Uniform | null; items: TodayItem[] }) {
+export function TodaySection({ dayOff, uniform, assignments, onToggle, items }: {
+  dayOff: string | null; uniform: Uniform | null; assignments: TodayAssignments | null; onToggle: (a: Assignment) => void; items: TodayItem[];
+}) {
   return (
     <View style={{ gap: 10 }}>
       {dayOff && (
@@ -27,6 +31,7 @@ export function TodaySection({ dayOff, uniform, items }: { dayOff: string | null
         </Card>
       )}
       {uniform && <UniformCard u={uniform} />}
+      {assignments && <AssignmentsCard a={assignments} onToggle={onToggle} />}
       {items.length > 0 && (
         <Card style={{ gap: 0, paddingVertical: 4 }}>
           {items.map((it, i) => (
