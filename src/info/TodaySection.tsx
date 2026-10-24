@@ -1,56 +1,86 @@
 /**
- * The Info tab's Today section: whether there's school, the uniform to wear (with boys'
- * and girls' photos, placeholders until the school adds them), assignments, and the
- * day's school events, activities, volunteer sign-ups and car line hours.
+ * One day on the Planner tab: whether there's school, the uniform to wear (with boys' and
+ * girls' photos, placeholders until the school adds them), assignments, a card for each
+ * of a parent's children, and the day's school events, activities, volunteer sign-ups
+ * and car line hours.
  */
 import { Image, Linking, Pressable, Text, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { Assignment } from '../api/connect';
+import { gradeLabel } from '../comms/grades';
 import { C, Card, P, s } from '../ui';
-import { AssignmentsCard, type TodayAssignments } from './AssignmentsCard';
+import { AssignmentsCard } from './AssignmentsCard';
+import type { DayPlan, Kid, Row } from './plan';
 import { UNIFORM_GUIDE, type Uniform } from './today';
 import { UNIFORM_IMAGES } from './uniformImages';
 
-type Icon = React.ComponentProps<typeof Ionicons>['name'];
-/** One thing happening today: what, a detail line, and where tapping it goes. */
-export type TodayItem = { key: string; icon: Icon; title: string; detail?: string; href?: Href; tint?: string };
+const TONES = { accent: C.accent, muted: C.muted, green: '#15803D' };
+/** "today", "tomorrow", "on Monday": the day's label inside a sentence. */
+export const onDay = (label: string) => (label === 'Today' ? 'today' : label === 'Tomorrow' ? 'tomorrow' : `on ${label}`);
 
-export function TodaySection({ dayOff, uniform, assignments, onToggle, items }: {
-  dayOff: string | null; uniform: Uniform | null; assignments: TodayAssignments | null; onToggle: (a: Assignment) => void; items: TodayItem[];
-}) {
+export function TodaySection({ plan, onToggle }: { plan: DayPlan; onToggle: (a: Assignment) => void }) {
+  const { dayOff, label } = plan;
   return (
     <View style={{ gap: 10 }}>
       {dayOff && (
         <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Ionicons name={dayOff === 'Weekend' ? 'sunny-outline' : 'calendar-clear-outline'} size={26} color={C.accent} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>No school today</Text>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>No school{label === 'Today' ? ' today' : ''}</Text>
             <P muted>{dayOff === 'Weekend' ? 'Enjoy the weekend!' : dayOff}</P>
           </View>
         </Card>
       )}
-      {uniform && <UniformCard u={uniform} />}
-      {assignments && <AssignmentsCard a={assignments} onToggle={onToggle} />}
-      {items.length > 0 && (
-        <Card style={{ gap: 0, paddingVertical: 4 }}>
-          {items.map((it, i) => (
-            <Pressable key={it.key} disabled={!it.href} onPress={() => it.href && router.push(it.href)} accessibilityRole={it.href ? 'button' : undefined}
-              style={({ pressed }) => [s.row, { gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }, pressed && { opacity: 0.7 }]}>
-              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${it.tint ?? C.primary}1A`, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={it.icon} size={18} color={it.tint ?? C.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '700', color: C.ink }}>{it.title}</Text>
-                {!!it.detail && <Text style={{ color: C.muted }}>{it.detail}</Text>}
-              </View>
-              {!!it.href && <Ionicons name="chevron-forward" size={18} color={C.muted} />}
-            </Pressable>
-          ))}
-        </Card>
+      {plan.uniform && <UniformCard u={plan.uniform} />}
+      {plan.assignments && <AssignmentsCard a={plan.assignments} label={label} onToggle={onToggle} />}
+      {plan.kids.map(({ kid, rows }) => <KidCard key={kid.id} kid={kid} rows={rows} label={label} />)}
+      {plan.items.length > 0 && <Card style={{ gap: 0, paddingVertical: 4 }}><Rows rows={plan.items} /></Card>}
+      {!dayOff && !plan.items.length && !plan.kids.length && !plan.assignments && (
+        <Card><P muted>Nothing else on the calendar {onDay(label)}.</P></Card>
       )}
     </View>
   );
+}
+
+/** A parent's child on this day: their class assignments due and their activities. */
+function KidCard({ kid, rows, label }: { kid: Kid; rows: Row[]; label: string }) {
+  const grade = gradeLabel(kid.grade);
+  return (
+    <Card style={{ gap: 4 }}>
+      <View style={[s.row, { gap: 10 }]}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>{kid.firstName.slice(0, 1)}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>{kid.firstName}</Text>
+          {!!grade && <Text style={{ color: C.muted }}>{/^\d/.test(grade) ? `${grade} grade` : grade}</Text>}
+        </View>
+      </View>
+      {rows.length ? <Rows rows={rows} />
+        : <P muted>No assignments due or activities {onDay(label)}.</P>}
+    </Card>
+  );
+}
+
+/** A list of the day's things, each opening its app when it has one. */
+function Rows({ rows }: { rows: Row[] }) {
+  return rows.map((it, i) => {
+    const tint = it.tone ? TONES[it.tone] : C.primary;
+    return (
+      <Pressable key={it.key} disabled={!it.href} onPress={() => it.href && router.push(it.href as Href)} accessibilityRole={it.href ? 'button' : undefined}
+        style={({ pressed }) => [s.row, { gap: 12, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }, pressed && { opacity: 0.7 }]}>
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${tint}1A`, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={it.icon} size={18} color={tint} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>{it.title}</Text>
+          {!!it.detail && <Text style={{ color: C.muted }}>{it.detail}</Text>}
+        </View>
+        {!!it.href && <Ionicons name="chevron-forward" size={18} color={C.muted} />}
+      </Pressable>
+    );
+  });
 }
 
 function UniformCard({ u }: { u: Uniform }) {

@@ -1,7 +1,9 @@
-/** src/info/today.ts: the Info tab's date, greeting, school day, uniform and next two weeks. */
+/** src/info/today.ts: the Planner tab's date, greeting, school day, uniform and next two weeks. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addDays, assignmentsAround, dayHeading, eventsToday, greeting, headerDate, nextSchoolDay, nextTwoWeeks, noSchool, schoolHour, uniformFor } from '../src/info/today';
+import {
+  addDays, assignmentsOn, dayLabel, dayOf, eventsToday, greeting, headerDate, names, nextTwoWeeks, noSchool, schoolHour, twoWeeks, uniformFor,
+} from '../src/info/today';
 
 const ev = (date: string, title: string, category = 'Academic', endDate: string | null = null) => ({ id: title, date, endDate, title, category });
 const CAL = [
@@ -38,25 +40,29 @@ test('the uniform: daily, Wednesday Chapel by grade, Spirit Day, none without sc
   assert.equal(wed.kind, 'chapel');
   assert.match(wed.shoes, /No sneakers/);
   assert.deepEqual(wed.notes.map((n) => n.split(':')[0]), ['K2–K3', '6th–8th']);
+  const kids = uniformFor('2026-11-04', CAL, [{ name: 'Ava', grade: 3 }, { name: 'Liam', grade: 0 }, { name: 'Mia', grade: 10 }])!;
+  assert.deepEqual(kids.notes.map((n) => n.split(':')[0]), ['K4–5th (Ava and Liam)', '9th–12th (Mia)'], "a parent's children by name");
+  assert.equal(names(['Ava', 'Liam', 'Mia']), 'Ava, Liam and Mia');
   assert.ok(uniformFor('2026-11-13', CAL)!.notes.some((n) => n.startsWith('Spirit Day')));
 });
 
-test('assignments: overdue, today and the next school day', () => {
-  assert.equal(nextSchoolDay('2026-11-02', CAL), '2026-11-03');
-  assert.equal(nextSchoolDay('2026-10-30', CAL), '2026-11-02', 'Friday → Monday');
-  assert.equal(nextSchoolDay('2026-11-10', CAL), '2026-11-12', "past Veteran's Day");
-  assert.equal(nextSchoolDay('2026-11-20', CAL), '2026-11-30', 'past Thanksgiving Break');
-  assert.equal(dayHeading('2026-11-03', '2026-11-02'), 'Tomorrow');
-  assert.equal(dayHeading('2026-11-02', '2026-10-30'), 'Monday');
-  assert.equal(dayHeading('2026-11-30', '2026-11-20'), 'Monday, Nov 30');
+test('the two weeks of days, and assignments on each', () => {
+  const days = twoWeeks('2026-10-30');
+  assert.deepEqual([days.length, days[0], days[3], days[13]], [14, '2026-10-30', '2026-11-02', '2026-11-12']);
+  assert.equal(dayLabel('2026-10-30', '2026-10-30'), 'Today');
+  assert.equal(dayLabel('2026-10-31', '2026-10-30'), 'Tomorrow');
+  assert.equal(dayLabel('2026-11-02', '2026-10-30'), 'Monday');
+  assert.equal(dayLabel('2026-11-09', '2026-10-30'), 'Monday, Nov 9');
+  assert.equal(dayOf('2026-10-31T03:30:00Z'), '2026-10-30', 'evening in Central time');
 
   const a = (title: string, dueOn: string | null, done = false) => ({ title, dueOn, done });
   const list = [a('Essay', '2026-11-02'), a('Map quiz', '2026-10-28'), a('Old, done', '2026-10-27', true), a('Reading', '2026-10-30', true),
-    a('Lab', '2026-10-30'), a('Weekend', '2026-11-01'), a('Later', '2026-11-03'), a('Someday', null)];
-  const g = assignmentsAround(list, '2026-10-30', '2026-11-02');
-  assert.deepEqual(g.overdue.map((x) => x.title), ['Map quiz'], 'done ones are not overdue');
-  assert.deepEqual(g.today.map((x) => x.title), ['Lab', 'Reading'], 'done ones stay, checked off');
-  assert.deepEqual(g.next.map((x) => x.title), ['Weekend', 'Essay']);
+    a('Lab', '2026-10-30'), a('Someday', null)];
+  const today = assignmentsOn(list, '2026-10-30', '2026-10-30');
+  assert.deepEqual(today.overdue.map((x) => x.title), ['Map quiz'], 'done ones are not overdue');
+  assert.deepEqual(today.due.map((x) => x.title), ['Lab', 'Reading'], 'done ones stay, checked off');
+  const monday = assignmentsOn(list, '2026-11-02', '2026-10-30');
+  assert.deepEqual([monday.overdue, monday.due.map((x) => x.title)], [[], ['Essay']], 'overdue only shows on today');
 });
 
 test('coming up: after today through the next two weeks', () => {

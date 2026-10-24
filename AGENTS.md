@@ -82,7 +82,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   'section': a lead teacher and its students; Admin portal → Classes). In Ask the Teacher only the
   student and a teacher of one of their sections write (`teacher_send`, `app.teaches`); the student's
   parents and `messages.review` holders only read (`app.reads_teacher_thread`). Checking an assignment
-  off (`assignment_done`) is private to the student. Students' Main Page is the short list in
+  off (`assignment_done`) is private to the student. Parents see their children's class assignments
+  (`child_assignments`, for the Planner tab), never the student's own entries or check-offs; Family
+  accounts see none. Students' Main Page is the short list in
   `src/appTiles.ts` (`student: false` hides a tile from them).
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.

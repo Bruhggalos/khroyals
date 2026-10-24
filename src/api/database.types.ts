@@ -2746,6 +2746,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      child_assignments: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          class_name: string
+          details: string
+          due_on: string
+          id: string
+          roster_id: string
+          student_id: string
+          title: string
+        }[]
+      }
       child_pickup_people: { Args: { p_student: string }; Returns: Json }
       clear_my_notifications: { Args: never; Returns: number }
       create_car_pass: { Args: never; Returns: string }

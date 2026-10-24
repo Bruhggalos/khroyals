@@ -270,6 +270,9 @@ export type Assignment = {
   dueOn: string | null; createdAt: string; done: boolean;
 };
 
+/** For a parent: one of their child's class assignments (never the child's own entries or check-offs). */
+export type ChildAssignment = { id: string; studentId: string; rosterId: string; className: string; title: string; details: string; dueOn: string };
+
 export type Section = { id: string; name: string; students: number };
 
 /** Class sections in the admin portal (people.family). */

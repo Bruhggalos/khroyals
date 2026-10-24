@@ -1,4 +1,4 @@
-/** src/site/faq.ts: the home page's F.A.Q.s move from the Info tab to Ask the School. */
+/** src/site/faq.ts: the home page's F.A.Q.s move from the Planner tab (then called Info) to Ask the School. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import type { Section } from '../src/site/types';
 
 const home = JSON.parse(readFileSync(join(__dirname, '../content/site/home.json'), 'utf8')) as { sections: Section[] };
 
-test('the home page has one F.A.Q.s section, which the Info tab leaves out', () => {
+test('the home page has one F.A.Q.s section, which the Planner tab leaves out', () => {
   assert.equal(home.sections.filter(isFaqSection).length, 1);
   assert.ok(home.sections.filter((s) => !isFaqSection(s)).length > 5, 'the rest of the home page stays');
 });

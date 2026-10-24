@@ -1,5 +1,5 @@
 /**
- * What the Info tab works out about today, on the school's clock (Central time): the date
+ * What the Planner tab works out about today, on the school's clock (Central time): the date
  * for the header, the greeting, whether there's school, the uniform to wear (from the
  * 2026–2027 Uniform Guide) and what's coming up in the next two weeks. No app imports,
  * so tests run it.
@@ -48,31 +48,30 @@ export function noSchool(today: string, events: Day[]): string | null {
 export const eventsToday = <T extends Day>(today: string, events: T[]) =>
   events.filter((e) => covers(e, today) && !['No School', 'Teacher In-Service'].includes(e.category));
 
-/** The next school day after today, skipping weekends and days off. */
-export function nextSchoolDay(today: string, events: Day[]) {
-  let d = addDays(today, 1);
-  for (let i = 0; i < 60 && noSchool(d, events); i++) d = addDays(d, 1);
-  return d;
-}
+/** The days the Planner tab pages through: today and the 13 after it. */
+export const twoWeeks = (today: string, n = 14) => Array.from({ length: n }, (_, i) => addDays(today, i));
 
-/** How a day after today reads in a heading: "Tomorrow", "Monday", or "Monday, Nov 30" a week or more out. */
-export function dayHeading(day: string, today: string) {
+/** How a day reads in a heading: "Today", "Tomorrow", "Monday", or "Monday, Nov 30" a week or more out. */
+export function dayLabel(day: string, today: string) {
   const days = Math.round((noon(day).getTime() - noon(today).getTime()) / 86_400_000);
+  if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
   return noon(day).toLocaleDateString('en-US', days < 7 ? { weekday: 'long' } : { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
+/** The school day (Central time) a timestamp falls on. */
+export const dayOf = (iso: string) => schoolToday(new Date(iso));
+
 type Due = { dueOn: string | null; done: boolean; title: string };
 /**
- * The assignments the Info tab shows: still overdue (not done), due today (done ones too,
- * checked off), and due after today through the next school day. Soonest first.
+ * A student's assignments for one day: what's due (done ones too, checked off) and, on
+ * today, what's still overdue. Soonest first.
  */
-export function assignmentsAround<T extends Due>(list: T[], today: string, next: string) {
+export function assignmentsOn<T extends Due>(list: T[], day: string, today: string) {
   const sorted = [...list].sort((a, b) => (a.dueOn ?? '').localeCompare(b.dueOn ?? '') || a.title.localeCompare(b.title));
   return {
-    overdue: sorted.filter((a) => !a.done && !!a.dueOn && a.dueOn < today),
-    today: sorted.filter((a) => a.dueOn === today),
-    next: sorted.filter((a) => !!a.dueOn && a.dueOn > today && a.dueOn <= next),
+    overdue: day === today ? sorted.filter((a) => !a.done && !!a.dueOn && a.dueOn < today) : [],
+    due: sorted.filter((a) => a.dueOn === day),
   };
 }
 
@@ -104,29 +103,39 @@ const CHAPEL = {
   shoes: 'Black, brown or navy dress shoes. No sneakers on Chapel Day.',
 };
 /** The Chapel uniform by grade band (grades: K2 = −3 … 12th = 12). */
-const CHAPEL_BANDS: { from: number; to: number; note: string }[] = [
-  { from: -3, to: -2, note: 'K2–K3: boys wear a tie, white oxford and khaki or navy pants; girls a Peter Pan blouse, crossbow, and navy polo dress or approved skort or jumper.' },
-  { from: -1, to: 5, note: 'K4–5th: boys wear the KHPS sweater vest over a white oxford; girls may wear the KHPS cardigan or vest.' },
-  { from: 6, to: 8, note: '6th–8th: boys wear the KHPS sweater vest over a plain white oxford, or the KHPS blazer; girls may wear the “at the knee” plaid or khaki pleated skirt, and the KHPS cardigan or vest.' },
-  { from: 9, to: 12, note: '9th–12th: the KHPS blazer is required.' },
+const CHAPEL_BANDS: { from: number; to: number; label: string; text: string }[] = [
+  { from: -3, to: -2, label: 'K2–K3', text: 'boys wear a tie, white oxford and khaki or navy pants; girls a Peter Pan blouse, crossbow, and navy polo dress or approved skort or jumper.' },
+  { from: -1, to: 5, label: 'K4–5th', text: 'boys wear the KHPS sweater vest over a white oxford; girls may wear the KHPS cardigan or vest.' },
+  { from: 6, to: 8, label: '6th–8th', text: 'boys wear the KHPS sweater vest over a plain white oxford, or the KHPS blazer; girls may wear the “at the knee” plaid or khaki pleated skirt, and the KHPS cardigan or vest.' },
+  { from: 9, to: 12, label: '9th–12th', text: 'the KHPS blazer is required.' },
 ];
 
+/** Whose Chapel details to show: a grade, or a parent's child by name. */
+type Wearer = number | null | undefined | { name: string; grade: number | null | undefined };
+const gradeOf = (w: Wearer) => (typeof w === 'object' && w ? w.grade : w);
+/** "Ava", "Ava and Liam", "Ava, Liam and Mia". */
+export const names = (list: string[]) => list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+
 /**
- * The uniform for today: the Chapel uniform on Wednesdays, the daily uniform on other
- * school days, nothing when there's no school. `grades` (the student's, or a parent's
- * children's) add the Chapel details for those grades.
+ * The uniform for a day: the Chapel uniform on Wednesdays, the daily uniform on other
+ * school days, nothing when there's no school. `wearers` (the student's grade, or a
+ * parent's children by name) add the Chapel details for their grades, with the names.
  */
-export function uniformFor(today: string, events: Day[], grades: (number | null | undefined)[] = []): Uniform | null {
+export function uniformFor(today: string, events: Day[], wearers: Wearer[] = []): Uniform | null {
   if (noSchool(today, events)) return null;
   const chapel = noon(today).getDay() === 3;
   const base = chapel ? CHAPEL : DAILY;
   const notes: string[] = [];
   if (chapel) {
-    for (const b of CHAPEL_BANDS) if (grades.some((g) => g != null && g >= b.from && g <= b.to)) notes.push(b.note);
+    for (const b of CHAPEL_BANDS) {
+      const here = wearers.filter((w) => { const g = gradeOf(w); return g != null && g >= b.from && g <= b.to; });
+      const who = here.flatMap((w) => (typeof w === 'object' && w ? [w.name] : []));
+      if (here.length) notes.push(`${b.label}${who.length ? ` (${names(who)})` : ''}: ${b.text}`);
+    }
   } else {
     notes.push('On your PE days, wear the PE uniform with white or black athletic shoes.');
   }
-  if (eventsToday(today, events).some((e) => /spirit/i.test(e.title))) notes.push('Spirit Day: Kingdom Heights sweatshirts are allowed today.');
+  if (eventsToday(today, events).some((e) => /spirit/i.test(e.title))) notes.push('Spirit Day: Kingdom Heights sweatshirts are allowed.');
   return { kind: chapel ? 'chapel' : 'daily', title: chapel ? 'Wednesday Chapel uniform' : 'Daily uniform', boys: base.boys, girls: base.girls, shoes: base.shoes, notes };
 }
 

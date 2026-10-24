@@ -1,7 +1,7 @@
 /**
- * The Info tab's Assignments card, under the uniform. A student sees what's overdue, due
- * today and due the next school day, and checks them off here (only they see that); a
- * teacher sees what's due today and next in the classes they've assigned to.
+ * The Planner tab's Assignments card, under the uniform, for one day. A student sees what's
+ * due that day (and, today, what's overdue) and checks them off here (only they see
+ * that); a teacher sees what's due that day in the classes they've assigned to.
  */
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
@@ -9,28 +9,22 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Assignment } from '../api/connect';
 import { PAST_STYLE } from '../calendar/PastToggle';
 import { C, Card, P, s } from '../ui';
+import type { DayPlan } from './plan';
 
 const GREEN = '#15803D';
 /** How many overdue ones to list before "and N more". */
 const OVERDUE_SHOWN = 3;
+const onDay = (label: string) => (label === 'Today' ? 'today' : label === 'Tomorrow' ? 'tomorrow' : label);
 
-export type TodayAssignments = {
-  teacher: boolean;
-  overdue: Assignment[]; today: Assignment[]; next: Assignment[];
-  /** "Tomorrow", "Monday"… for the next school day. */
-  nextLabel: string;
-};
-
-export function AssignmentsCard({ a, onToggle }: { a: TodayAssignments; onToggle: (x: Assignment) => void }) {
-  const left = a.today.filter((x) => !x.done).length;
+export function AssignmentsCard({ a, label, onToggle }: { a: NonNullable<DayPlan['assignments']>; label: string; onToggle: (x: Assignment) => void }) {
+  const when = onDay(label);
+  const left = a.due.filter((x) => !x.done).length;
   const title = a.teacher
-    ? (a.today.length ? `${a.today.length} due today in your classes` : 'Nothing due today in your classes')
-    : left ? `${left} due today` : a.today.length ? 'All done for today! 🎉' : 'Nothing due today';
-  const overdue = a.teacher ? [] : a.overdue;
+    ? (a.due.length ? `${a.due.length} due ${when} in your classes` : `Nothing due ${when} in your classes`)
+    : left ? `${left} due ${when}` : a.due.length ? `All done for ${when}! 🎉` : `Nothing due ${when}`;
   const groups: [string, Assignment[], string][] = [
-    ['Overdue', overdue.slice(0, OVERDUE_SHOWN), C.danger],
-    ['Due today', a.today, C.accent],
-    [`Due ${a.nextLabel === 'Tomorrow' ? 'tomorrow' : a.nextLabel}`, a.next, C.primary],
+    ['Overdue', a.overdue.slice(0, OVERDUE_SHOWN), C.danger],
+    [`Due ${when}`, a.due, C.accent],
   ];
 
   return (
@@ -42,20 +36,15 @@ export function AssignmentsCard({ a, onToggle }: { a: TodayAssignments; onToggle
           <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>{title}</Text>
         </View>
       </View>
-      {groups.map(([label, list, color]) => list.length > 0 && (
-        <View key={label} style={{ gap: 2 }}>
+      {groups.map(([group, list, color]) => list.length > 0 && (
+        <View key={group} style={{ gap: 2 }}>
           <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color }}>
-            {label.toUpperCase()}{label === 'Overdue' ? ` (${overdue.length})` : ''}
+            {group.toUpperCase()}{group === 'Overdue' ? ` (${a.overdue.length})` : ''}
           </Text>
           {list.map((x) => <Row key={x.id} x={x} teacher={a.teacher} onToggle={() => onToggle(x)} />)}
-          {label === 'Overdue' && overdue.length > OVERDUE_SHOWN && (
-            <P muted>and {overdue.length - OVERDUE_SHOWN} more</P>
-          )}
+          {group === 'Overdue' && a.overdue.length > OVERDUE_SHOWN && <P muted>and {a.overdue.length - OVERDUE_SHOWN} more</P>}
         </View>
       ))}
-      {!overdue.length && !a.today.length && !a.next.length && (
-        <P muted>Nothing due {a.nextLabel === 'Tomorrow' ? 'tomorrow' : `on ${a.nextLabel}`} either.</P>
-      )}
       <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="link" onPress={() => router.push('/assignments')}>
         {a.teacher ? 'Assign to a class ›' : 'All assignments ›'}
       </Text>
@@ -63,7 +52,7 @@ export function AssignmentsCard({ a, onToggle }: { a: TodayAssignments; onToggle
   );
 }
 
-/** One assignment: a checkbox for students (a bullet for teachers), the title and its class. */
+/** One assignment: a checkbox for students (a class icon for teachers), the title and its class. */
 function Row({ x, teacher, onToggle }: { x: Assignment; teacher: boolean; onToggle: () => void }) {
   return (
     <View style={[s.row, { alignItems: 'flex-start', gap: 10, paddingVertical: 6 }, x.done && PAST_STYLE]}>

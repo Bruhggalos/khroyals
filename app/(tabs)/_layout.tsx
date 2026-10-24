@@ -75,7 +75,7 @@ export default function TabsLayout() {
       // The red edge line runs down the sides of each tab and on around the tab bar.
       screenLayout={edgeLayout({ bottom: false })}>
       {/* Today's date; the Info screen keeps it current. */}
-      <Tabs.Screen name="index" options={{ title: 'Info', headerTitle: headerDate(), tabBarIcon: icon('🏫') }} />
+      <Tabs.Screen name="index" options={{ title: 'Planner', headerTitle: headerDate(), tabBarIcon: icon('🗓️') }} />
       <Tabs.Screen name="share" options={{ title: 'Share', tabBarIcon: icon('📲') }} />
       <Tabs.Screen name="apps" options={{ title: 'Apps', headerTitle: 'Boldly Christian', tabBarButton: (props) => <AppsTabButton {...props} /> }} />
       <Tabs.Screen name="connect" options={{ title: 'Connect', tabBarIcon: icon('💬') }} />

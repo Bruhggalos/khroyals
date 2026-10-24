@@ -1,6 +1,6 @@
 import { subscribeChanges } from './realtime';
 /** assignments: internal API implementation. Screens import the connect facade. */
-import type { Assignment, Section } from './types';
+import type { Assignment, ChildAssignment, Section } from './types';
 import { live, rpc, run, sb } from './client';
 import { current } from './session';
 
@@ -16,6 +16,14 @@ export async function listAssignments(): Promise<Assignment[]> {
   return a.map((x) => ({
     id: x.id, rosterId: x.roster_id, className: x.roster_id ? names.get(x.roster_id) ?? null : null, ownerId: x.owner_id,
     title: x.title, details: x.details, dueOn: x.due_on, createdAt: x.created_at, done: done.has(x.id),
+  }));
+}
+
+/** For a parent: what their children's teachers assigned, due from `from` to `to` (YYYY-MM-DD). */
+export async function childAssignments(from: string, to: string): Promise<ChildAssignment[]> {
+  if (!live || !current) return [];
+  return (await rpc('child_assignments', { p_from: from, p_to: to })).map((x) => ({
+    id: x.id, studentId: x.student_id, rosterId: x.roster_id, className: x.class_name, title: x.title, details: x.details, dueOn: x.due_on,
   }));
 }
 

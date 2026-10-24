@@ -835,6 +835,16 @@ test('students: Ask the Teacher and assignments, with teachers from class roster
   await as('u-s05');
   assert.equal((await rows(`select 1 from assignments`)).length, 0, 'not in the class');
   await rejects(`select assignment_check('${essay.id}', true)`, /isn't yours/);
+
+  // Rosa (Ava's mother) sees what Ava's teachers assigned, but not Ava's own list or what she's done.
+  await as('u-p01');
+  assert.deepEqual((await rows(`select * from child_assignments()`)).map((a) => [a.student_id, a.class_name, a.title]),
+    [[ava, 'English 10 – Period 3', 'Persuasive essay']]);
+  assert.equal((await rows(`select * from child_assignments(app.school_today() + 4)`)).length, 0, 'only the days asked for');
+  assert.equal((await rows(`select 1 from assignments`)).length, 0);
+  assert.equal((await rows(`select 1 from assignment_done`)).length, 0);
+  await as('u-p05');
+  assert.equal((await rows(`select * from child_assignments()`)).length, 0, 'her child is not in the class');
   await as('u-eng');
   assert.deepEqual((await rows(`select title from assignments`)).map((a) => a.title), ['Persuasive essay']);
   assert.equal((await rows(`select 1 from assignment_done`)).length, 0, "teachers don't see who's done");
@@ -1448,6 +1458,7 @@ test('family accounts: pick up linked children, volunteer and follow activities;
   await as('u-gran');
   await rejects(`select join_group(${id('g-announce')})`, /Family accounts/);
   assert.equal((await rows(`select * from student_details`)).length, 0);
+  assert.equal((await rows(`select * from child_assignments()`)).length, 0);
   assert.equal((await rows(`select * from market_listings`)).length, 0);
   await rejects(`select * from request_child('New', 'Kid', 3)`, /Only approved parents and staff/);
   await rejects(`select * from ask_school('Other', 'Bus times', 'When does the bus leave?')`, /Family accounts/);
