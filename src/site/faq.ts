@@ -1,8 +1,7 @@
 /**
- * The F.A.Q.s on the khroyals.com home page. They live in Ask the School
- * (app/questions/faq.tsx), so the Info tab leaves them out. Found by their "F.A.Q.s"
- * heading, so they keep working when the site content is imported again. No app
- * imports, so tests run it.
+ * The F.A.Q.s on the khroyals.com home page, shown in Ask the School
+ * (app/questions/faq.tsx). Found by their "F.A.Q.s" heading, so they keep working
+ * when the site content is imported again. No app imports, so tests run it.
  */
 import type { Block, Section } from './types';
 
