@@ -55,7 +55,7 @@ const db = {
   memberships: membershipsDb.memberships as Membership[],
   posts: postsDb.posts as unknown as Post[],
   comments: commentsDb.comments as Comment[],
-  audit: auditDb.events as any[],
+  audit: auditDb.events as { id: string; groupId?: string; actorId?: string; action: string; targetId?: string; at: string; detail?: unknown }[],
 };
 let currentUserId = 'u-eng';
 export const setCurrentUser = (id: string) => { currentUserId = id; };

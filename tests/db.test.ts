@@ -53,6 +53,51 @@ before(async () => {
                  update profiles set admin_tier = 'administrator' where id = ${id('u-ap')};`);
 });
 
+test('grade restrictions retain Kindergarten and reject empty or invalid audiences', async () => {
+  await as('u-eng');
+  const settings = JSON.stringify((await one(`select settings from groups where id = ${id('g-eng-p3')}`)).settings).replace(/'/g, "''");
+  const create = (rules: string) => `select id from create_group('Kindergarten test', '', 'K', '#00239C', 'class', '${settings}'::jsonb, '${rules}'::jsonb)`;
+  const group = await one(create('[{"grades":[0],"assignAs":"member"}]'));
+  await asSuper();
+  assert.deepEqual((await one(`select grades from assignment_rules where group_id = '${group.id}'`)).grades, [0]);
+  assert.equal((await rows(`select p.grade from memberships m join profiles p on p.id = m.user_id where m.group_id = '${group.id}' and m.source = 'rule'`))
+    .every((p) => p.grade === 0), true);
+  await db.exec(`delete from groups where id = '${group.id}'`);
+  await as('u-eng');
+  for (const grades of ['[]', '[13]', '[-4]', '[0.5]', '["0"]', 'null']) {
+    await assert.rejects(db.query(create(`[{"grades":${grades},"assignAs":"member"}]`)));
+  }
+});
+
+test('push delivery claims recover after interruption and only retry unprocessed devices', async () => {
+  await asSuper();
+  await db.exec(`update notifications set status = 'sent' where status in ('queued', 'sending');
+    insert into notifications (id, audience, title, body) values (${id('push-retry')}, 'everyone', 'Test', 'Retry');
+    update notifications set push_remaining = array['a', 'b'] where id = ${id('push-retry')};
+    set role service_role;`);
+  const first = await one('select * from push_claim()');
+  assert.equal(first.id, (await one(`select ${id('push-retry')} as id`)).id);
+  assert.equal(await one('select * from push_claim()'), undefined, 'a live claim cannot be taken twice');
+  assert.equal((await one(`select push_progress('${first.id}', '${first.push_claim_id}', array['a'], 1) as ok`)).ok, true);
+  await db.exec(`select push_release('${first.id}', '${first.push_claim_id}', 'offline');`);
+  assert.equal((await one(`select status from notifications where id = '${first.id}'`)).status, 'queued');
+  await db.exec(`update notifications set push_retry_after = now() - interval '1 second' where id = '${first.id}'`);
+  const second = await one('select * from push_claim()');
+  assert.deepEqual(second.push_remaining, ['b']);
+  assert.equal(second.sent_count, 1);
+  await db.exec(`update notifications set push_claim_until = now() - interval '1 second' where id = '${first.id}'`);
+  const third = await one('select * from push_claim()');
+  assert.notEqual(third.push_claim_id, second.push_claim_id);
+  assert.equal((await one(`select push_progress('${first.id}', '${second.push_claim_id}', array['b'], 1) as ok`)).ok, false, 'stale workers cannot checkpoint');
+  await db.exec(`select push_progress('${first.id}', '${third.push_claim_id}', array['b'], 1);
+    select push_release('${first.id}', '${third.push_claim_id}');`);
+  const final = await one(`select status, sent_count from notifications where id = '${first.id}'`);
+  assert.deepEqual(final, { status: 'sent', sent_count: 2 });
+  await as('u-p01');
+  await rejects('select * from push_claim()', /permission denied/);
+  await asSuper();
+});
+
 test('seed: rule sync builds memberships from the roster', async () => {
   const n = await one(`select count(*)::int as n from memberships where source = 'rule'`);
   assert.ok(n.n > 50);

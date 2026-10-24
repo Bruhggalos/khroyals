@@ -17,6 +17,8 @@ test('date and time values round-trip in the formats the database expects', () =
   assert.equal(parseDate('10/24/2026'), null, 'typed formats are not dates');
   assert.equal(toTimeString(parseTime('7:05')!), '07:05');
   assert.equal(parseTime('3:30 PM'), null);
+  for (const value of ['2026-02-29', '2026-04-31', '2026-13-01']) assert.equal(parseDate(value), null);
+  for (const value of ['24:00', '12:60', '99:99']) assert.equal(parseTime(value), null);
   assert.equal(dateLabel('2026-10-24'), 'Sat, Oct 24, 2026');
   assert.equal(timeLabel('15:30'), '3:30 PM');
   assert.equal(dateLabel(''), '');

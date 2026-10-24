@@ -11,7 +11,7 @@ import type { Group, Membership, Post, User } from '../src/comms/types';
 const U = (id: string) => (users.users as User[]).find((u) => u.id === id)!;
 const G = (id: string) => (groups.groups as unknown as Group[]).find((g) => g.id === id)!;
 const M = (g: string, u: string) => (mships.memberships as Membership[]).find((m) => m.groupId === g && m.userId === u) ?? null;
-const ctx = (u: string, g: string, now = new Date('2026-10-14T15:00:00')) => ({ user: U(u), group: G(g), membership: M(g, u), now });
+const ctx = (u: string, g: string, now = new Date('2026-10-14T15:00:00-05:00')) => ({ user: U(u), group: G(g), membership: M(g, u), now });
 
 test('broadcast: subscribers read and react, cannot post or comment', () => {
   assert.equal(can(ctx('u-s01', 'g-announce'), 'viewContent').allowed, true);
@@ -40,8 +40,9 @@ test('lockdown blocks members but not moderators', () => {
 });
 
 test('quiet hours apply to students at night', () => {
-  assert.equal(can(ctx('u-s01', 'g-eng-p3', new Date('2026-10-14T22:30:00')), 'post').allowed, false);
-  assert.equal(can(ctx('u-s01', 'g-eng-p3', new Date('2026-10-14T15:00:00')), 'post').allowed, true);
+  assert.equal(can(ctx('u-s01', 'g-eng-p3', new Date('2026-10-15T03:30:00Z')), 'post').allowed, false);
+  assert.equal(can(ctx('u-s01', 'g-eng-p3', new Date('2026-10-14T20:00:00Z')), 'post').allowed, true);
+  assert.equal(can(ctx('u-s01', 'g-eng-p3', new Date('2026-12-15T04:30:00Z')), 'post').allowed, false);
 });
 
 test('per-member silence and timed mute', () => {
@@ -51,7 +52,7 @@ test('per-member silence and timed mute', () => {
 });
 
 test('slow mode', () => {
-  const c = { ...ctx('u-s01', 'g-eng-p3'), lastPostAt: new Date('2026-10-14T14:59:50') };
+  const c = { ...ctx('u-s01', 'g-eng-p3'), lastPostAt: new Date('2026-10-14T14:59:50-05:00') };
   assert.match(can(c, 'post').reason!, /Slow mode/);
 });
 

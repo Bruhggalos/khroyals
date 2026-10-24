@@ -20,13 +20,13 @@ async function read(): Promise<LocalNotice[]> {
 }
 const write = (list: LocalNotice[]) => AsyncStorage.setItem(KEY, JSON.stringify(list)).catch(() => {});
 
-type Content = { title: string; body: string; data?: Record<string, unknown>; categoryIdentifier?: string };
+type Content = { title: string; body: string; data?: Record<string, unknown>; categoryIdentifier?: string; sound?: boolean };
 
 /**
  * Show a notification now, or at `at`. It joins the Notifications page from the moment it shows,
  * even if notifications are off for the app (it's recorded before the phone is asked to show it).
  */
-export async function notifyLocal(content: Content, opts: { id?: string; at?: Date } = {}): Promise<string> {
+export async function notifyLocal(content: Content, opts: { id?: string; at?: Date; channelId?: string } = {}): Promise<string> {
   const id = opts.id ?? `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const showAt = (opts.at ?? new Date()).toISOString();
   await write(addLocal(await read(), {
@@ -35,7 +35,8 @@ export async function notifyLocal(content: Content, opts: { id?: string; at?: Da
   await Notifications.scheduleNotificationAsync({
     identifier: id,
     content,
-    trigger: opts.at ? { type: Notifications.SchedulableTriggerInputTypes.DATE, date: opts.at } : null,
+    trigger: opts.at ? { type: Notifications.SchedulableTriggerInputTypes.DATE, date: opts.at, channelId: opts.channelId }
+      : opts.channelId ? { channelId: opts.channelId } : null,
   });
   return id;
 }

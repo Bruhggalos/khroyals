@@ -1,10 +1,10 @@
 import { getUser, type Opportunity } from '../api/connect';
+import { isPastDay, schoolToday } from '../calendar/past';
 
 const pad = (n: number) => String(n).padStart(2, '0');
-/** Today as YYYY-MM-DD on this device. */
-export const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+export const todayIso = schoolToday;
 
-export const isPast = (o: Opportunity) => (o.endsOn ?? o.startsOn) < todayIso();
+export const isPast = (o: Opportunity) => isPastDay(o.endsOn ?? o.startsOn);
 
 const day = (iso: string) => new Date(`${iso}T12:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const time = (hm: string) => { const [h, m] = hm.split(':').map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`; };

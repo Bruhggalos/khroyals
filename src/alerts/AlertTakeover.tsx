@@ -15,6 +15,8 @@ import {
 import { clock } from '../carline/time';
 import { AnswerButtons } from './AlertParts';
 import { alertKind } from './kinds';
+import { alertChanges } from './changes';
+import { pingCleared, pingStarted } from './ping';
 
 export function AlertTakeover() {
   const insets = useSafeAreaInsets();
@@ -22,6 +24,8 @@ export function AlertTakeover() {
   const [answers, setAnswers] = useState<AlertAnswer[]>([]);
   const [later, setLater] = useState<Set<string>>(new Set());  // "Read the details" puts one away for now
   const scroll = useRef<ScrollView>(null);
+  const known = useRef<Map<string, boolean> | null>(null);  // alert id → had ended; null until the first look
+  const [allClear, setAllClear] = useState<CriticalAlert | null>(null);
   // Typing where they are: bring "Send for help" up above the keyboard.
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidShow', () => scroll.current?.scrollToEnd({ animated: true }));
@@ -33,6 +37,13 @@ export function AlertTakeover() {
     try {
       const [a, r] = await Promise.all([listAlerts(5), myAlertAnswers()]);
       setAlerts(a.filter((x) => !x.endedAt)); setAnswers(r);
+      // Ping for what's new since the last look (not for what was already going on when the app opened).
+      if (known.current) {
+        const { started, cleared } = alertChanges(known.current, a);
+        started.forEach((x) => { pingStarted(x); });
+        cleared.forEach((x) => { pingCleared(x); setAllClear(x); });
+      }
+      known.current = new Map(a.map((x) => [x.id, !!x.endedAt]));
     } catch { /* offline: keep what's showing */ }
   }, []);
   useEffect(() => {
@@ -46,6 +57,22 @@ export function AlertTakeover() {
   }, [refresh]);
 
   const alert = alerts.find((a) => !later.has(a.id) && !answers.some((x) => x.alertId === a.id)) ?? null;
+  if (!alert && allClear) {
+    return (
+      <Modal visible animationType="fade" onRequestClose={() => setAllClear(null)} statusBarTranslucent>
+        <View style={{ flex: 1, backgroundColor: '#1B7F3B', paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16, padding: 20, justifyContent: 'center', gap: 16 }}>
+          <MaterialCommunityIcons name="check-circle" size={56} color="#fff" />
+          <Text style={{ color: '#fff', fontSize: 32, fontWeight: '900' }} accessibilityRole="header">All clear</Text>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{allClear.title}</Text>
+          <Text style={{ color: '#fff', fontSize: 19, lineHeight: 27 }}>{allClear.endNote || 'The alert is over.'}</Text>
+          <Pressable onPress={() => setAllClear(null)} accessibilityRole="button"
+            style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 8 }}>
+            <Text style={{ color: '#1B7F3B', fontWeight: '800', fontSize: 17 }}>OK</Text>
+          </Pressable>
+        </View>
+      </Modal>
+    );
+  }
   if (!alert) return null;
   const kind = alertKind(alert.kind);
   const sender = alert.createdBy ? getUser(alert.createdBy) : null;

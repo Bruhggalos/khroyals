@@ -1,3 +1,4 @@
+import { isDate, isTime } from '../../src/forms/dates';
 /** A Volunteer Leader posts an opportunity: asking for people's time, or for items (how many of what, brought by a date). */
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -9,8 +10,6 @@ import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Field, P, s } from '../../src/ui';
 import { DateField, TimeField } from '../../src/forms/DateTimeField';
 
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
-const isTime = (v: string) => /^\d{1,2}:\d{2}$/.test(v);
 
 export default function NewOpportunity() {
   return (
