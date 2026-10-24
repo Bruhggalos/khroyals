@@ -16,6 +16,7 @@
  * 4. Submits it for Beta App Review if Apple wants that; external testers get it once
  *    it's approved, usually right away for a new build of a version already approved.
  */
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { createPrivateKey, sign } from 'node:crypto';
 
