@@ -5,12 +5,12 @@
  * Page's Staff view; staff who are also parents can switch to their children there, and
  * on Standard they see the parent version. Car line leads and the office open the settings.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  carlineBoard, carlineConfig, carlineToday, isFamily, live, myPickupChildren, myVehicles, pickupNumbers, session, subscribeCarline,
+  carlineBoard, carlineConfig, carlineToday, errorText, isFamily, live, myPickupChildren, myVehicles, pickupNumbers, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person, type Pickup, type Vehicle,
 } from '../src/api/connect';
 import { DutyView } from '../src/carline/DutyView';
@@ -31,6 +31,8 @@ export default function CarLine() {
   const [config, setConfig] = useState<CarlineConfig | null>(null);
   const [view, setView] = useState<'staff' | 'parent' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Once the line is on screen, a failed reload keeps it there (the next change or visit tries again).
+  const loaded = useRef(false);
   const staffView = useStaffView(person);
 
   const refresh = useCallback(async () => {
@@ -38,7 +40,9 @@ export default function CarLine() {
       const p = await session();
       const [today, b] = await Promise.all([carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([])]);
       setPickups(today); setBoard(b);
-    } catch (e: any) { setError(e.message); }
+    } catch {
+      // Keep what's on screen; the next change in the line loads it again.
+    }
   }, []);
   const load = useCallback(async () => {
     try {
@@ -48,8 +52,9 @@ export default function CarLine() {
         ? await Promise.all([myPickupChildren(), carlineToday(), isStaff(p) ? carlineBoard() : Promise.resolve([]), pickupNumbers(), carlineConfig(), myVehicles().catch(() => [])])
         : [[], [], [], {}, null, []];
       setPerson(p); setKids(k); setVehicles(v); setPickups(today); setBoard(b); setNumbers(n); setConfig(c); setError(null);
-    } catch (e: any) {
-      setError(e.message ?? String(e));
+      loaded.current = true;
+    } catch (e) {
+      if (!loaded.current) setError(errorText(e));
     }
   }, []);
   useFocusEffect(useCallback(() => { load(); return subscribeCarline(refresh); }, [load, refresh]));
@@ -66,7 +71,7 @@ export default function CarLine() {
   const box = (body: React.ReactNode) => <View style={[s.screen, s.pad]}>{header}{body}</View>;
 
   if (!live) return box(<Card><H>Car line needs the school server</H><P muted>This build is running on demo data without Royals Connect.</P></Card>);
-  if (error) return box(<Card><H>Couldn't load the car line</H><P muted>{error}</P><Button label="Try again" onPress={load} /></Card>);
+  if (error) return box(<Card><H>Couldn't load the car line</H><P muted>{error}</P><Button label="Try again" onPress={() => { setError(null); load(); }} /></Card>);
   if (person === undefined) return <>{header}<Loading /></>;
   if (!person) return box(
     <Card>

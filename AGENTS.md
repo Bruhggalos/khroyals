@@ -131,6 +131,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - All writes go through `SECURITY DEFINER` functions that call `app.can()` /
   `app.require_permission()`; tables are read-only to clients (except `events`).
   Keep it that way — new write paths need a function + a DB test.
+- **Reads ride out a dropped connection** (`src/api/retryFetch.ts`): table reads and the
+  functions in `READ_ONLY_RPCS` are sent again when no answer came back; writes never
+  are. Only list `STABLE` functions there (`tests/retry-fetch.test.ts` checks). Show
+  failures with `errorText()` so a dropped connection reads as one.
 - Admin powers only count in an authenticator-verified session (`aal2`).
   Tests simulate this with `as(user, true)`.
 - **React is pinned to 19.2.3** to match `react-dom` for the web build. Use

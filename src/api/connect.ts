@@ -1,5 +1,6 @@
 /** Public API facade. Domain implementations, transport and DTOs live beside it. */
 export { live } from './client';
+export { errorText, isNetworkError } from './errors';
 export { Abilities, GroupView, Person, GroupEvent, NewEvent, Member, Pickup, PickupVehicle, CarlineConfig, Spot, BoardRow, Arrival, Vehicle, Sport, SportSeason, SportEventKind, SportEvent, SportRegistration, MySport, SportRsvp, SportAttendance, Condition, Listing, MarketLine, MarketTerms, Opportunity, Signup, VolunteerMessage, ROLE_LABELS, QUESTION_TOPICS, QuestionTopic, SchoolQuestion, QuestionMessage, ParentRelation, FamilyLink, CriticalAlert, AlertAnswer, AlertStatusRow, Access, PermissionInfo, AdminPerson, AdminRole, PeopleFilter, Notice, MySettings, GroupPref, PostStats, GroupPostStat, Child, FamilyRequest, AdminStudent, AdminFamilyRequest, SimilarStudent, PickupRelationship, ApprovedPickup, ChildPickupPeople, TeacherContact, TeacherConversation, ClassStudent, TeacherMessage, TeacherThread, Assignment, ChildAssignment, Section, AdminSection, SectionStudent } from './types';
 export { session, me, getUser, listUsers, signOut, onAuthChange, setMockUser } from './session';
 export { marketPhotoUrls } from './storage';
