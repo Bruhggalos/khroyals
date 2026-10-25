@@ -14,6 +14,10 @@
  *    Edge Function, and optionally names the director (--director=email; that
  *    person must have signed in once).
  *
+ * --deploy (what the "Supabase" GitHub Action runs on every push to main): only
+ * steps 1 and the Edge Functions; needs just SUPABASE_ACCESS_TOKEN (the project
+ * comes from app.json).
+ *
  * Without SUPABASE_ACCESS_TOKEN, steps 1 and 3 print the SQL files to paste
  * into the dashboard's SQL editor instead.
  */
@@ -28,11 +32,13 @@ const env = (k, required = true) => {
   if (!v && required) { console.error(`Missing ${k}`); process.exit(1); }
   return v;
 };
-const URL = env('SUPABASE_URL').replace(/\/$/, '');
-const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY');
-const TOKEN = env('SUPABASE_ACCESS_TOKEN', false);
+const deployOnly = process.argv.includes('--deploy');
+const URL = (env('SUPABASE_URL', false)
+  ?? JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8')).expo.extra.supabaseUrl).replace(/\/$/, '');
+const TOKEN = env('SUPABASE_ACCESS_TOKEN', deployOnly);
 const REF = env('SUPABASE_PROJECT_REF', false) ?? new globalThis.URL(URL).hostname.split('.')[0];
 const seed = process.argv.includes('--demo');
+const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY', seed);
 const PASSWORD = seed ? env('DEMO_PASSWORD') : null;
 
 /** Same mapping as app.seed_id(): md5('khroyals:' || id)::uuid */
@@ -67,6 +73,7 @@ async function migrate() {
     await sql(`begin;\n${body}\ninsert into app.applied_migrations (name) values ('${f}');\ncommit;`);
     console.log(`✓ applied ${f}`);
   }
+  await sql(`notify pgrst, 'reload schema'`);   // the Data API sees new functions right away
   return true;
 }
 
@@ -156,7 +163,9 @@ if (seed) {
   if (migrated) { await sql(readFileSync(join(ROOT, 'supabase/seed.sql'), 'utf8')); console.log('✓ seed loaded'); }
   else console.log('Then paste supabase/seed.sql into the SQL editor.');
 }
-if (TOKEN) {
+if (deployOnly) {
+  await deployPush();
+} else if (TOKEN) {
   await configureAuthEmail();
   await deployPush();
   const director = process.argv.find((a) => a.startsWith('--director='))?.split('=')[1];

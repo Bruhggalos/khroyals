@@ -8,7 +8,10 @@ rules and traps.
 
 - **Work on `main` and push to `main`.** No feature branches or PRs unless the
   owner asks. Each push builds the Android APK and redeploys the web app
-  (https://bruhggalos.github.io/khroyals/).
+  (https://bruhggalos.github.io/khroyals/), and the Supabase workflow applies new
+  migrations to the **live** database and redeploys the Edge Functions. So a pushed
+  migration is live within minutes: don't apply them by hand, and never push one that
+  isn't covered by `npm test`.
 - Before every push: `npm run typecheck && npm test` must pass (CI runs both and
   blocks the APK otherwise).
 - For UI changes, also check the web build renders: `npx expo export --platform web`.

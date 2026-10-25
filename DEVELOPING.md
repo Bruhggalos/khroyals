@@ -129,7 +129,13 @@ The schema lives in `supabase/migrations/` and is tested locally by `tests/db.te
 1. Add a new file `supabase/migrations/<timestamp>_<name>.sql` (never edit one that's been applied).
 2. If seed data changes: `python3 scripts/gen_seed.py` (rewrites `supabase/seed.sql` and `supabase/setup_all.sql`).
 3. `npm test` until green.
-4. Apply to the live project (needs a Supabase **personal access token**, created at
+4. Push to `main`. The **Supabase** GitHub Action (`.github/workflows/supabase.yml`) runs the
+   tests, then applies the new migrations to the live project and redeploys the Edge Functions
+   (`node scripts/supabase_setup.mjs --deploy`). It needs the repository secret
+   `SUPABASE_ACCESS_TOKEN` (Settings → Secrets and variables → Actions). A failed migration rolls
+   back and turns the run red; fix it with a new migration and push again.
+
+   To apply by hand instead (also needs a Supabase **personal access token**, created at
    supabase.com/dashboard/account/tokens — keep it in an env var, never in git or chat):
    ```bash
    export SUPABASE_URL=https://twmeenkvoedoryhterpf.supabase.co
