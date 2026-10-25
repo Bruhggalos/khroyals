@@ -118,6 +118,22 @@ async function deployPush() {
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }
 
+// Where sign-in links may send people back to: the app (deep link) and the web portal.
+// Never list an address the school doesn't own: a sign-in link sent there hands over the session.
+const REDIRECTS = ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**',
+  'https://royalrockinapps.github.io/khroyals/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(',');
+
+/** Only the allowed sign-in redirect addresses (run on every deploy, so a new web address takes effect). */
+async function setRedirects() {
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uri_allow_list: REDIRECTS }),
+  });
+  if (!r.ok) throw new Error(`Updating redirect URLs failed (${r.status}): ${await r.text()}`);
+  console.log('✓ sign-in links may return to the app and the web portal');
+}
+
 /** Sign-in emails show the 6-digit code the app asks for (instead of only a magic link). */
 async function configureAuthEmail() {
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
@@ -138,7 +154,6 @@ async function configureAuthEmail() {
     // default email has a sign-in link, which the app also handles.
     console.log(`· sign-in email template unchanged (${r.status}): emails contain a sign-in link instead of a code`);
   } else console.log('✓ sign-in emails send a 6-digit code');
-  // Where sign-in links may send people back to: the app (deep link) and the web portal.
   const r2 = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
@@ -150,7 +165,7 @@ async function configureAuthEmail() {
       // 2 emails/hour, and new accounts still need admin approval. Set to false once
       // the project uses its own email service (custom SMTP) to require confirmation.
       mailer_autoconfirm: process.env.REQUIRE_EMAIL_CONFIRMATION !== '1',
-      uri_allow_list: ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**', 'https://bruhggalos.github.io/khroyals/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(','),
+      uri_allow_list: REDIRECTS,
     }),
   });
   if (!r2.ok) throw new Error(`Updating redirect URLs failed (${r2.status}): ${await r2.text()}`);
@@ -165,6 +180,7 @@ if (seed) {
 }
 if (deployOnly) {
   await deployPush();
+  await setRedirects();
 } else if (TOKEN) {
   await configureAuthEmail();
   await deployPush();

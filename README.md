@@ -363,7 +363,7 @@ coach, student, a muted student, or a parent and watch permissions change.
 ## Web app (GitHub Pages)
 
 **Actions → Web app (GitHub Pages)** publishes the web version (school site,
-Royals Connect and the admin portal) to **https://bruhggalos.github.io/khroyals/**
+Royals Connect and the admin portal) to **https://royalrockinapps.github.io/khroyals/**
 on every push to `main`. One-time setup: *Settings → Pages → Source: GitHub Actions*.
 The build is served under `/khroyals` (`expo.experiments.baseUrl`).
 

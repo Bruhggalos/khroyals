@@ -5,7 +5,7 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
 
 | What | Where |
 |---|---|
-| Web app (site + Royals Connect + admin portal) | https://bruhggalos.github.io/khroyals/ |
+| Web app (site + Royals Connect + admin portal) | https://royalrockinapps.github.io/khroyals/ |
 | Android APK | GitHub → **Actions → Android APK** → latest run on `main` → **Artifacts → khroyals-android-apk** |
 | iPhone (TestFlight) | App Store Connect → **KH Royals → TestFlight**; uploads come from a Mac with `scripts/testflight.sh` (§9) |
 | Backend | Supabase project `twmeenkvoedoryhterpf` (dashboard: supabase.com/dashboard) |
@@ -29,7 +29,7 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
 Requirements: **Node 22**, npm, Git, Python 3 (only for the import scripts).
 
 ```bash
-git clone https://github.com/Bruhggalos/khroyals.git
+git clone https://github.com/RoyalRockinApps/khroyals.git
 cd khroyals
 npm ci              # use ci, not install, so the lockfile is respected
 npm run typecheck
@@ -114,7 +114,7 @@ npx expo export --platform web --output-dir dist   # production build (served un
 2. Commit and push to **`main`**.
 3. GitHub Actions runs:
    - **Android APK** — typecheck + tests, then a release APK (≈25 min) → artifact.
-   - **Web app (GitHub Pages)** — web export → https://bruhggalos.github.io/khroyals/ (≈2 min).
+   - **Web app (GitHub Pages)** — web export → https://royalrockinapps.github.io/khroyals/ (≈2 min).
 4. If a run fails at `npm ci` with `ECONNRESET`, it's a network blip on the
    runner: use **Re-run failed jobs**. Anything else is a real failure — read the log.
 

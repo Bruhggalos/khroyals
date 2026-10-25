@@ -8,7 +8,7 @@ rules and traps.
 
 - **Work on `main` and push to `main`.** No feature branches or PRs unless the
   owner asks. Each push builds the Android APK and redeploys the web app
-  (https://bruhggalos.github.io/khroyals/), and the Supabase workflow applies new
+  (https://royalrockinapps.github.io/khroyals/), and the Supabase workflow applies new
   migrations to the **live** database and redeploys the Edge Functions. So a pushed
   migration is live within minutes: don't apply them by hand, and never push one that
   isn't covered by `npm test`.
