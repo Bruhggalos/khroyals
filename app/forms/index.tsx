@@ -54,7 +54,7 @@ function List({ me }: { me: Person }) {
               <Text style={{ color: C.muted }}>{[f.sentTo, dueText(f)].filter(Boolean).join(' · ')}</Text>
               <Progress done={signed} total={f.students} />
               <Text style={{ color: C.ink, fontWeight: '600' }}>
-                {signed} of {f.students} signed{f.declined ? ` · ${f.declined} declined` : ''}
+                {signed} of {f.students} signed{f.declined ? ` · ${f.declined} declined` : ''}{f.feeCents ? ` · ${f.paid} paid` : ''}
               </Text>
             </Card>
           );

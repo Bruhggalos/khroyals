@@ -1989,3 +1989,63 @@ test('forms: teachers, coaches and the office send them; parents sign for each c
   const forms = (await one(`select my_forms() as f`)).f.map((f: any) => `${f.sentTo}: ${f.status}`);
   assert.ok(forms.includes('English 10 – Period 3: closed') && forms.includes('Robotics Club · Fall 2026: open'), forms.join('; '));
 });
+
+test('form fees: the sender records who paid, how and where it was handed in; parents see their own', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const ava = await uid('u-s01');
+  const send = (fee: string) => `select * from form_send('Science museum', 'Bus and admission.', null, app.school_today() + 7, 'section',
+    'eng10-p3', null, null, '[]'::jsonb, ${fee})`;
+  const pay = (form: string, student: string, cents: number, method: string, where: string, on = 'app.school_today()', note = '') =>
+    `select * from form_record_payment('${form}', '${student}', ${cents}, '${method}', '${where}', ${on}, '${note}')`;
+
+  await as('u-eng');
+  await rejects(send('0'), /fee in dollars/);
+  const museum = await one(send('2500'));
+  assert.equal(museum.fee_cents, 2500);
+  const free = await one(send('null'));
+
+  // Only the sender records payments, for students the form went to, with how, where and when.
+  for (const who of ['u-p01', 'u-sci']) {
+    await as(who);
+    await rejects(pay(museum.id, ava, 2500, 'cash', 'Front office'), /Only whoever sent/);
+  }
+  await as('u-eng');
+  await rejects(pay(free.id, ava, 2500, 'cash', 'Front office'), /no fee/);
+  await rejects(pay(museum.id, await uid('u-s05'), 2500, 'cash', 'Front office'), /didn't go to that student/);
+  await rejects(pay(museum.id, ava, 0, 'cash', 'Front office'), /amount paid/);
+  await rejects(pay(museum.id, ava, 2500, 'venmo', 'Front office'), /how it was paid/);
+  await rejects(pay(museum.id, ava, 2500, 'cash', ' '), /where it was handed in/);
+  await rejects(pay(museum.id, ava, 2500, 'cash', 'Front office', 'app.school_today() + 1'), /future/);
+  const cash = await one(pay(museum.id, ava, 2500, 'cash', 'Front office'));
+  assert.deepEqual([cash.method, cash.delivered_to, cash.amount_cents], ['cash', 'Front office', 2500]);
+
+  // Rosa is told once; correcting it to a check doesn't tell her again.
+  const told = async () => {
+    await as('u-p01');
+    return (await rows(`select title || ' | ' || body as t from my_notifications() where data->>'formId' = '${museum.id}' and title like '💵%'`)).map((n) => n.t);
+  };
+  assert.deepEqual(await told(), ['💵 Science museum | Payment received for Ava: $25.00 (cash).']);
+  await as('u-eng');
+  await one(pay(museum.id, ava, 2500, 'check', 'Mrs. Taylor', 'app.school_today()', 'Check #1042'));
+  assert.equal((await told()).length, 1);
+
+  // Rosa sees Ava's payment (not the sender's note); the sender sees everything and the totals.
+  await as('u-p01');
+  const mine = (await one(`select my_forms() as f`)).f.find((f: any) => f.id === museum.id);
+  assert.equal(mine.feeCents, 2500);
+  assert.deepEqual(mine.children[0].payment, { amountCents: 2500, method: 'check', deliveredTo: 'Mrs. Taylor', receivedOn: mine.children[0].payment.receivedOn });
+  await as('u-eng');
+  const row = (await one(`select form_status('${museum.id}') as s`)).s.students.find((x: any) => x.studentId === ava);
+  assert.deepEqual([row.payment.method, row.payment.note, row.payment.recordedBy], ['check', 'Check #1042', 'Jennifer Taylor']);
+  const sent = (await one(`select sent_forms() as f`)).f.find((f: any) => f.id === museum.id);
+  assert.deepEqual([sent.paid, sent.collectedCents], [1, 2500]);
+
+  // Other families see no payments; nobody writes them directly; a mistake can be removed.
+  await as('u-p05');
+  assert.equal((await rows(`select 1 from form_payments`)).length, 0);
+  await rejects(`insert into form_payments (form_id, student_id, amount_cents, method, delivered_to, received_on)
+    values ('${museum.id}', '${ava}', 1, 'cash', 'x', current_date)`, /permission denied/);
+  await as('u-eng');
+  await one(`select form_clear_payment('${museum.id}', '${ava}')`);
+  assert.equal((await one(`select form_status('${museum.id}') as s`)).s.students.find((x: any) => x.studentId === ava).payment, null);
+});

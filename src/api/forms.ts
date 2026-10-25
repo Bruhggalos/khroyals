@@ -1,5 +1,5 @@
 /** forms: internal API implementation. Screens import the connect facade. */
-import type { FormStatus, MyForm, NewForm, SentForm } from './types';
+import type { FormPayment, FormStatus, MyForm, NewForm, SentForm } from './types';
 import { live, rpc } from './client';
 import { current } from './session';
 
@@ -27,6 +27,7 @@ export async function sendForm(f: NewForm): Promise<string> {
   const row = await rpc('form_send', {
     p_title: f.title, p_details: f.details, p_link: f.link, p_due_on: f.dueOn, p_audience: f.audience,
     p_section: f.sectionId ?? null, p_season: f.seasonId ?? null, p_grades: f.grades ?? null, p_questions: f.questions,
+    p_fee_cents: f.feeCents ?? null,
   });
   return row.id;
 }
@@ -40,3 +41,14 @@ export async function signForm(formId: string, studentId: string, agree: boolean
 export async function remindForm(id: string): Promise<number> { return rpc('form_remind', { p_form: id }); }
 
 export async function closeForm(id: string) { await rpc('form_close', { p_form: id }); }
+
+/** The sender records (or corrects) a child's payment; the parents are told the first time. */
+export async function recordPayment(formId: string, studentId: string, p: Omit<FormPayment, 'recordedBy'>) {
+  await rpc('form_record_payment', {
+    p_form: formId, p_student: studentId, p_amount_cents: p.amountCents, p_method: p.method,
+    p_delivered_to: p.deliveredTo, p_received_on: p.receivedOn, p_note: p.note ?? '',
+  });
+}
+
+/** Remove a payment recorded by mistake. */
+export async function clearPayment(formId: string, studentId: string) { await rpc('form_clear_payment', { p_form: formId, p_student: studentId }); }

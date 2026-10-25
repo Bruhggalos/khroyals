@@ -92,6 +92,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Parents sign once per child (`form_sign`, `app.signs_form`: guardians only, never Family accounts);
   either parent's signature counts. A form can't be changed once sent; senders see signatures in
   `form_status` and remind or close it. Screens read `my_forms` / `sent_forms` / `form_status`.
+  A form's fee (`forms.fee_cents`) is paid outside the app; senders record each child's payment
+  (`form_record_payment`: amount, method, where it was handed in, date) and parents see their own.
+  The methods are listed in both `src/schoolForms/payments.ts` and the database check.
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.

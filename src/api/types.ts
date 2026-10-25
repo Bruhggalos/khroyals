@@ -280,23 +280,29 @@ export type FormQuestion = { id: string; kind: 'yes_no' | 'text' | 'choice'; pro
 /** A parent's signature for one child: agreed or declined, the answers (by question id) and the typed name. */
 export type FormSignature = { agreed: boolean; answers: Record<string, string>; signature: string; signedAt: string; signedBy: string | null };
 export type FormAudience = 'section' | 'season' | 'grades' | 'school';
+export type PaymentMethod = 'cash' | 'check' | 'card' | 'online' | 'other';
+/** A fee paid for one child, as the form's sender recorded it; `note` and `recordedBy` only for the sender. */
+export type FormPayment = { amountCents: number; method: PaymentMethod; deliveredTo: string; receivedOn: string; note?: string; recordedBy?: string | null };
 /** A permission slip, release or acknowledgment. `sentTo` names the class, activity season or grades. */
 export type SchoolForm = {
   id: string; title: string; details: string; link: string | null; dueOn: string; status: 'open' | 'closed';
   questions: FormQuestion[]; audience: FormAudience; sentTo: string | null; author: string | null; authorId: string | null; createdAt: string;
+  /** The fee per child, or null for none. */
+  feeCents: number | null;
 };
 /** For a parent: a form and each of their children it went to. */
-export type MyForm = SchoolForm & { children: { studentId: string; name: string; response: FormSignature | null }[] };
+export type MyForm = SchoolForm & { children: { studentId: string; name: string; response: FormSignature | null; payment: FormPayment | null }[] };
 /** For a sender: a form they sent, with counts. */
-export type SentForm = SchoolForm & { students: number; agreed: number; declined: number };
+export type SentForm = SchoolForm & { students: number; agreed: number; declined: number; paid: number; collectedCents: number };
 /** For a sender: every student a form went to and their signature (or none yet). */
 export type FormStatus = SchoolForm & {
-  students: { studentId: string; name: string; grade: number | null; hasParent: boolean; response: FormSignature | null }[];
+  students: { studentId: string; name: string; grade: number | null; hasParent: boolean; response: FormSignature | null; payment: FormPayment | null }[];
 };
 export type NewForm = {
   title: string; details: string; link: string; dueOn: string; audience: FormAudience;
   sectionId?: string | null; seasonId?: string | null; grades?: number[] | null;
   questions: Omit<FormQuestion, 'id'>[];
+  feeCents?: number | null;
 };
 
 /** Class sections in the admin portal (people.family). */

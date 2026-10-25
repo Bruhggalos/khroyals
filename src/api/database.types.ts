@@ -2897,13 +2897,27 @@ export type Database = {
         Args: { p_error?: string; p_id: string }
         Returns: undefined
       }
+      form_clear_payment: { Args: { p_form: string; p_student: string }; Returns: undefined }
       form_close: { Args: { p_form: string }; Returns: undefined }
+      form_record_payment: {
+        Args: {
+          p_amount_cents: number
+          p_delivered_to: string
+          p_form: string
+          p_method: string
+          p_note?: string
+          p_received_on?: string
+          p_student: string
+        }
+        Returns: { form_id: string; student_id: string; amount_cents: number; method: string; delivered_to: string; received_on: string }
+      }
       form_remind: { Args: { p_form: string }; Returns: number }
       form_send: {
         Args: {
           p_audience: string
           p_details: string
           p_due_on: string
+          p_fee_cents?: number
           p_grades?: number[]
           p_link: string
           p_questions?: Json

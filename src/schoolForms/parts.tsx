@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { FormQuestion, FormSignature, SchoolForm } from '../api/connect';
 import { dueLabel } from '../assignments/groups';
 import { C, Card, Chip, Field, P, s } from '../ui';
+import { money } from './payments';
 
 export const GREEN = '#15803D';
 
@@ -22,6 +23,7 @@ export function FormHeader({ form }: { form: SchoolForm }) {
       <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
         <Chip label={dueText(form)} color={form.status === 'closed' ? C.muted : late ? C.danger : C.accent} />
         {!!form.sentTo && <Chip label={form.sentTo} />}
+        {!!form.feeCents && <Chip label={`${money(form.feeCents)} fee`} color={GREEN} />}
       </View>
       {!!form.author && <P muted>From {form.author}</P>}
       {!!form.details && <P>{form.details}</P>}
@@ -75,7 +77,8 @@ export function SignatureLine({ r, questions }: { r: FormSignature; questions: F
       <View style={[s.row, { gap: 6 }]}>
         <Ionicons name={r.agreed ? 'checkmark-circle' : 'close-circle'} size={20} color={r.agreed ? GREEN : C.danger} />
         <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>
-          {r.agreed ? 'Agreed' : 'Declined'} · signed “{r.signature}”{r.signedBy ? ` (${r.signedBy})` : ''}, {when}
+          {r.agreed ? 'Agreed' : 'Declined'} · signed “{r.signature}”
+          {r.signedBy && r.signedBy.trim().toLowerCase() !== r.signature.trim().toLowerCase() ? ` (${r.signedBy})` : ''}, {when}
         </Text>
       </View>
       {questions.filter((q) => r.answers[q.id]).map((q) => (

@@ -1,8 +1,9 @@
 /**
  * Send a form. Teachers pick one of the classes they lead, coaches and directors one of
  * their activities' seasons, and people with Send forms some grades or the whole
- * school. A form has a title, details, an optional link (a PDF or web page), a due date
- * and up to 10 questions. It can't be changed once it's sent.
+ * school. A form has a title, details, an optional link (a PDF or web page), a due date,
+ * an optional fee per child (payments are recorded on the form as they come in) and up
+ * to 10 questions. It can't be changed once it's sent.
  */
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
@@ -17,6 +18,7 @@ import { GRADES } from '../../src/comms/grades';
 import { DateField } from '../../src/forms/DateTimeField';
 import { addDays } from '../../src/info/today';
 import { FormsGate } from '../../src/schoolForms/FormsGate';
+import { money, parseDollars } from '../../src/schoolForms/payments';
 import { SectionTitle } from '../../src/volunteer/parts';
 import { Button, C, Card, Field, Loading, P, ask, s } from '../../src/ui';
 
@@ -40,6 +42,7 @@ function Compose({ me }: { me: Person }) {
   const [details, setDetails] = useState('');
   const [link, setLink] = useState('');
   const [due, setDue] = useState(() => addDays(schoolToday(), 7));
+  const [fee, setFee] = useState('');
   const [questions, setQuestions] = useState<Draft[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -77,9 +80,11 @@ function Compose({ me }: { me: Person }) {
       : !to ? 'Choose who gets the form.'
       : due < schoolToday() ? "The due date can't be in the past."
       : link.trim() && !/^https:\/\//i.test(link.trim()) ? 'Links start with https://'
+      : fee.trim() && !parseDollars(fee) ? 'Enter the fee in dollars, like 25 or 25.50, or leave it empty.'
       : bad ? (bad.prompt.trim() ? `"${bad.prompt.trim()}" needs at least two choices, separated by commas.` : 'Every question needs a question.') : null;
     if (problem) return Alert.alert('Almost there', problem);
-    ask('Send this form?', `The parents of ${to} are told right away. A form can't be changed once it's sent.`, 'Send', async () => {
+    const feeCents = fee.trim() ? parseDollars(fee) : null;
+    ask('Send this form?', `The parents of ${to} are told right away${feeCents ? `, with a ${money(feeCents)} fee` : ''}. A form can't be changed once it's sent.`, 'Send', async () => {
       setBusy(true);
       try {
         const id = await sendForm({
@@ -87,6 +92,7 @@ function Compose({ me }: { me: Person }) {
           sectionId: audience!.kind === 'section' ? audience!.id : null, seasonId: audience!.kind === 'season' ? audience!.id : null,
           grades: audience!.kind === 'grades' ? grades : null,
           questions: questions.map((q) => ({ kind: q.kind, prompt: q.prompt.trim(), required: q.required, options: q.kind === 'choice' ? opts(q) : [] })),
+          feeCents,
         });
         router.replace(`/forms/${id}`);
       } catch (e) {
@@ -117,6 +123,8 @@ function Compose({ me }: { me: Person }) {
         <Field label="Link to a document (optional)" placeholder="https://… a PDF or web page" value={link} onChangeText={setLink}
           autoCapitalize="none" keyboardType="url" maxLength={500} hint="Parents open it from the form, e.g. the venue's waiver." />
         <DateField label="Due" value={due} min={schoolToday()} onChange={setDue} />
+        <Field label="Fee per child (optional)" placeholder="e.g. 25" value={fee} onChangeText={setFee} keyboardType="decimal-pad"
+          hint="Parents see it on the form. Record each payment on the form as it comes in: how much, how and where it was handed in." />
       </Card>
 
       <Card style={{ gap: 0 }}>

@@ -7425,7 +7425,9 @@ insert into app.applied_migrations (name) values ('20261024000031_parent_assignm
 -- parent's signature counts, and they can change it while the form is open. Family
 -- accounts aren't parents (no guardians link), so they get none. A form can't be
 -- changed once it's sent; its sender (and forms.send holders) see who has signed,
--- remind the rest and close it.
+-- remind the rest and close it. A form can carry a fee: the sender records each
+-- child's payment as it comes in (how much, cash/check/card/online/other, where it
+-- was handed in, and when), and the parents see it. Paying in the app comes later.
 
 create table public.forms (
   id          uuid primary key default gen_random_uuid(),
@@ -7439,6 +7441,7 @@ create table public.forms (
   season_id   uuid references public.sport_seasons (id) on delete set null,
   grades      int[],
   questions   jsonb not null default '[]',
+  fee_cents   int check (fee_cents between 1 and 10000000),   -- null = no fee
   status      text not null default 'open' check (status in ('open', 'closed')),
   reminded_at timestamptz,
   created_at  timestamptz not null default now()
@@ -7466,9 +7469,25 @@ create table public.form_responses (
   foreign key (form_id, student_id) references public.form_recipients (form_id, student_id) on delete cascade
 );
 
+/** A fee paid for one child, recorded by the form's sender: how much, how, where it was handed in, and when. */
+create table public.form_payments (
+  form_id      uuid not null,
+  student_id   uuid not null,
+  amount_cents int not null check (amount_cents between 1 and 10000000),
+  method       text not null check (method in ('cash', 'check', 'card', 'online', 'other')),
+  delivered_to text not null check (char_length(trim(delivered_to)) between 1 and 80),
+  received_on  date not null,
+  note         text not null default '' check (char_length(note) <= 200),
+  recorded_by  uuid references public.profiles (id) on delete set null,
+  recorded_at  timestamptz not null default now(),
+  primary key (form_id, student_id),
+  foreign key (form_id, student_id) references public.form_recipients (form_id, student_id) on delete cascade
+);
+
 alter table public.forms enable row level security;
 alter table public.form_recipients enable row level security;
 alter table public.form_responses enable row level security;
+alter table public.form_payments enable row level security;
 
 /** Sent this form, or holds forms.send (authenticator-verified). */
 create function app.runs_form(f uuid, u uuid default auth.uid()) returns boolean
@@ -7487,6 +7506,8 @@ create policy "the sender, and parents of students it went to" on public.forms f
 create policy "the sender, and the student's parents" on public.form_recipients for select to authenticated
   using (app.runs_form(form_id) or app.is_guardian_of(student_id));
 create policy "the sender, and the student's parents" on public.form_responses for select to authenticated
+  using (app.runs_form(form_id) or app.is_guardian_of(student_id));
+create policy "the sender, and the student's parents" on public.form_payments for select to authenticated
   using (app.runs_form(form_id) or app.is_guardian_of(student_id));
 
 /** Checks a form's questions and gives each an id (q1, q2…): yes/no, short answer, or choice (2–10 options). */
@@ -7524,11 +7545,12 @@ end $$;
 /**
  * Send a form to a class section (`p_section`, its teacher), an activity season's
  * registered students (`p_season`, its coaches and directors), some grades or the whole
- * school (forms.send). Each parent of those students is told once.
+ * school (forms.send), with an optional fee per child. Each parent of those students is told once.
  */
 create function public.form_send(
   p_title text, p_details text, p_link text, p_due_on date, p_audience text,
-  p_section text default null, p_season uuid default null, p_grades int[] default null, p_questions jsonb default '[]'
+  p_section text default null, p_season uuid default null, p_grades int[] default null, p_questions jsonb default '[]',
+  p_fee_cents int default null
 ) returns public.forms
 language plpgsql security definer set search_path = public as $$
 declare f forms%rowtype; r rosters%rowtype; qs jsonb; link text := nullif(trim(p_link), ''); n int; g record;
@@ -7556,12 +7578,13 @@ begin
   if nullif(trim(p_title), '') is null then raise exception 'Give the form a title.'; end if;
   if p_due_on is null or p_due_on < app.school_today() then raise exception 'Pick a due date from today on.'; end if;
   if link is not null and link !~* '^https://' then raise exception 'Links start with https://'; end if;
+  if p_fee_cents is not null and p_fee_cents not between 1 and 10000000 then raise exception 'Enter the fee in dollars, or leave it empty.'; end if;
   qs := app.clean_form_questions(p_questions);
 
-  insert into forms (author_id, title, details, link, due_on, audience, section_id, season_id, grades, questions)
+  insert into forms (author_id, title, details, link, due_on, audience, section_id, season_id, grades, questions, fee_cents)
   values (auth.uid(), trim(p_title), coalesce(trim(p_details), ''), link, p_due_on, p_audience,
           case when p_audience = 'section' then p_section end, case when p_audience = 'season' then p_season end,
-          case when p_audience = 'grades' then p_grades end, qs)
+          case when p_audience = 'grades' then p_grades end, qs, p_fee_cents)
   returning * into f;
   insert into form_recipients (form_id, student_id)
   select f.id, p.id from profiles p
@@ -7639,6 +7662,65 @@ begin
   return n;
 end $$;
 
+/** "$25.00". */
+create function app.dollars(cents int) returns text
+language sql immutable as $$ select '$' || to_char(cents / 100.0, 'FM999,999,990.00') $$;
+
+/**
+ * The sender records a child's payment (or changes it): the amount, how it was paid,
+ * where it was handed in and when. The parents are told the first time.
+ */
+create function public.form_record_payment(p_form uuid, p_student uuid, p_amount_cents int, p_method text, p_delivered_to text,
+  p_received_on date default null, p_note text default '') returns public.form_payments
+language plpgsql security definer set search_path = public as $$
+declare f forms%rowtype; pay form_payments%rowtype; first boolean; g record; kid text;
+begin
+  select * into f from forms where id = p_form;
+  if not found or not app.runs_form(p_form) then
+    raise exception 'Only whoever sent this form can record payments.' using errcode = '42501';
+  end if;
+  if f.fee_cents is null then raise exception 'This form has no fee.'; end if;
+  if not exists (select 1 from form_recipients where form_id = p_form and student_id = p_student) then
+    raise exception 'This form didn''t go to that student.';
+  end if;
+  if p_amount_cents is null or p_amount_cents not between 1 and 10000000 then raise exception 'Enter the amount paid.'; end if;
+  if p_method is null or p_method not in ('cash', 'check', 'card', 'online', 'other') then raise exception 'Pick how it was paid.'; end if;
+  if nullif(trim(p_delivered_to), '') is null then raise exception 'Say where it was handed in.'; end if;
+  if coalesce(p_received_on, app.school_today()) > app.school_today() then raise exception 'The date can''t be in the future.'; end if;
+  first := not exists (select 1 from form_payments where form_id = p_form and student_id = p_student);
+  insert into form_payments (form_id, student_id, amount_cents, method, delivered_to, received_on, note, recorded_by, recorded_at)
+  values (p_form, p_student, p_amount_cents, p_method, trim(p_delivered_to), coalesce(p_received_on, app.school_today()),
+          coalesce(trim(p_note), ''), auth.uid(), now())
+  on conflict (form_id, student_id) do update
+    set amount_cents = excluded.amount_cents, method = excluded.method, delivered_to = excluded.delivered_to,
+        received_on = excluded.received_on, note = excluded.note, recorded_by = excluded.recorded_by, recorded_at = excluded.recorded_at
+  returning * into pay;
+  if first then
+    select first_name into kid from profiles where id = p_student;
+    for g in select guardian_id from guardians where student_id = p_student and not app.is_family(guardian_id) loop
+      perform app.notify_user(g.guardian_id, '💵 ' || f.title,
+        'Payment received for ' || kid || ': ' || app.dollars(pay.amount_cents) || ' (' || pay.method || ').', jsonb_build_object('formId', f.id));
+    end loop;
+  end if;
+  return pay;
+end $$;
+
+/** Remove a payment recorded by mistake. */
+create function public.form_clear_payment(p_form uuid, p_student uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not app.runs_form(p_form) then raise exception 'Only whoever sent this form can change payments.' using errcode = '42501'; end if;
+  delete from form_payments where form_id = p_form and student_id = p_student;
+end $$;
+
+/** A payment as JSON; `with_note` adds the note and who recorded it (for the sender). */
+create function app.form_payment_json(p public.form_payments, with_note boolean) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select case when p.form_id is null then null else jsonb_build_object('amountCents', p.amount_cents, 'method', p.method,
+    'deliveredTo', p.delivered_to, 'receivedOn', p.received_on) || case when with_note then jsonb_build_object('note', p.note,
+    'recordedBy', (select trim(first_name || ' ' || last_name) from profiles where id = p.recorded_by)) else '{}' end end
+$$;
+
 /** Stop taking signatures. */
 create function public.form_close(p_form uuid) returns void
 language plpgsql security definer set search_path = public as $$
@@ -7651,7 +7733,7 @@ end $$;
 create function app.form_json(f public.forms) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object('id', f.id, 'title', f.title, 'details', f.details, 'link', f.link, 'dueOn', f.due_on,
-    'status', f.status, 'questions', f.questions, 'audience', f.audience, 'createdAt', f.created_at,
+    'status', f.status, 'questions', f.questions, 'audience', f.audience, 'createdAt', f.created_at, 'feeCents', f.fee_cents,
     'authorId', f.author_id, 'author', (select trim(first_name || ' ' || last_name) from profiles where id = f.author_id),
     'sentTo', case f.audience
       when 'section' then (select name from rosters where id = f.section_id)
@@ -7670,10 +7752,12 @@ language sql stable security definer set search_path = public as $$
       select jsonb_agg(jsonb_build_object('studentId', r.student_id, 'name', s.first_name,
         'response', case when x.student_id is null then null else jsonb_build_object(
           'agreed', x.agreed, 'answers', x.answers, 'signature', x.signature, 'signedAt', x.signed_at,
-          'signedBy', (select trim(first_name || ' ' || last_name) from profiles where id = x.signed_by)) end)
+          'signedBy', (select trim(first_name || ' ' || last_name) from profiles where id = x.signed_by)) end,
+        'payment', app.form_payment_json(pay, false))
         order by s.first_name)
       from form_recipients r join profiles s on s.id = r.student_id
       left join form_responses x on x.form_id = r.form_id and x.student_id = r.student_id
+      left join form_payments pay on pay.form_id = r.form_id and pay.student_id = r.student_id
       where r.form_id = f.id and app.is_guardian_of(r.student_id))) as j
     from forms f
     where exists (select 1 from form_recipients r where r.form_id = f.id and app.is_guardian_of(r.student_id))) t
@@ -7686,7 +7770,9 @@ language sql stable security definer set search_path = public as $$
     select f.created_at, app.form_json(f) || jsonb_build_object(
       'students', (select count(*) from form_recipients r where r.form_id = f.id),
       'agreed', (select count(*) from form_responses x where x.form_id = f.id and x.agreed),
-      'declined', (select count(*) from form_responses x where x.form_id = f.id and not x.agreed)) as j
+      'declined', (select count(*) from form_responses x where x.form_id = f.id and not x.agreed),
+      'paid', (select count(*) from form_payments x where x.form_id = f.id),
+      'collectedCents', (select coalesce(sum(amount_cents), 0) from form_payments x where x.form_id = f.id)) as j
     from forms f where app.runs_form(f.id)) t
 $$;
 
@@ -7698,10 +7784,12 @@ language sql stable security definer set search_path = public as $$
       'grade', s.grade, 'hasParent', exists (select 1 from guardians gd where gd.student_id = r.student_id and not app.is_family(gd.guardian_id)),
       'response', case when x.student_id is null then null else jsonb_build_object(
         'agreed', x.agreed, 'answers', x.answers, 'signature', x.signature, 'signedAt', x.signed_at,
-        'signedBy', (select trim(first_name || ' ' || last_name) from profiles where id = x.signed_by)) end)
+        'signedBy', (select trim(first_name || ' ' || last_name) from profiles where id = x.signed_by)) end,
+      'payment', app.form_payment_json(pay, true))
       order by s.last_name, s.first_name)
     from form_recipients r join profiles s on s.id = r.student_id
     left join form_responses x on x.form_id = r.form_id and x.student_id = r.student_id
+    left join form_payments pay on pay.form_id = r.form_id and pay.student_id = r.student_id
     where r.form_id = f.id), '[]'))
   from forms f where f.id = p_form and app.runs_form(f.id)
 $$;
@@ -7737,22 +7825,24 @@ where id in ('director', 'administrator') and not ('forms.send' = any (permissio
 -- ======================================================================
 
 revoke all on function app.runs_form(uuid, uuid), app.signs_form(uuid, uuid, uuid), app.clean_form_questions(jsonb),
-  app.form_json(public.forms) from public, anon;
+  app.form_json(public.forms), app.form_payment_json(public.form_payments, boolean), app.dollars(int) from public, anon;
 grant execute on function app.runs_form(uuid, uuid), app.signs_form(uuid, uuid, uuid), app.clean_form_questions(jsonb),
-  app.form_json(public.forms) to authenticated, service_role;
+  app.form_json(public.forms), app.form_payment_json(public.form_payments, boolean), app.dollars(int) to authenticated, service_role;
 
-revoke all on function public.form_send(text, text, text, date, text, text, uuid, int[], jsonb),
+revoke all on function public.form_send(text, text, text, date, text, text, uuid, int[], jsonb, int),
   public.form_sign(uuid, uuid, boolean, jsonb, text), public.form_remind(uuid), public.form_close(uuid),
+  public.form_record_payment(uuid, uuid, int, text, text, date, text), public.form_clear_payment(uuid, uuid),
   public.my_forms(), public.sent_forms(), public.form_status(uuid) from public, anon;
-grant execute on function public.form_send(text, text, text, date, text, text, uuid, int[], jsonb),
+grant execute on function public.form_send(text, text, text, date, text, text, uuid, int[], jsonb, int),
   public.form_sign(uuid, uuid, boolean, jsonb, text), public.form_remind(uuid), public.form_close(uuid),
+  public.form_record_payment(uuid, uuid, int, text, text, date, text), public.form_clear_payment(uuid, uuid),
   public.my_forms(), public.sent_forms(), public.form_status(uuid) to authenticated, service_role;
 
 -- Reads go through row-level security; writes only through the functions above.
-revoke all on public.forms, public.form_recipients, public.form_responses from anon;
-revoke insert, update, delete on public.forms, public.form_recipients, public.form_responses from authenticated;
-grant select on public.forms, public.form_recipients, public.form_responses to authenticated;
-grant all on public.forms, public.form_recipients, public.form_responses to service_role;
+revoke all on public.forms, public.form_recipients, public.form_responses, public.form_payments from anon;
+revoke insert, update, delete on public.forms, public.form_recipients, public.form_responses, public.form_payments from authenticated;
+grant select on public.forms, public.form_recipients, public.form_responses, public.form_payments to authenticated;
+grant all on public.forms, public.form_recipients, public.form_responses, public.form_payments to service_role;
 
 insert into app.applied_migrations (name) values ('20261024000032_forms.sql') on conflict do nothing;
 

@@ -1,8 +1,9 @@
 /**
  * One form. A parent reads it and signs for each of their children it went to (agree,
  * answering the questions, or decline), by typing their full name; they can change it
- * while the form is open. Its sender sees every student's signature, reminds the
- * families still to sign, and closes it.
+ * while the form is open, and see whether its fee has been paid. Its sender sees every
+ * student's signature, records payments as they come in (how much, how, where it was
+ * handed in, and when), reminds the families still to sign, and closes it.
  */
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -14,6 +15,8 @@ import {
 } from '../../src/api/connect';
 import { FormsGate } from '../../src/schoolForms/FormsGate';
 import { FormHeader, GREEN, Progress, QuestionInput, SignatureLine } from '../../src/schoolForms/parts';
+import { PaymentEditor, PaymentLine } from '../../src/schoolForms/PaymentEditor';
+import { money } from '../../src/schoolForms/payments';
 import { SectionTitle } from '../../src/volunteer/parts';
 import { Button, C, Card, Field, Loading, P, ask, s } from '../../src/ui';
 
@@ -100,17 +103,20 @@ function SignCard({ form, child, me, onSigned }: { form: MyForm; child: MyForm['
         </>
       )}
       {!done && !open && <P muted>This form closed before it was signed.</P>}
+      {!!form.feeCents && <PaymentLine fee={form.feeCents} payment={child.payment} />}
     </Card>
   );
 }
 
-/** For the sender: who has signed, and reminding or closing. */
+/** For the sender: who has signed and paid, recording payments, and reminding or closing. */
 function Status({ status, onChange }: { status: FormStatus; onChange: () => void }) {
   const [shown, setShown] = useState<string | null>(null);
   const agreed = status.students.filter((x) => x.response?.agreed);
   const declined = status.students.filter((x) => x.response && !x.response.agreed);
   const waiting = status.students.filter((x) => !x.response);
   const open = status.status === 'open';
+  const fee = status.feeCents;
+  const paid = status.students.filter((x) => x.payment);
 
   const remind = () => ask('Send a reminder?', `The parents of the ${waiting.length} still to sign get a notification.`, 'Send', async () => {
     try { const n = await remindForm(status.id); Alert.alert('Reminder sent', `${n} parent${n === 1 ? '' : 's'} told.`); onChange(); }
@@ -123,27 +129,45 @@ function Status({ status, onChange }: { status: FormStatus; onChange: () => void
   const group = (title: string, list: FormStatus['students'], tint: string) => list.length > 0 && (
     <View key={title} style={{ gap: 2 }}>
       <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: tint }}>{title.toUpperCase()} ({list.length})</Text>
-      {list.map((x) => (
-        <Pressable key={x.studentId} disabled={!x.response} onPress={() => setShown(shown === x.studentId ? null : x.studentId)}
-          accessibilityRole={x.response ? 'button' : undefined} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line, gap: 4 }}>
-          <View style={s.row}>
-            <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{x.name}</Text>
-            {!x.hasParent && <Text style={{ color: C.muted }}>No parent in the app</Text>}
-            {!!x.response && <Ionicons name={shown === x.studentId ? 'chevron-up' : 'chevron-down'} size={16} color={C.muted} />}
+      {list.map((x) => {
+        const more = !!x.response || !!fee;
+        const on = shown === x.studentId;
+        return (
+          <View key={x.studentId} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line, gap: 8 }}>
+            <Pressable disabled={!more} onPress={() => setShown(on ? null : x.studentId)} accessibilityRole={more ? 'button' : undefined}
+              accessibilityState={more ? { expanded: on } : undefined} style={[s.row, { gap: 8 }]}>
+              <Text style={{ flex: 1, fontWeight: '700', color: C.ink }}>{x.name}</Text>
+              {!x.hasParent && <Text style={{ color: C.muted }}>No parent in the app</Text>}
+              {!!fee && <Text style={{ fontWeight: '700', color: x.payment ? GREEN : C.muted }}>{x.payment ? 'Paid' : 'Not paid'}</Text>}
+              {more && <Ionicons name={on ? 'chevron-up' : 'chevron-down'} size={16} color={C.muted} />}
+            </Pressable>
+            {on && x.response && <SignatureLine r={x.response} questions={status.questions} />}
+            {on && !!fee && (
+              <>
+                <PaymentLine fee={fee} payment={x.payment} />
+                <PaymentEditor key={`${x.studentId}-${x.payment?.receivedOn ?? ''}-${x.payment?.amountCents ?? ''}`} formId={status.id} studentId={x.studentId}
+                  name={x.name.split(' ')[0]} fee={fee} payment={x.payment} onSaved={onChange} />
+              </>
+            )}
           </View>
-          {shown === x.studentId && x.response && <SignatureLine r={x.response} questions={status.questions} />}
-        </Pressable>
-      ))}
+        );
+      })}
     </View>
   );
 
   return (
     <Card style={{ gap: 12 }}>
-      <SectionTitle icon="people-outline" title="Signatures" />
+      <SectionTitle icon="people-outline" title={fee ? 'Signatures and payments' : 'Signatures'} />
       <Progress done={agreed.length + declined.length} total={status.students.length} />
       <Text style={{ color: C.ink, fontWeight: '600' }}>
         {agreed.length} agreed · {declined.length} declined · {waiting.length} not yet
       </Text>
+      {!!fee && (
+        <Text style={{ color: C.ink, fontWeight: '600' }}>
+          {money(fee)} each · {paid.length} of {status.students.length} paid · {money(paid.reduce((n, x) => n + x.payment!.amountCents, 0))} collected
+        </Text>
+      )}
+      {!!fee && <P muted>Tap a student to record their payment.</P>}
       {group('Not yet', waiting, C.accent)}
       {group('Declined', declined, C.danger)}
       {group('Agreed', agreed, GREEN)}
