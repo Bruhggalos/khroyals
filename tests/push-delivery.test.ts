@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { deliver, type DeliveryStore, type Note } from '../supabase/functions/send-push/delivery';
 
 const note: Note = { id: 'notice', title: 'Alert', body: 'Test', data: { alertId: 'alert', level: 'critical' },
@@ -28,6 +30,7 @@ test('partial acceptance checkpoints only processed devices and retries rejected
   const request: typeof fetch = async (_, init) => {
     const payload = JSON.parse(String(init?.body));
     assert.equal(payload[0].sound.critical, true);
+    assert.equal(payload[0].channelId, 'emergency');
     assert.equal(payload[0].data.notificationId, note.id);
     assert.ok(init?.signal);
     return Response.json({ data: [{ status: 'ok' }, { status: 'error', details: { error: 'MessageRateExceeded' } }] });
@@ -47,4 +50,10 @@ test('dead tokens are removed, and later batch failures preserve accepted checkp
   assert.equal(f.checkpoints[0].tokens.length, 100);
   assert.deepEqual(f.dead, [['t0']]);
   assert.equal(f.releases[0], 'offline');
+});
+
+test('alert pushes name the channel the app creates', () => {
+  const app = readFileSync(join(__dirname, '../src/alerts/loudness.ts'), 'utf8');
+  assert.match(app, /EMERGENCY_CHANNEL = 'emergency'/);
+  assert.match(app, /usage: Notifications\.AndroidAudioUsage\.ALARM/, 'rings at alarm volume, so silent mode does not mute it');
 });

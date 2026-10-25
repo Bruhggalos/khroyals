@@ -67,6 +67,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   how loud the push is (`app.alert_level()`, the `critical_alerts` setting). Alert kinds are
   in both `src/alerts/kinds.ts` and the database checks. Keep the full-screen alert
   (`src/alerts/AlertTakeover.tsx`) mounted in `app/_layout.tsx`.
+  On Android they ring on the `emergency` channel (`src/alerts/loudness.ts`: alarm volume, so
+  silent mode doesn't mute it; Do Not Disturb access lets it through DND); `send-push/delivery.ts`
+  names the same channel. Channel sound settings can't change once made: change the id instead.
 - **Parents and pickup people:** a child has at most two parents, one mother and one
   father (`guardians.relation`, enforced by `app.check_parents`); links made before that
   may have no relation until the office sets it. Anyone else who picks up must have an

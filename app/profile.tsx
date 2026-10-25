@@ -7,9 +7,10 @@ import { Alert, Linking, Platform, ScrollView, Switch, Text, View } from 'react-
 import { Stack, router } from 'expo-router';
 import { pickSquarePhoto } from '../src/photos';
 import {
-  live, myGroupPrefs, mySettings, removeMyAvatar, session, setNotificationPref, signOut, updateMyName, updateMySettings,
+  isSchoolStaff, live, myGroupPrefs, mySettings, removeMyAvatar, session, setNotificationPref, signOut, updateMyName, updateMySettings,
   uploadMyAvatar, type GroupPref, type MySettings, type Person,
 } from '../src/api/connect';
+import { EmergencyAlertsCard } from '../src/alerts/EmergencyAlertsCard';
 import { forgetCarPass } from '../src/carline/carPass';
 import { disableAutoCheckIn } from '../src/carline/autoCheckIn';
 import { MyVehicles } from '../src/carline/MyVehicles';
@@ -200,6 +201,8 @@ export default function Profile() {
           </>
         )}
       </Card>
+
+      {isSchoolStaff(person) && <EmergencyAlertsCard />}
 
       {groups.length > 0 && (
         <Card>
