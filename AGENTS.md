@@ -42,6 +42,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`admin_roles`; director is built in) and permissions are only for real accounts.
   There may be several directors but never zero (trigger `app.keep_a_director`);
   `patguettler@gmail.com` is a director.
+- **Deleting accounts** (`admin_delete_user`) needs `people.delete` (directors by default; they can
+  give it to a role or person). It refuses yourself, directors and children (remove them as students),
+  and admins unless the caller also has `admins.manage`. It deletes their posts (anonymous ones too) and
+  comments so nothing is left looking anonymous, and logs `user.deleted` with their name and email.
 - **Car line:** parents announce with their location (`carline_announce`; the server
   checks the radius — never add a check-in path without it). All staff see the board
   (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents

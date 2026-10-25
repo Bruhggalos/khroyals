@@ -169,5 +169,6 @@ Working in the app and on the server today.
 | Admin portal | Classes | Class sections with their teacher and students, for Ask the Teacher and Assignments |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |
+| Admin portal | Delete accounts | Holders of Delete accounts (directors by default) remove someone's login, profile, posts and comments; never yourself or a director; admins need Manage admins too |
 | Admin portal | Students, questions, push | Add children, approve family requests, route questions, send pushes |
 | Builds | Web, Android and iPad | Web app on GitHub Pages and an Android APK built on every push; on iPads and tablets pages sit in a centered column with five Main Page tiles across |

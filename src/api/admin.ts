@@ -74,6 +74,11 @@ export async function adminSetAccess(userId: string, roleId: string | null, perm
 }
 
 /** Add or remove a director (there must always be at least one). */
+/** people.delete: permanently delete someone's account, with their posts and comments. */
+export async function adminDeleteUser(userId: string) {
+  await rpc('admin_delete_user', { p_user: userId });
+}
+
 export async function adminSetDirector(userId: string, director: boolean) {
   await rpc('admin_set_director', { p_user: userId, p_director: director });
 }

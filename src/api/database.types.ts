@@ -2399,6 +2399,7 @@ export type Database = {
       admin_delete_role: { Args: { p_id: string }; Returns: undefined }
       admin_delete_roster: { Args: { p_roster: string }; Returns: undefined }
       admin_delete_student: { Args: { p_student: string }; Returns: undefined }
+      admin_delete_user: { Args: { p_user: string }; Returns: undefined }
       admin_family_requests: { Args: never; Returns: Json }
       admin_link_guardian: {
         Args: {

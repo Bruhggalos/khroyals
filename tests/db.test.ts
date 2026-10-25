@@ -2049,3 +2049,50 @@ test('form fees: the sender records who paid, how and where it was handed in; pa
   await one(`select form_clear_payment('${museum.id}', '${ava}')`);
   assert.equal((await one(`select form_status('${museum.id}') as s`)).s.students.find((x: any) => x.studentId === ava).payment, null);
 });
+
+test('deleting accounts: only people.delete holders; never yourself, a director or (without admins.manage) an admin', async () => {
+  await asSuper();
+  await db.exec(`insert into posts (group_id, author_id, kind, body) values (${id('g-announce')}, ${id('u-p06')}, 'message', 'Signed post');
+    with p as (insert into posts (group_id, author_id, kind, body) values (${id('g-counsel')}, null, 'question', 'Anonymous question') returning id)
+    insert into app.anonymous_authors (post_id, author_id) select id, ${id('u-p06')} from p;
+    insert into comments (post_id, author_id, body) select id, ${id('u-p06')}, 'A reply' from posts where author_id = ${id('u-admin')} limit 1;`);
+  assert.ok((await one(`select 'people.delete' = any (app.tier_permissions('director')) as ok`)).ok);
+  assert.ok((await rows(`select 1 from permission_catalog() where key = 'people.delete'`)).length === 1);
+
+  // Administrators and everyone else can't, and directors need their authenticator.
+  await as('u-ap', true);
+  await rejects(`select admin_delete_user(${id('u-p06')})`, /permission/);
+  await as('u-admin');
+  await rejects(`select admin_delete_user(${id('u-p06')})`, /MFA_REQUIRED/);
+  await as('u-p01');
+  await rejects(`select admin_delete_user(${id('u-p06')})`, /permission/);
+  await rejects(`delete from profiles where id = ${id('u-p06')}`, /permission denied/);
+
+  // Guards: not yourself, not a director, not a child (they're removed as students).
+  await as('u-admin', true);
+  await rejects(`select admin_delete_user(${id('u-admin')})`, /your own account/);
+  await asSuper();
+  await db.exec(`update profiles set admin_tier = 'director' where id = ${id('u-ap')}`);
+  await as('u-admin', true);
+  await rejects(`select admin_delete_user(${id('u-ap')})`, /director role first/);
+  const child = (await one(`select admin_create_student('Delete', 'Testchild', 1, '2019-05-05') as id`)).id;
+  await rejects(`select admin_delete_user('${child}')`, /Students list/);
+
+  // Given to someone else, people.delete works on regular accounts but not on admins.
+  await asSuper();
+  await db.exec(`update profiles set admin_tier = 'administrator' where id = ${id('u-ap')};
+                 update profiles set permissions = array['people.delete'] where id = ${id('u-libr')}`);
+  await as('u-libr', true);
+  await rejects(`select admin_delete_user(${id('u-ap')})`, /delete an admin/);
+  await one(`select admin_delete_user(${id('u-p06')})`);
+
+  await asSuper();
+  assert.equal((await rows(`select 1 from profiles where id = ${id('u-p06')}`)).length, 0, 'profile gone');
+  assert.equal((await rows(`select 1 from auth.users where id = ${id('u-p06')}`)).length, 0, 'login gone');
+  assert.equal((await rows(`select 1 from posts where body in ('Signed post', 'Anonymous question')`)).length, 0, 'posts gone');
+  assert.equal((await rows(`select 1 from comments where body = 'A reply'`)).length, 0, 'comments gone');
+  const logged = await one(`select actor_id = ${id('u-libr')} as by_libr, detail from audit_log where action = 'user.deleted'`);
+  assert.ok(logged.by_libr);
+  assert.match(logged.detail.name, /\S/);
+  await db.exec(`update profiles set permissions = '{}' where id = ${id('u-libr')}`);
+});

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import {
-  adminClearAvatar, adminDeleteRole, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
+  adminClearAvatar, adminDeleteRole, adminDeleteUser, adminFamilyLinks, adminLinkGuardian, adminListPeople, adminRoles, adminSaveRole, adminSetAccess,
   adminSetCarlineDuty, adminSetDirector, adminSetVolunteerLead, adminUpdateProfile, getUser, listAudit, listMyGroups, listNotifications, listQuestions, me, notificationOpenCounts, permissionCatalog,
   ROLE_LABELS, sendNotification, subscribeQuestions,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo, type SchoolQuestion,
@@ -166,6 +166,12 @@ function PersonCard({ p, links, access, roles, onChange }: {
                 ? 'Family accounts can pick up the students linked here at the car line. They don\'t join groups.'
                 : 'Linked parents join their student\'s family groups automatically.'}</P>
             </View>
+          )}
+          {can('people.delete') && p.id !== me()?.id && p.adminTier !== 'director' && (p.email || p.schoolRole !== 'student')
+            && (!isAdminAccount || can('admins.manage')) && (
+            <Text style={{ color: C.danger, marginTop: 4 }} onPress={() => confirm('Delete account?',
+              `${fullName(p)}'s account will be permanently deleted, with everything they posted. This can't be undone.`,
+              () => adminDeleteUser(p.id).then(onChange).catch(fail))}>Delete account…</Text>
           )}
         </View>
       )}

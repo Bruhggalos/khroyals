@@ -12,7 +12,7 @@ export { listSports, sportSchedule, mySports, mySportSchedule, sportRegistration
 export { marketTerms, acceptMarketTerms, listMarket, getListing, uploadMarketPhoto, marketPost, marketRemove, marketDibs, marketOffer, marketAnswerOffer, marketAnswerCounter, marketWithdraw, marketSelect, marketComplete, marketCancelSale, subscribeMarket } from './market';
 export { listVolunteer, getOpportunity, volunteerPost, volunteerSayYes, volunteerPledge, volunteerWithdraw, volunteerDelete, volunteerSend, adminSetVolunteerLead, subscribeVolunteer } from './volunteer';
 export { listQuestions, getQuestion, askSchool, questionReply, questionAssign, questionClose, subscribeQuestions } from './questions';
-export { adminUpdateProfile, adminLinkGuardian, adminSetParentRelation, adminSetCarlineDuty, adminFamilyLinks, listAudit, permissionCatalog, adminListPeople, adminRoles, adminSaveRole, adminDeleteRole, adminSetAccess, adminSetDirector, transferDirector } from './admin';
+export { adminUpdateProfile, adminLinkGuardian, adminSetParentRelation, adminSetCarlineDuty, adminFamilyLinks, listAudit, permissionCatalog, adminListPeople, adminRoles, adminSaveRole, adminDeleteRole, adminSetAccess, adminSetDirector, adminDeleteUser, transferDirector } from './admin';
 export { NoAccountError, sendEmailCode, authRedirectUrl, completeSignInFromUrl, verifyEmailCode, mfaStatus, mfaEnroll, mfaVerify } from './auth';
 export { listAlerts, myAlertAnswers, sendCriticalAlert, answerAlert, endAlert, alertStatus, subscribeAlerts } from './alerts';
 export { myAccess } from './access';
