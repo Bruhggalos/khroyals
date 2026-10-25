@@ -2106,3 +2106,18 @@ test('deleting accounts: only people.delete holders; never yourself, a director 
   assert.match(logged.detail.name, /\S/);
   await db.exec(`update profiles set permissions = '{}' where id = ${id('u-libr')}`);
 });
+
+test('critical alerts: the roll call leaves out staff without a login', async () => {
+  await asSuper();
+  await db.exec(`insert into profiles (id, first_name, last_name, school_role, managed)
+    values ('aaaaaaaa-0000-4000-8000-000000000035', 'No', 'Login', 'teacher', true)`);
+  await as('u-admin', true);
+  const alert = await one(`select * from critical_alert_send('weather', 'Severe weather: shelter in place', 'Move to the hallways.')`);
+  const roll = (await one(`select critical_alert_status('${alert.id}') as s`)).s as { id: string; role: string }[];
+  assert.ok(roll.length > 0 && roll.every((r) => ['admin', 'teacher', 'staff'].includes(r.role)));
+  assert.ok(!roll.some((r) => r.id === 'aaaaaaaa-0000-4000-8000-000000000035'), 'no login, never asked');
+  assert.ok(roll.some((r) => r.role === 'teacher'), 'teachers with a login still are');
+  await one(`select critical_alert_end('${alert.id}', 'All clear.')`);
+  await asSuper();
+  await db.exec(`delete from profiles where id = 'aaaaaaaa-0000-4000-8000-000000000035'`);
+});
