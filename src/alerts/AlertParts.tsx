@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { alertStatus, answerAlert, type AlertAnswer, type AlertStatusRow, type CriticalAlert } from '../api/connect';
+import { ROLE_LABELS, alertStatus, answerAlert, type AlertAnswer, type AlertStatusRow, type CriticalAlert } from '../api/connect';
 import { clock } from '../carline/time';
 import { C, P, PLACEHOLDER, s } from '../ui';
+import { rollCall, type RollCallTab } from './rollCall';
 
 const GREEN = '#15803D';
 const RED = '#B42318';
@@ -75,37 +76,65 @@ export function AnswerButtons({ alert, answer, dark, onDone }: {
 }
 
 /** For the senders: who needs help, who hasn't answered and who's safe. `tick` reloads it (live updates). */
+/**
+ * The senders' live roll call: Need help, No answer and Safe counts, each a tab that lists
+ * its people (name, role and when they answered). Whoever needs help always shows, with
+ * where they are, whichever tab is open.
+ */
 export function RollCall({ alertId, tick }: { alertId: string; tick: number }) {
   const [rows, setRows] = useState<AlertStatusRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<RollCallTab | null>(null);
   useEffect(() => { alertStatus(alertId).then((r) => { setRows(r); setError(null); }).catch((e) => setError(e.message)); }, [alertId, tick]);
   if (error) return <P muted>{error}</P>;
-  if (!rows) return <P muted>Loading who's answered…</P>;
+  if (!rows) return <P muted>Loading who’s answered…</P>;
 
-  const help = rows.filter((r) => r.status === 'help');
-  const none = rows.filter((r) => r.status === 'none');
-  const safe = rows.filter((r) => r.status === 'safe');
-  const count = (n: number, label: string, color: string) => (
-    <View style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 12, backgroundColor: `${color}14` }}>
-      <Text style={{ fontSize: 24, fontWeight: '900', color }}>{n}</Text>
-      <Text style={{ fontSize: 12, fontWeight: '700', color }}>{label}</Text>
+  const { groups, first } = rollCall(rows);
+  const tab = picked ?? first;
+  const TABS: { key: RollCallTab; label: string; color: string; empty: string }[] = [
+    { key: 'help', label: 'NEED HELP', color: RED, empty: 'Nobody has asked for help.' },
+    { key: 'none', label: 'NO ANSWER', color: C.muted, empty: 'Everyone has answered.' },
+    { key: 'safe', label: 'SAFE', color: GREEN, empty: 'Nobody has answered safe yet.' },
+  ];
+  const current = TABS.find((x) => x.key === tab)!;
+  const role = (r: AlertStatusRow) => ROLE_LABELS[r.role] ?? r.role;
+  const helpCard = (r: AlertStatusRow) => (
+    <View key={r.id} style={{ padding: 10, borderRadius: 12, borderWidth: 1, borderColor: RED, gap: 2 }}>
+      <Text style={{ fontWeight: '800', color: RED }}>🆘 {r.name}{r.updatedAt ? ` · ${clock(r.updatedAt)}` : ''}</Text>
+      <Text style={{ color: C.muted, fontSize: 13 }}>{role(r)}</Text>
+      {!!r.note && <Text style={{ color: C.ink }}>{r.note}</Text>}
     </View>
   );
+
   return (
     <View style={{ gap: 10 }}>
-      <View style={[s.row, { gap: 8 }]}>
-        {count(help.length, 'NEED HELP', RED)}
-        {count(none.length, 'NO ANSWER', C.muted)}
-        {count(safe.length, 'SAFE', GREEN)}
+      <View style={[s.row, { gap: 8 }]} accessibilityRole="tablist">
+        {TABS.map((x) => {
+          const on = x.key === tab;
+          return (
+            <Pressable key={x.key} onPress={() => setPicked(x.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
+              accessibilityLabel={`${groups[x.key].length} ${x.label.toLowerCase()}`}
+              style={({ pressed }) => [{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 12, backgroundColor: `${x.color}14`,
+                borderWidth: 2, borderColor: on ? x.color : 'transparent' }, pressed && { opacity: 0.7 }]}>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: x.color }}>{groups[x.key].length}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: x.color }}>{x.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
-      {help.map((r) => (
-        <View key={r.id} style={{ padding: 10, borderRadius: 12, borderWidth: 1, borderColor: RED, gap: 2 }}>
-          <Text style={{ fontWeight: '800', color: RED }}>🆘 {r.name}{r.updatedAt ? ` · ${clock(r.updatedAt)}` : ''}</Text>
-          {!!r.note && <Text style={{ color: C.ink }}>{r.note}</Text>}
+      {tab !== 'help' && groups.help.map(helpCard)}
+      <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: current.color }}>{current.label} ({groups[tab].length})</Text>
+      {groups[tab].length === 0 && <P muted>{current.empty}</P>}
+      {tab === 'help' ? groups.help.map(helpCard) : groups[tab].map((r, i) => (
+        <View key={r.id} style={[s.row, { gap: 10, paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }]}>
+          <Ionicons name={tab === 'safe' ? 'checkmark-circle' : 'time-outline'} size={20} color={current.color} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700', color: C.ink }}>{r.name}</Text>
+            <Text style={{ color: C.muted, fontSize: 13 }}>{role(r)}</Text>
+          </View>
+          {tab === 'safe' && !!r.updatedAt && <Text style={{ color: C.muted }}>{clock(r.updatedAt)}</Text>}
         </View>
       ))}
-      {none.length > 0 && <P muted>No answer yet: {none.map((r) => r.name).join(', ')}</P>}
-      {safe.length > 0 && <P muted>Safe: {safe.map((r) => r.name).join(', ')}</P>}
     </View>
   );
 }
