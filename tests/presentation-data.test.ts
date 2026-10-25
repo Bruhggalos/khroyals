@@ -17,6 +17,8 @@ const STUDENT = '22222222-2222-4222-8222-222222222222';
 const OLDER = '33333333-3333-4333-8333-333333333333';
 const YOUNGER = '44444444-4444-4444-8444-444444444444';
 const VB_SEASON = '55555555-5555-4555-8555-555555555555';
+const CHEER_SEASON = '77777777-7777-4777-8777-777777777777';
+const BASKETBALL = '88888888-8888-4888-8888-888888888888';
 const DAY = '2026-10-27';
 
 async function as(who: string) {
@@ -26,7 +28,8 @@ async function as(who: string) {
 const one = async (q: string) => (await db.query<any>(q)).rows[0];
 const count = async (q: string) => Number((await one(`select count(*) as n from (${q}) x`)).n);
 const load = (remove = false) => db.exec(buildSql({
-  day: DAY, me: ME, children: [{ id: OLDER, grade: 6 }, { id: YOUNGER, grade: 2 }], student: STUDENT, volleyball: VB_SEASON, remove,
+  day: DAY, me: ME, children: [{ id: OLDER, grade: 6 }, { id: YOUNGER, grade: 2 }], student: STUDENT, volleyball: VB_SEASON,
+  cheer: CHEER_SEASON, basketball: BASKETBALL, remove,
 }));
 
 before(async () => {
@@ -40,7 +43,12 @@ before(async () => {
       ('${OLDER}', 'Alaythea', 'Nelson', 'student', 6, true), ('${YOUNGER}', 'Lexi Kate', 'Nelson', 'student', 2, true);
     insert into guardians (guardian_id, student_id, relation) values ('${ME}', '${OLDER}', 'father'), ('${ME}', '${YOUNGER}', 'father');
     insert into sports (id, name, icon, description, category) values ('66666666-6666-4666-8666-666666666666', 'Volleyball', '🏐', '', 'sports');
-    insert into sport_seasons (id, sport_id, name, starts_on, ends_on) values ('${VB_SEASON}', '66666666-6666-4666-8666-666666666666', 'Fall 2026', '2026-08-03', '2026-10-31');`);
+    insert into sport_seasons (id, sport_id, name, starts_on, ends_on) values ('${VB_SEASON}', '66666666-6666-4666-8666-666666666666', 'Fall 2026', '2026-08-03', '2026-10-31');
+    -- The school's real activities, which the sample data joins but never removes.
+    insert into sports (id, name, icon, description, category) values ('${BASKETBALL}', 'Basketball', '🏀', '', 'sports'),
+      ('99999999-9999-4999-8999-999999999999', 'Royals Cheer', '📣', '', 'sports');
+    insert into sport_seasons (id, sport_id, name, starts_on, ends_on, min_grade, max_grade)
+      values ('${CHEER_SEASON}', '99999999-9999-4999-8999-999999999999', '2026–27', '2026-12-11', '2026-12-29', 0, 5);`);
 });
 
 test('school days skip the weekend', () => {
@@ -57,7 +65,9 @@ test('loads, shows up for the parent, their class and the student, loads again, 
   assert.equal(people, 25, '5 staff, 10 parents and 10 students');
   assert.equal(await count(`select 1 from forms`), 4);
   assert.equal(await count(`select 1 from market_listings`), 11);
-  assert.equal(await count(`select 1 from sports`), 5, 'Volleyball and four new ones');
+  assert.equal(await count(`select 1 from sports`), 6, 'Volleyball, Basketball, Royals Cheer and three made-up ones');
+  assert.equal(await count(`select 1 from sport_registrations where season_id = '${CHEER_SEASON}'`), 3, 'the younger child and two classmates in Cheer');
+  assert.equal(await count(`select 1 from sport_follows where sport_id = '${BASKETBALL}' and user_id = '${ME}'`), 1);
   assert.equal(await count(`select 1 from volunteer_opportunities`), 4);
   assert.equal((await one(`select school_role, grade from profiles where id = '${STUDENT}'`)).school_role, 'student');
 
@@ -88,6 +98,7 @@ test('loads, shows up for the parent, their class and the student, loads again, 
   for (const t of ['forms', 'market_listings', 'volunteer_opportunities', 'assignments', 'rosters', 'teacher_threads', 'sport_events', 'sport_registrations']) {
     assert.equal(await count(`select 1 from ${t}`), 0, t);
   }
-  assert.equal(await count(`select 1 from sports`), 1);
+  assert.equal(await count(`select 1 from sports`), 3, 'the real activities stay');
+  assert.equal(await count(`select 1 from sport_follows`), 0);
   assert.equal(await count(`select 1 from profiles where id in ('${ME}', '${STUDENT}', '${OLDER}', '${YOUNGER}')`), 4);
 });

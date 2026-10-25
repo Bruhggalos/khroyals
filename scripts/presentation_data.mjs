@@ -5,7 +5,9 @@
  * assignments, forms (signed, paid and still to do), marketplace listings, activities and
  * volunteer opportunities. It centers on one real test account: their children are in the
  * classes and get the forms, they teach one class themselves (the Staff view), and a second
- * login can become a 6th grader in two of the classes (the student view).
+ * login can become a 6th grader in two of the classes (the student view). The school's real
+ * activities stay as they are; the younger child (and two made-up classmates) join Royals
+ * Cheer and the parent follows Basketball, if those exist.
  *
  *   SUPABASE_ACCESS_TOKEN=… node scripts/presentation_data.mjs --parent <email> [--student <email>]
  *     [--day 2026-10-27] [--remove] [--print]
@@ -87,12 +89,13 @@ const kid = (k) => uid(`kid:${k}`);
 /**
  * The SQL that removes everything this script adds, then (unless `remove`) adds it again.
  * `me` is the test parent's profile id, `children` their children ({ id, grade }, older
- * first), `student` an optional student login's id, `volleyball` an existing season id.
- * @param {{ day: string, me: string, children: { id: string, grade: number }[],
- *   student?: string | null, volleyball?: string | null, remove?: boolean }} options
+ * first), `student` an optional student login's id, `volleyball` an existing season id,
+ * `cheer` the real Royals Cheer season's id and `basketball` the real Basketball activity's id.
+ * @param {{ day: string, me: string, children: { id: string, grade: number }[], student?: string | null,
+ *   volleyball?: string | null, cheer?: string | null, basketball?: string | null, remove?: boolean }} options
  * @returns {string}
  */
-export function buildSql({ day, me, children, student = null, volleyball = null, remove = false }) {
+export function buildSql({ day, me, children, student = null, volleyball = null, cheer = null, basketball = null, remove = false }) {
   const [older, younger] = children;
   const sd = (n) => schoolDay(day, n);
   const ids = { forms: [], threads: [], assignments: [], rosters: [], events: [], sports: [], opps: [], listings: [], people: [] };
@@ -194,26 +197,22 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
 
   // --- Activities
   const sport = (key, name, icon, category, description, coach) => ({ key, id: uid(`sport:${key}`), name, icon, category, description, coach });
+  // (An earlier version made up a Basketball activity; the school's real one replaced it.)
   const sports = [
-    sport('basketball', 'Basketball', '🏀', 'sports', 'Middle and high school basketball. Practice Tuesdays and Thursdays in the gym.', staff('davis')),
     sport('annie', 'Annie Jr.', '🎭', 'theater', 'This year’s musical. Rehearsals Mondays and Wednesdays after school.', staff('price')),
     sport('chess', 'Chess Club', '♟️', 'clubs', 'All levels welcome. We meet Wednesdays in Room 112.', staff('taylor')),
     sport('choir', 'Royal Voices', '🎵', 'music', 'Lower school choir. Rehearsals Thursdays after school.', staff('price')),
   ];
-  ids.sports = sports.map((s) => s.id);
+  ids.sports = [...sports.map((s) => s.id), uid('sport:basketball')];
   const season = (key, sp, name, starts, ends, min, max, details) => ({ id: uid(`season:${key}`), sport: uid(`sport:${sp}`), name, starts, ends, min, max, details });
   const seasons = [
-    season('basketball', 'basketball', '2026–27 season', '2026-11-02', '2027-02-20', 6, 12, 'Practice Tue and Thu, 3:45–5:15. Bring a water bottle.'),
     season('annie', 'annie', 'Fall show', '2026-09-14', '2026-12-12', 2, 8, 'Rehearsals Mon and Wed, 3:30–5:00. Shows Dec 11 and 12.'),
     season('chess', 'chess', 'Fall 2026', '2026-09-02', '2026-12-16', 3, 12, 'Wednesdays, 3:30–4:30.'),
     season('choir', 'choir', '2026–27', '2026-08-17', '2027-05-14', 2, 6, 'Thursdays, 3:30–4:15. Christmas Program on Dec 1.'),
   ];
   const ev = (key, s, kind, title, start, end, location, home = null) => ({ id: uid(`event:${key}`), season: s, kind, title, start, end, location, home });
-  const SB = uid('season:basketball'), SA = uid('season:annie'), SC = uid('season:chess'), SV = uid('season:choir');
+  const SA = uid('season:annie'), SC = uid('season:chess'), SV = uid('season:choir');
   const events = [
-    ev('bb1', SB, 'practice', 'First practice', at(sd(6), '15:45'), at(sd(6), '17:15'), 'Royals Gym'),
-    ev('bb2', SB, 'practice', 'Practice', at(sd(8), '15:45'), at(sd(8), '17:15'), 'Royals Gym'),
-    ev('bb3', SB, 'game', 'vs. Grace Prep', at(sd(11), '18:00'), null, 'Royals Gym', true),
     ev('an1', SA, 'rehearsal', 'Rehearsal: Act 1', at(sd(-1), '15:30'), at(sd(-1), '17:00'), 'Auditorium'),
     ev('an2', SA, 'rehearsal', 'Rehearsal: Act 1', at(sd(1), '15:30'), at(sd(1), '17:00'), 'Auditorium'),
     ev('an3', SA, 'rehearsal', 'Music rehearsal', at(sd(5), '15:30'), at(sd(5), '17:00'), 'Music room'),
@@ -229,11 +228,14 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   }
   ids.events = events.map((e) => e.id);
   const registrations = [
-    ...(older ? [[SB, older.id, me, 'registered'], ...fa.slice(0, 3).map((f) => [SB, kid(f.key), parent(f.key), 'registered']), ...(fa[3] ? [[SB, kid(fa[3].key), parent(fa[3].key), 'pending']] : [])] : []),
     ...(younger ? [[SA, younger.id, me, 'registered'], [SV, younger.id, me, 'registered'], ...fb.slice(0, 2).map((f) => [SA, kid(f.key), parent(f.key), 'registered']),
       ...fb.slice(2, 4).map((f) => [SV, kid(f.key), parent(f.key), 'registered'])] : []),
+    // The school's real Royals Cheer (K–5): the younger child and two classmates.
+    ...(younger && cheer ? [[cheer, younger.id, me, 'registered'], ...fb.slice(3, 5).map((f) => [cheer, kid(f.key), parent(f.key), 'registered'])] : []),
+    ...fa.slice(1, 3).map((f) => [SA, kid(f.key), parent(f.key), 'registered']),
     ...fa.slice(3).map((f) => [SC, kid(f.key), parent(f.key), 'registered']),
   ];
+  const regId = (s, st) => uid(`registration:${s}:${st}`);
 
   // --- Volunteer (led by the front office)
   const opps = [
@@ -275,6 +277,9 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   out.push(`delete from public.rosters where id in ${inList(ids.rosters)};`);
   out.push(`delete from public.sport_events where id in ${inList([...ids.events, uid('event:vb1'), uid('event:vb2')])};`);
   out.push(`delete from public.sports where id in ${inList(ids.sports)};`);
+  // On the school's real activities: only the rows added here (sign-ups and the parent's follow).
+  out.push(`delete from public.sport_registrations where id in ${inList(registrations.map(([s, st]) => regId(s, st)))};`);
+  if (basketball) out.push(`delete from public.sport_follows where sport_id = ${lit(basketball)} and user_id = ${lit(me)};`);
   out.push(`delete from public.volunteer_opportunities where id in ${inList(ids.opps)};`);
   out.push(`delete from public.market_listings where id in ${inList(ids.listings)};`);
   out.push(`delete from public.profiles where id in ${inList(ids.people)};`);
@@ -319,8 +324,9 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   out.push(insert('sport_seasons', ['id', 'sport_id', 'name', 'starts_on', 'ends_on', 'signup_opens', 'signup_closes', 'min_grade', 'max_grade', 'details', 'signup_announced_at'],
     seasons.map((s) => [s.id, s.sport, s.name, s.starts, s.ends, addDays(day, -20), addDays(day, 10), s.min, s.max, s.details, at(addDays(day, -20), '08:00')])));
   out.push(insert('sport_registrations', ['id', 'season_id', 'student_id', 'requested_by', 'status', 'decided_by', 'decided_at'],
-    registrations.map(([s, st, by, status], i) => [uid(`registration:${i}:${s}:${st}`), s, st, by, status,
-      status === 'registered' ? sports.find((x) => uid(`season:${x.key}`) === s).coach : null, status === 'registered' ? at(sd(-5), '12:00') : null])));
+    registrations.map(([s, st, by, status]) => [regId(s, st), s, st, by, status,
+      status === 'registered' ? sports.find((x) => uid(`season:${x.key}`) === s)?.coach ?? null : null, status === 'registered' ? at(sd(-5), '12:00') : null])));
+  if (basketball) out.push(`insert into public.sport_follows (sport_id, user_id) values (${lit(basketball)}, ${lit(me)}) on conflict do nothing;`);
   out.push(insert('sport_events', ['id', 'season_id', 'kind', 'title', 'starts_at', 'ends_at', 'location', 'home', 'created_by'],
     events.map((e) => [e.id, e.season, e.kind, e.title, e.start, e.end, e.location, e.home, null])));
 
@@ -374,8 +380,12 @@ async function main() {
   if (studentEmail && !student) console.warn(`No account for ${studentEmail} yet: sign in with it once in the app, then run this again. Going on without it.`);
   const [vb] = await q(`select se.id from public.sport_seasons se join public.sports s on s.id = se.sport_id
     where s.name = 'Volleyball' and se.ends_on >= ${lit(day)} order by se.starts_on limit 1`);
+  const [cheer] = await q(`select se.id from public.sport_seasons se join public.sports s on s.id = se.sport_id
+    where s.name = 'Royals Cheer' and se.ends_on >= ${lit(day)} order by se.starts_on limit 1`);
+  const [basketball] = await q(`select id from public.sports where name = 'Basketball' and id <> ${lit(uid('sport:basketball'))}`);
 
-  const sql = buildSql({ day, me: me.id, children, student: student?.id ?? null, volleyball: vb?.id ?? null, remove: args.includes('--remove') });
+  const sql = buildSql({ day, me: me.id, children, student: student?.id ?? null, volleyball: vb?.id ?? null,
+    cheer: cheer?.id ?? null, basketball: basketball?.id ?? null, remove: args.includes('--remove') });
   if (args.includes('--print')) { console.log(sql); return; }
   await q(sql);
   if (args.includes('--remove')) { console.log('Removed the presentation data.'); return; }
