@@ -17,6 +17,7 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { markNotificationsOpened, registerPushToken, session, unregisterPushToken } from '../api/connect';
 import { handleCarlineResponse } from '../carline/autoCheckIn';
+import { setUpChannels } from '../alerts/loudness';
 import { notificationHref } from './inbox';
 import { clearLocalNotifications } from './localInbox';
 import appJson from '../../app.json';
@@ -44,14 +45,7 @@ const projectId = (): string | undefined => (Constants.expoConfig?.extra as any)
 export async function enablePush(opts: { critical?: boolean } = {}): Promise<{ state: PushState; detail?: string }> {
   if (Platform.OS === 'web') return { state: 'unsupported', detail: 'Notifications need the Android or iPhone app.' };
   try {
-    if (Platform.OS === 'android') {  // Android 13+ only asks once a channel exists
-      await Notifications.setNotificationChannelAsync('default', { name: 'Royals Connect', importance: Notifications.AndroidImportance.HIGH });
-      await Notifications.setNotificationChannelAsync('critical', {
-        name: 'Critical alerts', description: 'Severe weather, lockdowns and other emergencies from the school administration.',
-        importance: Notifications.AndroidImportance.MAX, bypassDnd: true, enableVibrate: true, vibrationPattern: [0, 600, 300, 600, 300, 600],
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC, sound: 'default',
-      });
-    }
+    await setUpChannels();  // Android 13+ only asks once a channel exists
     let perm = await Notifications.getPermissionsAsync();
     if (perm.status !== 'granted' && perm.canAskAgain) perm = await Notifications.requestPermissionsAsync();
     if (perm.status === 'granted' && opts.critical && Platform.OS === 'ios' && !perm.ios?.allowsCriticalAlerts) {

@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
 import { AlertTakeover } from '../src/alerts/AlertTakeover';
+import { offerDndAccess } from '../src/alerts/loudness';
 import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
 import { edgeLayout } from '../src/ScreenEdge';
@@ -18,7 +19,13 @@ function usePush() {
   useEffect(() => handleNotificationTaps(), []);
   useEffect(() => {
     if (!live) return;
-    const register = () => session().then((p) => { if (p && !p.pending) { enablePush({ critical: isSchoolStaff(p) }); syncCarPass(p); } }).catch(() => {});
+    const register = () => session().then(async (p) => {
+      if (!p || p.pending) return;
+      syncCarPass(p);
+      const staff = isSchoolStaff(p);
+      await enablePush({ critical: staff });
+      if (staff) await offerDndAccess();  // so critical alerts ring through Do Not Disturb
+    }).catch(() => {});
     register();
     return onAuthChange(register);
   }, []);

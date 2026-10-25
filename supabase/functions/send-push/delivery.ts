@@ -11,12 +11,13 @@ export type DeliveryStore = {
 type Ticket = { status: 'ok' | 'error'; details?: { error?: string }; message?: string };
 const EXPO = 'https://exp.host/--/api/v2/push/send';
 
+/** Alerts use the phone's "Emergency alerts" channel (src/alerts/loudness.ts: alarm volume, lock screen). */
 function loudness(n: Note) {
   if (!n.data.alertId) return { sound: 'default', channelId: 'default' };
   const critical = n.data.level === 'critical';
   return {
     sound: critical ? { critical: true, name: 'default', volume: 1 } : 'default',
-    interruptionLevel: critical ? 'critical' : 'time-sensitive', channelId: 'critical', priority: 'high',
+    interruptionLevel: critical ? 'critical' : 'time-sensitive', channelId: 'emergency', priority: 'high',
   };
 }
 

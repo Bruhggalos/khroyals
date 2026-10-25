@@ -363,8 +363,11 @@ settings or quiet hours. How loud they are on an iPhone depends on Apple:
   3. When that build is out, turn the loud level on for pushes:
      `update app.settings set value = 'on' where key = 'critical_alerts';`
      Staff are then asked once to allow critical alerts.
-- **Android:** alerts use the "Critical alerts" channel (max importance, allowed to ring
-  through Do Not Disturb if the person grants it).
+- **Android:** alerts use the "Emergency alerts" channel (`src/alerts/loudness.ts`): max
+  importance, shown on the lock screen, and the sound plays at **alarm volume**, so silent and
+  vibrate mode don't mute it. Ringing through Do Not Disturb needs Do Not Disturb access for the
+  app (`ACCESS_NOTIFICATION_POLICY`): staff are asked once after sign-in, and Profile →
+  Emergency alerts shows what's on and opens the setting.
 - Phones only get any of this after the push setup in §7; until then alerts still fill
   the screen when the app is open and land on the bell page.
 

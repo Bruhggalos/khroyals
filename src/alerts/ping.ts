@@ -9,19 +9,18 @@ import type { CriticalAlert } from '../api/connect';
 import { pushRegistered } from '../comms/push';
 import { notifyLocal } from '../comms/localInbox';
 import { alertKind } from './kinds';
-
-const BUZZ = [0, 600, 300, 600, 300, 600];
+import { BUZZ, EMERGENCY_CHANNEL } from './loudness';
 
 export async function pingStarted(a: CriticalAlert) {
   Vibration.vibrate(BUZZ);
   if (pushRegistered()) return;  // the push rings for it
   await notifyLocal({ title: `${alertKind(a.kind).label}: ${a.title}`, body: a.body || 'Open KH Royals for details.', data: { alertId: a.id, kind: a.kind, critical: true }, sound: true },
-    { id: `alert-${a.id}`, channelId: 'critical' }).catch(() => {});
+    { id: `alert-${a.id}`, channelId: EMERGENCY_CHANNEL }).catch(() => {});
 }
 
 export async function pingCleared(a: CriticalAlert) {
   Vibration.vibrate([0, 300, 150, 300]);
   if (pushRegistered()) return;
   await notifyLocal({ title: `✅ All clear: ${a.title}`, body: a.endNote || 'The alert is over.', data: { alertId: a.id, kind: a.kind }, sound: true },
-    { id: `allclear-${a.id}`, channelId: 'critical' }).catch(() => {});
+    { id: `allclear-${a.id}`, channelId: EMERGENCY_CHANNEL }).catch(() => {});
 }
