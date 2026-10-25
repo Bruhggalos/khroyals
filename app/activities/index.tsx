@@ -1,6 +1,6 @@
 /**
  * Activities (Apps → Activities): sports, theater, music, art and clubs. Pick a category
- * (or All), or search. "Your activities" are the ones you follow (★), a child is registered
+ * (or All), or search every activity and schedule. "Your activities" are the ones you follow (★), a child is registered
  * for, or you opened lately; "Upcoming events" counts down to what's next for them, with
  * where it is and Are you going? for registered children. Below: what's happening now,
  * seasons coming up with sign-up info, and every other activity to follow. Anyone can
@@ -11,15 +11,17 @@ import { Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 're
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  listSports, myAccess, mySports, mySportSchedule, session, subscribeSports,
+  listSports, myAccess, mySports, mySportSchedule, session, sportSchedule, subscribeSports,
   type Access, type MySport, type Person, type Sport, type SportEvent, type SportSeason,
 } from '../../src/api/connect';
+import { PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
 import { ActivityCard, AttendanceLine, EventCard, MoreCard, RsvpButton } from '../../src/sports/cards';
 import { CATEGORIES, categoryInfo, inCategory, type Category } from '../../src/sports/categories';
 import { useEventPeople, useNow } from '../../src/sports/hooks';
 import { recentActivities } from '../../src/sports/recent';
 import { dateRange, schoolToday, seasonState, shortDay, signupState, sportSections } from '../../src/sports/seasons';
-import { SportRow } from '../../src/sports/ui';
+import { searchActivities } from '../../src/sports/search';
+import { EventRow, SportRow } from '../../src/sports/ui';
 import { Button, C, Card, H, Loading, P, PLACEHOLDER, s } from '../../src/ui';
 
 const Section = ({ title }: { title: string }) => (
@@ -76,6 +78,9 @@ export default function ActivitiesHome() {
   const [filter, setFilter] = useState<Category | 'all'>('all');
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState('');
+  // Every activity's schedule (past too), loaded the first time someone searches.
+  const [allEvents, setAllEvents] = useState<SportEvent[] | null>(null);
+  const pastHits = usePastToggle();
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const scroll = useRef<ScrollView>(null);
@@ -88,7 +93,7 @@ export default function ActivitiesHome() {
       const d = await listSports();  // after session(), so team photos are signed for approved accounts
       const approved = p && !p.pending;
       const [m, sch, a] = approved ? await Promise.all([mySports(), mySportSchedule(), myAccess().catch(() => null)]) : [[], [], null];
-      setData(d); setMe(p); setMine(m); setSchedule(sch); setAccess(a); setRecent(r); setError(null);
+      setData(d); setMe(p); setMine(m); setSchedule(sch); setAccess(a); setRecent(r); setError(null); setAllEvents(null);
     } catch (e: any) {
       setError(e.message ?? String(e));
     }
@@ -101,6 +106,12 @@ export default function ActivitiesHome() {
   const rsvp = useEventPeople(me, upcoming);
   useEffect(() => subscribeSports(() => { load(); rsvp.reload(); }), [load, rsvp.reload]);
   const refresh = async () => { setRefreshing(true); await Promise.all([load(), rsvp.reload()]); setRefreshing(false); };
+  useEffect(() => {
+    if (!searching || !data || allEvents) return;
+    let on = true;
+    sportSchedule(data.seasons.map((se) => se.id), { past: true }).then((ev) => on && setAllEvents(ev)).catch(() => on && setAllEvents([]));
+    return () => { on = false; };
+  }, [searching, data, allEvents]);
 
   const header = (
     <Stack.Screen options={{
@@ -134,8 +145,9 @@ export default function ActivitiesHome() {
     const cur = ss.find((se) => seasonState(se, today) === 'in-season') ?? ss[0];
     return cur?.name ?? categoryInfo(sp.category).label;
   };
-  const q = query.trim().toLowerCase();
-  const results = q ? data.sports.filter((sp) => `${sp.name} ${sp.description} ${categoryInfo(sp.category).label}`.toLowerCase().includes(q)) : [];
+  const q = query.trim();
+  const found = searchActivities(q, data.sports, data.seasons, allEvents ?? []);
+  const SHOWN = 25;
 
   return (
     <ScrollView ref={scroll} style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled"
@@ -144,19 +156,34 @@ export default function ActivitiesHome() {
       {searching && (
         <View style={[s.row, s.input, { gap: 8, paddingVertical: 10 }]}>
           <Ionicons name="search" size={18} color={C.muted} />
-          <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Search activities" placeholderTextColor={PLACEHOLDER}
-            accessibilityLabel="Search activities" style={{ flex: 1, fontSize: 15, color: C.ink, padding: 0 }} returnKeyType="search" />
+          <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Search activities and schedules" placeholderTextColor={PLACEHOLDER}
+            accessibilityLabel="Search activities and schedules" style={{ flex: 1, fontSize: 15, color: C.ink, padding: 0 }} returnKeyType="search" />
         </View>
       )}
 
       {q ? (
         <>
-          <SmallSection title={`${results.length} ${results.length === 1 ? 'activity' : 'activities'}`} />
-          {results.length === 0 && <Card><P muted>No activities match “{query.trim()}”.</P></Card>}
-          {results.map((sp) => (
+          {found.activities.length > 0 && <SmallSection title={`${found.activities.length} ${found.activities.length === 1 ? 'activity' : 'activities'}`} />}
+          {found.activities.map((sp) => (
             <SportRow key={sp.id} sport={sp} onPress={() => open(sp.id)} following={why(sp.id)?.following} registered={why(sp.id)?.registered}
               line={`${categoryInfo(sp.category).emoji} ${categoryInfo(sp.category).label} · ${seasonLabel(sp)}`} />
           ))}
+          {allEvents === null ? <P muted>Looking through the schedules…</P> : (
+            <>
+              {found.upcoming.length > 0 && <SmallSection title={`Coming up on the schedule (${found.upcoming.length})`} />}
+              {found.upcoming.slice(0, SHOWN).map(({ event, sport }) => (
+                <EventRow key={event.id} e={event} sport={sport} onPress={sport ? () => open(sport.id) : undefined} />
+              ))}
+              {found.upcoming.length > SHOWN && <P muted>And {found.upcoming.length - SHOWN} more. Add a word to narrow it down.</P>}
+              <PastToggle count={found.past.length} shown={pastHits.shown} onToggle={pastHits.toggle} noun="past games and events" />
+              {pastHits.shown && found.past.slice(0, SHOWN).map(({ event, sport }) => (
+                <EventRow key={event.id} e={event} sport={sport} past onPress={sport ? () => open(sport.id) : undefined} />
+              ))}
+              {!found.activities.length && !found.upcoming.length && !found.past.length && (
+                <Card><P muted>No activities or schedule items match “{q}”.</P></Card>
+              )}
+            </>
+          )}
         </>
       ) : (
         <>
