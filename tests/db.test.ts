@@ -9,6 +9,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import users from '../mock-db/comms/users.json';
+import { accessSchema } from '../src/api/schemas';
 
 const ROOT = join(__dirname, '..');
 const sql = (p: string) => readFileSync(join(ROOT, p), 'utf8');
@@ -2048,4 +2049,13 @@ test('form fees: the sender records who paid, how and where it was handed in; pa
   await as('u-eng');
   await one(`select form_clear_payment('${museum.id}', '${ava}')`);
   assert.equal((await one(`select form_status('${museum.id}') as s`)).s.students.find((x: any) => x.studentId === ava).payment, null);
+});
+
+test("my_access: isDirector is always true or false, and every reply passes the app's check", async () => {
+  for (const [who, mfa, director] of [['u-p01', false, false], ['u-eng', false, false], ['u-ap', true, false], ['u-admin', true, true]] as const) {
+    await as(who, mfa);
+    const a = (await one(`select my_access() as a`)).a;
+    assert.equal(a.isDirector, director, `${who}: a boolean, not null`);
+    assert.doesNotThrow(() => accessSchema.parse(a), who);
+  }
 });

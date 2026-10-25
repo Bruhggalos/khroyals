@@ -38,7 +38,8 @@ export const childrenSchema = z.object({
   bio: text, allergies: text, medicalNotes: text, parents: text.array(),
 }).array() satisfies z.ZodType<Omit<Child, 'photo'>[]>;
 export const accessSchema = z.object({
-  tier: nullableText, roleName: nullableText, isDirector: boolean, granted: text.array(), permissions: text.array(),
+  // Servers before migration 34 sent null for people without an admin tier.
+  tier: nullableText, roleName: nullableText, isDirector: boolean.nullable().transform((v) => !!v), granted: text.array(), permissions: text.array(),
   mfaRequired: boolean, mfaVerified: boolean,
 }) satisfies z.ZodType<Access>;
 export const carlineConfigSchema = z.object({
