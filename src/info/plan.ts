@@ -1,7 +1,7 @@
 /**
  * One day on the Planner tab, from what's loaded once for the two weeks: whether there's
  * school, the uniform, the student's (or teacher's) assignments, a card for each of a
- * parent's children (their class assignments and activities), and the day's other
+ * parent's children (their class assignments, activities and forms to sign), and the day's other
  * things (school events, activities, volunteer sign-ups, car line hours). No app
  * imports, so tests run it.
  */
@@ -23,6 +23,8 @@ export type InfoData = {
   /** A parent's children, and what their teachers assigned. */
   kids: Kid[];
   kidAssignments: ChildAssignment[];
+  /** Open forms still to sign, and for which children. */
+  forms: { id: string; title: string; dueOn: string; waiting: string[] }[];
   schedule: SportEvent[]; sports: Sport[]; seasons: SportSeason[];
   /** The children's activity sign-ups, to put each event on the right child's card. */
   registrations: SportRegistration[];
@@ -34,7 +36,7 @@ export type InfoData = {
 };
 
 export const NO_DATA: InfoData = {
-  assigns: null, assignments: [], kids: [], kidAssignments: [], schedule: [], sports: [], seasons: [],
+  assigns: null, assignments: [], kids: [], kidAssignments: [], forms: [], schedule: [], sports: [], seasons: [],
   registrations: [], opportunities: [], signups: [], carline: null,
 };
 
@@ -78,6 +80,11 @@ export function planDay(day: string, today: string, calendar: CalendarDay[], d: 
         key: `ka-${kid.id}-${a.id}`, icon: 'document-text-outline', title: a.title, detail: a.className,
       })),
       ...games.filter((e) => going(e).includes(kid.id)).map((e) => activity(e, `kg-${kid.id}-${e.id}`)),
+      // A form to sign shows on its due day, and on today while it's overdue.
+      ...d.forms.filter((f) => f.waiting.includes(kid.id) && (f.dueOn === day || (day === today && f.dueOn < today))).map((f): Row => ({
+        key: `kf-${kid.id}-${f.id}`, icon: 'create-outline', tone: 'accent', title: `Sign: ${f.title}`,
+        detail: f.dueOn === day ? 'Form due' : 'Form overdue', href: `/forms/${f.id}`,
+      })),
     ],
   })).filter((k) => k.rows.length || !dayOff);
 

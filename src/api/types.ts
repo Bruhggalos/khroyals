@@ -275,6 +275,30 @@ export type ChildAssignment = { id: string; studentId: string; rosterId: string;
 
 export type Section = { id: string; name: string; students: number };
 
+/** A form question: yes/no, short answer, or one of a few choices. */
+export type FormQuestion = { id: string; kind: 'yes_no' | 'text' | 'choice'; prompt: string; required: boolean; options: string[] };
+/** A parent's signature for one child: agreed or declined, the answers (by question id) and the typed name. */
+export type FormSignature = { agreed: boolean; answers: Record<string, string>; signature: string; signedAt: string; signedBy: string | null };
+export type FormAudience = 'section' | 'season' | 'grades' | 'school';
+/** A permission slip, release or acknowledgment. `sentTo` names the class, activity season or grades. */
+export type SchoolForm = {
+  id: string; title: string; details: string; link: string | null; dueOn: string; status: 'open' | 'closed';
+  questions: FormQuestion[]; audience: FormAudience; sentTo: string | null; author: string | null; authorId: string | null; createdAt: string;
+};
+/** For a parent: a form and each of their children it went to. */
+export type MyForm = SchoolForm & { children: { studentId: string; name: string; response: FormSignature | null }[] };
+/** For a sender: a form they sent, with counts. */
+export type SentForm = SchoolForm & { students: number; agreed: number; declined: number };
+/** For a sender: every student a form went to and their signature (or none yet). */
+export type FormStatus = SchoolForm & {
+  students: { studentId: string; name: string; grade: number | null; hasParent: boolean; response: FormSignature | null }[];
+};
+export type NewForm = {
+  title: string; details: string; link: string; dueOn: string; audience: FormAudience;
+  sectionId?: string | null; seasonId?: string | null; grades?: number[] | null;
+  questions: Omit<FormQuestion, 'id'>[];
+};
+
 /** Class sections in the admin portal (people.family). */
 export type AdminSection = { id: string; name: string; leadId: string | null; leadName: string | null; students: number };
 

@@ -13,9 +13,9 @@
 export const READ_ONLY_RPCS = new Set([
   'admin_family_requests', 'admin_list_people', 'admin_list_sections', 'admin_section_students', 'admin_similar_students',
   'carline_board', 'carline_config', 'carline_today', 'child_assignments', 'child_pickup_people', 'critical_alert_status',
-  'group_abilities', 'group_post_stats', 'market_terms', 'my_access', 'my_class_students', 'my_groups', 'my_notifications',
+  'form_status', 'group_abilities', 'group_post_stats', 'market_terms', 'my_access', 'my_class_students', 'my_forms', 'my_groups', 'my_notifications',
   'my_pickup_children', 'my_sections', 'my_sport_schedule', 'my_sports', 'my_teachers', 'notification_open_counts',
-  'permission_catalog', 'post_stats', 'sport_event_attendance', 'teacher_conversations', 'teacher_thread', 'teacher_thread_for',
+  'permission_catalog', 'post_stats', 'sent_forms', 'sport_event_attendance', 'teacher_conversations', 'teacher_thread', 'teacher_thread_for',
 ]);
 
 /** Whether sending this request twice can't change anything. */

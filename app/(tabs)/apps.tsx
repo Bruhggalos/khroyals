@@ -30,6 +30,7 @@ const APPS: App[] = [
   { label: 'Activities', image: require('../../assets/apps/activities.png'), color: '#0A1F4D', href: '/activities' },
   { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false, student: false },
   { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer', student: false },
+  { label: 'Forms', icon: 'document-text', color: '#0A1F4D', href: '/forms', family: false, student: false, staffVersion: true },
   { label: 'Handbook', image: require('../../assets/apps/handbook.png'), color: '#0A1F4D', href: '/handbook' },
   { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false, student: false, staffVersion: true },
   { label: 'Ask the Teacher', image: require('../../assets/apps/teachers.png'), color: '#0A1F4D', href: '/teachers', family: false, studentApp: true },

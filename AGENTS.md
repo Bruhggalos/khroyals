@@ -86,6 +86,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`child_assignments`, for the Planner tab), never the student's own entries or check-offs; Family
   accounts see none. Students' Main Page is the short list in
   `src/appTiles.ts` (`student: false` hides a tile from them).
+- **Forms** (`forms`, `form_recipients`, `form_responses`; the Forms app): teachers send to the
+  class sections they lead, coaches and directors to their activity seasons' registered students
+  (`app.can_manage_sport`), and `forms.send` holders to grades or the whole school (`form_send`).
+  Parents sign once per child (`form_sign`, `app.signs_form`: guardians only, never Family accounts);
+  either parent's signature counts. A form can't be changed once sent; senders see signatures in
+  `form_status` and remind or close it. Screens read `my_forms` / `sent_forms` / `form_status`.
 - **Car line vehicles** (`vehicles`, `carline_pickups.vehicle`): the types and colors are
   listed in both `src/carline/vehicles.ts` and the database checks, so change them together.
   A pickup stores a snapshot of the vehicle, so editing or deleting one never rewrites the line.

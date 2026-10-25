@@ -23,6 +23,7 @@ const PARENT: InfoData = {
   ...NO_DATA,
   kids: [{ id: 'ava', firstName: 'Ava', grade: 3 }, { id: 'liam', firstName: 'Liam', grade: 10 }],
   kidAssignments: [{ id: 'k1', studentId: 'ava', rosterId: 'r3', className: 'Reading', title: 'Book report', details: '', dueOn: '2026-11-02' }],
+  forms: [{ id: 'f1', title: 'Zoo field trip', dueOn: '2026-11-02', waiting: ['ava'] }, { id: 'f0', title: 'Photo release', dueOn: '2026-10-28', waiting: ['liam'] }],
   sports: [sport('vb', 'Volleyball'), sport('ch', 'Chess Club')],
   seasons: [season('vb-f', 'vb'), season('ch-f', 'ch')],
   schedule: [game('g1', 'vb-f', '2026-11-02T22:00:00Z'), game('g2', 'ch-f', '2026-11-02T20:30:00Z', 'Chess Club meet')],
@@ -39,7 +40,8 @@ test("a parent: a card for each child, the family's other things, car line on sc
   const mon = planDay('2026-11-02', TODAY, CAL, PARENT);
   assert.equal(mon.label, 'Monday');
   assert.deepEqual(mon.kids.map((k) => [k.kid.firstName, k.rows.map((r) => r.title)]),
-    [['Ava', ['Book report']], ['Liam', ['Volleyball: Game']]], "each child's assignments and activities");
+    [['Ava', ['Book report', 'Sign: Zoo field trip']], ['Liam', ['Volleyball: Game']]], "each child's assignments, activities and forms to sign");
+  assert.equal(mon.kids[0].rows[1].href, '/forms/f1');
   assert.deepEqual(mon.items.map((r) => r.title), ['Chess Club meet', 'Book fair helpers', 'Car line pickup'], 'followed, not registered');
   assert.equal(mon.items.find((r) => r.key === 'carline')!.detail, '2:45–3:30 PM', '"Open now" is only for today');
   assert.equal(mon.items.find((r) => r.key === 'vol-o1')!.detail, 'You signed up · 8:00–10:00 AM · Library');
@@ -49,9 +51,10 @@ test("a parent: a card for each child, the family's other things, car line on sc
   assert.deepEqual([sat.dayOff, sat.uniform, sat.kids, sat.items, sat.busy], ['Weekend', null, [], [], false], 'nothing on a day off');
 
   const fri = planDay(TODAY, TODAY, CAL, PARENT);
-  assert.deepEqual(fri.kids.map((k) => k.rows.length), [0, 0], 'a school day shows each child, even with nothing');
+  assert.deepEqual(fri.kids.map((k) => k.rows.map((r) => `${r.title} (${r.detail})`)), [[], ['Sign: Photo release (Form overdue)']],
+    'an overdue form shows on today; each child shows on a school day, even with nothing');
   assert.match(fri.items.find((r) => r.key === 'carline')!.detail!, /Open now/);
-  assert.equal(fri.busy, false, 'car line alone is not a busy day');
+  assert.equal(planDay(TODAY, TODAY, CAL, { ...PARENT, forms: [] }).busy, false, 'car line alone is not a busy day');
 
   const wed = planDay('2026-11-04', TODAY, CAL, PARENT);
   assert.deepEqual(wed.uniform!.notes.map((n) => n.split(':')[0]), ['K4–5th (Ava)', '9th–12th (Liam)']);

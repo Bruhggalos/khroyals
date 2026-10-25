@@ -1855,3 +1855,137 @@ test('duplicate children: the same child is never added twice; likely matches ar
   await as('u-p06');
   await rejects(`select * from request_child('Lily', 'Chen-Park', 1, null, null, 'mother')`, /already linked to your account/);
 });
+
+test('forms: teachers, coaches and the office send them; parents sign for each child; senders see who has', async () => {
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const ava = await uid('u-s01');
+  const told = async (who: string, form: string) => {
+    await as(who);
+    return (await rows(`select title || ' | ' || body as t from my_notifications() where data->>'formId' = '${form}' order by created_at`)).map((n) => n.t);
+  };
+  const questions = JSON.stringify([
+    { kind: 'yes_no', prompt: 'May your child ride the bus?', required: true },
+    { kind: 'text', prompt: 'Allergies or medicines?' },
+    { kind: 'choice', prompt: 'Can you chaperone?', options: ['Yes', 'No', 'Maybe', 'No '] },
+  ]);
+  const send = (audience: string, target: string, q = questions, due = 'app.school_today() + 5', link = "'https://www.example.org/zoo.pdf'") =>
+    `select * from form_send('Zoo field trip', 'We leave at 9 and are back by 2.', ${link}, ${due}, '${audience}', ${target}, '${q}'::jsonb)`;
+  const section = `'eng10-p3', null, null`;
+
+  // Only faculty and staff send, a teacher only to the classes they lead, and only the office to grades or the school.
+  await as('u-p01');
+  await rejects(send('section', section), /Faculty and staff send forms/);
+  await as('u-sci');
+  await rejects(send('section', section), /classes you teach/);
+  await as('u-eng');
+  await rejects(send('grades', `null, null, array[10]`), /permission/);
+  await rejects(send('school', `null, null, null`), /permission/);
+  await rejects(send('section', section, JSON.stringify(Array.from({ length: 11 }, () => ({ kind: 'text', prompt: 'Hi?' })))), /up to 10 questions/);
+  await rejects(send('section', section, JSON.stringify([{ kind: 'choice', prompt: 'Pick', options: ['Only one'] }])), /2 to 10 choices/);
+  await rejects(send('section', section, questions, 'app.school_today() - 1'), /due date from today on/);
+  await rejects(send('section', section, questions, 'app.school_today() + 5', "'http://example.org'"), /https/);
+
+  // Jennifer sends to her class: its five students, each question checked and numbered; each parent is told once.
+  const trip = await one(send('section', section));
+  assert.deepEqual(trip.questions.map((q: any) => [q.id, q.kind, q.required]), [['q1', 'yes_no', true], ['q2', 'text', false], ['q3', 'choice', false]]);
+  assert.deepEqual(trip.questions[2].options, ['Yes', 'No', 'Maybe']);
+  await asSuper();
+  assert.equal(Number((await one(`select count(*) as n from form_recipients where form_id = '${trip.id}'`)).n), 5);
+  assert.deepEqual(await told('u-p01', trip.id), [`📝 Zoo field trip | Please read and sign by ${(await one(`select to_char(app.school_today() + 5, 'Dy, Mon FMDD') as d`)).d}.`]);
+  assert.deepEqual(await told('u-p05', trip.id), [], 'her child is not in the class');
+  assert.deepEqual(await told('u-gran', trip.id), [], 'Family accounts are not parents');
+
+  // Rosa sees it for Ava; parents of other children, Family accounts and students see nothing.
+  await as('u-p01');
+  const mine = (await one(`select my_forms() as f`)).f;
+  assert.deepEqual(mine.map((f: any) => [f.title, f.sentTo, f.author, f.children.map((c: any) => [c.name, c.response])]),
+    [['Zoo field trip', 'English 10 – Period 3', 'Jennifer Taylor', [['Ava', null]]]]);
+  for (const who of ['u-p05', 'u-gran', 'u-s01']) {
+    await as(who);
+    assert.deepEqual((await one(`select my_forms() as f`)).f, [], who);
+    assert.equal((await rows(`select 1 from forms`)).length, 0, who);
+  }
+
+  // Rosa signs for Ava: required answers, valid choices and a typed name; only for her own child.
+  await as('u-p01');
+  const sign = (student: string, agree: boolean, answers: object, name = 'Rosa Reyes') =>
+    `select * from form_sign('${trip.id}', '${student}', ${agree}, '${JSON.stringify(answers)}'::jsonb, '${name}')`;
+  await rejects(sign(ava, true, { q2: 'None' }), /Please answer "May your child ride the bus\?"/);
+  await rejects(sign(ava, true, { q1: 'maybe' }), /yes or no/);
+  await rejects(sign(ava, true, { q1: 'yes', q3: 'Sometimes' }), /Pick one of the choices/);
+  await rejects(sign(ava, true, { q1: 'yes' }, ' '), /Type your full name/);
+  await rejects(sign(await uid('u-s05'), true, { q1: 'yes' }), /Only a parent of a student/);
+  assert.equal((await one(sign(ava, false, {}))).agreed, false, 'declining needs no answers');
+  const signed = await one(sign(ava, true, { q1: 'yes', q3: 'Maybe', extra: 'dropped' }));
+  assert.deepEqual([signed.agreed, signed.answers, signed.signature], [true, { q1: 'yes', q3: 'Maybe' }, 'Rosa Reyes'], 'signing again replaces it');
+  await rejects(`insert into form_responses (form_id, student_id, agreed, signature) values ('${trip.id}', '${ava}', true, 'x')`, /permission denied/);
+  await as('u-gran');
+  await rejects(sign(ava, true, { q1: 'yes' }, 'June Reyes'), /Only a parent of a student/);
+
+  // Jennifer sees who has signed; another teacher sees nothing.
+  await as('u-eng');
+  const status = (await one(`select form_status('${trip.id}') as s`)).s;
+  assert.equal(status.students.length, 5);
+  const avaRow = status.students.find((s: any) => s.studentId === ava);
+  assert.deepEqual([avaRow.response.agreed, avaRow.hasParent], [true, true]);
+  assert.match(avaRow.response.signedBy, / Reyes$/, "Rosa's name (an earlier test renamed her)");
+  assert.equal(status.students.filter((s: any) => !s.response).length, 4);
+  assert.deepEqual((await one(`select sent_forms() as f`)).f.map((f: any) => [f.title, f.students, f.agreed, f.declined]), [['Zoo field trip', 5, 1, 0]]);
+  await as('u-sci');
+  assert.equal((await one(`select form_status('${trip.id}') as s`)).s, null);
+  assert.deepEqual((await one(`select sent_forms() as f`)).f, []);
+  await rejects(`select form_remind('${trip.id}')`, /Only whoever sent/);
+
+  // A reminder goes to the parents still to sign (not Rosa), at most once an hour.
+  await asSuper();
+  const waiting = Number((await one(`select count(distinct g.guardian_id) as n from form_recipients r join guardians g on g.student_id = r.student_id
+    where r.form_id = '${trip.id}' and r.student_id <> '${ava}' and not app.is_family(g.guardian_id)`)).n);
+  assert.ok(waiting >= 4);
+  await as('u-eng');
+  assert.equal((await one(`select form_remind('${trip.id}') as n`)).n, waiting);
+  await rejects(`select form_remind('${trip.id}')`, /less than an hour ago/);
+  assert.equal((await told('u-p01', trip.id)).length, 1);
+  assert.match((await told('u-p02', trip.id)).at(-1)!, /^📝 Reminder: Zoo field trip/);
+
+  // Closing stops signatures; only the sender closes.
+  await as('u-sci');
+  await rejects(`select form_close('${trip.id}')`, /Only whoever sent/);
+  await as('u-eng');
+  await one(`select form_close('${trip.id}')`);
+  await as('u-p01');
+  await rejects(sign(ava, false, {}), /closed/);
+
+  // The office (forms.send, authenticator-verified) sends to grades and sees every form.
+  await asSuper();
+  await db.exec(`update profiles set grade = 10 where id = ${id('u-s02')}`);
+  const tenth = Number((await one(`select count(*) as n from profiles where school_role = 'student' and grade = 10`)).n);
+  await as('u-ap');
+  await rejects(send('grades', `null, null, array[10]`), /MFA_REQUIRED/);
+  await as('u-ap', true);
+  const handbook = await one(send('grades', `null, null, array[10]`, '[]'));
+  await asSuper();
+  assert.equal(Number((await one(`select count(*) as n from form_recipients where form_id = '${handbook.id}'`)).n), tenth);
+  await as('u-ap', true);
+  assert.deepEqual((await one(`select sent_forms() as f`)).f.map((f: any) => f.sentTo).sort(), ['10th grade', 'English 10 – Period 3']);
+  assert.equal((await one(`select form_status('${trip.id}') as s`)).s.students.length, 5);
+
+  // A coach sends a release to the students registered for their activity season.
+  await as('u-admin', true);
+  const robotics = await one(`select * from sport_save(null, 'Robotics Club', '🤖', '', 'clubs')`);
+  await one(`select sport_set_coach('${robotics.id}', ${id('u-vbcoach')}, true)`);
+  await as('u-vbcoach');
+  const season = await one(`select * from season_save(null, '${robotics.id}', 'Fall 2026', app.school_today() - 1, app.school_today() + 40,
+    app.school_today() - 1, app.school_today() + 5, null, null)`);
+  await as('u-p01');
+  const reg = await one(`select * from sport_register('${season.id}', '${ava}')`);
+  await as('u-vbcoach');
+  await one(`select * from sport_decide('${reg.id}', true)`);
+  const release = await one(send('season', `null, '${season.id}', null`, '[]'));
+  await asSuper();
+  assert.deepEqual((await rows(`select student_id from form_recipients where form_id = '${release.id}'`)).map((r) => r.student_id), [ava]);
+  await as('u-eng');
+  await rejects(send('season', `null, '${season.id}', null`, '[]'), /activities you coach or direct/);
+  await as('u-p01');
+  const forms = (await one(`select my_forms() as f`)).f.map((f: any) => `${f.sentTo}: ${f.status}`);
+  assert.ok(forms.includes('English 10 – Period 3: closed') && forms.includes('Robotics Club · Fall 2026: open'), forms.join('; '));
+});

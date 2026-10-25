@@ -2897,6 +2897,27 @@ export type Database = {
         Args: { p_error?: string; p_id: string }
         Returns: undefined
       }
+      form_close: { Args: { p_form: string }; Returns: undefined }
+      form_remind: { Args: { p_form: string }; Returns: number }
+      form_send: {
+        Args: {
+          p_audience: string
+          p_details: string
+          p_due_on: string
+          p_grades?: number[]
+          p_link: string
+          p_questions?: Json
+          p_season?: string
+          p_section?: string
+          p_title: string
+        }
+        Returns: { id: string; title: string; due_on: string; status: string; questions: Json }
+      }
+      form_sign: {
+        Args: { p_agree: boolean; p_answers: Json; p_form: string; p_signature: string; p_student: string }
+        Returns: { form_id: string; student_id: string; agreed: boolean; answers: Json; signature: string; signed_at: string }
+      }
+      form_status: { Args: { p_form: string }; Returns: Json }
       group_abilities: { Args: { p_group: string }; Returns: Json }
       group_post_stats: {
         Args: { p_group: string; p_limit?: number }
@@ -3109,6 +3130,7 @@ export type Database = {
           student_name: string
         }[]
       }
+      my_forms: { Args: never; Returns: Json }
       my_groups: {
         Args: never
         Returns: {
@@ -3427,6 +3449,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      sent_forms: { Args: never; Returns: Json }
       send_notification: {
         Args: {
           p_audience: string

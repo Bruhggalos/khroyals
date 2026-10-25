@@ -3,7 +3,7 @@ import { AppState, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
 import {
   canVolunteer, carlineConfig, checkAssignment, childAssignments, isFamily, isSchoolStaff, listAssignments, listSports, listVolunteer,
-  live, me, myChildren, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
+  live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
   type Assignment, type Person,
 } from '../../src/api/connect';
 import { getCalendar, getNews } from '../../src/api/mockApi';
@@ -107,8 +107,8 @@ function usePerson() {
 
 /**
  * What the two weeks hold for the signed-in person, loaded once: a student's assignments
- * (or a teacher's for their classes); a parent's children with their class assignments
- * and activity sign-ups; activities; volunteer sign-ups; and car line hours for whoever
+ * (or a teacher's for their classes); a parent's children with their class assignments,
+ * activity sign-ups and forms to sign; activities; volunteer sign-ups; and car line hours for whoever
  * picks children up. Each part loads on its own and is left out if it fails. Reloads
  * when the screen comes back into view and when assignments change.
  */
@@ -130,8 +130,9 @@ function useInfoData(person: Person | null, today: string) {
       student ? [] : quiet(myPickupChildren(), [] as Person[]),
     ]);
     const seasons = [...new Set(schedule.map((e) => e.seasonId))];
-    const [kidAssignments, registrations, config] = await Promise.all([
+    const [kidAssignments, forms, registrations, config] = await Promise.all([
       kids.length ? quiet(childAssignments(today, addDays(today, 13)), []) : [],
+      kids.length ? quiet(myForms(), []) : [],
       kids.length && seasons.length ? quiet(sportRegistrations(seasons), []) : [],
       pickup.length ? quiet(carlineConfig(), null) : null,
     ]);
@@ -141,6 +142,9 @@ function useInfoData(person: Person | null, today: string) {
       assignments: student ? assignments : assignments.filter((a) => a.ownerId === id && a.rosterId),
       kids: kids.map((k) => ({ id: k.id, firstName: k.firstName, grade: k.grade })),
       kidAssignments, schedule, sports: sports.sports, seasons: sports.seasons, registrations,
+      forms: forms.filter((f) => f.status === 'open').map((f) => ({
+        id: f.id, title: f.title, dueOn: f.dueOn, waiting: f.children.filter((c) => !c.response).map((c) => c.studentId),
+      })),
       opportunities: volunteer.opportunities, signups: volunteer.signups.filter((x) => x.userId === id),
       carline: config ? { start: config.start, end: config.end, openNow: config.line.state === 'open' } : null,
     });
