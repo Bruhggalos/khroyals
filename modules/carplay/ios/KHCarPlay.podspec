@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.description    = 'CarPlay scene and list screens for car line check-in (a CarPlay driving task app).'
   s.license        = { type: 'UNLICENSED' }
   s.author         = 'KH Royals'
-  s.homepage       = 'https://github.com/bruhggalos/khroyals'
+  s.homepage       = 'https://github.com/RoyalRockinApps/khroyals'
   s.platforms      = { :ios => '16.4' }
   s.swift_version  = '5.9'
   s.source         = { git: '' }

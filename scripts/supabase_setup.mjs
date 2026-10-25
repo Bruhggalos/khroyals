@@ -14,6 +14,10 @@
  *    Edge Function, and optionally names the director (--director=email; that
  *    person must have signed in once).
  *
+ * --deploy (what the "Supabase" GitHub Action runs on every push to main): only
+ * steps 1 and the Edge Functions; needs just SUPABASE_ACCESS_TOKEN (the project
+ * comes from app.json).
+ *
  * Without SUPABASE_ACCESS_TOKEN, steps 1 and 3 print the SQL files to paste
  * into the dashboard's SQL editor instead.
  */
@@ -28,11 +32,13 @@ const env = (k, required = true) => {
   if (!v && required) { console.error(`Missing ${k}`); process.exit(1); }
   return v;
 };
-const URL = env('SUPABASE_URL').replace(/\/$/, '');
-const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY');
-const TOKEN = env('SUPABASE_ACCESS_TOKEN', false);
+const deployOnly = process.argv.includes('--deploy');
+const URL = (env('SUPABASE_URL', false)
+  ?? JSON.parse(readFileSync(join(ROOT, 'app.json'), 'utf8')).expo.extra.supabaseUrl).replace(/\/$/, '');
+const TOKEN = env('SUPABASE_ACCESS_TOKEN', deployOnly);
 const REF = env('SUPABASE_PROJECT_REF', false) ?? new globalThis.URL(URL).hostname.split('.')[0];
 const seed = process.argv.includes('--demo');
+const SERVICE = env('SUPABASE_SERVICE_ROLE_KEY', seed);
 const PASSWORD = seed ? env('DEMO_PASSWORD') : null;
 
 /** Same mapping as app.seed_id(): md5('khroyals:' || id)::uuid */
@@ -67,6 +73,7 @@ async function migrate() {
     await sql(`begin;\n${body}\ninsert into app.applied_migrations (name) values ('${f}');\ncommit;`);
     console.log(`✓ applied ${f}`);
   }
+  await sql(`notify pgrst, 'reload schema'`);   // the Data API sees new functions right away
   return true;
 }
 
@@ -111,6 +118,22 @@ async function deployPush() {
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }
 
+// Where sign-in links may send people back to: the app (deep link) and the web portal.
+// Never list an address the school doesn't own: a sign-in link sent there hands over the session.
+const REDIRECTS = ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**',
+  'https://royalrockinapps.github.io/khroyals/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(',');
+
+/** Only the allowed sign-in redirect addresses (run on every deploy, so a new web address takes effect). */
+async function setRedirects() {
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uri_allow_list: REDIRECTS }),
+  });
+  if (!r.ok) throw new Error(`Updating redirect URLs failed (${r.status}): ${await r.text()}`);
+  console.log('✓ sign-in links may return to the app and the web portal');
+}
+
 /** Sign-in emails show the 6-digit code the app asks for (instead of only a magic link). */
 async function configureAuthEmail() {
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
@@ -131,7 +154,6 @@ async function configureAuthEmail() {
     // default email has a sign-in link, which the app also handles.
     console.log(`· sign-in email template unchanged (${r.status}): emails contain a sign-in link instead of a code`);
   } else console.log('✓ sign-in emails send a 6-digit code');
-  // Where sign-in links may send people back to: the app (deep link) and the web portal.
   const r2 = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
@@ -143,7 +165,7 @@ async function configureAuthEmail() {
       // 2 emails/hour, and new accounts still need admin approval. Set to false once
       // the project uses its own email service (custom SMTP) to require confirmation.
       mailer_autoconfirm: process.env.REQUIRE_EMAIL_CONFIRMATION !== '1',
-      uri_allow_list: ['khroyals://**', 'exp://**', 'http://localhost:8081/**', 'https://*.expo.app/**', 'https://bruhggalos.github.io/khroyals/**', ...(process.env.WEB_PORTAL_URL ? [`${process.env.WEB_PORTAL_URL}/**`] : [])].join(','),
+      uri_allow_list: REDIRECTS,
     }),
   });
   if (!r2.ok) throw new Error(`Updating redirect URLs failed (${r2.status}): ${await r2.text()}`);
@@ -156,7 +178,10 @@ if (seed) {
   if (migrated) { await sql(readFileSync(join(ROOT, 'supabase/seed.sql'), 'utf8')); console.log('✓ seed loaded'); }
   else console.log('Then paste supabase/seed.sql into the SQL editor.');
 }
-if (TOKEN) {
+if (deployOnly) {
+  await deployPush();
+  await setRedirects();
+} else if (TOKEN) {
   await configureAuthEmail();
   await deployPush();
   const director = process.argv.find((a) => a.startsWith('--director='))?.split('=')[1];

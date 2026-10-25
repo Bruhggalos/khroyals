@@ -8,7 +8,10 @@ rules and traps.
 
 - **Work on `main` and push to `main`.** No feature branches or PRs unless the
   owner asks. Each push builds the Android APK and redeploys the web app
-  (https://bruhggalos.github.io/khroyals/).
+  (https://royalrockinapps.github.io/khroyals/), and the Supabase workflow applies new
+  migrations to the **live** database and redeploys the Edge Functions. So a pushed
+  migration is live within minutes: don't apply them by hand, and never push one that
+  isn't covered by `npm test`.
 - Before every push: `npm run typecheck && npm test` must pass (CI runs both and
   blocks the APK otherwise).
 - For UI changes, also check the web build renders: `npx expo export --platform web`.
@@ -42,6 +45,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`admin_roles`; director is built in) and permissions are only for real accounts.
   There may be several directors but never zero (trigger `app.keep_a_director`);
   `patguettler@gmail.com` is a director.
+- **Deleting accounts** (`admin_delete_user`) needs `people.delete` (directors by default; they can
+  give it to a role or person). It refuses yourself, directors and children (remove them as students),
+  and admins unless the caller also has `admins.manage`. It deletes their posts (anonymous ones too) and
+  comments so nothing is left looking anonymous, and logs `user.deleted` with their name and email.
 - **Car line:** parents announce with their location (`carline_announce`; the server
   checks the radius — never add a check-in path without it). All staff see the board
   (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents

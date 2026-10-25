@@ -5,7 +5,7 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
 
 | What | Where |
 |---|---|
-| Web app (site + Royals Connect + admin portal) | https://bruhggalos.github.io/khroyals/ |
+| Web app (site + Royals Connect + admin portal) | https://royalrockinapps.github.io/khroyals/ |
 | Android APK | GitHub → **Actions → Android APK** → latest run on `main` → **Artifacts → khroyals-android-apk** |
 | iPhone (TestFlight) | App Store Connect → **KH Royals → TestFlight**; uploads come from a Mac with `scripts/testflight.sh` (§9) |
 | Backend | Supabase project `twmeenkvoedoryhterpf` (dashboard: supabase.com/dashboard) |
@@ -29,7 +29,7 @@ overview see [README.md](README.md); for AI coding agents see [AGENTS.md](AGENTS
 Requirements: **Node 22**, npm, Git, Python 3 (only for the import scripts).
 
 ```bash
-git clone https://github.com/Bruhggalos/khroyals.git
+git clone https://github.com/RoyalRockinApps/khroyals.git
 cd khroyals
 npm ci              # use ci, not install, so the lockfile is respected
 npm run typecheck
@@ -114,7 +114,7 @@ npx expo export --platform web --output-dir dist   # production build (served un
 2. Commit and push to **`main`**.
 3. GitHub Actions runs:
    - **Android APK** — typecheck + tests, then a release APK (≈25 min) → artifact.
-   - **Web app (GitHub Pages)** — web export → https://bruhggalos.github.io/khroyals/ (≈2 min).
+   - **Web app (GitHub Pages)** — web export → https://royalrockinapps.github.io/khroyals/ (≈2 min).
 4. If a run fails at `npm ci` with `ECONNRESET`, it's a network blip on the
    runner: use **Re-run failed jobs**. Anything else is a real failure — read the log.
 
@@ -129,7 +129,13 @@ The schema lives in `supabase/migrations/` and is tested locally by `tests/db.te
 1. Add a new file `supabase/migrations/<timestamp>_<name>.sql` (never edit one that's been applied).
 2. If seed data changes: `python3 scripts/gen_seed.py` (rewrites `supabase/seed.sql` and `supabase/setup_all.sql`).
 3. `npm test` until green.
-4. Apply to the live project (needs a Supabase **personal access token**, created at
+4. Push to `main`. The **Supabase** GitHub Action (`.github/workflows/supabase.yml`) runs the
+   tests, then applies the new migrations to the live project and redeploys the Edge Functions
+   (`node scripts/supabase_setup.mjs --deploy`). It needs the repository secret
+   `SUPABASE_ACCESS_TOKEN` (Settings → Secrets and variables → Actions). A failed migration rolls
+   back and turns the run red; fix it with a new migration and push again.
+
+   To apply by hand instead (also needs a Supabase **personal access token**, created at
    supabase.com/dashboard/account/tokens — keep it in an env var, never in git or chat):
    ```bash
    export SUPABASE_URL=https://twmeenkvoedoryhterpf.supabase.co
