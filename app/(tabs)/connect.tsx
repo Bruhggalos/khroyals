@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  ROLE_LABELS, isFamily, joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, myAccess, onAuthChange, session,
+  ROLE_LABELS, isFamily, joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, onAuthChange, session,
   setMockUser, signOut, type Person,
 } from '../../src/api/connect';
 import { forgetCarPass } from '../../src/carline/carPass';
@@ -39,7 +39,6 @@ export default function Connect() {
   const [groups, setGroups] = useState<Group[] | null>(null);
   const [discover, setDiscover] = useState<Group[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -51,8 +50,6 @@ export default function Connect() {
         setGroups(await listMyGroups());
         setDiscover(await listDiscoverableGroups());
         if (!live) setPeople(await listUsers());
-        const a = live ? await myAccess() : null;
-        setIsAdmin(!!a && (!!a.tier || a.granted.length > 0));
       }
     } catch (e: any) {
       Alert.alert('Could not load groups', e.message);
@@ -125,7 +122,6 @@ export default function Connect() {
 
       <View style={[s.row, { flexWrap: 'wrap' }]}>
         {canCreateGroup(person) && <View style={{ flex: 1 }}><Button label="+ New group" onPress={() => router.push('/group/new')} /></View>}
-        {isAdmin && <View style={{ flex: 1 }}><Button kind="ghost" label="Admin portal" onPress={() => router.push('/admin')} /></View>}
       </View>
 
       {groups.length === 0 && !isFamily(person) && <P muted>You're not in any groups yet.</P>}
