@@ -103,7 +103,8 @@ and publishes the app to every family.
 |---|---|---|---|
 | Remove test data from live | — | Not started | Ben's test family (two test children linked to his account), the sample Soccer and Volleyball seasons and schedule, and the "Test Leader" account (no login) with its four Volunteer opportunities. The presentation data comes out with `node scripts/presentation_data.mjs --parent <email> --remove`. Also decide whether Ben's account stays a director (made Admin + director on Oct 21, 2026 to test the staff view). |
 | Remove demo roles | — | Not started | The demo Teacher's Car line lead and Volunteer Leader roles must go with the demo accounts before real families use the app. |
-| Publish to the App Store and Google Play | Ben | Not started | Privacy policy URL, Apple’s privacy labels, store listings and screenshots (iPad screenshots too, since the app runs on iPad); allow time for App Store review, then public release. |
+| Publish to the App Store and Google Play | Ben | Not started | Privacy policy URL, Apple’s privacy labels, store listings and screenshots (iPad screenshots too, since the app runs on iPad); allow time for App Store review, then public release. Public or unlisted is an open decision (below). |
+| App Review sign-in | Ben | Needs a decision | Apple's reviewer must be able to sign in, but sign-in is by emailed code and they can't read our email. Needs a review account (approved, no admin powers) with a safe way in that doesn't bring back passwords or demo logins for everyone else, plus reviewer notes on what to try. |
 | Staff training and parent rollout | — | Not started | A short guide, an announcement to families and a support contact. |
 
 ## Phase 5 — Future features and bug fixes
@@ -120,6 +121,9 @@ Ongoing after release; bugs reported in beta and after release go here too.
 
 ## Open decisions
 
+- [ ] Public App Store listing, or Apple's unlisted distribution? Unlisted is a normal App Store
+  app that only opens from a link the school shares (it doesn't show in search); it needs a request
+  to Apple. Decide with the school before publishing (Phase 4).
 - [ ] Add notification switches for Activities and Ask the School? (Phase 5)
 - [ ] Should Family accounts see the F.A.Q.s? They moved from the Info tab (now Planner) to Ask the School
   (`app/questions/faq.tsx`), and Family accounts don't get the Ask the School tile. The F.A.Q.s
