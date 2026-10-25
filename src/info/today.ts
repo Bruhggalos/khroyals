@@ -140,3 +140,6 @@ export function uniformFor(today: string, events: Day[], wearers: Wearer[] = [])
 }
 
 export const UNIFORM_GUIDE = 'https://www.khroyals.com/s/Uniform-Guide.pdf';
+
+/** Royal News, the newsletter emailed to families. Until the school gives its web address, the link opens the News page. */
+export const ROYAL_NEWS_URL: string | null = null;

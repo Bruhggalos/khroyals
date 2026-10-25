@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AppState, ScrollView, Text, View } from 'react-native';
+import { AppState, Linking, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect, useNavigation } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   canVolunteer, carlineConfig, checkAssignment, childAssignments, isFamily, isSchoolStaff, listAssignments, listSports, listVolunteer,
   live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
@@ -10,7 +11,7 @@ import { getCalendar, getNews } from '../../src/api/mockApi';
 import { schoolToday } from '../../src/calendar/past';
 import { DayPager } from '../../src/info/DayPager';
 import { NO_DATA, planDay, type InfoData } from '../../src/info/plan';
-import { addDays, greeting, headerDate, nextTwoWeeks, schoolHour, twoWeeks } from '../../src/info/today';
+import { ROYAL_NEWS_URL, addDays, greeting, headerDate, nextTwoWeeks, schoolHour, twoWeeks } from '../../src/info/today';
 import { TodaySection } from '../../src/info/TodaySection';
 import { ArticleCard } from '../../src/site/Blocks';
 import { C, Card, H, Loading, P, s, useLoad } from '../../src/ui';
@@ -20,8 +21,8 @@ import { dateRange } from '../../src/site/calendar';
  * Planner: today's date in the header, a greeting, the next two weeks one day at a time
  * (swipe, or tap a day in the strip; it opens on today): the uniform, assignments, a
  * card for each of a parent's children, and the day's events, activities, volunteer
- * sign-ups and car line hours. Then the school calendar's next two weeks and the latest
- * news. (The khroyals.com home page's other sections aren't shown here; its F.A.Q.s are
+ * sign-ups and car line hours. Then the school calendar's next two weeks, Royal News (the
+ * emailed newsletter) and the latest news. (The khroyals.com home page's other sections aren't shown here; its F.A.Q.s are
  * in Ask the School.)
  */
 export default function Home() {
@@ -73,6 +74,18 @@ export default function Home() {
         ))}
         <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => router.navigate('/calendar')}>Full calendar ›</Text>
       </View>
+
+      <Card onPress={() => (ROYAL_NEWS_URL ? Linking.openURL(ROYAL_NEWS_URL) : router.navigate('/news'))}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${C.primary}1A`, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="mail-open-outline" size={22} color={C.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: C.ink }}>Royal News</Text>
+          <P muted>The school newsletter, sent to families by email.</P>
+        </View>
+        <Ionicons name={ROYAL_NEWS_URL ? 'open-outline' : 'chevron-forward'} size={18} color={C.muted} />
+      </Card>
 
       <View style={{ gap: 8 }}>
         <H>Latest News</H>
