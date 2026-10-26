@@ -98,6 +98,9 @@
   .plan .total { font-size: 34px; font-weight: 800; color: var(--navy); line-height: 1.1; margin-top: 6px; }
   .plan .total small { font-size: 15px; color: var(--muted); font-weight: 600; }
   .plan .per { color: var(--muted); font-size: 14px; }
+  .plan .steady { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .flash { animation: flash .8s ease-out; border-radius: 8px; }
+  @keyframes flash { from { background: #FEF3C7; } to { background: transparent; } }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   td { padding: 9px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
   td.amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
@@ -631,6 +634,20 @@ $('people').addEventListener('input', () => { people = fromSlider(+$('people').v
 $('people').value = toSlider(people);
 
 const sum = (p) => p.lines.reduce((a, l) => a + l[1], 0);
+/** "3.5¢" under a dollar, "$1.24" above. */
+const perPerson = (v) => (v < 1 ? `${(v * 100).toFixed(1)}¢` : money(round(v)));
+const planTotal = (id, n, up) => sum((id === 'supa' ? supabase : aws)(usage(n), up));
+/** How far up and down the slider this plan's price holds, so a flat price doesn't look stuck. */
+function steady(id, total, up, k, unit) {
+  const here = toSlider(people);
+  let hi = people, lo = people;
+  for (let v = here + 1; v <= 1000; v++) { const n = fromSlider(v); if (Math.abs(planTotal(id, n, up) - total) > 0.005) break; hi = n; }
+  for (let v = here - 1; v >= 0; v--) { const n = fromSlider(v); if (Math.abs(planTotal(id, n, up) - total) > 0.005) break; lo = n; }
+  if (hi === people && lo === people) return 'Goes up with every person: usage-based lines grow as you slide.';
+  return `Stays ${money(round(total * k))} ${unit.replace('/ ', 'a ')} from ${lo === MIN ? 'the smallest school' : `about ${lo.toLocaleString()}`} `
+    + `to ${hi === MAX ? `${MAX.toLocaleString()}+` : `about ${hi.toLocaleString()}`} people.`;
+}
+let lastTotals = {};
 function drawCosts() {
   const up = $('upgrades').checked;
   const u = usage(people);
@@ -647,12 +664,19 @@ function drawCosts() {
   $('plans').innerHTML = Object.entries(plans).map(([id, p]) => `<div class="plan ${id}${id === pick ? '' : ' off'}">
       <div class="ph"><div class="tag">${p.tag}</div><h3>${p.name}</h3>
         <div class="total">${money(round(totals[id] * k))} <small>${unit}</small></div>
-        <div class="per">${money(round(totals[id] / people, 3))} per person per month</div>
+        <div class="per">${perPerson(totals[id] * k / people)} per person per ${yearly ? 'year' : 'month'}</div>
+        <div class="steady">${steady(id, totals[id], up, k, unit)}</div>
         <div class="bar"><i style="width:${(totals[id] / max * 100).toFixed(1)}%;background:${id === 'supa' ? 'var(--green)' : '#D97706'}"></i></div></div>
       <details class="lines" ${phone.matches ? '' : 'open'}><summary><span class="closed">Show the ${p.lines.length} line items ›</span><span class="opened">Hide the line items</span></summary>
       <table>${p.lines.map(([n, a, note, opt]) => `<tr class="${opt ? 'opt' : ''}${a === 0 && !opt ? ' zero' : ''}"><td>${opt ? '⬆️ ' : ''}${esc(n)}<span class="note">${esc(note)}</span></td><td class="amt">${a === 0 ? 'Included' : money(round(a * k))}</td></tr>`).join('')}
         <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(round(totals[id] * k))}</td></tr></table></details>
       <div class="foot">${p.foot}</div></div>`).join('');
+  document.querySelectorAll('.plan').forEach((el) => {
+    const id = el.classList.contains('supa') ? 'supa' : 'aws';
+    const key = `${round(totals[id] * k)}${unit}`;
+    if (lastTotals[id] && lastTotals[id] !== key) el.querySelector('.total').classList.add('flash');
+    lastTotals[id] = key;
+  });
   $('totals-bar').innerHTML = `<div>${people.toLocaleString()} people<b>${yearly ? 'per year' : 'per month'}</b></div>
     <div>Supabase<b>${money(round(totals.supa * k))}</b></div><div>AWS<b>${money(round(totals.aws * k))}</b></div>`;
   const sy = SHARED_YEARLY.reduce((a, l) => a + l[1], 0);
