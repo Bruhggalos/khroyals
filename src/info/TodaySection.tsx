@@ -94,6 +94,7 @@ function UniformCard({ u }: { u: Uniform }) {
           <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>{u.title}</Text>
         </View>
       </View>
+      {u.dress && <DressUp dress={u.dress} />}
       <View style={[s.row, { alignItems: 'flex-start', gap: 12 }]}>
         <Variant label="Boys" photo={photos.boys} lines={u.boys} />
         <Variant label="Girls" photo={photos.girls} lines={u.girls} />
@@ -110,6 +111,25 @@ function UniformCard({ u }: { u: Uniform }) {
       ))}
       <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="link" onPress={() => Linking.openURL(UNIFORM_GUIDE)}>Uniform Guide ›</Text>
     </Card>
+  );
+}
+
+/** A dress-up day (Spirit Week): the themes students may wear instead of the uniform below. */
+function DressUp({ dress }: { dress: NonNullable<Uniform['dress']> }) {
+  return (
+    <View style={{ gap: 8, padding: 12, borderRadius: 12, backgroundColor: `${C.accent}12`, borderWidth: 1, borderColor: `${C.accent}55` }}>
+      <View style={[s.row, { gap: 8 }]}>
+        <Ionicons name="sparkles" size={18} color={C.accent} />
+        <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: C.accent }}>{(dress.week ?? 'Dress-up day').toUpperCase()}</Text>
+      </View>
+      {dress.themes.map((t) => (
+        <View key={t.title} style={{ gap: 2 }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>{t.title}{t.who ? <Text style={{ fontSize: 14, fontWeight: '600', color: C.muted }}>{`  ${t.who}`}</Text> : null}</Text>
+          {!!t.details && <Text style={{ color: C.ink, lineHeight: 20 }}>{t.details}</Text>}
+        </View>
+      ))}
+      <Text style={{ color: C.muted, fontSize: 13 }}>Not dressing up? Wear the usual uniform below.</Text>
+    </View>
   );
 }
 

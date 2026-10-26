@@ -4,8 +4,8 @@ import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   canVolunteer, carlineConfig, checkAssignment, childAssignments, isFamily, isSchoolStaff, listAssignments, listSports, listVolunteer,
-  live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
-  type Assignment, type Person,
+  listDressDays, live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
+  type Assignment, type DressDay, type Person,
 } from '../../src/api/connect';
 import { getCalendar, getNews } from '../../src/api/mockApi';
 import { schoolToday } from '../../src/calendar/past';
@@ -34,10 +34,11 @@ export default function Home() {
   const person = usePerson();
   const { data } = useLoad(async () => ({ news: await getNews(), cal: await getCalendar() }));
   const { info, toggle } = useInfoData(person, today);
+  const dress = useDressDays(today);
   const events = data?.cal.events;
   const plans = useMemo(() => events
-    ? twoWeeks(today).map((d) => planDay(d, today, events, info, person?.schoolRole === 'student' ? [person.grade] : []))
-    : [], [events, today, info, person]);
+    ? twoWeeks(today).map((d) => planDay(d, today, events, info, person?.schoolRole === 'student' ? [person.grade] : [], dress))
+    : [], [events, today, info, person, dress]);
 
   // Opens on today: again at midnight (a day picked yesterday doesn't count) and whenever
   // the app comes back to the front.
@@ -125,6 +126,15 @@ function usePerson() {
  * picks children up. Each part loads on its own and is left out if it fails. Reloads
  * when the screen comes back into view and when assignments change.
  */
+/** Dress-up days (Spirit Week) in the two weeks the Planner shows; again whenever it comes into view. */
+function useDressDays(today: string) {
+  const [days, setDays] = useState<DressDay[]>([]);
+  useFocusEffect(useCallback(() => {
+    listDressDays(today, addDays(today, 13)).then(setDays).catch(() => {});
+  }, [today]));
+  return days;
+}
+
 function useInfoData(person: Person | null, today: string) {
   const [info, setInfo] = useState<InfoData>(NO_DATA);
   const id = person && !person.pending ? person.id : null;

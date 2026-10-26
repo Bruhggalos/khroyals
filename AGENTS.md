@@ -121,6 +121,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   "Are you going?" answers (`sport_event_rsvps`, `sport_rsvp`) are only for registered
   participants, given by their parents (`app.my_students()`, so never Family accounts) or
   themselves; only the activity's leaders see attendance.
+- **Dress-up days** (Spirit Week; `dress_days`): a theme for a school day, for everyone or a grade
+  range. Everyone reads them (signed out too); `calendar.school` holders add, change and remove them
+  (`dress_day_save` / `dress_day_delete`; the Calendar app → Dress-up days). The Planner's "What to
+  wear" card shows the day's themes for the person's grade or children above the usual uniform
+  (`dressFor` in `src/info/today.ts`).
 - **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
   (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
   browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`

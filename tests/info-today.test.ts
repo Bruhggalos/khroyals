@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addDays, assignmentsOn, dayLabel, dayOf, eventsToday, greeting, headerDate, names, nextTwoWeeks, noSchool, schoolHour, twoWeeks, uniformFor,
+  addDays, assignmentsOn, dayLabel, dayOf, eventsToday, greeting, headerDate, names, nextTwoWeeks, noSchool, schoolHour, twoWeeks, uniformFor, dressFor, type DressTheme,
 } from '../src/info/today';
 
 const ev = (date: string, title: string, category = 'Academic', endDate: string | null = null) => ({ id: title, date, endDate, title, category });
@@ -70,4 +70,24 @@ test('coming up: after today through the next two weeks', () => {
   assert.deepEqual(nextTwoWeeks(CAL, '2026-11-10').map((e) => e.title), ['Veteran’s Day – Closed', 'Spirit Day', 'Thanksgiving Break']);
   assert.deepEqual(nextTwoWeeks(CAL, '2026-11-24').map((e) => e.title), ['Thanksgiving Break', 'Christmas Program'], 'still on after today');
   assert.deepEqual(nextTwoWeeks(CAL, '2026-12-05'), []);
+});
+
+test('dress-up days: the theme sits above the uniform, for the right grades and children', () => {
+  const thu = '2026-10-29';
+  const SPIRIT: DressTheme[] = [
+    { date: '2026-10-26', week: 'Spirit Week', title: 'Mismatch Monday', details: 'Clash!', gradeFrom: null, gradeTo: null },
+    { date: thu, week: 'Spirit Week', title: 'Twinning Thursday', details: 'Dress alike.', gradeFrom: 6, gradeTo: 12 },
+    { date: thu, week: 'Spirit Week', title: 'Character Day', details: 'Be a character.', gradeFrom: -3, gradeTo: 5 },
+  ];
+  const mon = uniformFor('2026-10-26', [], [], SPIRIT)!;
+  assert.equal(mon.title, 'Daily uniform', 'the usual uniform is still there');
+  assert.deepEqual(mon.dress, { week: 'Spirit Week', themes: [{ title: 'Mismatch Monday', details: 'Clash!', who: null }] });
+  assert.equal(uniformFor('2026-10-27', [], [], SPIRIT)!.dress, null);
+
+  // Staff and visitors see every theme with its grades; a student only theirs; a parent's children by name.
+  assert.deepEqual(dressFor(thu, SPIRIT)!.themes.map((t) => t.who), ['6th–12th', 'K2–5th']);
+  assert.deepEqual(dressFor(thu, SPIRIT, [1])!.themes.map((t) => t.title), ['Character Day']);
+  const kids = dressFor(thu, SPIRIT, [{ name: 'Winry', grade: 1 }, { name: 'Ava', grade: 3 }, { name: 'Mia', grade: 10 }])!;
+  assert.deepEqual(kids.themes.map((t) => t.who), ['6th–12th: Mia', 'K2–5th: Winry and Ava']);
+  assert.equal(uniformFor('2026-10-31', [], [], [{ ...SPIRIT[0], date: '2026-10-31' }]), null, 'no school on the weekend, so nothing to wear');
 });

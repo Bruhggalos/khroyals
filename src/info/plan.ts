@@ -8,7 +8,7 @@
 import type { Ionicons } from '@expo/vector-icons';
 import type { Assignment, ChildAssignment, Opportunity, Signup, Sport, SportEvent, SportRegistration, SportSeason } from '../api/types';
 import { clock, hoursLabel } from '../carline/time';
-import { assignmentsOn, dayLabel, dayOf, eventsToday, noSchool, uniformFor, type Uniform } from './today';
+import { assignmentsOn, dayLabel, dayOf, eventsToday, noSchool, uniformFor, type DressTheme, type Uniform } from './today';
 
 type Icon = React.ComponentProps<typeof Ionicons>['name'];
 /** One thing on a day: what, a detail line, and where tapping it goes. */
@@ -49,7 +49,8 @@ export type DayPlan = {
   busy: boolean;
 };
 
-export function planDay(day: string, today: string, calendar: CalendarDay[], d: InfoData, grades: (number | null | undefined)[] = []): DayPlan {
+export function planDay(day: string, today: string, calendar: CalendarDay[], d: InfoData, grades: (number | null | undefined)[] = [],
+  dress: DressTheme[] = []): DayPlan {
   const dayOff = noSchool(day, calendar);
   const wearers = d.kids.length ? d.kids.map((k) => ({ name: k.firstName, grade: k.grade })) : grades;
 
@@ -109,5 +110,5 @@ export function planDay(day: string, today: string, calendar: CalendarDay[], d: 
     });
   }
 
-  return { day, label: dayLabel(day, today), dayOff, uniform: uniformFor(day, calendar, wearers), assignments, kids, items, busy };
+  return { day, label: dayLabel(day, today), dayOff, uniform: uniformFor(day, calendar, wearers, dress), assignments, kids, items, busy };
 }

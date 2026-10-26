@@ -15,6 +15,12 @@ export type GroupView = { group: Group; myRole: GroupRole | null; posts: Post[];
 
 export type Person = User & { email?: string | null; pending?: boolean; carlineDuty?: boolean; volunteerLead?: boolean };
 
+/** A dress-up day (Spirit Week): a theme students may wear that day, for some grades or (null) everyone. */
+export type DressDay = {
+  id: string; week: string | null; date: string; title: string; details: string;
+  gradeFrom: number | null; gradeTo: number | null;
+};
+
 export type GroupEvent = {
   id: string; groupId: string | null; groupName?: string; groupIcon?: string;
   title: string; description?: string | null; date: string; endDate: string | null;

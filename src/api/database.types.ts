@@ -410,6 +410,50 @@ export type Database = {
           },
         ]
       }
+      dress_days: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          details: string
+          grade_from: number | null
+          grade_to: number | null
+          id: string
+          on_date: string
+          title: string
+          week: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          details?: string
+          grade_from?: number | null
+          grade_to?: number | null
+          id?: string
+          on_date: string
+          title: string
+          week?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          details?: string
+          grade_from?: number | null
+          grade_to?: number | null
+          id?: string
+          on_date?: string
+          title?: string
+          week?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dress_days_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           all_day: boolean
@@ -2884,6 +2928,19 @@ export type Database = {
       }
       critical_alert_status: { Args: { p_alert: string }; Returns: Json }
       dismiss_notifications: { Args: { p_ids: string[] }; Returns: undefined }
+      dress_day_delete: { Args: { p_id: string }; Returns: undefined }
+      dress_day_save: {
+        Args: {
+          p_details?: string
+          p_grade_from?: number
+          p_grade_to?: number
+          p_id: string | null
+          p_on: string
+          p_title: string
+          p_week: string | null
+        }
+        Returns: string
+      }
       email_claim: {
         Args: { p_limit?: number }
         Returns: {

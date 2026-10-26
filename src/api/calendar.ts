@@ -1,6 +1,6 @@
 /** calendar: internal API implementation. Screens import the connect facade. */
-import type { GroupEvent, NewEvent } from './types';
-import { live, run, sb } from './client';
+import type { DressDay, GroupEvent, NewEvent } from './types';
+import { live, rpc, run, sb } from './client';
 import { toEvent } from './mappers';
 import { current } from './session';
 import { listMyGroups } from './groups';
@@ -30,3 +30,22 @@ export async function editableCalendars(): Promise<{ groupId: string | null; nam
   const ids = new Set(mine.map((m) => m.group_id));
   return groups.filter((g) => ids.has(g.id)).map((g) => ({ groupId: g.id, name: g.name }));
 }
+
+/** Dress-up days (Spirit Week) from one day through another. Everyone can read them, signed out too. */
+export async function listDressDays(from: string, to: string): Promise<DressDay[]> {
+  if (!live) return [];
+  const rows = await run(sb().from('dress_days').select('*').gte('on_date', from).lte('on_date', to).order('on_date').order('title'));
+  return rows.map((r) => ({
+    id: r.id, week: r.week, date: r.on_date, title: r.title, details: r.details, gradeFrom: r.grade_from, gradeTo: r.grade_to,
+  }));
+}
+
+/** School calendar editors: add a dress-up day (no id) or change one. */
+export async function saveDressDay(d: Omit<DressDay, 'id'> & { id?: string | null }): Promise<string> {
+  return rpc('dress_day_save', {
+    p_id: d.id ?? null, p_week: d.week, p_on: d.date, p_title: d.title, p_details: d.details,
+    ...(d.gradeFrom != null && d.gradeTo != null ? { p_grade_from: d.gradeFrom, p_grade_to: d.gradeTo } : {}),
+  });
+}
+
+export async function deleteDressDay(id: string) { await rpc('dress_day_delete', { p_id: id }); }

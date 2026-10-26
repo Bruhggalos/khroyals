@@ -5,6 +5,7 @@
  * so tests run it.
  */
 import { schoolToday } from '../calendar/past';
+import { gradeLabel } from '../comms/grades';
 
 type Day = { date: string; endDate: string | null; title: string; category: string };
 
@@ -90,7 +91,35 @@ export type Uniform = {
   shoes: string;
   /** Grade-level Chapel details for these grades, and day notes (PE, Spirit Day). */
   notes: string[];
+  /** A dress-up day (Spirit Week): the themes students may wear instead, shown above the uniform. */
+  dress: { week: string | null; themes: { title: string; details: string; who: string | null }[] } | null;
 };
+
+/** A dress-up day as the Planner gets it (src/api/types DressDay). */
+export type DressTheme = { date: string; week: string | null; title: string; details: string; gradeFrom: number | null; gradeTo: number | null };
+
+/** "K2–5th", "6th–12th", "3rd": the grades a dress-up theme is for. */
+export const gradeSpan = (from: number, to: number) => (from === to ? gradeLabel(from) : `${gradeLabel(from)}–${gradeLabel(to)}`);
+
+/**
+ * The day's dress-up themes for these wearers: all of them (with their grades) when there's no
+ * grade to go by, else the ones for the wearers' grades, naming a parent's children.
+ */
+export function dressFor(day: string, themes: DressTheme[], wearers: Wearer[] = []): Uniform['dress'] {
+  const today = themes.filter((t) => t.date === day);
+  const known = wearers.filter((w) => gradeOf(w) != null);
+  type Shown = { title: string; details: string; who: string | null };
+  const shown = today.flatMap((t): Shown[] => {
+    if (t.gradeFrom == null || t.gradeTo == null) return [{ title: t.title, details: t.details, who: null }];
+    const span = gradeSpan(t.gradeFrom, t.gradeTo);
+    if (!known.length) return [{ title: t.title, details: t.details, who: span }];
+    const here = known.filter((w) => { const g = gradeOf(w)!; return g >= t.gradeFrom! && g <= t.gradeTo!; });
+    if (!here.length) return [];
+    const who = here.flatMap((w) => (typeof w === 'object' && w ? [w.name] : []));
+    return [{ title: t.title, details: t.details, who: who.length ? `${span}: ${names(who)}` : span }];
+  });
+  return shown.length ? { week: today.find((t) => t.week)?.week ?? null, themes: shown } : null;
+}
 
 const DAILY = {
   boys: ['White, navy or light blue polo, or a white or light blue oxford', 'Khaki or navy pants or shorts', 'Black or brown belt if needed'],
@@ -119,9 +148,10 @@ export const names = (list: string[]) => list.length < 2 ? list.join('') : `${li
 /**
  * The uniform for a day: the Chapel uniform on Wednesdays, the daily uniform on other
  * school days, nothing when there's no school. `wearers` (the student's grade, or a
- * parent's children by name) add the Chapel details for their grades, with the names.
+ * parent's children by name) add the Chapel details for their grades, with the names,
+ * and pick the day's dress-up `themes` (Spirit Week) that apply to them.
  */
-export function uniformFor(today: string, events: Day[], wearers: Wearer[] = []): Uniform | null {
+export function uniformFor(today: string, events: Day[], wearers: Wearer[] = [], themes: DressTheme[] = []): Uniform | null {
   if (noSchool(today, events)) return null;
   const chapel = noon(today).getDay() === 3;
   const base = chapel ? CHAPEL : DAILY;
@@ -136,7 +166,10 @@ export function uniformFor(today: string, events: Day[], wearers: Wearer[] = [])
     notes.push('On your PE days, wear the PE uniform with white or black athletic shoes.');
   }
   if (eventsToday(today, events).some((e) => /spirit/i.test(e.title))) notes.push('Spirit Day: Kingdom Heights sweatshirts are allowed.');
-  return { kind: chapel ? 'chapel' : 'daily', title: chapel ? 'Wednesday Chapel uniform' : 'Daily uniform', boys: base.boys, girls: base.girls, shoes: base.shoes, notes };
+  return {
+    kind: chapel ? 'chapel' : 'daily', title: chapel ? 'Wednesday Chapel uniform' : 'Daily uniform', boys: base.boys, girls: base.girls,
+    shoes: base.shoes, notes, dress: dressFor(today, themes, wearers),
+  };
 }
 
 export const UNIFORM_GUIDE = 'https://www.khroyals.com/s/Uniform-Guide.pdf';

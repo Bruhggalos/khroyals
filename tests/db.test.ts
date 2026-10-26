@@ -2121,3 +2121,29 @@ test('critical alerts: the roll call leaves out staff without a login', async ()
   await asSuper();
   await db.exec(`delete from profiles where id = 'aaaaaaaa-0000-4000-8000-000000000035'`);
 });
+
+test('dress-up days: everyone reads them; only school calendar editors add, change and remove them', async () => {
+  await db.exec(`set role anon`);
+  const week = await rows(`select title, grade_from, grade_to from dress_days where week = 'Spirit Week' order by on_date, title`);
+  assert.deepEqual(week.map((d) => d.title),
+    ['Mismatch Monday', 'Team Tuesday', 'Western Wednesday', 'Character Day', 'Twinning Thursday', 'Royal Fun Friday']);
+  assert.deepEqual([week[3].grade_from, week[3].grade_to], [-3, 5], 'Character Day is K2–5th');
+  await rejects(`select dress_day_save(null, 'x', '2026-11-02', 'x')`, /permission denied/);
+
+  await as('u-p01');
+  await rejects(`select dress_day_save(null, 'Spirit Week', '2026-11-02', 'Pajama Day')`, /permission/);
+  await rejects(`insert into dress_days (on_date, title) values ('2026-11-02', 'x')`, /permission denied/);
+  await as('u-ap');
+  await rejects(`select dress_day_save(null, null, '2026-11-02', 'Pajama Day')`, /MFA_REQUIRED/);
+
+  await as('u-ap', true);
+  await rejects(`select dress_day_save(null, null, '2026-11-02', ' ')`, /Give the day a name/);
+  await rejects(`select dress_day_save(null, null, '2026-11-02', 'Pajama Day', '', 3, null)`, /both the first and last grade/);
+  const id = (await one(`select dress_day_save(null, 'Cozy Week', '2026-11-02', 'Pajama Day', 'Pajamas!', 0, 5) as id`)).id;
+  await one(`select dress_day_save('${id}', 'Cozy Week', '2026-11-03', 'Pajama Day', 'Comfy pajamas', 0, 5)`);
+  assert.deepEqual(await one(`select on_date::text as d, details from dress_days where id = '${id}'`), { d: '2026-11-03', details: 'Comfy pajamas' });
+  await one(`select dress_day_delete('${id}')`);
+  assert.equal((await rows(`select 1 from dress_days where id = '${id}'`)).length, 0);
+  await asSuper();
+  assert.equal((await rows(`select 1 from audit_log where action like 'dress_day.%' and target_id = '${id}'`)).length, 3);
+});
