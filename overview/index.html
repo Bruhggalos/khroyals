@@ -76,6 +76,10 @@
   .seg button { font: inherit; font-weight: 700; border: 0; background: transparent; color: var(--muted); padding: 7px 16px; border-radius: 9px; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
   label.check { display: inline-flex; gap: 8px; align-items: center; font-size: 15px; cursor: pointer; }
+  .slider { margin-bottom: 14px; display: grid; gap: 8px; }
+  .slider input[type=range] { width: 100%; accent-color: var(--navy); height: 28px; }
+  .slider output { font-size: 20px; font-weight: 800; color: var(--navy); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
   .users { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
   .users div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
   .users b { font-size: 22px; display: block; }
@@ -95,6 +99,7 @@
   td.amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
   td .note { display: block; color: var(--muted); font-size: 13px; }
   tr.opt td { background: #FFFBEB; }
+  tr.zero td.amt { color: var(--green); font-weight: 600; }
   tr.sum td { font-weight: 800; border-bottom: 0; }
   .plan .foot { padding: 12px 18px 16px; color: var(--muted); font-size: 13px; margin-top: auto; }
   .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
@@ -112,7 +117,7 @@
   <div class="wrap">
     <div class="hero">
       <h1>KH Royals: the Kingdom Heights school app</h1>
-      <p>One app for families, students and staff: the school's site and news, the daily Planner, Royals Connect groups, car line pickup, emergency alerts, activities, forms and the office's admin tools. Android, iPhone, iPad and the web, with one secure backend.</p>
+      <p>One app for families, students and staff: the school's site and news, the daily Planner, a photo gallery, Royals Connect groups, car line pickup, emergency alerts, activities, forms and the office's admin tools. Android, iPhone, iPad and the web, with one secure backend.</p>
       <div class="stats" id="stats"></div>
     </div>
     <nav class="tabs" role="tablist">
@@ -135,15 +140,21 @@
   </section>
 
   <section class="panel" id="costs" role="tabpanel" aria-labelledby="tab-costs" hidden>
-    <h2>What it costs to run for 1,300 people</h2>
-    <p class="lead">Hosting for the app's backend (accounts, database, files, live updates, notifications and email), two ways: on <b>Supabase</b>, where it runs today, and the same setup built on <b>AWS</b>. Prices are list prices in US dollars, checked October 2026.</p>
+    <h2 id="cost-title">What it costs to run</h2>
+    <p class="lead">Hosting for the app's backend (accounts, database, files and photos, live updates, notifications and email), two ways: on <b>Supabase</b>, where it runs today, and the same setup built on <b>AWS</b>. Slide to change the number of people; every line recalculates. List prices in US dollars, checked October 2026.</p>
+    <div class="card slider">
+      <label for="people"><b>People using the app:</b> <output id="people-out"></output></label>
+      <input type="range" id="people" min="0" max="1000" step="1" aria-describedby="people-help">
+      <div class="presets" id="presets"></div>
+      <div class="small" id="people-help">Split like Kingdom Heights today: about 11.5% staff, 21% students with their own login, the rest parents and family.</div>
+    </div>
     <div class="users" id="users"></div>
     <div class="toolbar">
       <div class="seg" role="group" aria-label="Show costs per">
         <button id="per-month" aria-pressed="true">Monthly</button>
         <button id="per-year" aria-pressed="false">Yearly</button>
       </div>
-      <label class="check"><input type="checkbox" id="upgrades"> Include recommended production upgrades</label>
+      <label class="check"><input type="checkbox" id="upgrades"> Include production upgrades (bigger database, failover, custom domain)</label>
     </div>
     <div class="plans" id="plans"></div>
 
@@ -161,6 +172,7 @@
         <ul>
           <li>Moving to AWS is a rebuild of accounts, permissions, live updates and file storage. Expect roughly 6–10 weeks of developer time, once.</li>
           <li>Ongoing developer time, support, and app-store review time.</li>
+          <li>Growth of the photo gallery after the first year (about the same again each year).</li>
           <li>Taxes, and any discounts AWS or Supabase give schools or non-profits.</li>
         </ul>
       </div>
@@ -210,6 +222,15 @@ const F = [
       '<b>Families tap Royal News</b> on the Planner to read it, or browse past issues.',
       '<b>Fixing a mistake?</b> Paste the same link again to update it, or delete the issue.'],
     safe: ['Only Smore newsletter pages can be imported.', 'Smore\'s per-reader tracking links (which can carry an email address) are removed.'] },
+  { area: 'Everyday', icon: '📸', name: 'Photo gallery', short: 'Staff post albums of school photos; every family, student and staff member can browse them.',
+    what: 'Albums of photos from school events, games and field trips. Teachers and staff post them from their phones; everyone with an approved account (parents, students, family and staff) browses them in Apps → Photos, and the newest albums show on the Planner under Latest Photos. Tap a photo to see it full screen and step through the album.',
+    who: ['Teachers and staff post', 'Parents, students and family view', 'Office (Manage photo gallery)'],
+    flow: ['<b>Staff open Photos → New album</b>: name it ("Fall Fest 2026"), pick the date, add a line about it.',
+      '<b>Add photos</b> from the phone, many at once. The app shrinks each one before uploading (full size plus a thumbnail), so uploads are quick and browsing is light.',
+      '<b>Office staff can "Let everyone know"</b>, which sends every family a notification that opens the album.',
+      '<b>Families browse</b> Latest Photos on the Planner or Apps → Photos; tap a photo for full screen, arrows for the next one.',
+      '<b>Tidy up</b>: whoever posted a photo, the album\'s creator, or anyone with Manage photo gallery can remove photos or a whole album.'],
+    safe: ['Only signed-in, approved accounts can see photos; there are no public links, and each link to a photo expires within the hour.', 'Only staff can post.', 'Removing an album removes its files too.'] },
   { area: 'Everyday', icon: '🔔', name: 'Notifications', short: 'Push notifications plus a bell inbox of everything sent to you; swipe to delete, clear all.',
     what: 'Announcements, replies, car line updates, forms and alerts arrive as phone notifications (banner, sound, lock screen) and always land on the bell page too. Each person chooses what reaches their phone and can set quiet hours.',
     who: ['Everyone signed in'],
@@ -369,7 +390,7 @@ const F = [
 ];
 
 const ROLES = [
-  ['Parents', 'Planner, their children, car line, groups, forms, activities, Marketplace, Volunteer, Royal News.'],
+  ['Parents', 'Planner, their children, car line, groups, forms, activities, photo gallery, Marketplace, Volunteer, Royal News.'],
   ['Students', 'Their own Planner, classes, assignments, Ask the Teacher, activities, groups (when a parent gives them a login).'],
   ['Teachers and staff', 'Car line board, emergency alerts, their classes and assignments, forms, groups they run.'],
   ['Family (relatives)', 'Car line for linked children, Volunteer, following activities, public screens.'],
@@ -378,56 +399,89 @@ const ROLES = [
 ];
 
 /* ------------------------------------------------------------------ costs */
-const USERS = { staff: 150, students: 275, total: 1300 };
-USERS.parents = USERS.total - USERS.staff - USERS.students;
-
-const PLANS = {
-  supa: {
-    name: 'Supabase', tag: 'Runs today',
-    lines: [
-      ['Pro plan (one project)', 25, 'Includes 100,000 monthly users, 8 GB database, 100 GB files, 250 GB transfer, 2M function calls, 500 live connections.'],
-      ['Database computer: Micro (1 GB RAM)', 0, '$10/month, covered by the Pro plan\'s $10 compute credit.'],
-      ['Usage above the plan', 0, 'None expected: ~1,100 monthly users, ~1 GB data, ~10 GB photos, ~40 GB transfer.'],
-      ['Email: Resend Pro (50,000/month)', 20, 'Pickup emails and sign-in codes, ~12,000 a month. The free tier stops at 3,000 a month and 100 a day.'],
-      ['Push notifications (Expo)', 0, 'Free.'],
-    ],
-    upgrades: [
-      ['Database computer: Small (2 GB RAM)', 15, 'Headroom for the afternoon car line rush ($25, less the $10 credit).'],
-      ['Custom domain (e.g. api.khroyals.com)', 10, 'Optional; makes sign-in emails and links show the school\'s domain.'],
-    ],
-    foot: 'One bill. Daily backups (7 days) included. Spend cap on by default.',
-  },
-  aws: {
-    name: 'AWS', tag: 'Same app, rebuilt on AWS',
-    lines: [
-      ['Accounts: Amazon Cognito', 0, 'Free up to 10,000 monthly users.'],
-      ['Database: RDS PostgreSQL db.t4g.micro', 11.68, '$0.016/hour, one zone.'],
-      ['Database storage: 20 GB gp3', 2.30, '$0.115/GB-month; automated backups free up to the database size.'],
-      ['API: API Gateway + Lambda', 0.30, '~300,000 requests a month; Lambda stays in its free tier.'],
-      ['Live updates: API Gateway WebSockets', 1.10, 'Car line board and chat: ~1M messages and ~400,000 connection minutes.'],
-      ['NAT gateway (functions reach the internet)', 36.95, '$0.045/hour + public IPv4 $0.005/hour + data. Needed for push and email from inside the private network.'],
-      ['Files: S3 + CloudFront', 0.23, '10 GB of photos; CloudFront\'s free tier covers the transfer.'],
-      ['Email: Amazon SES', 1.20, '~12,000 emails at $0.10 per 1,000.'],
-      ['Secrets Manager (3 keys)', 1.20, '$0.40 per secret.'],
-      ['Monitoring: CloudWatch logs and alarms', 3.00, 'Typical for this size.'],
-      ['Push notifications (Expo)', 0, 'Free.'],
-    ],
-    upgrades: [
-      ['Database in two zones (Multi-AZ)', 13.98, 'Automatic failover; doubles the instance and storage cost.'],
-    ],
-    foot: 'Many separate services and bills. Prices for us-east-1 (N. Virginia).',
-  },
-};
+// Kingdom Heights' split: 150 staff and 275 students with a login out of 1,300.
+const SPLIT = { staff: 150 / 1300, students: 275 / 1300 };
 const SHARED_YEARLY = [['Apple Developer Program (iPhone and iPad apps)', 99]];
 const SHARED_ONCE = [['Google Play developer account (one time)', 25]];
-const ASSUME = [
-  `${USERS.total.toLocaleString()} people: ${USERS.staff} staff, ${USERS.students} students with their own login, ${USERS.parents} parents and family.`,
-  'About 1,100 of them use the app in a typical month.',
-  'Database about 1 GB; photos and files about 10 GB; about 40 GB of downloads a month.',
-  'About 12,000 emails a month: pickup emails to both parents on school days, plus sign-in codes.',
-  'Push notifications go through Expo, which is free for this volume.',
-  'The web app and Android builds run on GitHub (free for this public repository).',
-];
+const round = (n, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
+const fmtN = (n) => Math.round(n).toLocaleString('en-US');
+
+/** What N people use in a month (and the gallery over a school year). */
+function usage(n) {
+  const mau = n * 0.85;
+  return {
+    n, mau,
+    staff: Math.round(n * SPLIT.staff), students: Math.round(n * SPLIT.students),
+    dbGB: 0.5 + n * 0.0008,
+    filesGB: n * 0.004,                    // profile, child and marketplace photos, newsletters
+    galleryGB: n * 6 * 0.43 / 1000,         // ~6 gallery photos per person a year, 430 KB each with its thumbnail
+    egressGB: mau * 0.028,                  // ~20 MB of app data + ~8 MB of gallery viewing per active person
+    emails: n * 9,                          // pickup emails to both parents on school days, plus sign-in codes
+    fnCalls: n * 200,
+    peak: n * 0.25,                         // live connections during afternoon pickup
+    requests: n * 230,
+  };
+}
+
+const SUPA_COMPUTE = [[2500, 'Micro (1 GB RAM)', 10], [6000, 'Small (2 GB RAM)', 25], [15000, 'Medium (4 GB RAM)', 60], [40000, 'Large (8 GB RAM)', 110], [Infinity, 'XL (16 GB RAM)', 210]];
+const RDS = [[2500, 'db.t4g.micro', 0.016], [6000, 'db.t4g.small', 0.032], [15000, 'db.t4g.medium', 0.065], [40000, 'db.t4g.large', 0.129], [Infinity, 'db.m6g.xlarge', 0.336]];
+const tier = (list, n, up) => list[Math.min(list.findIndex(([max]) => n <= max) + (up ? 1 : 0), list.length - 1)];
+
+function resend(e) {
+  if (e <= 3000) return [0, 'Free tier (3,000 a month)'];
+  if (e <= 50000) return [20, 'Pro: 50,000 a month'];
+  if (e <= 100000) return [90, 'Scale: 100,000 a month'];
+  return [round(90 + (e - 100000) / 1000 * 0.9), 'Scale, plus $0.90 per 1,000 over 100,000'];
+}
+
+function supabase(u, up) {
+  const [, size, price] = tier(SUPA_COMPUTE, u.n, up);
+  const over = (x, inc) => Math.max(0, x - inc);
+  const [mail, mailNote] = resend(u.emails);
+  const rt = Math.ceil(over(u.peak, 500) / 1000) * 10;
+  const lines = [
+    ['Pro plan (one project)', 25, 'Includes 100,000 monthly users, 8 GB database, 100 GB files, 250 GB downloads, 2M function calls, 500 live connections.'],
+    [`Database computer: ${size}`, price - 10, `$${price}/month, less the Pro plan's $10 compute credit.${up ? ' One size up for headroom.' : ''}`],
+    ['Monthly users above 100,000', round(over(u.mau, 100000) * 0.00325), `${fmtN(u.mau)} active a month; $0.00325 each above 100,000.`],
+    ['Database disk above 8 GB', round(over(u.dbGB, 8) * 0.125), `About ${round(u.dbGB, 1)} GB of data; $0.125/GB above 8 GB.`],
+    ['Photo gallery storage', round(over(u.filesGB + u.galleryGB, 100) * 0.021), `About ${round(u.galleryGB, 1)} GB of gallery photos a school year, plus ${round(u.filesGB, 1)} GB of other files; 100 GB included, then $0.021/GB.`],
+    ['Downloads (app data and photo viewing)', round(over(u.egressGB, 250) * 0.09), `About ${fmtN(u.egressGB)} GB a month; 250 GB included, then $0.09/GB.`],
+    ['Live connections above 500', rt, `About ${fmtN(u.peak)} at the afternoon pickup peak; $10 per extra 1,000.`],
+    ['Edge function calls above 2M', round(over(u.fnCalls, 2e6) / 1e6 * 2), `About ${fmtN(u.fnCalls)} a month; $2 per extra million.`],
+    [`Email: Resend (${mailNote})`, mail, `About ${fmtN(u.emails)} emails a month.`],
+    ['Push notifications (Expo)', 0, 'Free.'],
+  ];
+  if (up) lines.push(['Custom domain (e.g. api.khroyals.com)', 10, 'Sign-in emails and links show the school\'s domain.', true]);
+  return { name: 'Supabase', tag: 'Runs today', lines, foot: 'One bill. Daily backups (7 days) included. Spend cap on by default.' };
+}
+
+function aws(u, up) {
+  const [, inst, hr] = tier(RDS, u.n, false);
+  const az = up ? 2 : 1;
+  const storeGB = Math.max(20, u.dbGB * 2);
+  const files = u.filesGB + u.galleryGB;
+  const lines = [
+    ['Accounts: Amazon Cognito', round(Math.max(0, u.mau - 10000) * 0.015), `${fmtN(u.mau)} active a month; free up to 10,000, then $0.015 each (email sign-in codes need Essentials).`],
+    [`Database: RDS PostgreSQL ${inst}${up ? ', two zones' : ''}`, round(hr * 730 * az), `$${hr}/hour${up ? ' × 2 zones (automatic failover)' : ', one zone'}.`],
+    [`Database storage: ${fmtN(storeGB)} GB gp3`, round(storeGB * 0.115 * az), '$0.115/GB-month; automated backups free up to the database size.'],
+    ['API: API Gateway + Lambda', round(u.requests / 1e6 * 1 + Math.max(0, u.requests - 1e6) / 1e6 * 0.2 + u.requests * 0.0000004), `About ${fmtN(u.requests)} requests a month.`],
+    ['Live updates: API Gateway WebSockets', round(u.n * 770 / 1e6 + u.n * 300 / 1e6 * 0.25), 'Car line board and chat messages, and connection minutes.'],
+    ['NAT gateway (functions reach the internet)', round(32.85 + 3.65 + u.n * 0.0004 * 0.045), '$0.045/hour + public IPv4 $0.005/hour + data. Needed for push and email from the private network.'],
+    ['Photo gallery and files: S3', round(files * 0.023), `About ${round(u.galleryGB, 1)} GB of gallery photos a school year plus ${round(u.filesGB, 1)} GB of other files, at $0.023/GB.`],
+    ['Downloads: CloudFront', round(Math.max(0, u.egressGB - 1000) * 0.085), `About ${fmtN(u.egressGB)} GB a month; the first 1,000 GB are free, then $0.085/GB.`],
+    ['Email: Amazon SES', round(u.emails * 0.0001), `About ${fmtN(u.emails)} emails at $0.10 per 1,000.`],
+    ['Secrets Manager (3 keys)', 1.2, '$0.40 per secret.'],
+    ['Monitoring: CloudWatch', round(2 + u.n * 0.0008), 'Logs, metrics and alarms.'],
+    ['Push notifications (Expo)', 0, 'Free.'],
+  ];
+  return { name: 'AWS', tag: 'Same app, rebuilt on AWS', lines, foot: 'Many separate services and bills. Prices for us-east-1 (N. Virginia).' };
+}
+
+// The slider runs on a log scale from 300 to 50,000 people, snapping to round numbers.
+const MIN = 300, MAX = 50000;
+const fromSlider = (v) => { const n = MIN * Math.pow(MAX / MIN, v / 1000); const step = n < 2000 ? 50 : n < 10000 ? 100 : 500; return Math.round(n / step) * step; };
+const toSlider = (n) => Math.round(Math.log(n / MIN) / Math.log(MAX / MIN) * 1000);
+let people = 1300;
 
 /* ------------------------------------------------------------------ render */
 const $ = (id) => document.getElementById(id);
@@ -481,42 +535,62 @@ if (location.hash === '#costs') $('tab-costs').click();
 
 // Costs
 let yearly = false;
-$('users').innerHTML = [[USERS.total, 'people in all'], [USERS.staff, 'staff'], [USERS.students, 'students with a login'], [USERS.parents, 'parents and family']]
-  .map(([b, s]) => `<div><b>${b.toLocaleString()}</b><span>${s}</span></div>`).join('');
-function monthly(p, up) { return p.lines.reduce((a, l) => a + l[1], 0) + (up ? p.upgrades.reduce((a, l) => a + l[1], 0) : 0); }
+const PRESETS = [500, 1300, 5000, 10000, 25000, 50000];
+$('presets').innerHTML = PRESETS.map((n) => `<button class="chip" data-n="${n}">${n.toLocaleString()}${n === 1300 ? ' (Kingdom Heights)' : ''}</button>`).join('');
+$('presets').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) { people = +b.dataset.n; $('people').value = toSlider(people); drawCosts(); } });
+$('people').addEventListener('input', () => { people = fromSlider(+$('people').value); drawCosts(); });
+$('people').value = toSlider(people);
+
+const sum = (p) => p.lines.reduce((a, l) => a + l[1], 0);
 function drawCosts() {
   const up = $('upgrades').checked;
+  const u = usage(people);
+  const parents = people - u.staff - u.students;
+  $('people-out').textContent = people.toLocaleString();
+  $('cost-title').textContent = `What it costs to run for ${people.toLocaleString()} people`;
+  [...$('presets').children].forEach((b) => b.setAttribute('aria-pressed', +b.dataset.n === people));
+  $('users').innerHTML = [[people, 'people in all'], [u.staff, 'staff'], [u.students, 'students with a login'], [parents, 'parents and family']]
+    .map(([b, t]) => `<div><b>${b.toLocaleString()}</b><span>${t}</span></div>`).join('');
   const k = yearly ? 12 : 1, unit = yearly ? '/ year' : '/ month';
-  const totals = Object.fromEntries(Object.entries(PLANS).map(([id, p]) => [id, monthly(p, up)]));
-  const max = Math.max(...Object.values(totals));
-  $('plans').innerHTML = Object.entries(PLANS).map(([id, p]) => {
-    const rows = [...p.lines.map((l) => [...l, false]), ...(up ? p.upgrades.map((l) => [...l, true]) : [])];
-    return `<div class="plan ${id}">
+  const plans = { supa: supabase(u, up), aws: aws(u, up) };
+  const totals = { supa: sum(plans.supa), aws: sum(plans.aws) };
+  const max = Math.max(totals.supa, totals.aws);
+  $('plans').innerHTML = Object.entries(plans).map(([id, p]) => `<div class="plan ${id}">
       <div class="ph"><div class="tag">${p.tag}</div><h3>${p.name}</h3>
-        <div class="total">${money(totals[id] * k)} <small>${unit}</small></div>
-        <div class="per">${money(totals[id] / USERS.total)} per person per month</div>
+        <div class="total">${money(round(totals[id] * k))} <small>${unit}</small></div>
+        <div class="per">${money(round(totals[id] / people, 3))} per person per month</div>
         <div class="bar"><i style="width:${(totals[id] / max * 100).toFixed(1)}%;background:${id === 'supa' ? 'var(--green)' : '#D97706'}"></i></div></div>
-      <table>${rows.map(([n, a, note, opt]) => `<tr class="${opt ? 'opt' : ''}"><td>${opt ? '⬆️ ' : ''}${esc(n)}<span class="note">${esc(note)}</span></td><td class="amt">${money(a * k)}</td></tr>`).join('')}
-        <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(totals[id] * k)}</td></tr></table>
-      <div class="foot">${p.foot}</div></div>`;
-  }).join('');
+      <table>${p.lines.map(([n, a, note, opt]) => `<tr class="${opt ? 'opt' : ''}${a === 0 && !opt ? ' zero' : ''}"><td>${opt ? '⬆️ ' : ''}${esc(n)}<span class="note">${esc(note)}</span></td><td class="amt">${a === 0 ? 'Included' : money(round(a * k))}</td></tr>`).join('')}
+        <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(round(totals[id] * k))}</td></tr></table>
+      <div class="foot">${p.foot}</div></div>`).join('');
   const sy = SHARED_YEARLY.reduce((a, l) => a + l[1], 0);
   $('shared').innerHTML = `<b>Either way: app store accounts</b>
-    <ul>${SHARED_YEARLY.map(([n, a]) => `<li>${n}: ${money(yearly ? a : a / 12)} ${yearly ? 'a year' : 'a month (paid $99 yearly)'}</li>`).join('')}
+    <ul>${SHARED_YEARLY.map(([n, a]) => `<li>${n}: ${money(yearly ? a : round(a / 12))} ${yearly ? 'a year' : 'a month (paid $99 yearly)'}</li>`).join('')}
     ${SHARED_ONCE.map(([n, a]) => `<li>${n}: ${money(a)}</li>`).join('')}
     <li>Expo push notifications, GitHub builds and the web app: free</li></ul>
-    <p class="small">All-in ${yearly ? 'first year' : 'per month'}: Supabase ${money(yearly ? totals.supa * 12 + sy + 25 : totals.supa + sy / 12)}, AWS ${money(yearly ? totals.aws * 12 + sy + 25 : totals.aws + sy / 12)}${yearly ? ' (including the one-time Google fee)' : ''}.</p>`;
+    <p class="small">All-in ${yearly ? 'first year' : 'per month'}: Supabase ${money(round(yearly ? totals.supa * 12 + sy + 25 : totals.supa + sy / 12))}, AWS ${money(round(yearly ? totals.aws * 12 + sy + 25 : totals.aws + sy / 12))}${yearly ? ' (including the one-time Google fee)' : ''}.</p>`;
   const diff = totals.aws - totals.supa;
+  const mailGap = resend(u.emails)[0] - u.emails * 0.0001;
   $('compare').innerHTML = `<b>How they compare</b>
-    <ul><li>${diff >= 0 ? 'Supabase' : 'AWS'} costs ${money(Math.abs(diff) * k)} less ${yearly ? 'a year' : 'a month'} at this size.</li>
-    <li>Supabase includes accounts, database, files, live updates and functions in one plan, with room to grow to 100,000 users before usage charges start.</li>
-    <li>On AWS the biggest single cost is the NAT gateway, a fixed charge whatever the number of users.</li>
+    <ul><li>${diff >= 0 ? 'Supabase' : 'AWS'} costs ${money(round(Math.abs(diff) * k))} less ${yearly ? 'a year' : 'a month'} for ${people.toLocaleString()} people.</li>
+    <li>Supabase includes accounts, database, files, live updates and functions in one plan; usage charges only start past 100,000 monthly users, 100 GB of files or 250 GB of downloads.</li>
+    <li>On AWS the NAT gateway is a fixed ~$37 a month whatever the size${diff >= 0 ? ', which is why AWS costs more for a single school' : '; at this size AWS makes that back on usage'}.</li>
+    ${mailGap > 5 ? `<li>Most of the gap at this size is email: Resend costs ${money(round(mailGap * k))} more ${yearly ? 'a year' : 'a month'} than Amazon SES. Supabase can send through Amazon SES too, which would bring Supabase to ${money(round((totals.supa - mailGap) * k))}.</li>` : ''}
+    <li>The photo gallery adds about ${round(u.galleryGB, 1)} GB of photos a school year; it stays inside Supabase's included storage up to about 15,000 people.</li>
     <li>The app runs on Supabase today; staying there needs no rebuild.</li></ul>`;
+  $('assume').innerHTML = [
+    `${people.toLocaleString()} people: ${u.staff.toLocaleString()} staff, ${u.students.toLocaleString()} students with their own login, ${parents.toLocaleString()} parents and family.`,
+    `About ${fmtN(u.mau)} of them (85%) use the app in a typical month.`,
+    `Database about ${round(u.dbGB, 1)} GB; other photos and files about ${round(u.filesGB, 1)} GB.`,
+    `Photo gallery: about 6 photos per person a school year (${fmtN(u.n * 6)} photos, ${round(u.galleryGB, 1)} GB), shrunk on the phone to 1600 px plus a thumbnail. It grows by about that much each year.`,
+    `Downloads about ${fmtN(u.egressGB)} GB a month, including gallery viewing (thumbnails while browsing, full size when opened).`,
+    `About ${fmtN(u.emails)} emails a month: pickup emails to both parents on school days, plus sign-in codes.`,
+    'Push notifications go through Expo, free at these volumes; the web app and Android builds run free on GitHub.',
+  ].map((a) => `<li>${esc(a)}</li>`).join('');
 }
 $('per-month').onclick = () => { yearly = false; $('per-month').setAttribute('aria-pressed', 'true'); $('per-year').setAttribute('aria-pressed', 'false'); drawCosts(); };
 $('per-year').onclick = () => { yearly = true; $('per-year').setAttribute('aria-pressed', 'true'); $('per-month').setAttribute('aria-pressed', 'false'); drawCosts(); };
 $('upgrades').onchange = drawCosts;
-$('assume').innerHTML = ASSUME.map((a) => `<li>${esc(a)}</li>`).join('');
 drawCosts();
 </script>
 </body>
