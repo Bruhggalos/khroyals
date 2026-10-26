@@ -410,6 +410,44 @@ export type Database = {
           },
         ]
       }
+      newsletters: {
+        Row: {
+          blocks: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          sent_on: string
+          source_url: string
+          title: string
+        }
+        Insert: {
+          blocks: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_on: string
+          source_url: string
+          title: string
+        }
+        Update: {
+          blocks?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          sent_on?: string
+          source_url?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "newsletters_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dress_days: {
         Row: {
           created_at: string
@@ -3311,6 +3349,11 @@ export type Database = {
           thread_id: string
           unread: boolean
         }[]
+      }
+      newsletter_delete: { Args: { p_id: string }; Returns: undefined }
+      newsletter_save: {
+        Args: { p_blocks: Json; p_sent_on: string; p_source_url: string; p_title: string }
+        Returns: string
       }
       notification_open_counts: {
         Args: { p_ids: string[] }

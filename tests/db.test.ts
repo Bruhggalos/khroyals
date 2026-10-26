@@ -2147,3 +2147,24 @@ test('dress-up days: everyone reads them; only school calendar editors add, chan
   await asSuper();
   assert.equal((await rows(`select 1 from audit_log where action like 'dress_day.%' and target_id = '${id}'`)).length, 3);
 });
+
+test('Royal News: everyone reads the archive; push.send holders add and remove issues', async () => {
+  await db.exec(`set role anon`);
+  const first = await one(`select title, sent_on::text as d, jsonb_array_length(blocks) as n from newsletters order by sent_on desc limit 1`);
+  assert.deepEqual([first.title, first.d], ['Royals News', '2026-10-23']);
+  assert.ok(first.n > 5);
+
+  const blocks = `'[{"kind":"heading","text":"Welcome back"}]'::jsonb`;
+  await as('u-p01');
+  await rejects(`select newsletter_save('https://app.smore.com/n/abc12', 'Royals News', '2026-08-10', ${blocks})`, /permission/);
+  await rejects(`insert into newsletters (title, sent_on, source_url, blocks) values ('x', current_date, 'https://app.smore.com/n/x', '[]')`, /permission denied/);
+  await as('u-ap', true);
+  await rejects(`select newsletter_save('https://evil.com/n/abc12', 'x', '2026-08-10', ${blocks})`, /Smore link/);
+  await rejects(`select newsletter_save('https://app.smore.com/n/abc12', 'x', '2026-08-10', '[]')`, /nothing in it/);
+  const id = (await one(`select newsletter_save('https://app.smore.com/n/abc12', 'Royals News', '2026-08-10', ${blocks}) as id`)).id;
+  const again = (await one(`select newsletter_save('https://app.smore.com/n/abc12', 'Royals News', '2026-08-11', ${blocks}) as id`)).id;
+  assert.equal(again, id, 'adding the same link again refreshes that issue');
+  assert.equal((await one(`select sent_on::text as d from newsletters where id = '${id}'`)).d, '2026-08-11');
+  await one(`select newsletter_delete('${id}')`);
+  assert.equal((await rows(`select 1 from newsletters where id = '${id}'`)).length, 0);
+});

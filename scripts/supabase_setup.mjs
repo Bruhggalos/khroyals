@@ -114,6 +114,8 @@ async function deployPush() {
   await deployFunction('send-push', { verifyJwt: false });
   // Car line pickup emails (needs the RESEND_API_KEY function secret; see DEVELOPING.md).
   await deployFunction('send-email', { verifyJwt: false });
+  // Royal News: staff add an issue from its Smore link (signed-in callers only).
+  await deployFunction('import-newsletter', { verifyJwt: true });
   await sql(`create extension if not exists pg_net with schema extensions;
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }

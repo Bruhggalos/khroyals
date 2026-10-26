@@ -126,6 +126,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`dress_day_save` / `dress_day_delete`; the Calendar app → Dress-up days). The Planner's "What to
   wear" card shows the day's themes for the person's grade or children above the usual uniform
   (`dressFor` in `src/info/today.ts`).
+- **Royal News** (`newsletters`; the newsletter made in Smore): everyone reads the archive (signed out
+  too); `push.send` holders add an issue by pasting its Smore link (the `import-newsletter` Edge
+  Function fetches only `app.smore.com/n/…` pages, parses them with `smore.ts` and saves through
+  `newsletter_save` as the caller) or delete one. The parser drops Smore's tracking links (they can
+  carry the reader's email); keep it that way.
 - **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
   (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
   browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`

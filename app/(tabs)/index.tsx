@@ -76,14 +76,14 @@ export default function Home() {
         <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => router.navigate('/calendar')}>Full calendar ›</Text>
       </View>
 
-      <Card onPress={() => (ROYAL_NEWS_URL ? Linking.openURL(ROYAL_NEWS_URL) : router.navigate('/news'))}
+      <Card onPress={() => (ROYAL_NEWS_URL ? Linking.openURL(ROYAL_NEWS_URL) : router.navigate('/royal-news'))}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: `${C.primary}1A`, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="mail-open-outline" size={22} color={C.primary} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: C.ink }}>Royal News</Text>
-          <P muted>The school newsletter, sent to families by email.</P>
+          <P muted>The school newsletter, sent to families by email. Read this week's and past issues.</P>
         </View>
         <Ionicons name={ROYAL_NEWS_URL ? 'open-outline' : 'chevron-forward'} size={18} color={C.muted} />
       </Card>
