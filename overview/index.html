@@ -231,9 +231,22 @@
       <details class="card fold" data-fold><summary>How they compare</summary><div id="compare"></div></details>
       <details class="card fold" data-fold><summary>Either way: app store accounts</summary><div id="shared"></div></details>
       <details class="card fold" data-fold><summary>What the estimate assumes</summary><ul id="assume"></ul></details>
+      <details class="card fold" data-fold><summary>What moving to AWS involves</summary>
+        <p class="small">The AWS column prices the same app running on AWS. To get there:</p>
+        <ul>
+          <li><b>Database:</b> run the same Postgres migrations (tables, permissions rules and functions) on RDS, and copy the data across.</li>
+          <li><b>Sign-in:</b> switch from Supabase Auth to Amazon Cognito: email sign-in codes, and the authenticator-app check for admins. Keep each account's id so every link to it carries over.</li>
+          <li><b>Data API:</b> the app talks to Supabase's built-in API; on AWS that becomes PostgREST (the same software) or API Gateway + Lambda in front of RDS.</li>
+          <li><b>Live updates</b> (car line board, chat, alerts): Supabase Realtime becomes API Gateway WebSockets or AppSync.</li>
+          <li><b>Files:</b> move the profile, marketplace and gallery photos to S3 with signed links, and carry over who may see each one.</li>
+          <li><b>Server functions:</b> move push notifications, email, Royal News import and student logins to Lambda; run the scheduled jobs (email queue, push retries, grade changes) on EventBridge or pg_cron.</li>
+          <li><b>Email and secrets:</b> verify the school's domain in Amazon SES; keep keys in Secrets Manager.</li>
+          <li><b>Deploys and checks:</b> point the GitHub workflow at AWS, then rerun the app's automated tests and try each feature end to end.</li>
+        </ul>
+      </details>
       <details class="card fold" data-fold><summary>Not counted</summary>
         <ul>
-          <li>Moving to AWS is a rebuild of accounts, permissions, live updates and file storage. Expect roughly 6–10 weeks of developer time, once.</li>
+          <li>The work of moving to AWS, if the school chooses it (see What moving to AWS involves).</li>
           <li>Ongoing developer time, support, and app-store review time.</li>
           <li>Growth of the photo gallery after the first year (about the same again each year).</li>
           <li>Taxes, and any discounts AWS or Supabase give schools or non-profits.</li>
@@ -691,7 +704,7 @@ function drawCosts() {
     <li>On AWS the NAT gateway is a fixed ~$37 a month whatever the size${diff >= 0 ? ', which is why AWS costs more for a single school' : '; at this size AWS makes that back on usage'}.</li>
     ${mailGap > 5 ? `<li>Most of the gap at this size is email: Resend costs ${money(round(mailGap * k))} more ${yearly ? 'a year' : 'a month'} than Amazon SES. Supabase can send through Amazon SES too, which would bring Supabase to ${money(round((totals.supa - mailGap) * k))}.</li>` : ''}
     <li>The photo gallery adds about ${round(u.galleryGB, 1)} GB of photos a school year; it stays inside Supabase's included storage up to about 15,000 people.</li>
-    <li>The app runs on Supabase today; staying there needs no rebuild.</li></ul>`;
+    <li>The app runs on Supabase today; staying there needs none of the moving steps.</li></ul>`;
   $('assume').innerHTML = [
     `${people.toLocaleString()} people: ${u.staff.toLocaleString()} staff, ${u.students.toLocaleString()} students with their own login, ${parents.toLocaleString()} parents and family.`,
     `About ${fmtN(u.mau)} of them (85%) use the app in a typical month.`,
