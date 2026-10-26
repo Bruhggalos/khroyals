@@ -9,7 +9,7 @@
 <style>
   :root {
     --navy: #00239C; --red: #FC1723; --ink: #0B1928; --muted: #5B6577; --line: #E1E6F0;
-    --bg: #F5F7FC; --card: #FFFFFF; --soft: #EEF2FC; --green: #15803D;
+    --bg: #F5F7FC; --card: #FFFFFF; --soft: #EEF2FC; --green: #15803D; --amber: #B45309;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -133,6 +133,52 @@
   details.lines > summary::-webkit-details-marker { display: none; }
   details.lines[open] > summary .closed, details.lines:not([open]) > summary .opened { display: none; }
   .plan-pick, .totals-bar { display: none; }
+
+  /* User roles */
+  .kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .kind { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .kind .top { display: flex; align-items: center; gap: 10px; }
+  .kind .icon { font-size: 22px; width: 40px; height: 40px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; flex: none; }
+  .kind h3 { margin: 0; font-size: 17px; }
+  .kind p { margin: 0; color: var(--muted); font-size: 14px; }
+  .kind ul { margin: 0; padding-left: 18px; font-size: 14px; }
+  .kind li { margin-bottom: 3px; }
+  .kind .tag { align-self: flex-start; background: var(--soft); color: var(--navy); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+  .kind .more { margin-top: auto; align-self: flex-start; font: inherit; font-size: 13px; font-weight: 700; color: var(--navy); background: none; border: 0; padding: 4px 0 0; cursor: pointer; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; margin-top: 4px; }
+  .dot.y { background: var(--navy); }
+  .dot.s { border: 2px solid var(--navy); }
+  .dot.d { background: var(--amber); }
+  .dot.n { width: 10px; height: 2px; border-radius: 1px; background: #C5CDDD; margin-top: 9px; }
+  .legend .dot { margin-top: 0; }
+  .mx-wrap, .tiers-wrap { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
+  .mx { border-collapse: separate; border-spacing: 0; min-width: 880px; }
+  .mx.one { min-width: 0; }
+  .mx th, .mx td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .mx thead th { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); }
+  .mx thead th:first-child, .mx tbody th { position: sticky; left: 0; z-index: 1; background: #fff; }
+  .mx tbody th { font-weight: 600; width: 28%; min-width: 200px; border-right: 1px solid var(--line); }
+  .mx.one tbody th { width: 50%; min-width: 0; }
+  .mx tr.grp th, .mx tr.grp td { background: var(--soft); color: var(--navy); font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding-block: 8px; }
+  .mx tbody tr:last-child > * { border-bottom: 0; }
+  .mx .c { display: flex; gap: 8px; align-items: flex-start; }
+  .mx .note { color: var(--muted); font-size: 13px; line-height: 1.35; }
+  .mx .note.d { color: #92400E; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .duty-who { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--red); text-transform: uppercase; margin-bottom: 2px; }
+  .tiers { min-width: 520px; }
+  .tiers th, .tiers td { padding: 9px 14px; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle; }
+  .tiers th:first-child { text-align: left; }
+  .tiers thead th { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); }
+  .tiers tbody th { font-weight: 600; }
+  .tiers tbody th small { display: block; color: var(--muted); font-weight: 400; font-size: 13px; }
+  .tiers tbody tr:last-child > * { border-bottom: 0; }
+  #access ol.flow li { background: var(--card); border: 1px solid var(--line); }
+  #mx-title { scroll-margin-top: 64px; }
+  .tick { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--navy); }
+  .none { display: inline-block; width: 10px; height: 2px; background: #C5CDDD; vertical-align: middle; }
   footer { color: var(--muted); font-size: 13px; padding: 20px 0 40px; }
   @media (max-width: 640px) {
     body { font-size: 15px; }
@@ -169,6 +215,11 @@
       background: var(--navy); color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 3px solid var(--red); font-size: 14px; }
     .totals-bar b { font-size: 17px; display: block; }
     .totals-bar div { text-align: center; }
+    .kinds { grid-template-columns: 1fr; gap: 8px; }
+    .mx th, .mx td, .tiers th, .tiers td { padding: 8px 10px; }
+    .tiers { min-width: 0; }
+    .tiers td, .tiers thead th:not(:first-child) { width: 19%; padding-inline: 4px; }
+    .tiers thead th { font-size: 10px; letter-spacing: 0.5px; }
   }
 </style>
 </head>
@@ -185,6 +236,7 @@
 <div class="tabbar"><div class="wrap">
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-features" aria-selected="true" aria-controls="features">Features</button>
+    <button role="tab" id="tab-access" aria-selected="false" aria-controls="access">User roles</button>
     <button role="tab" id="tab-costs" aria-selected="false" aria-controls="costs">Cost to run</button>
   </nav>
 </div></div>
@@ -201,6 +253,48 @@
       <summary>Who uses it <span class="small">· 6 kinds of users</span></summary>
       <p class="lead">Everyone signs in with their email and a 6-digit code: no passwords. New accounts wait for the office to approve them, and each role sees only what it should.</p>
       <div class="roles" id="roles"></div>
+      <p class="small"><a href="#roles" id="see-roles">Every permission, role by role: User roles ›</a></p>
+    </details>
+  </section>
+
+  <section class="panel" id="access" role="tabpanel" aria-labelledby="tab-access" hidden>
+    <h2>Six kinds of users</h2>
+    <p class="lead">Everyone signs in with their email and a 6-digit code: no passwords. Each kind of account sees only what it should, and the database enforces every rule on this page, not just the app's buttons.</p>
+    <div class="kinds" id="kinds"></div>
+
+    <details class="fold big" data-fold>
+      <summary>Getting an account type</summary>
+      <ol class="flow">
+        <li><b>Open the app.</b> Everyone starts as a visitor; no account needed.</li>
+        <li><b>Sign in with an email code.</b> The app emails a 6-digit code; there are no passwords.</li>
+        <li><b>The office approves the account</b> as a parent, student or family, and links parents and family to their children. An administrator can make someone a teacher or staff.</li>
+        <li><b>Parents give a child their own login</b> when the family decides they're ready; the child becomes a student account with the same classes and activities.</li>
+        <li><b>The director adds admins</b> by giving a staff member an admin role. Admin powers only work after the authenticator-app check.</li>
+      </ol>
+    </details>
+
+    <h2 id="mx-title" style="margin-top: 26px">What each kind of user can do</h2>
+    <p class="lead">Pick a kind of user to see what they can do, or compare all six side by side. Amber marks need an extra duty on top of the account type (see Extra duties below).</p>
+    <div class="chips" id="mx-roles"></div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="dot y"></i>Yes</span>
+      <span><i class="dot s"></i>Partly (see note)</span>
+      <span><i class="dot d"></i>With an extra duty</span>
+      <span><i class="dot n"></i>No</span>
+    </div>
+    <div class="mx-wrap"><table class="mx" id="mx"></table></div>
+    <p class="small" id="mx-foot"></p>
+
+    <details class="fold big" data-fold>
+      <summary>Extra duties <span class="small">· jobs on top of an account type</span></summary>
+      <p class="lead">Duties aren't admin powers and don't need an authenticator app. Each one unlocks a few features for the person who holds it.</p>
+      <div class="roles" id="duties"></div>
+    </details>
+
+    <details class="fold big" data-fold>
+      <summary>Admin roles <span class="small">· which role holds each power</span></summary>
+      <p class="lead">The starting setups. The director can change Administrator and Office, make a custom role from any mix of these powers, or give one power to one person.</p>
+      <div class="tiers-wrap"><table class="tiers" id="tiers"></table></div>
     </details>
   </section>
 
@@ -476,6 +570,119 @@ const ROLES = [
   ['Visitors (signed out)', 'School site, news, calendar, handbook, Royal News, Planner basics.'],
 ];
 
+/* ------------------------------------------------------------------ user roles */
+const KINDS = [
+  { id: 'visitor', as: 'a visitor', icon: '🌐', name: 'Visitor', who: 'Anyone who opens the app without signing in, and new accounts waiting for the office to approve them.',
+    can: ['Planner with the school\'s next two weeks', 'School website, news, Royal News and calendar', 'Handbook and campus map', 'Browse and search activities'] },
+  { id: 'student', as: 'a student', icon: '🎒', name: 'Student', who: 'A student with their own login, given by a parent or the office. Until then, their parents use the app for them.',
+    can: ['Planner with their uniform and assignments', 'Ask the Teacher: message their teachers', 'Assignments to check off', 'Photo gallery, groups and activities'] },
+  { id: 'parent', as: 'a parent', icon: '👨‍👩‍👧', name: 'Parent', who: 'Parents approved by the office and linked to their children: up to two per child, a mother and a father.',
+    can: ['A Planner card for each child', 'Car line pickup, and who else may pick up', 'Sign forms and see fees owed', 'Sign children up for activities', 'Marketplace, Volunteer and groups'] },
+  { id: 'family', as: 'a family account', icon: '👵', name: 'Family', who: 'Grandparents and other relatives the office approves and links to the children they pick up.',
+    can: ['Car line pickup for the linked children', 'Volunteer: sign-ups, item pledges and chat', 'Follow activities', 'Planner, news, photos and handbook'], tag: 'No groups, Marketplace or forms' },
+  { id: 'staff', as: 'teachers and staff', icon: '🧑‍🏫', name: 'Teacher & staff', who: 'Faculty and staff. Teachers and staff get the same features, with a Staff view on the Main Page.',
+    can: ['Critical alerts: answer I\'m safe or I need help', 'Car line board with pickup numbers', 'Their classes: Ask the Teacher, assignments, forms', 'Post photo albums and create groups'] },
+  { id: 'admin', as: 'an admin', icon: '🛡️', name: 'Admin', who: 'Staff the director gives an admin role: Director, Administrator, Office or a custom one. Every staff feature, plus:',
+    can: ['The admin portal', 'Send critical alerts, follow the roll call, give the all clear', 'Approve accounts, link families, set up classes', 'Send forms and notifications to a grade or everyone'], tag: 'Needs an authenticator app' },
+];
+
+// One cell per kind, in KINDS order: 'y' yes, 'n' no, ['s', note] partly, ['d', note] with an extra duty, ['y', note] yes with a note.
+const ALL = ['y', 'y', 'y', 'y', 'y', 'y'];
+const SIGNED_IN = ['n', 'y', 'y', 'y', 'y', 'y'];
+const PICKUP = ['d', 'Approved pickup people'];
+const MX = [
+  ['Everyday', [
+    ['Planner: today and the next two weeks', [['s', 'School events'], ['y', 'Plus their uniform or dress-up theme, and assignments'], ['y', 'A card per child: uniform, assignments, activities, forms to sign'], ['s', 'School events, volunteering, car line hours'], ['y', 'Plus their classes\' assignments'], ['y', 'Plus their classes\' assignments']]],
+    ['School website, news, handbook and campus map', ALL],
+    ['School calendar', ['y', 'y', 'y', 'y', 'y', ['y', 'Also adds school events and dress-up days']]],
+    ['Royal News: this week\'s issue and every past one', ['y', 'y', 'y', 'y', 'y', ['y', 'Adds issues, with Send notifications']]],
+    ['Photo gallery: browse and search albums', ['n', 'y', 'y', 'y', ['y', 'Plus staff-only albums'], ['y', 'Plus staff-only albums']]],
+    ['Post photo albums', ['n', 'n', 'n', 'n', ['y', 'Edit and remove their own'], ['y', 'Any album, with Manage photo gallery; tell everyone, with Send notifications']]],
+    ['Notifications page and push settings', SIGNED_IN],
+    ['Share the app with a QR code', ALL],
+  ]],
+  ['Activities', [
+    ['Browse sports, theater, music, art and clubs', ALL],
+    ['Search every activity and its schedule (teams, opponents, places)', ALL],
+    ['Follow an activity and see its schedule', SIGNED_IN],
+    ['Sign up a child', ['n', 'n', ['y', 'Own children'], 'n', 'n', 'n']],
+    ['Answer "Are you going?" for games, practices and rehearsals', ['n', ['s', 'Themselves, if registered'], ['y', 'Each registered child'], 'n', 'n', 'n']],
+    ['See who\'s coming and add a team photo', ['n', 'n', 'n', 'n', ['d', 'Coaches and directors'], ['y', 'With Manage activities']]],
+    ['Run an activity: seasons, schedule, sign-up approvals', ['n', 'n', 'n', 'n', ['d', 'Coaches and directors'], ['y', 'Every activity, with Manage activities; adds activities and coaches']]],
+  ]],
+  ['Students', [
+    ['Ask the Teacher: messages between a student and their teachers', ['n', ['y', 'With their own teachers'], ['s', 'Reads their children\'s conversations'], 'n', ['d', 'Class teachers, with their students'], ['y', 'Reads every conversation, with Student messages']]],
+    ['Assignments: due dates and checking them off', ['n', ['y', 'Class assignments, plus their own; check-offs are private'], ['s', 'Sees their children\'s on the Planner'], 'n', ['d', 'Class teachers assign to their classes'], ['d', 'Class teachers assign to their classes']]],
+    ['A student\'s own login', ['n', ['s', 'Once a parent gives them one'], ['y', 'Gives or turns off their children\'s logins'], 'n', 'n', ['y', 'Any student, with Families & rosters']]],
+    ['Sign forms: permission slips, releases, acknowledgments', ['n', 'n', ['y', 'For each child; either parent signs'], 'n', 'n', 'n']],
+    ['Send forms, see who signed and send reminders', ['n', 'n', 'n', 'n', ['d', 'Class teachers to their classes; coaches to a season'], ['y', 'Any class, activity, grade or the whole school, with Send forms']]],
+    ['Form fees: record who paid, how, and where it was handed in', ['n', 'n', ['s', 'Sees what\'s owed and what\'s recorded'], 'n', ['d', 'Whoever sent the form'], ['y', 'Every form, with Send forms']]],
+  ]],
+  ['Car line', [
+    ['Announce pickup and check in on arrival (CarPlay once Apple approves)', ['n', 'n', ['y', 'Own children'], ['y', 'Children the office linked'], 'n', 'n']],
+    ['Pick up another family\'s child, for good or for set dates', [['d', 'Once they have an account'], 'n', PICKUP, PICKUP, PICKUP, PICKUP]],
+    ['Choose who else may pick up a child', ['n', 'n', ['y', 'Own children'], 'n', 'n', ['y', 'Any child, with Families & rosters']]],
+    ['Email when a child\'s pickup is confirmed', ['n', 'n', ['y', 'Every parent of the child'], 'n', 'n', 'n']],
+    ['Car line board with pickup numbers', ['n', 'n', 'n', 'n', 'y', 'y']],
+    ['Car line settings: spot, radius, hours, open now', ['n', 'n', 'n', 'n', ['d', 'Car line leads'], ['y', 'With Families & rosters']]],
+  ]],
+  ['Families', [
+    ['Student page (grades and report cards link to FACTS)', ['n', ['s', 'Their own'], ['s', 'Their children\'s'], 'n', 'n', 'n']],
+    ['Add a child or request changes', ['n', 'n', ['y', 'Up to two parents per child'], 'n', 'n', ['y', 'Approves the requests; a likely duplicate child needs a second look']]],
+  ]],
+  ['Community', [
+    ['Royals Connect groups: read, post, reply', ['n', ['s', 'As each group allows'], ['s', 'As each group allows'], 'n', ['s', 'As each group allows'], ['y', 'Every group, with Manage all groups']]],
+    ['Create a group, open to everyone or chosen grades', ['n', 'n', 'n', 'n', 'y', 'y']],
+    ['Moderate a group', ['n', ['d', 'Group moderators'], ['d', 'Group moderators'], 'n', ['d', 'Group owners and moderators'], ['y', 'Every group, with Manage all groups']]],
+    ['Marketplace: buy and sell', ['n', 'n', ['y', 'After accepting the terms'], 'n', ['y', 'After accepting the terms'], ['y', 'Also removes posts']]],
+    ['Volunteer: sign up, pledge items and chat', ['n', 'n', 'y', 'y', 'y', 'y']],
+    ['Volunteer: post opportunities and item requests', ['n', 'n', ['d', 'Volunteer Leaders'], 'n', ['d', 'Volunteer Leaders'], ['d', 'Volunteer Leaders']]],
+    ['Ask the School a question', ['n', 'n', 'y', 'n', 'y', 'y']],
+    ['Answer school questions', ['n', 'n', 'n', 'n', ['d', 'When one is assigned to them'], ['y', 'Sees, assigns and answers all, with Route questions']]],
+    ['Send a notification', ['n', ['d', 'Group moderators, to their group'], ['d', 'Group moderators, to their group'], 'n', ['d', 'Group moderators, to their group'], ['y', 'Everyone, a role or any group, with Send notifications']]],
+  ]],
+  ['Safety', [
+    ['Critical alerts: get them and answer I\'m safe or I need help', ['n', 'n', 'n', 'n', ['y', 'Rings on a silenced phone; their profile shows if alerts can reach them'], ['y', 'Rings on a silenced phone']]],
+    ['Send critical alerts and give the all clear (lockdown, severe weather, hold)', ['n', 'n', 'n', 'n', 'n', ['y', 'With Send critical alerts; roll call shows who needs help, who hasn\'t answered and who\'s safe']]],
+  ]],
+  ['Admin', [
+    ['Main Page Staff view: alerts, the staff car line, class apps', ['n', 'n', 'n', 'n', 'y', ['y', 'Plus the admin portal']]],
+    ['Admin portal: accounts, families, calendar, notifications, activity log', ['n', 'n', 'n', 'n', 'n', ['y', 'After the authenticator-app check']]],
+    ['Classes: set each class\'s teacher and students', ['n', 'n', 'n', 'n', 'n', ['y', 'With Families & rosters']]],
+    ['Delete an account, with its posts and comments', ['n', 'n', 'n', 'n', 'n', ['y', 'With Delete accounts (directors to start)']]],
+  ]],
+];
+
+const DUTIES = [
+  ['Teachers and staff', 'Class teacher', 'Leads a class set up in Admin → Classes: answers its students in Ask the Teacher, gives them assignments and sends forms to their parents.'],
+  ['Staff', 'Coach or director', 'Runs one activity: its seasons, schedule, sign-up approvals and attendance, and sends forms to a season\'s families. Assigned by an admin with Manage activities.'],
+  ['Any account but students', 'Approved pickup person', 'Added by a child\'s parents or the office, for good or for set dates. Gets the car line for that child only.'],
+  ['Staff', 'Car line lead', 'Sets the pickup spot, check-in radius, hours and "open now", and manages pickup numbers. Given in the admin portal.'],
+  ['Parents or staff', 'Volunteer Leader', 'Posts volunteer opportunities and item requests, and runs their sign-ups, pledges and chat. Given in the admin portal.'],
+  ['Any group member', 'Group owner or moderator', 'Moderates posts and members, adds group calendar events and notifies the group. Staff who create a group own it.'],
+  ['Staff', 'Question assignee', 'Answers the Ask the School questions an admin routes to them.'],
+];
+
+// Which starting admin role has each power: Director, Administrator, Office.
+const TIERS = [
+  ['Approve sign-ups', 'New accounts as parents, students or family', [1, 1, 1]],
+  ['View people', 'Everyone\'s contact email', [1, 1, 1]],
+  ['Families & rosters', 'Link parents and family to students; grades, classes, rosters, student logins, pickup people, car line duty', [1, 1, 1]],
+  ['School calendar', 'School events and dress-up days', [1, 1, 1]],
+  ['Send notifications', 'To everyone, a role or any group; Royal News issues and new albums', [1, 1, 1]],
+  ['Send critical alerts', 'To every teacher and staff member; roll call and all clear', [1, 1, 1]],
+  ['Route questions', 'See every question, assign and answer it', [1, 1, 1]],
+  ['Activity log', 'The school-wide record of admin actions', [1, 1, 1]],
+  ['Change roles', 'Including teachers and staff', [1, 1, 0]],
+  ['Manage all groups', 'Act as owner of every group', [1, 1, 0]],
+  ['Manage activities', 'Activities, seasons, coaches and directors', [1, 1, 0]],
+  ['Student messages', 'Read every Ask the Teacher conversation, for safety', [1, 1, 0]],
+  ['Send forms', 'To any class, activity, grade or the whole school; every form\'s signatures and payments', [1, 1, 0]],
+  ['Manage photo gallery', 'Change or remove any album or photo; gallery categories', [1, 1, 0]],
+  ['Manage admins and roles', 'Add admins, edit and create roles', [1, 0, 0]],
+  ['Delete accounts', 'Permanently, with their posts and comments; deleting an admin also needs Manage admins', [1, 0, 0]],
+];
+
 /* ------------------------------------------------------------------ costs */
 // Kingdom Heights' split: 150 staff and 275 students with a login out of 1,300.
 const SPLIT = { staff: 150 / 1300, students: 275 / 1300 };
@@ -622,15 +829,60 @@ $('d-prev').onclick = () => openFeature(current - 1);
 $('d-next').onclick = () => openFeature(current + 1);
 $('detail').addEventListener('click', (e) => { if (e.target === $('detail')) $('detail').close(); });
 
+// User roles
+$('kinds').innerHTML = KINDS.map((k) => `<article class="kind">
+    <div class="top"><div class="icon" aria-hidden="true">${k.icon}</div><h3>${esc(k.name)}</h3></div>
+    <p>${esc(k.who)}</p>
+    <ul>${k.can.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    ${k.tag ? `<span class="tag">${esc(k.tag)}</span>` : ''}
+    <button class="more" data-kind="${k.id}">Everything ${esc(k.as)} can do ›</button>
+  </article>`).join('');
+$('duties').innerHTML = DUTIES.map(([who, name, what]) => `<div class="role"><div class="duty-who">${esc(who)}</div><b>${esc(name)}</b><span>${esc(what)}</span></div>`).join('');
+$('tiers').innerHTML = `<thead><tr><th scope="col">Admin power</th><th scope="col">Director</th><th scope="col">Admin&shy;istrator</th><th scope="col">Office</th></tr></thead><tbody>`
+  + TIERS.map(([name, desc, has]) => `<tr><th scope="row">${esc(name)}<small>${esc(desc)}</small></th>${has.map((h) =>
+    `<td>${h ? '<span class="tick" role="img" aria-label="Yes"></span>' : '<span class="none" role="img" aria-label="No"></span>'}</td>`).join('')}</tr>`).join('') + '</tbody>';
+
+const MARK = { y: 'Yes', s: 'Partly', d: 'With an extra duty', n: 'No' };
+function mxCell(spec) {
+  const [k, note] = Array.isArray(spec) ? spec : [spec, ''];
+  // A bare yes or no is read out but not shown; the mark says it.
+  return `<td><div class="c"><i class="dot ${k}" aria-hidden="true"></i>${note ? `<span class="note${k === 'd' ? ' d' : ''}">${esc(note)}</span>` : `<span class="sr">${MARK[k]}</span>`}</div></td>`;
+}
+// One kind at a time on phones (only what they can do); all six side by side on wider screens.
+let kind = phone.matches ? 'parent' : 'all';
+function drawMatrix() {
+  const cols = KINDS.map((k, i) => [k, i]).filter(([k]) => kind === 'all' || k.id === kind);
+  const one = cols.length === 1;
+  $('mx-roles').innerHTML = [{ id: 'all', name: 'Compare all' }, ...KINDS].map((k) => `<button class="chip" aria-pressed="${k.id === kind}" data-kind="${k.id}">${esc(k.name)}</button>`).join('');
+  $('mx').className = one ? 'mx one' : 'mx';
+  $('mx').innerHTML = `<thead><tr><th scope="col">Feature</th>${cols.map(([k]) => `<th scope="col">${esc(k.name)}</th>`).join('')}</tr></thead><tbody>`
+    + MX.map(([group, rows]) => {
+      const shown = rows.filter(([, cells]) => !one || cells[cols[0][1]] !== 'n');
+      return shown.length ? `<tr class="grp"><th scope="rowgroup">${esc(group)}</th>${cols.map(() => '<td></td>').join('')}</tr>`
+        + shown.map(([name, cells]) => `<tr><th scope="row">${esc(name)}</th>${cols.map(([, i]) => mxCell(cells[i])).join('')}</tr>`).join('') : '';
+    }).join('') + '</tbody>';
+  $('mx-foot').textContent = (one ? `Showing what ${cols[0][0].as} can do; pick Compare all to see what they can't. ` : '')
+    + 'Staff who are also parents at the school get the parent features for their own children. Family accounts can\'t join groups or be given admin powers.';
+}
+drawMatrix();
+$('mx-roles').addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (b) { kind = b.dataset.kind; drawMatrix(); } });
+$('kinds').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-kind]'); if (!b) return;
+  kind = b.dataset.kind; drawMatrix();
+  $('mx-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
 // Tabs
-const tabs = [['tab-features', 'features'], ['tab-costs', 'costs']];
-tabs.forEach(([t, p]) => $(t).addEventListener('click', () => {
+const tabs = [['tab-features', 'features', '#'], ['tab-access', 'access', '#roles'], ['tab-costs', 'costs', '#costs']];
+tabs.forEach(([t, p, hash]) => $(t).addEventListener('click', () => {
   tabs.forEach(([t2, p2]) => { $(t2).setAttribute('aria-selected', t2 === t); $(p2).hidden = p2 !== p; });
   document.body.classList.toggle('costs-on', p === 'costs');
   if (window.scrollY > $('features').offsetTop) window.scrollTo({ top: document.querySelector('header').offsetHeight, behavior: 'smooth' });
-  history.replaceState(null, '', p === 'costs' ? '#costs' : '#');
+  history.replaceState(null, '', hash);
 }));
-if (location.hash === '#costs') $('tab-costs').click();
+const fromHash = tabs.find(([, , hash]) => hash !== '#' && hash === location.hash);
+if (fromHash) $(fromHash[0]).click();
+$('see-roles').addEventListener('click', (e) => { e.preventDefault(); $('tab-access').click(); });
 
 // Costs
 let yearly = false, pick = 'supa';
