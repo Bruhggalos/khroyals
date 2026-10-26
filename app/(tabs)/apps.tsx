@@ -27,6 +27,7 @@ const APPS: App[] = [
   { label: 'Student', image: require('../../assets/apps/student.png'), color: '#0A1F4D', href: '/student', family: false },
   { label: 'Calendar', image: require('../../assets/apps/calendar.png'), color: '#0A1F4D', href: '/calendar' },
   { label: 'News', image: require('../../assets/apps/news.png'), color: '#0A1F4D', href: '/news' },
+  { label: 'Photos', icon: 'images', color: '#0A1F4D', href: '/photos' },
   { label: 'Activities', image: require('../../assets/apps/activities.png'), color: '#0A1F4D', href: '/activities' },
   { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false, student: false },
   { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer', student: false },

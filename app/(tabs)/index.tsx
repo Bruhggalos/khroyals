@@ -4,11 +4,12 @@ import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   canVolunteer, carlineConfig, checkAssignment, childAssignments, isFamily, isSchoolStaff, listAssignments, listSports, listVolunteer,
-  listDressDays, live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
-  type Assignment, type DressDay, type Person,
+  listAlbums, listDressDays, live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
+  type Assignment, type DressDay, type GalleryAlbum, type Person,
 } from '../../src/api/connect';
 import { getCalendar, getNews } from '../../src/api/mockApi';
 import { schoolToday } from '../../src/calendar/past';
+import { AlbumCard } from '../../src/gallery/AlbumCard';
 import { DayPager } from '../../src/info/DayPager';
 import { NO_DATA, planDay, type InfoData } from '../../src/info/plan';
 import { ROYAL_NEWS_URL, addDays, greeting, headerDate, nextTwoWeeks, schoolHour, twoWeeks } from '../../src/info/today';
@@ -35,6 +36,7 @@ export default function Home() {
   const { data } = useLoad(async () => ({ news: await getNews(), cal: await getCalendar() }));
   const { info, toggle } = useInfoData(person, today);
   const dress = useDressDays(today);
+  const photos = useLatestPhotos(person);
   const events = data?.cal.events;
   const plans = useMemo(() => events
     ? twoWeeks(today).map((d) => planDay(d, today, events, info, person?.schoolRole === 'student' ? [person.grade] : [], dress))
@@ -88,6 +90,16 @@ export default function Home() {
         <Ionicons name={ROYAL_NEWS_URL ? 'open-outline' : 'chevron-forward'} size={18} color={C.muted} />
       </Card>
 
+      {photos.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <H>Latest Photos</H>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+            {photos.map((a) => <AlbumCard key={a.id} a={a} width={220} />)}
+          </ScrollView>
+          <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => router.navigate('/photos')}>All photos ›</Text>
+        </View>
+      )}
+
       <View style={{ gap: 8 }}>
         <H>Latest News</H>
         {data.news.articles.slice(0, 3).map((a) => <ArticleCard key={a.id} a={a} compact />)}
@@ -126,6 +138,16 @@ function usePerson() {
  * picks children up. Each part loads on its own and is left out if it fails. Reloads
  * when the screen comes back into view and when assignments change.
  */
+/** The newest photo albums, for signed-in, approved people; again whenever the Planner comes into view. */
+function useLatestPhotos(person: Person | null) {
+  const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
+  const ok = !!person && !person.pending;
+  useFocusEffect(useCallback(() => {
+    if (ok) listAlbums(6).then(setAlbums).catch(() => {}); else setAlbums([]);
+  }, [ok]));
+  return albums;
+}
+
 /** Dress-up days (Spirit Week) in the two weeks the Planner shows; again whenever it comes into view. */
 function useDressDays(today: string) {
   const [days, setDays] = useState<DressDay[]>([]);

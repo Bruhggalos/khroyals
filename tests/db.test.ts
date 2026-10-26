@@ -2214,3 +2214,37 @@ test('student logins: parents (or the office) give a child a login with their em
   await as('u-ap', true);
   assert.equal((await one(`select student_login_request('${kid}', 'winry2@example.com') as r`)).r.email, 'winry2@example.com');
 });
+
+test('photo gallery: staff post albums everyone approved can see; only the poster, album creator or gallery.manage remove', async () => {
+  await as('u-eng');
+  const album = (await one(`select gallery_album_save(null, 'Fall Fest 2026', 'Bounce houses and face painting', '2026-10-30') as id`)).id;
+  const me = (await one(`select auth.uid()::text as u`)).u;
+  assert.equal((await one(`select gallery_add_photos('${album}', '[{"path":"${me}/a.jpg","width":1600,"height":1200,"caption":"Dunk tank"},{"path":"${me}/b.jpg","width":1200,"height":1600}]') as n`)).n, 2);
+  await rejects(`select gallery_add_photos('${album}', '[{"path":"someone-else/c.jpg","width":1,"height":1}]')`, /own folder/);
+  await rejects(`select gallery_album_save(null, 'x', '', null, true)`, /permission/);  // telling everyone needs push.send
+
+  // Everyone approved sees it: parents, students, family; not people still waiting for approval.
+  for (const u of ['u-p01', 'u-s01']) {
+    await as(u);
+    assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}'`)).length, 2, u);
+    await rejects(`select gallery_album_save(null, 'Mine', '', null)`, /Only staff/);
+    await rejects(`select gallery_add_photos('${album}', '[]')`, /Only staff/);
+  }
+  await rejects(`insert into gallery_albums (title) values ('x')`, /permission denied/);
+
+  // Another teacher can't remove it; the poster can remove a photo; gallery.manage can remove the album.
+  await as('u-sci');
+  const photo = (await one(`select id from gallery_photos where album_id = '${album}' and caption = 'Dunk tank'`)).id;
+  await rejects(`select gallery_photo_delete('${photo}')`, /photos you posted/);
+  await rejects(`select gallery_album_delete('${album}')`, /albums you started/);
+  await as('u-eng');
+  assert.equal((await one(`select gallery_photo_delete('${photo}') as p`)).p, `${me}/a.jpg`);
+  await as('u-ap', true);
+  const news = (await one(`select gallery_album_save('${album}', 'Fall Fest 2026', 'Updated', '2026-10-30', true) as id`)).id;
+  assert.equal(news, album);
+  await asSuper();
+  assert.equal((await one(`select data->>'albumId' as a from notifications where data ? 'albumId' order by created_at desc limit 1`)).a, album);
+  await as('u-ap', true);
+  assert.deepEqual((await one(`select gallery_album_delete('${album}') as p`)).p, [`${me}/b.jpg`]);
+  assert.equal((await rows(`select 1 from gallery_albums where id = '${album}'`)).length, 0);
+});

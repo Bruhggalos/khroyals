@@ -6,6 +6,7 @@ export { session, me, getUser, listUsers, signOut, onAuthChange, setMockUser } f
 export { marketPhotoUrls } from './storage';
 export { listMyGroups, listDiscoverableGroups, getGroup, getComments, createPost, addComment, moderatePost, toggleReaction, votePoll, updateGroupSettings, createGroup, joinGroup, leaveGroup, listMembers, setMembership, subscribeGroup } from './groups';
 export { listEvents, createEvent, deleteEvent, editableCalendars, listDressDays, saveDressDay, deleteDressDay } from './calendar';
+export { listAlbums, getAlbum, saveAlbum, addGalleryPhotos, deleteGalleryPhoto, deleteAlbum, type GalleryAlbum, type GalleryPhoto, type NewGalleryPhoto } from './gallery';
 export { issueDate, listNewsletters, getNewsletter, importNewsletter, deleteNewsletter, type NewsletterSummary, type NewsletterIssue, type NewsBlock, type Span } from './news';
 export { onCarlineDuty, canManageSport, canVolunteer, isFamily, isSchoolStaff, isVolunteerLead } from './policy';
 export { myChildren, carlineToday, carlineAnnounce, myVehicles, saveVehicle, deleteVehicle, chooseVehicle, carlineCancel, carlineConfirm, carlineReopen, carlineConfig, carlineArrived, carlineBoard, carlineSetConfig, carlineOpenNow, setPickupNumber, pickupNumbers, subscribeCarline, createCarPass, revokeCarPass } from './carline';

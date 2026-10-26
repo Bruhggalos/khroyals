@@ -19,3 +19,27 @@ export async function pickSquarePhoto(camera: boolean): Promise<string | null> {
   const out = await (await ctx.renderAsync()).saveAsync({ compress: 0.75, format: SaveFormat.JPEG, base64: true });
   return out.base64 ?? null;
 }
+
+/**
+ * Pick photos for the gallery (several at once): each shrunk to at most 1600 px on its long side,
+ * plus a 400 px thumbnail, as base64 JPEG. Empty when cancelled.
+ */
+export async function pickGalleryPhotos(limit = 30): Promise<{ full: string; thumb: string; width: number; height: number }[]> {
+  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: limit, quality: 1 });
+  if (result.canceled) return [];
+  const out: { full: string; thumb: string; width: number; height: number }[] = [];
+  for (const asset of result.assets) {
+    const fit = (max: number) => {
+      const k = Math.min(1, max / Math.max(asset.width, asset.height));
+      return { width: Math.round(asset.width * k), height: Math.round(asset.height * k) };
+    };
+    const size = fit(1600);
+    const full = ImageManipulator.manipulate(asset.uri);
+    if (size.width < asset.width) full.resize(size);
+    const big = await (await full.renderAsync()).saveAsync({ compress: 0.8, format: SaveFormat.JPEG, base64: true });
+    const small = ImageManipulator.manipulate(asset.uri).resize(fit(400));
+    const thumb = await (await small.renderAsync()).saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
+    if (big.base64 && thumb.base64) out.push({ full: big.base64, thumb: thumb.base64, width: size.width, height: size.height });
+  }
+  return out;
+}

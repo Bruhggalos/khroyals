@@ -410,6 +410,89 @@ export type Database = {
           },
         ]
       }
+      gallery_albums: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          taken_on: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          taken_on?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          taken_on?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_albums_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gallery_photos: {
+        Row: {
+          album_id: string
+          caption: string
+          created_at: string
+          created_by: string | null
+          height: number
+          id: string
+          path: string
+          width: number
+        }
+        Insert: {
+          album_id: string
+          caption?: string
+          created_at?: string
+          created_by?: string | null
+          height: number
+          id?: string
+          path: string
+          width: number
+        }
+        Update: {
+          album_id?: string
+          caption?: string
+          created_at?: string
+          created_by?: string | null
+          height?: number
+          id?: string
+          path?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gallery_photos_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletters: {
         Row: {
           blocks: Json
@@ -3028,6 +3111,13 @@ export type Database = {
         Returns: { form_id: string; student_id: string; agreed: boolean; answers: Json; signature: string; signed_at: string }
       }
       form_status: { Args: { p_form: string }; Returns: Json }
+      gallery_add_photos: { Args: { p_album: string; p_photos: Json }; Returns: number }
+      gallery_album_delete: { Args: { p_album: string }; Returns: string[] }
+      gallery_album_save: {
+        Args: { p_description: string; p_id: string | null; p_notify?: boolean; p_taken_on: string; p_title: string }
+        Returns: string
+      }
+      gallery_photo_delete: { Args: { p_photo: string }; Returns: string }
       group_abilities: { Args: { p_group: string }; Returns: Json }
       group_post_stats: {
         Args: { p_group: string; p_limit?: number }

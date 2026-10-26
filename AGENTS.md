@@ -137,6 +137,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Function fetches only `app.smore.com/n/…` pages, parses them with `smore.ts` and saves through
   `newsletter_save` as the caller) or delete one. The parser drops Smore's tracking links (they can
   carry the reader's email); keep it that way.
+- **Photo gallery** (`gallery_albums`, `gallery_photos`, private `gallery` bucket): every approved
+  account sees it (Family and students too); any staff member starts albums and adds photos
+  (`gallery_album_save`, `gallery_add_photos`; files go in their own `<uid>/` folder, a 1600 px JPEG
+  plus a `_t.jpg` 400 px thumbnail made on the phone). The poster, the album's creator or
+  `gallery.manage` remove; only `push.send` holders can notify everyone about an album. Apps → Photos,
+  and Latest Photos on the Planner.
 - **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
   (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
   browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`
