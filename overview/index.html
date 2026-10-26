@@ -14,16 +14,17 @@
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   a { color: var(--navy); }
-  header { background: var(--navy); color: #fff; border-bottom: 4px solid var(--red); }
+  header { background: var(--navy); color: #fff; }
+  .tabbar { position: sticky; top: 0; z-index: 5; background: var(--navy); border-bottom: 4px solid var(--red); }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-  .hero { padding: 28px 0 18px; }
+  .hero { padding: 28px 0 12px; }
   .hero h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.5px; }
   .hero p { margin: 0; opacity: 0.9; max-width: 760px; }
   .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .stat { background: rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 14px; }
   .stat b { display: block; font-size: 20px; }
   .stat span { font-size: 13px; opacity: 0.85; }
-  nav.tabs { display: flex; gap: 4px; margin-top: 18px; }
+  nav.tabs { display: flex; gap: 4px; padding-top: 6px; }
   nav.tabs button { font: inherit; font-weight: 700; color: #fff; background: transparent; border: 0; padding: 10px 16px; border-radius: 10px 10px 0 0; cursor: pointer; opacity: 0.8; }
   nav.tabs button[aria-selected="true"] { background: var(--bg); color: var(--navy); opacity: 1; }
   main { padding: 22px 0 60px; }
@@ -42,6 +43,9 @@
   .feature h3 { margin: 0; font-size: 16px; }
   .feature .area { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--red); text-transform: uppercase; }
   .feature p { margin: 0; color: var(--muted); font-size: 14px; }
+  .feature .body { display: contents; }
+  .feature .m-name { display: none; }
+  @media (max-width: 640px) { .feature .m-name { display: block; margin-bottom: 2px; } }
   .feature .more { margin-top: auto; padding-top: 6px; font-size: 13px; font-weight: 700; color: var(--navy); }
   .roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .role { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
@@ -108,8 +112,61 @@
   .bar { height: 12px; border-radius: 6px; background: var(--soft); overflow: hidden; margin: 6px 0 2px; }
   .bar i { display: block; height: 100%; border-radius: 6px; }
   .small { font-size: 13px; color: var(--muted); }
+  .pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+  .pager:empty { display: none; }
+  .pager button { font: inherit; font-weight: 700; color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; }
+  .pager button:disabled { opacity: .4; cursor: default; }
+  .pager .dots { display: flex; gap: 6px; }
+  .pager .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+  .pager .dots i.on { background: var(--navy); }
+  details.fold > summary { cursor: pointer; font-weight: 800; list-style: none; display: flex; align-items: center; gap: 6px; }
+  details.fold > summary::-webkit-details-marker { display: none; }
+  details.fold > summary::after { content: '›'; margin-left: auto; font-size: 20px; color: var(--muted); transition: transform .15s; }
+  details.fold[open] > summary::after { transform: rotate(90deg); }
+  details.fold.big { margin-top: 26px; }
+  details.fold.big > summary { font-size: 22px; }
+  details.fold[open] > summary { margin-bottom: 10px; }
+  details.lines > summary { cursor: pointer; padding: 10px 18px; font-weight: 700; color: var(--navy); border-top: 1px solid var(--line); list-style: none; }
+  details.lines > summary::-webkit-details-marker { display: none; }
+  details.lines[open] > summary .closed, details.lines:not([open]) > summary .opened { display: none; }
+  .plan-pick, .totals-bar { display: none; }
   footer { color: var(--muted); font-size: 13px; padding: 20px 0 40px; }
-  @media (max-width: 560px) { td { padding: 8px 12px; } .plan .ph, .plan .foot { padding-left: 12px; padding-right: 12px; } }
+  @media (max-width: 640px) {
+    body { font-size: 15px; }
+    .hero { padding: 18px 0 8px; }
+    .hero h1 { font-size: 22px; }
+    .hero p { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .stats { flex-wrap: nowrap; overflow-x: auto; margin-top: 12px; padding-bottom: 4px; }
+    .stat { flex: none; padding: 6px 12px; }
+    .stat b { font-size: 17px; }
+    nav.tabs button { flex: 1; padding: 10px 8px; }
+    main { padding-top: 16px; }
+    h2 { font-size: 19px; }
+    .lead { font-size: 14px; }
+    .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px 4px; scrollbar-width: none; }
+    .chip { flex: none; }
+    .grid { grid-template-columns: 1fr; gap: 8px; }
+    .feature { flex-direction: row; align-items: center; padding: 12px; gap: 12px; }
+    .feature .top { flex: none; }
+    .feature .top > div:last-child { display: none; }
+    .feature .body { display: block; }
+    .feature .more { display: none; }
+    .feature p { -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+    details.fold.big > summary { font-size: 19px; }
+    td { padding: 8px 12px; }
+    .plan .ph, .plan .foot { padding-left: 12px; padding-right: 12px; }
+    .plan-pick { display: inline-flex; margin-bottom: 10px; }
+    .plan.off { display: none; }
+    .users { grid-template-columns: repeat(2, 1fr); }
+    .users b { font-size: 18px; }
+    .toolbar { gap: 10px; }
+    label.check { font-size: 14px; }
+    body.costs-on { padding-bottom: 64px; }
+    body.costs-on .totals-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; justify-content: space-around; gap: 8px;
+      background: var(--navy); color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); border-top: 3px solid var(--red); font-size: 14px; }
+    .totals-bar b { font-size: 17px; display: block; }
+    .totals-bar div { text-align: center; }
+  }
 </style>
 </head>
 <body>
@@ -120,12 +177,14 @@
       <p>One app for families, students and staff: the school's site and news, the daily Planner, a photo gallery, Royals Connect groups, car line pickup, emergency alerts, activities, forms and the office's admin tools. Android, iPhone, iPad and the web, with one secure backend.</p>
       <div class="stats" id="stats"></div>
     </div>
-    <nav class="tabs" role="tablist">
-      <button role="tab" id="tab-features" aria-selected="true" aria-controls="features">Features</button>
-      <button role="tab" id="tab-costs" aria-selected="false" aria-controls="costs">Cost to run</button>
-    </nav>
   </div>
 </header>
+<div class="tabbar"><div class="wrap">
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-features" aria-selected="true" aria-controls="features">Features</button>
+    <button role="tab" id="tab-costs" aria-selected="false" aria-controls="costs">Cost to run</button>
+  </nav>
+</div></div>
 
 <main class="wrap">
   <section class="panel" id="features" role="tabpanel" aria-labelledby="tab-features">
@@ -133,10 +192,13 @@
     <p class="lead">Tap any feature for the full breakdown: what it does, who uses it, how the workflow runs step by step, and the safeguards behind it.</p>
     <div class="chips" id="areas"></div>
     <div class="grid" id="grid"></div>
+    <div class="pager" id="pager"></div>
 
-    <h2>Who uses it</h2>
-    <p class="lead">Everyone signs in with their email and a 6-digit code: no passwords. New accounts wait for the office to approve them, and each role sees only what it should.</p>
-    <div class="roles" id="roles"></div>
+    <details class="fold big" data-fold>
+      <summary>Who uses it <span class="small">· 6 kinds of users</span></summary>
+      <p class="lead">Everyone signs in with their email and a 6-digit code: no passwords. New accounts wait for the office to approve them, and each role sees only what it should.</p>
+      <div class="roles" id="roles"></div>
+    </details>
   </section>
 
   <section class="panel" id="costs" role="tabpanel" aria-labelledby="tab-costs" hidden>
@@ -156,27 +218,26 @@
       </div>
       <label class="check"><input type="checkbox" id="upgrades"> Include production upgrades (bigger database, failover, custom domain)</label>
     </div>
+    <div class="seg plan-pick" role="group" aria-label="Show plan">
+      <button data-plan="supa" aria-pressed="true">Supabase</button>
+      <button data-plan="aws" aria-pressed="false">AWS</button>
+    </div>
     <div class="plans" id="plans"></div>
 
     <div class="two">
-      <div class="card" id="shared"></div>
-      <div class="card" id="compare"></div>
-    </div>
-    <div class="two">
-      <div class="card">
-        <b>What the estimate assumes</b>
-        <ul id="assume"></ul>
-      </div>
-      <div class="card">
-        <b>Not counted</b>
+      <details class="card fold" data-fold><summary>How they compare</summary><div id="compare"></div></details>
+      <details class="card fold" data-fold><summary>Either way: app store accounts</summary><div id="shared"></div></details>
+      <details class="card fold" data-fold><summary>What the estimate assumes</summary><ul id="assume"></ul></details>
+      <details class="card fold" data-fold><summary>Not counted</summary>
         <ul>
           <li>Moving to AWS is a rebuild of accounts, permissions, live updates and file storage. Expect roughly 6–10 weeks of developer time, once.</li>
           <li>Ongoing developer time, support, and app-store review time.</li>
           <li>Growth of the photo gallery after the first year (about the same again each year).</li>
           <li>Taxes, and any discounts AWS or Supabase give schools or non-profits.</li>
         </ul>
-      </div>
+      </details>
     </div>
+    <div class="totals-bar" id="totals-bar" aria-live="polite"></div>
   </section>
 </main>
 
@@ -494,16 +555,35 @@ $('stats').innerHTML = [[F.length, 'features'], ['6', 'kinds of users'], ['4', '
 $('roles').innerHTML = ROLES.map(([b, s]) => `<div class="role"><b>${b}</b><span>${s}</span></div>`).join('');
 
 const areas = ['All', ...new Set(F.map((f) => f.area))];
-let area = 'All';
+let area = 'All', page = 0;
+const phone = window.matchMedia('(max-width: 640px)');
+const PER_PAGE = () => (phone.matches ? 6 : Infinity);
 function drawGrid() {
   $('areas').innerHTML = areas.map((a) => `<button class="chip" aria-pressed="${a === area}" data-area="${a}">${a}</button>`).join('');
-  $('grid').innerHTML = F.map((f, i) => (area === 'All' || f.area === area) ? `
+  const shown = F.map((f, i) => [f, i]).filter(([f]) => area === 'All' || f.area === area);
+  const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE()));
+  page = Math.min(page, pages - 1);
+  const from = Number.isFinite(PER_PAGE()) ? page * PER_PAGE() : 0;
+  const slice = Number.isFinite(PER_PAGE()) ? shown.slice(from, from + PER_PAGE()) : shown;
+  $('pager').innerHTML = pages < 2 ? '' : `<button data-go="-1" ${page === 0 ? 'disabled' : ''}>‹ Previous</button>
+    <span class="small">${from + 1}–${from + slice.length} of ${shown.length}</span>
+    <button data-go="1" ${page === pages - 1 ? 'disabled' : ''}>Next ›</button>`;
+  $('grid').innerHTML = slice.map(([f, i]) => `
     <button class="feature" data-i="${i}">
       <div class="top"><div class="icon" aria-hidden="true">${f.icon}</div><div><div class="area">${f.area}</div><h3>${esc(f.name)}</h3></div></div>
-      <p>${esc(f.short)}</p><span class="more">How it works ›</span>
-    </button>` : '').join('');
+      <div class="body"><h3 class="m-name">${esc(f.name)}</h3><p>${esc(f.short)}</p></div><span class="more">How it works ›</span>
+    </button>`).join('');
 }
-$('areas').addEventListener('click', (e) => { const a = e.target.closest('[data-area]'); if (a) { area = a.dataset.area; drawGrid(); } });
+$('areas').addEventListener('click', (e) => { const a = e.target.closest('[data-area]'); if (a) { area = a.dataset.area; page = 0; drawGrid(); } });
+$('pager').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  page += +b.dataset.go; drawGrid();
+  $('areas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+// Folded sections start open on wide screens, closed on phones; the list repages when the width changes.
+const setFolds = () => document.querySelectorAll('[data-fold]').forEach((d) => { d.open = !phone.matches; });
+phone.addEventListener('change', () => { setFolds(); page = 0; drawGrid(); drawCosts(); });
+setFolds();
 $('grid').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) openFeature(+b.dataset.i); });
 drawGrid();
 
@@ -530,12 +610,20 @@ $('detail').addEventListener('click', (e) => { if (e.target === $('detail')) $('
 const tabs = [['tab-features', 'features'], ['tab-costs', 'costs']];
 tabs.forEach(([t, p]) => $(t).addEventListener('click', () => {
   tabs.forEach(([t2, p2]) => { $(t2).setAttribute('aria-selected', t2 === t); $(p2).hidden = p2 !== p; });
+  document.body.classList.toggle('costs-on', p === 'costs');
+  if (window.scrollY > $('features').offsetTop) window.scrollTo({ top: document.querySelector('header').offsetHeight, behavior: 'smooth' });
   history.replaceState(null, '', p === 'costs' ? '#costs' : '#');
 }));
 if (location.hash === '#costs') $('tab-costs').click();
 
 // Costs
-let yearly = false;
+let yearly = false, pick = 'supa';
+document.querySelector('.plan-pick').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-plan]'); if (!b) return;
+  pick = b.dataset.plan;
+  document.querySelectorAll('.plan-pick button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.plan === pick));
+  drawCosts();
+});
 const PRESETS = [500, 1300, 5000, 10000, 25000, 50000];
 $('presets').innerHTML = PRESETS.map((n) => `<button class="chip" data-n="${n}">${n.toLocaleString()}${n === 1300 ? ' (Kingdom Heights)' : ''}</button>`).join('');
 $('presets').addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b) { people = +b.dataset.n; $('people').value = toSlider(people); drawCosts(); } });
@@ -556,24 +644,25 @@ function drawCosts() {
   const plans = { supa: supabase(u, up), aws: aws(u, up) };
   const totals = { supa: sum(plans.supa), aws: sum(plans.aws) };
   const max = Math.max(totals.supa, totals.aws);
-  $('plans').innerHTML = Object.entries(plans).map(([id, p]) => `<div class="plan ${id}">
+  $('plans').innerHTML = Object.entries(plans).map(([id, p]) => `<div class="plan ${id}${id === pick ? '' : ' off'}">
       <div class="ph"><div class="tag">${p.tag}</div><h3>${p.name}</h3>
         <div class="total">${money(round(totals[id] * k))} <small>${unit}</small></div>
         <div class="per">${money(round(totals[id] / people, 3))} per person per month</div>
         <div class="bar"><i style="width:${(totals[id] / max * 100).toFixed(1)}%;background:${id === 'supa' ? 'var(--green)' : '#D97706'}"></i></div></div>
+      <details class="lines" ${phone.matches ? '' : 'open'}><summary><span class="closed">Show the ${p.lines.length} line items ›</span><span class="opened">Hide the line items</span></summary>
       <table>${p.lines.map(([n, a, note, opt]) => `<tr class="${opt ? 'opt' : ''}${a === 0 && !opt ? ' zero' : ''}"><td>${opt ? '⬆️ ' : ''}${esc(n)}<span class="note">${esc(note)}</span></td><td class="amt">${a === 0 ? 'Included' : money(round(a * k))}</td></tr>`).join('')}
-        <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(round(totals[id] * k))}</td></tr></table>
+        <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(round(totals[id] * k))}</td></tr></table></details>
       <div class="foot">${p.foot}</div></div>`).join('');
+  $('totals-bar').innerHTML = `<div>${people.toLocaleString()} people<b>${yearly ? 'per year' : 'per month'}</b></div>
+    <div>Supabase<b>${money(round(totals.supa * k))}</b></div><div>AWS<b>${money(round(totals.aws * k))}</b></div>`;
   const sy = SHARED_YEARLY.reduce((a, l) => a + l[1], 0);
-  $('shared').innerHTML = `<b>Either way: app store accounts</b>
-    <ul>${SHARED_YEARLY.map(([n, a]) => `<li>${n}: ${money(yearly ? a : round(a / 12))} ${yearly ? 'a year' : 'a month (paid $99 yearly)'}</li>`).join('')}
+  $('shared').innerHTML = `<ul>${SHARED_YEARLY.map(([n, a]) => `<li>${n}: ${money(yearly ? a : round(a / 12))} ${yearly ? 'a year' : 'a month (paid $99 yearly)'}</li>`).join('')}
     ${SHARED_ONCE.map(([n, a]) => `<li>${n}: ${money(a)}</li>`).join('')}
     <li>Expo push notifications, GitHub builds and the web app: free</li></ul>
     <p class="small">All-in ${yearly ? 'first year' : 'per month'}: Supabase ${money(round(yearly ? totals.supa * 12 + sy + 25 : totals.supa + sy / 12))}, AWS ${money(round(yearly ? totals.aws * 12 + sy + 25 : totals.aws + sy / 12))}${yearly ? ' (including the one-time Google fee)' : ''}.</p>`;
   const diff = totals.aws - totals.supa;
   const mailGap = resend(u.emails)[0] - u.emails * 0.0001;
-  $('compare').innerHTML = `<b>How they compare</b>
-    <ul><li>${diff >= 0 ? 'Supabase' : 'AWS'} costs ${money(round(Math.abs(diff) * k))} less ${yearly ? 'a year' : 'a month'} for ${people.toLocaleString()} people.</li>
+  $('compare').innerHTML = `<ul><li>${diff >= 0 ? 'Supabase' : 'AWS'} costs ${money(round(Math.abs(diff) * k))} less ${yearly ? 'a year' : 'a month'} for ${people.toLocaleString()} people.</li>
     <li>Supabase includes accounts, database, files, live updates and functions in one plan; usage charges only start past 100,000 monthly users, 100 GB of files or 250 GB of downloads.</li>
     <li>On AWS the NAT gateway is a fixed ~$37 a month whatever the size${diff >= 0 ? ', which is why AWS costs more for a single school' : '; at this size AWS makes that back on usage'}.</li>
     ${mailGap > 5 ? `<li>Most of the gap at this size is email: Resend costs ${money(round(mailGap * k))} more ${yearly ? 'a year' : 'a month'} than Amazon SES. Supabase can send through Amazon SES too, which would bring Supabase to ${money(round((totals.supa - mailGap) * k))}.</li>` : ''}
