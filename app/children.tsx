@@ -16,6 +16,7 @@ import { gradeLabel } from '../src/comms/grades';
 import { Avatar, Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
 import { DateField, birthdayMax, birthdayMin, birthdayStart } from '../src/forms/DateTimeField';
 import { PickupPeople } from '../src/carline/PickupPeople';
+import { StudentLogin } from '../src/children/StudentLogin';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const fail = (e: any) => Alert.alert('Something went wrong', e.message);
@@ -23,6 +24,7 @@ const fail = (e: any) => Alert.alert('Something went wrong', e.message);
 function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest | undefined; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [pickups, setPickups] = useState(false);
+  const [login, setLogin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [birthday, setBirthday] = useState(c.birthday ?? '');
   const [bio, setBio] = useState(c.bio);
@@ -63,8 +65,10 @@ function ChildCard({ c, pending, onChange }: { c: Child; pending: FamilyRequest 
       <View style={[s.row, { flexWrap: 'wrap', gap: 18 }]}>
         <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setOpen(!open)}>{open ? 'Close' : `Edit ${c.firstName}'s details`}</Text>
         <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setPickups(!pickups)}>{pickups ? 'Hide pickup list' : 'Who can pick up'}</Text>
+        <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setLogin(!login)}>{login ? 'Hide login' : `${c.firstName}'s login`}</Text>
       </View>
       {pickups && <PickupPeople studentId={c.id} childName={c.firstName} />}
+      {login && <StudentLogin studentId={c.id} childName={c.firstName} onChange={onChange} />}
       {open && (
         <View style={{ gap: 10 }}>
           <View style={[s.row, { flexWrap: 'wrap', gap: 16 }]}>

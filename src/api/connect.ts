@@ -20,7 +20,7 @@ export { myAccess } from './access';
 export { listNotifications, myNotifications, sendNotification, setNotificationPref, registerPushToken, unregisterPushToken, markNotificationsOpened, openedNotifications, notificationOpenCounts, dismissNotifications, clearMyNotifications } from './notifications';
 export { updateMyName, uploadMyAvatar, removeMyAvatar, adminClearAvatar, mySettings, updateMySettings, myGroupPrefs } from './profile';
 export { recordPostViews, postStats, groupPostStats, myFollows, setPostFollow } from './stats';
-export { myChildProfiles, updateChildDetails, uploadChildPhoto, removeChildPhoto, requestChild, requestChildEdit, cancelFamilyRequest, myFamilyRequests } from './children';
+export { myChildProfiles, updateChildDetails, uploadChildPhoto, removeChildPhoto, requestChild, requestChildEdit, cancelFamilyRequest, myFamilyRequests, studentLoginStatus, giveStudentLogin, removeStudentLogin, type StudentLogin } from './children';
 export { adminListStudents, adminCreateStudent, adminUpdateStudent, adminDeleteStudent, adminSimilarStudents, adminFamilyRequests, adminDecideFamilyRequest } from './adminStudents';
 export { childPickupPeople, addPickupPerson, removePickupPerson, myPickupChildren } from './pickup';
 export { myTeachers, teacherConversations, myClassStudents, teacherThread, teacherThreadFor, teacherSend, teacherThreadRead, subscribeTeacherMessages } from './teachers';

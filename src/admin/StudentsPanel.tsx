@@ -13,6 +13,7 @@ import { gradeLabel } from '../comms/grades';
 import { Button, C, Card, Chip, Field, H, Loading, P, s } from '../ui';
 import { DateField, birthdayMax, birthdayMin, birthdayStart, dateLabel } from '../forms/DateTimeField';
 import { PickupPeople } from '../carline/PickupPeople';
+import { StudentLogin } from '../children/StudentLogin';
 
 const PAGE = 20;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -188,6 +189,7 @@ function StudentCard({ x, number, onChange }: { x: AdminStudent; number?: string
           )}
           <P muted>A child has at most one mother and one father. Anyone else who picks up goes on the approved list below.</P>
           <PickupPeople studentId={x.id} childName={x.firstName} office />
+          <StudentLogin studentId={x.id} childName={x.firstName} onChange={onChange} />
           <View style={[s.row, { justifyContent: 'space-between' }]}>
             {x.managed ? (
               <Text style={{ color: C.danger, fontWeight: '600' }}

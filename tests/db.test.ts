@@ -2168,3 +2168,49 @@ test('Royal News: everyone reads the archive; push.send holders add and remove i
   await one(`select newsletter_delete('${id}')`);
   assert.equal((await rows(`select 1 from newsletters where id = '${id}'`)).length, 0);
 });
+
+test('student logins: parents (or the office) give a child a login with their email; it keeps the child\'s profile', async () => {
+  await as('u-admin', true);
+  const kid = (await one(`select admin_create_student('Winry', 'Logan', 1, '2019-03-03', ${id('u-p03')}, 'mother') as id`)).id;
+  await asSuper();
+  const linked = (await rows(`select 1 from guardians where student_id = '${kid}'`)).length;
+
+  // Only the child's parents or the office (with the authenticator); never with an email already in use.
+  await as('u-p02');
+  await rejects(`select student_login_request('${kid}', 'winry@example.com')`, /permission/);
+  await as('u-p03');
+  await rejects(`select student_login_request('${kid}', 'not an email')`, /email address Winry/);
+  await rejects(`select student_login_request('${kid}', 'U-P01@demo.khroyals.test')`, /already has a KH Royals account/);
+  await rejects(`select student_login_request(${id('u-p01')}, 'x@example.com')`, /permission/);
+  const req = (await one(`select student_login_request('${kid}', ' Winry@Example.com ') as r`)).r;
+  assert.deepEqual([req.email, req.firstName], ['winry@example.com', 'Winry']);
+  assert.equal((await one(`select student_login_status('${kid}') as s`)).s.hasLogin, false);
+
+  // The student-login function creates the login with the child's id: the same profile, now with a login.
+  await asSuper();
+  await db.exec(`insert into auth.users (id, email) values ('${kid}', 'winry@example.com')`);
+  const p = await one(`select first_name, school_role, managed, grade from profiles where id = '${kid}'`);
+  assert.deepEqual([p.first_name, p.school_role, p.managed, p.grade], ['Winry', 'student', false, 1]);
+  assert.equal((await rows(`select 1 from guardians where student_id = '${kid}'`)).length, linked, 'still linked to the parents');
+  assert.equal((await one(`select email from profile_private where id = '${kid}'`)).email, 'winry@example.com');
+  assert.match((await one(`select body from app.email_queue where to_email = 'winry@example.com'`)).body, /Hi Winry,[\s\S]*6-digit code/);
+  await as('u-p03');
+  assert.equal((await one(`select student_login_status('${kid}') as s`)).s.hasLogin, true);
+  await rejects(`select student_login_request('${kid}', 'other@example.com')`, /already has a login/);
+  await as('u-p02');
+  assert.equal((await one(`select student_login_status('${kid}') as s`)).s, null, 'other parents see nothing');
+
+  // Taking it away: no more login, but Winry stays on the roster with her parents.
+  await as('u-p03');
+  await one(`select student_login_remove('${kid}')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from auth.users where id = '${kid}'`)).length, 0);
+  assert.equal((await one(`select managed from profiles where id = '${kid}'`)).managed, true);
+  assert.equal((await rows(`select 1 from guardians where student_id = '${kid}'`)).length, linked);
+
+  // The office can do it too (with the authenticator).
+  await as('u-ap');
+  await rejects(`select student_login_request('${kid}', 'winry2@example.com')`, /MFA_REQUIRED/);
+  await as('u-ap', true);
+  assert.equal((await one(`select student_login_request('${kid}', 'winry2@example.com') as r`)).r.email, 'winry2@example.com');
+});

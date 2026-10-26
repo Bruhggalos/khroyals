@@ -116,6 +116,8 @@ async function deployPush() {
   await deployFunction('send-email', { verifyJwt: false });
   // Royal News: staff add an issue from its Smore link (signed-in callers only).
   await deployFunction('import-newsletter', { verifyJwt: true });
+  // Parents give a child their own login (signed-in callers only).
+  await deployFunction('student-login', { verifyJwt: true });
   await sql(`create extension if not exists pg_net with schema extensions;
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }

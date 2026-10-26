@@ -3787,6 +3787,9 @@ export type Database = {
         Returns: undefined
       }
       sport_withdraw: { Args: { p_registration: string }; Returns: undefined }
+      student_login_remove: { Args: { p_student: string }; Returns: undefined }
+      student_login_request: { Args: { p_email: string; p_student: string }; Returns: Json }
+      student_login_status: { Args: { p_student: string }; Returns: Json }
       teacher_conversations: {
         Args: { p_student?: string }
         Returns: {

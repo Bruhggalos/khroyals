@@ -13,7 +13,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint app src tests scripts plugins modules --max-warnings=0",
-    "check:edge": "deno check --config supabase/functions/deno.json supabase/functions/send-push/index.ts supabase/functions/send-email/index.ts supabase/functions/import-newsletter/index.ts",
+    "check:edge": "deno check --config supabase/functions/deno.json supabase/functions/send-push/index.ts supabase/functions/send-email/index.ts supabase/functions/import-newsletter/index.ts supabase/functions/student-login/index.ts",
     "test": "tsx --test tests/*.test.ts",
     "import-site": "python3 scripts/import_site.py content/site",
     "regen-comms": "python3 scripts/gen_comms.py mock-db/comms"

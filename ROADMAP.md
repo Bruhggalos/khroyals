@@ -173,6 +173,7 @@ Working in the app and on the server today.
 | Admin portal | Classes | Class sections with their teacher and students, for Ask the Teacher and Assignments |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |
+| Accounts | Student logins | Parents (or the office) give a child their own login by adding their email; the child is emailed how to sign in and keeps their classes and links |
 | Planner | Royal News archive | Every newsletter issue in the app (sections, pictures, links); staff add one by pasting its Smore link |
 | Planner | Dress-up days | Staff add Spirit Week themes (per day, optionally by grade); the Planner shows them above the uniform |
 | Admin portal | Delete accounts | Holders of Delete accounts (directors by default) remove someone's login, profile, posts and comments; never yourself or a director; admins need Manage admins too |

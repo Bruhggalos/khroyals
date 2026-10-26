@@ -76,6 +76,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   account and is added by the child's parents or the office (`pickup_authorizations`,
   `add_pickup_person`, optionally for a date range); they get the car line for that child
   only, through `app.pickup_children()`, never `guardians`.
+- **Student logins:** a child added by the office has no login (`profiles.managed`). Their parents
+  (`app.is_guardian_of`, so never Family accounts) or `people.family` give them one by email: the
+  `student-login` Edge Function runs `student_login_request` as the caller, then creates the auth
+  user **with the child's profile id**, so every link to the child carries over; `app.handle_new_user`
+  keeps that profile and emails the child how to sign in. `student_login_remove` takes it away again
+  (the child stays, `managed` again). Never give a child a new profile id.
 - **No duplicate children.** Two students can never share a normalized first + last name
   and birthday (`app.require_unique_child`, enforced by triggers). Creating a student
   (`admin_create_student`, or approving a parent's request) refuses a likely duplicate

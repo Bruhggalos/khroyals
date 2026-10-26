@@ -51,3 +51,21 @@ export async function myFamilyRequests(): Promise<FamilyRequest[]> {
   return (await run(sb().from('family_requests').select('*').eq('requested_by', current.id).eq('status', 'pending')
     .order('created_at'))).map(toRequest);
 }
+
+export type StudentLogin = { email: string; invitedAt: string | null; hasLogin: boolean; signedInAt: string | null };
+
+/** The child's own login, if they have one (or one is being set up). Parents and the office. */
+export async function studentLoginStatus(studentId: string): Promise<StudentLogin | null> {
+  return (await rpc('student_login_status', { p_student: studentId })) as StudentLogin | null;
+}
+
+/** Give a child their own login with this email (the student-login Edge Function makes it and emails them). */
+export async function giveStudentLogin(studentId: string, email: string): Promise<void> {
+  const { error } = await sb().functions.invoke('student-login', { body: { studentId, email } });
+  if (error) {
+    const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    throw new Error(body?.error ?? error.message);
+  }
+}
+
+export async function removeStudentLogin(studentId: string) { await rpc('student_login_remove', { p_student: studentId }); }
