@@ -367,6 +367,11 @@ Royals Connect and the admin portal) to **https://royalrockinapps.github.io/khro
 on every push to `main`. One-time setup: *Settings → Pages → Source: GitHub Actions*.
 The build is served under `/khroyals` (`expo.experiments.baseUrl`).
 
+**Demo overview:** **https://royalrockinapps.github.io/khroyals/overview/** is a one-page
+summary of every feature (tap one for its workflow and safeguards) with a running-cost tab
+(Supabase vs AWS for 1,300 users, monthly or yearly). It's `overview/index.html`, copied into the
+site by the web workflow, and deliberately not linked from the app. Update it when features change.
+
 ## Download the Android APK
 
 Every push to `main` (and every pull request) runs **Actions → Android APK**:

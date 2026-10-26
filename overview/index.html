@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KH Royals App Overview</title>
+<meta name="description" content="One-page summary of the KH Royals school app: every feature, how each one works, and what it costs to run.">
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --navy: #00239C; --red: #FC1723; --ink: #0B1928; --muted: #5B6577; --line: #E1E6F0;
+    --bg: #F5F7FC; --card: #FFFFFF; --soft: #EEF2FC; --green: #15803D;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  a { color: var(--navy); }
+  header { background: var(--navy); color: #fff; border-bottom: 4px solid var(--red); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  .hero { padding: 28px 0 18px; }
+  .hero h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.5px; }
+  .hero p { margin: 0; opacity: 0.9; max-width: 760px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .stat { background: rgba(255,255,255,0.12); border-radius: 12px; padding: 8px 14px; }
+  .stat b { display: block; font-size: 20px; }
+  .stat span { font-size: 13px; opacity: 0.85; }
+  nav.tabs { display: flex; gap: 4px; margin-top: 18px; }
+  nav.tabs button { font: inherit; font-weight: 700; color: #fff; background: transparent; border: 0; padding: 10px 16px; border-radius: 10px 10px 0 0; cursor: pointer; opacity: 0.8; }
+  nav.tabs button[aria-selected="true"] { background: var(--bg); color: var(--navy); opacity: 1; }
+  main { padding: 22px 0 60px; }
+  .panel[hidden] { display: none; }
+  h2 { font-size: 22px; margin: 26px 0 10px; }
+  h2:first-child { margin-top: 0; }
+  .lead { color: var(--muted); margin: 0 0 16px; max-width: 800px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip { font: inherit; font-size: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .feature { text-align: left; font: inherit; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: box-shadow .15s, transform .15s; }
+  .feature:hover, .feature:focus-visible { box-shadow: 0 6px 18px rgba(0,35,156,0.12); transform: translateY(-1px); outline: none; }
+  .feature .top { display: flex; align-items: center; gap: 10px; }
+  .feature .icon { font-size: 22px; width: 40px; height: 40px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; flex: none; }
+  .feature h3 { margin: 0; font-size: 16px; }
+  .feature .area { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--red); text-transform: uppercase; }
+  .feature p { margin: 0; color: var(--muted); font-size: 14px; }
+  .feature .more { margin-top: auto; padding-top: 6px; font-size: 13px; font-weight: 700; color: var(--navy); }
+  .roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .role { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .role b { display: block; }
+  .role span { color: var(--muted); font-size: 14px; }
+
+  /* Feature detail */
+  dialog { border: 0; border-radius: 18px; padding: 0; width: min(760px, calc(100vw - 24px)); max-height: calc(100vh - 32px); box-shadow: 0 24px 60px rgba(11,25,40,0.35); }
+  dialog::backdrop { background: rgba(11,25,40,0.5); }
+  .dlg-head { background: var(--navy); color: #fff; padding: 18px 20px; border-bottom: 4px solid var(--red); position: sticky; top: 0; display: flex; gap: 12px; align-items: flex-start; }
+  .dlg-head h3 { margin: 2px 0 0; font-size: 22px; }
+  .dlg-head .area { font-size: 11px; font-weight: 800; letter-spacing: 1px; opacity: .85; text-transform: uppercase; }
+  .dlg-head button { margin-left: auto; font: inherit; font-weight: 700; background: rgba(255,255,255,0.15); color: #fff; border: 0; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+  .dlg-body { padding: 18px 20px 24px; overflow: auto; }
+  .dlg-body h4 { margin: 18px 0 6px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--navy); }
+  .dlg-body h4:first-child { margin-top: 0; }
+  .dlg-body p { margin: 0 0 8px; }
+  .who { display: flex; flex-wrap: wrap; gap: 6px; }
+  .who span { background: var(--soft); color: var(--navy); font-size: 13px; font-weight: 700; border-radius: 999px; padding: 4px 10px; }
+  ol.flow { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  ol.flow li { counter-increment: step; position: relative; padding: 10px 12px 10px 48px; background: var(--bg); border-radius: 10px; }
+  ol.flow li::before { content: counter(step); position: absolute; left: 12px; top: 10px; width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 13px; font-weight: 800; display: grid; place-items: center; }
+  ol.flow li b { color: var(--navy); }
+  ul.safe { margin: 0; padding-left: 20px; }
+  ul.safe li { margin-bottom: 4px; }
+  .dlg-nav { display: flex; justify-content: space-between; gap: 8px; padding: 0 20px 18px; }
+  .dlg-nav button { font: inherit; font-weight: 700; color: var(--navy); background: var(--soft); border: 0; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+
+  /* Costs */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .seg { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+  .seg button { font: inherit; font-weight: 700; border: 0; background: transparent; color: var(--muted); padding: 7px 16px; border-radius: 9px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+  label.check { display: inline-flex; gap: 8px; align-items: center; font-size: 15px; cursor: pointer; }
+  .users { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .users div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+  .users b { font-size: 22px; display: block; }
+  .users span { color: var(--muted); font-size: 14px; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+  .plan { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+  .plan .ph { padding: 16px 18px; border-bottom: 1px solid var(--line); }
+  .plan .ph .tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+  .plan.supa .tag { color: var(--green); }
+  .plan.aws .tag { color: #B45309; }
+  .plan .ph h3 { margin: 2px 0 2px; font-size: 20px; }
+  .plan .total { font-size: 34px; font-weight: 800; color: var(--navy); line-height: 1.1; margin-top: 6px; }
+  .plan .total small { font-size: 15px; color: var(--muted); font-weight: 600; }
+  .plan .per { color: var(--muted); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 9px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.amt { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 700; }
+  td .note { display: block; color: var(--muted); font-size: 13px; }
+  tr.opt td { background: #FFFBEB; }
+  tr.sum td { font-weight: 800; border-bottom: 0; }
+  .plan .foot { padding: 12px 18px 16px; color: var(--muted); font-size: 13px; margin-top: auto; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .card ul { margin: 6px 0 0; padding-left: 20px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-top: 14px; }
+  .bar { height: 12px; border-radius: 6px; background: var(--soft); overflow: hidden; margin: 6px 0 2px; }
+  .bar i { display: block; height: 100%; border-radius: 6px; }
+  .small { font-size: 13px; color: var(--muted); }
+  footer { color: var(--muted); font-size: 13px; padding: 20px 0 40px; }
+  @media (max-width: 560px) { td { padding: 8px 12px; } .plan .ph, .plan .foot { padding-left: 12px; padding-right: 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hero">
+      <h1>KH Royals: the Kingdom Heights school app</h1>
+      <p>One app for families, students and staff: the school's site and news, the daily Planner, Royals Connect groups, car line pickup, emergency alerts, activities, forms and the office's admin tools. Android, iPhone, iPad and the web, with one secure backend.</p>
+      <div class="stats" id="stats"></div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-features" aria-selected="true" aria-controls="features">Features</button>
+      <button role="tab" id="tab-costs" aria-selected="false" aria-controls="costs">Cost to run</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel" id="features" role="tabpanel" aria-labelledby="tab-features">
+    <h2>Everything the app does</h2>
+    <p class="lead">Tap any feature for the full breakdown: what it does, who uses it, how the workflow runs step by step, and the safeguards behind it.</p>
+    <div class="chips" id="areas"></div>
+    <div class="grid" id="grid"></div>
+
+    <h2>Who uses it</h2>
+    <p class="lead">Everyone signs in with their email and a 6-digit code: no passwords. New accounts wait for the office to approve them, and each role sees only what it should.</p>
+    <div class="roles" id="roles"></div>
+  </section>
+
+  <section class="panel" id="costs" role="tabpanel" aria-labelledby="tab-costs" hidden>
+    <h2>What it costs to run for 1,300 people</h2>
+    <p class="lead">Hosting for the app's backend (accounts, database, files, live updates, notifications and email), two ways: on <b>Supabase</b>, where it runs today, and the same setup built on <b>AWS</b>. Prices are list prices in US dollars, checked October 2026.</p>
+    <div class="users" id="users"></div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Show costs per">
+        <button id="per-month" aria-pressed="true">Monthly</button>
+        <button id="per-year" aria-pressed="false">Yearly</button>
+      </div>
+      <label class="check"><input type="checkbox" id="upgrades"> Include recommended production upgrades</label>
+    </div>
+    <div class="plans" id="plans"></div>
+
+    <div class="two">
+      <div class="card" id="shared"></div>
+      <div class="card" id="compare"></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <b>What the estimate assumes</b>
+        <ul id="assume"></ul>
+      </div>
+      <div class="card">
+        <b>Not counted</b>
+        <ul>
+          <li>Moving to AWS is a rebuild of accounts, permissions, live updates and file storage. Expect roughly 6–10 weeks of developer time, once.</li>
+          <li>Ongoing developer time, support, and app-store review time.</li>
+          <li>Taxes, and any discounts AWS or Supabase give schools or non-profits.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">For demonstrations. This page is published with the web app on GitHub Pages and isn't linked from the app.</footer>
+
+<dialog id="detail" aria-labelledby="d-title">
+  <div class="dlg-head">
+    <div>
+      <div class="area" id="d-area"></div>
+      <h3 id="d-title"></h3>
+    </div>
+    <button id="d-close" aria-label="Close">Close ✕</button>
+  </div>
+  <div class="dlg-body" id="d-body"></div>
+  <div class="dlg-nav"><button id="d-prev">‹ Previous</button><button id="d-next">Next ›</button></div>
+</dialog>
+
+<script>
+/* ------------------------------------------------------------------ features */
+const F = [
+  { area: 'Everyday', icon: '📅', name: 'Planner', short: 'Today at a glance: date, greeting, what to wear, assignments, each child, events and car line hours, two weeks ahead.',
+    what: 'The home tab. It opens on today and pages through the next two weeks one day at a time (swipe or tap the date strip). Each day shows whether there is school, the uniform for that day, assignments, a card per child for parents, school events, activities, volunteer sign-ups and car line hours. Below: what is coming up on the school calendar, Royal News and the latest school news.',
+    who: ['Parents', 'Students', 'Staff', 'Visitors (signed out)'],
+    flow: ['<b>Open the app.</b> The Planner shows today in the school\'s time zone, with "Good morning Ava!" for students.',
+      '<b>Check what to wear.</b> Daily uniform Monday, Tuesday, Thursday and Friday; Chapel uniform on Wednesday, with pictures of the approved pieces and the Chapel details for each child\'s grade.',
+      '<b>See each child.</b> Parents get one card per child: assignments due, activities and forms still to sign.',
+      '<b>Look ahead.</b> Tap a day in the strip to see it; a dot marks days with something on.',
+      '<b>Leave from anywhere.</b> "Today" jumps back; the app reopens on today the next morning.'],
+    safe: ['Each person only sees their own children\'s assignments and activities.', 'No-school days and weekends show "No school" instead of a uniform.'] },
+  { area: 'Everyday', icon: '👕', name: 'Dress-up days (Spirit Week)', short: 'Staff add themed days; the Planner shows the theme above the usual uniform, by grade.',
+    what: 'For Spirit Week and other dress-up days, staff add a theme for each day ("Mismatch Monday", "Character Day"), optionally for some grades only. The Planner\'s What to wear card shows it in a highlighted box above the usual uniform.',
+    who: ['Office staff (School calendar permission)', 'Parents', 'Students'],
+    flow: ['<b>Staff open Calendar → Dress-up days.</b> Enter the week\'s name, pick the day from a calendar, the theme and what to wear.',
+      '<b>Limit by grade if needed:</b> e.g. Twinning Thursday for 6th–12th and Character Day for K2–5th on the same day.',
+      '<b>It appears at once.</b> Students see their grade\'s theme; parents see each child\'s theme with the child\'s name; staff see all of them.',
+      '<b>Not dressing up?</b> The usual uniform is still shown underneath.'],
+    safe: ['Only people with the School calendar permission (and their authenticator code) can add or change themes.', 'Every change is in the activity log.'] },
+  { area: 'Everyday', icon: '📰', name: 'Royal News', short: 'The emailed newsletter, kept in the app: this week\'s issue and every past one.',
+    what: 'Every issue of the school newsletter (made in Smore) reads in the app with its sections, bold text, pictures and working links, newest first by month. Long issues have a floating "Top" button and a "Back to Royal News" button at the end.',
+    who: ['Everyone (even signed out)', 'Office staff add issues'],
+    flow: ['<b>The office sends the newsletter</b> from Smore as usual.',
+      '<b>They paste its link</b> into Royal News → Add an issue. The app reads the page and adds it.',
+      '<b>Families tap Royal News</b> on the Planner to read it, or browse past issues.',
+      '<b>Fixing a mistake?</b> Paste the same link again to update it, or delete the issue.'],
+    safe: ['Only Smore newsletter pages can be imported.', 'Smore\'s per-reader tracking links (which can carry an email address) are removed.'] },
+  { area: 'Everyday', icon: '🔔', name: 'Notifications', short: 'Push notifications plus a bell inbox of everything sent to you; swipe to delete, clear all.',
+    what: 'Announcements, replies, car line updates, forms and alerts arrive as phone notifications (banner, sound, lock screen) and always land on the bell page too. Each person chooses what reaches their phone and can set quiet hours.',
+    who: ['Everyone signed in'],
+    flow: ['<b>Something happens</b> (a new announcement, a reply on a post you follow, a form to sign).',
+      '<b>The phone shows it</b> even when the app is closed, once push is connected to Apple and Google.',
+      '<b>Tap it</b> to open exactly what it is about.',
+      '<b>Manage it</b> on the bell page: swipe one away or clear all. Profile → Notifications chooses categories, groups and quiet hours.'],
+    safe: ['Urgent school messages and emergency alerts always come through, whatever the settings.', 'Senders see how many people opened a notification, not who read what in private.'] },
+  { area: 'Car line', icon: '🚗', name: 'Car line check-in', short: 'Parents tap "I\'m here" in the pickup zone; staff see who is waiting, in order, with pickup numbers.',
+    what: 'Works like PikMyKid. Parents announce their arrival from the pickup zone; the server checks their location against the school\'s spot and radius. Each child has a pickup number; families can save their vehicles so staff know which car to look for.',
+    who: ['Parents', 'Approved pickup people', 'Family accounts', 'All staff'],
+    flow: ['<b>Parent arrives</b> in the pickup zone during pickup hours.',
+      '<b>Taps "Check in".</b> The phone shares its location once; the server confirms they are inside the radius.',
+      '<b>Their children join the line</b> with pickup number, vehicle and place in line; the parent sees their position.',
+      '<b>Staff call the number</b> and walk the child out.',
+      '<b>Staff tap "Picked up"</b> (undo within a minute if it was a mistake).'],
+    safe: ['Only a child\'s parents, the office-approved family, and people the parents approved can check that child in.', 'Location is checked once at check-in and never stored.', 'Pickup numbers are visible only to staff and the child\'s own parents.'] },
+  { area: 'Car line', icon: '📍', name: 'Automatic check-in', short: 'Optional geofence: the phone checks children in on arrival, skipping no-school days.',
+    what: 'Parents who turn it on are checked in automatically when their phone enters the pickup zone during pickup hours, with a notification that offers Cancel.',
+    who: ['Parents'],
+    flow: ['<b>Turn on automatic check-in</b> on the Car Line screen and allow location "Always".',
+      '<b>Drive to school.</b> Entering the zone during pickup hours checks the children in.',
+      '<b>A notification confirms it,</b> with Cancel if it was a mistake.'],
+    safe: ['Off by default; one tap turns it off.', 'Skips weekends and no-school days.'] },
+  { area: 'Car line', icon: '📋', name: 'Duty board and settings', short: 'Live board for staff; car line leads set the spot, radius, hours and pickup numbers.',
+    what: 'Every staff member sees the live line. Car line leads (and the office) set where pickup happens, how close parents must be, pickup hours, can open the line early, and manage pickup numbers. There is a daily pickup record.',
+    who: ['All staff see the board', 'Car line leads and the office change settings'],
+    flow: ['<b>Lead sets up once:</b> drop the pin on the pickup spot, choose the radius and hours.',
+      '<b>Each afternoon</b> the board fills as parents check in, oldest first, with numbers and vehicles.',
+      '<b>Staff release children</b> by tapping Picked up; the record keeps who released whom and when.',
+      '<b>Need to start early?</b> "Open now" opens the line before the usual time.'],
+    safe: ['Settings changes need the car line lead role or the office.', 'The record shows which staff member released each child.'] },
+  { area: 'Car line', icon: '✉️', name: 'Pickup emails', short: 'Every parent is emailed who picked the child up, who released them, and when.',
+    what: 'When a child is marked picked up, each of the child\'s parents gets an email a minute later saying who picked the child up (and their relationship), which staff member released them, and the time.',
+    who: ['Parents (automatic)'],
+    flow: ['<b>Staff tap Picked up</b> on the duty board.',
+      '<b>The email is queued</b> for one minute, so an Undo cancels it.',
+      '<b>Both parents receive it</b>, so a parent at work knows their child is safely on the way.'],
+    safe: ['Sent through the school\'s email service (Resend); the key is never in the code.', 'Undo within a minute cancels the email.'] },
+  { area: 'Car line', icon: '🧑‍🤝‍🧑', name: 'Parents and approved pickup people', short: 'One mother and one father per child; parents approve anyone else, for a day or longer.',
+    what: 'A child has at most two parents (one mother, one father). Anyone else who picks up (grandparents, a neighbor, a nanny) must have an account, and is approved by the child\'s parents or the office, for today, until a date, or until removed.',
+    who: ['Parents', 'The office'],
+    flow: ['<b>Parent opens My children → Who can pick up.</b>',
+      '<b>Adds the person by email</b> and their relationship, and chooses for today, until a date, or ongoing.',
+      '<b>That person can now check in</b> for that child only, and appears on the duty board.',
+      '<b>Remove them</b> any time; approvals with an end date expire on their own.'],
+    safe: ['Pickup people only ever see the child they were approved for.', 'The database enforces the one-mother, one-father rule.'] },
+  { area: 'Car line', icon: '🚙', name: 'Android Auto and CarPlay', short: 'The car line on the car\'s screen: each child\'s status and an "I\'m here" button.',
+    what: 'While driving, parents see each child\'s car line status (not checked in, waiting with place in line, picked up) on the car screen and can check in with one tap. Limited to the car line on purpose.',
+    who: ['Parents'],
+    flow: ['<b>Connect the phone</b> to Android Auto (CarPlay once Apple approves the app).',
+      '<b>Open KH Royals</b> on the car screen during pickup.',
+      '<b>Tap "I\'m here"</b> in the pickup zone; the same location check applies.'],
+    safe: ['The car screen can only read the car line and check in, nothing else in the account.', 'Needs Play Store testing track (Android) and Apple\'s CarPlay approval to ship.'] },
+  { area: 'Safety', icon: '🚨', name: 'Critical alerts', short: 'Lockdown, severe weather or hold: full-screen alert for all staff, live roll call, all clear.',
+    what: 'Administrators send an emergency alert from a template. Every teacher and staff member gets a full-screen alert that rings loudly (alarm volume on Android, through Do Not Disturb when allowed; Time Sensitive on iPhone), answers "I\'m safe" or "I need help", and the sender sees a live roll call until they give the all clear.',
+    who: ['Administrators with Send critical alerts', 'All teachers and staff'],
+    flow: ['<b>Admin picks a template</b> (lockdown, severe weather, hold in place), edits the message, sends.',
+      '<b>Every staff phone rings</b> and the app fills the screen, even locked or on silent where the phone allows.',
+      '<b>Staff answer</b> "I\'m safe" or "I need help" with one tap.',
+      '<b>The sender watches the roll call</b> fill in live and follows up on anyone who needs help or has not answered.',
+      '<b>All clear</b> ends the alert and notifies everyone.'],
+    safe: ['Only for staff; only Send critical alerts holders can send or clear.', 'Profile → Emergency alerts shows each phone whether alerts will ring through silent and Do Not Disturb.'] },
+  { area: 'Community', icon: '💬', name: 'Royals Connect groups', short: 'Class, grade, team and club groups: chat, discussion boards, announcements and Q&A.',
+    what: 'Groups in four styles (chat, discussion board, announcements, Q&A). Each action (post, comment, react, ask, attach, poll, pin) has its own "who can" setting. People are added automatically by role, grade, class section, team or club, plus their parents.',
+    who: ['Parents', 'Students', 'Staff', 'Group owners and moderators'],
+    flow: ['<b>The office creates a group</b> and sets its style and rules (e.g. "6th grade parents", posting by moderators only).',
+      '<b>Members are added automatically</b> by the rules, and kept up to date as grades and rosters change.',
+      '<b>People post, reply and react</b>; anonymous questions are possible where allowed.',
+      '<b>Moderators approve, pin, lock or mute</b> as needed; everything is in the audit log.'],
+    safe: ['Family accounts are kept out of groups.', 'Approval queues, slow mode, quiet hours and content filter per group.'] },
+  { area: 'Community', icon: '📊', name: 'Post stats and following', short: 'Who saw each post, opens and reactions; follow a post for reply notifications.',
+    what: 'Authors and admins see how many people a post reached and opened, and reactions. Anyone can follow a post to be notified of replies; your own posts are followed automatically.',
+    who: ['Post authors', 'Admins', 'Everyone (following)'],
+    flow: ['<b>Post an announcement.</b>', '<b>Open its stats</b> to see reach and opens over time.', '<b>Tap 🔔 on any post</b> to follow or stop following replies.'],
+    safe: ['Stats count views; they do not expose private messages.'] },
+  { area: 'Community', icon: '🙋', name: 'Ask the School', short: 'Families ask questions; the office routes them to the right staff member and tracks age.',
+    what: 'A help desk for families. Questions go to the office, who assign them to faculty or staff. Waiting questions turn amber and then red with age, so nothing is forgotten.',
+    who: ['Parents', 'Students', 'Office staff (Route questions)', 'Assigned staff'],
+    flow: ['<b>Parent asks</b> a question under a topic (e.g. Admissions, Uniforms).',
+      '<b>The office assigns it</b> to the right person.',
+      '<b>Staff reply</b>; the parent is notified and can follow up.',
+      '<b>Closed</b> when answered; ages flag anything waiting too long.'],
+    safe: ['Only the asker, the assigned staff and routers see a question.'] },
+  { area: 'Community', icon: '🛍️', name: 'Marketplace', short: 'Families buy, sell and swap uniforms and gear, with Dibs or an offer.',
+    what: 'A school marketplace with photos, prices or free items. Buyers call Dibs or make an offer (one counter-offer allowed); a deal card coordinates the hand-off.',
+    who: ['Parents', 'Staff'],
+    flow: ['<b>Accept the marketplace terms</b> once.', '<b>List an item</b> with a photo and price.', '<b>A buyer calls Dibs or offers</b>; the seller accepts or counters once.', '<b>Meet at school</b> using the deal card; mark it sold or delete the listing.'],
+    safe: ['Closed to students and Family accounts.', 'Sellers can delete their listings any time.'] },
+  { area: 'Community', icon: '🤝', name: 'Volunteer', short: 'Opportunities with spot limits, item requests people pledge toward, chat per opportunity.',
+    what: 'Volunteer leaders post opportunities (with a number of spots) and item requests ("24 juice boxes"). Families tap "Say Yes!", pledge items, and chat with the organizer.',
+    who: ['Volunteer leaders', 'Parents', 'Family accounts'],
+    flow: ['<b>Leader posts</b> an opportunity or item request.', '<b>Families say Yes</b> or pledge a quantity; progress bars fill up.', '<b>Chat</b> to coordinate; reminders arrive as notifications.'],
+    safe: ['Spot limits are enforced; past opportunities move out of view.'] },
+  { area: 'Activities', icon: '🏆', name: 'Activities', short: 'Sports, theater, music, art and clubs: seasons, schedules, sign-ups with coach approval, RSVPs.',
+    what: 'Each activity has seasons, a schedule (games, practices, performances), coaches or directors, sign-ups that the coach approves, and "Are you going?" RSVPs with attendance for coaches. Families can follow activities their child is not in.',
+    who: ['Coaches and directors', 'Parents', 'Students', 'Office (Manage activities)'],
+    flow: ['<b>The office adds the activity</b> and its coaches.', '<b>The coach creates a season</b> and its schedule.', '<b>Parents sign their child up</b>; the coach approves.', '<b>Before each event</b> registered families answer Going / Not going; coaches see attendance.', '<b>Directions and countdowns</b> are on each event.'],
+    safe: ['Coaching is limited to that activity; sign-ups only count once approved.', 'Only coaches see attendance.'] },
+  { area: 'Students', icon: '🍎', name: 'Ask the Teacher', short: 'Students message the teachers of their classes; parents and reviewers can read along.',
+    what: 'Students write to the teachers of their class sections; teachers reply or start a conversation. The student\'s parents, and admins with Student messages, can read every conversation for safety.',
+    who: ['Students', 'Teachers', 'Parents (read only)', 'Admins (Student messages)'],
+    flow: ['<b>Student picks a teacher</b> from their classes and writes.', '<b>The teacher replies</b>; both get notifications.', '<b>Parents can read</b> the conversation from the Student app.'],
+    safe: ['Only students and their own teachers can write.', 'Parents and safety reviewers can read; no private student-to-student messaging.'] },
+  { area: 'Students', icon: '📚', name: 'Assignments', short: 'Teachers assign work to a class; students add their own and check them off privately.',
+    what: 'Teachers post assignments to their class sections. Students see overdue, today and coming up, add their own reminders, and check things off. Parents see their children\'s class assignments on the Planner.',
+    who: ['Teachers', 'Students', 'Parents'],
+    flow: ['<b>Teacher assigns</b> work with a due date to a class.', '<b>Students see it</b> under today or coming up and check it off.', '<b>Parents see what is due</b> on each child\'s Planner card.'],
+    safe: ['Check-offs and a student\'s own reminders stay private to the student.'] },
+  { area: 'Students', icon: '🔑', name: 'Student logins', short: 'Children start under their parents; when ready, a parent adds the child\'s email and they get their own login.',
+    what: 'Children added by the office have no login: their parents use the app for them. When a family decides a child is ready (say, in 2nd grade), a parent adds the email the child will use. The child is emailed how to sign in, and their login uses the same student record, so classes, parents, activities and car line all carry over.',
+    who: ['Parents', 'Students', 'The office (Families & rosters)'],
+    flow: ['<b>Parent opens My children</b> → the child\'s card → "[Name]\'s login".',
+      '<b>Enters the child\'s email</b> and taps "Give login and email them".',
+      '<b>The child gets an email</b>: open the app, tap Log in, enter the email, type the 6-digit code.',
+      '<b>The child signs in</b> and sees their own Planner, classes, assignments, Ask the Teacher and activities.',
+      '<b>Parents can turn it off</b> any time; the child stays on the class lists. The office can do the same from Admin → Students.'],
+    safe: ['Only the child\'s parents or the office can give or remove a login.', 'An email already used by another account is refused.', 'Parents keep reading their child\'s teacher messages.'] },
+  { area: 'Students', icon: '✍️', name: 'Forms and fees', short: 'Permission slips and releases sent to a class, team, grade or school; parents sign per child.',
+    what: 'Teachers send forms to their classes, coaches to their teams, and the office to grades or the whole school. Parents sign once per child (either parent counts) with any questions answered. Senders see who has signed, send reminders, and record fee payments made outside the app.',
+    who: ['Teachers', 'Coaches', 'Office (Send forms)', 'Parents'],
+    flow: ['<b>Sender writes the form</b> (title, details, due date, questions, optional fee) and picks who gets it.',
+      '<b>Parents are notified</b> and sign for each child on the Forms screen.',
+      '<b>The sender tracks signatures</b>, reminds those missing, and closes the form.',
+      '<b>Fees</b>: the sender records each child\'s payment (cash, check, where handed in); parents see their own.'],
+    safe: ['Forms can\'t be changed once sent.', 'Family accounts can\'t sign; other families never see your signatures or payments.'] },
+  { area: 'Families', icon: '👨‍👩‍👧', name: 'My children', short: 'Parents keep each child\'s photo, birthday, bio, allergies and health notes up to date.',
+    what: 'Each child is a profile under their parents. Parents edit details; name and grade changes go to the office for approval. Grades move up automatically every July 1.',
+    who: ['Parents', 'The office'],
+    flow: ['<b>The office links</b> the parent to the child (or approves the parent\'s request to add one).', '<b>Parents add</b> a photo, birthday, allergies and health notes.', '<b>Each July 1</b> every child moves up a grade by graduation year.'],
+    safe: ['Duplicate children are caught: same name and birthday is refused, and likely matches (typos, nicknames) are shown to the office.', 'Family accounts can\'t see child details.'] },
+  { area: 'Families', icon: '👵', name: 'Family accounts', short: 'Grandparents and relatives: car line, Volunteer, Activities; kept out of groups and private areas.',
+    what: 'A closed-by-default account type for relatives. The office links them to the children they pick up. They get car line pickup for those children, Volunteer, following activities, and the public screens.',
+    who: ['Grandparents and relatives', 'The office'],
+    flow: ['<b>Relative signs up</b> and the office approves them as Family.', '<b>The office links them</b> to the children they may pick up.', '<b>They check in</b> at the car line like a parent.'],
+    safe: ['No groups, Marketplace, Ask the School, child details or forms.'] },
+  { area: 'Admin', icon: '🛡️', name: 'Admin portal and roles', short: 'Directors, custom roles and single permissions; every admin action needs an authenticator code.',
+    what: 'The office runs the school\'s account here: approve sign-ups, set roles, link families, manage classes and students, route questions, send notifications. Directors create roles from a list of permissions, or grant single permissions.',
+    who: ['Directors', 'Administrators', 'Office staff'],
+    flow: ['<b>A new person signs up</b>; they wait in "Needs approval".', '<b>The office approves them</b> as parent, student, family, teacher or staff.', '<b>Directors give admin roles</b> or single permissions (e.g. School calendar to a teacher).', '<b>Every admin session</b> needs the code from an authenticator app.'],
+    safe: ['Admin powers only work after the authenticator check.', 'There is always at least one director.', 'Everything is in the activity log.'] },
+  { area: 'Admin', icon: '🗑️', name: 'Delete accounts', short: 'Directors (or anyone they allow) permanently remove an account and what it posted.',
+    what: 'A dedicated "Delete accounts" permission. Deleting removes the login, profile, posts (anonymous ones too) and comments, and is recorded in the activity log with the person\'s name and email.',
+    who: ['Directors', 'Anyone given Delete accounts'],
+    flow: ['<b>Open the person</b> in Admin → People.', '<b>Tap "Delete account…"</b> and confirm the name.', '<b>The account and its content are gone</b>; the log keeps a record.'],
+    safe: ['You can\'t delete yourself or a director; deleting an admin also needs Manage admins.'] },
+  { area: 'School site', icon: '🏫', name: 'School website in the app', short: 'All khroyals.com pages, news, calendar, handbook (searchable) and videos.',
+    what: 'The school\'s public site is imported into the app: every page, news articles, the 2026–27 calendar, a searchable student handbook, the campus map and videos. It works signed out, so prospective families can explore.',
+    who: ['Everyone, signed out too'],
+    flow: ['<b>Browse More</b> for pages like Admissions and Student Life.', '<b>Read news</b> and the handbook (search highlights matches).', '<b>Share</b> the app with a QR code from the Share tab.'],
+    safe: ['Long pages have a Top button and a Done button at the end.'] },
+  { area: 'Platform', icon: '📱', name: 'Android, iPhone, iPad and web', short: 'One codebase; Android APK and the web app build automatically on every change.',
+    what: 'Built with Expo / React Native. Every change builds a new Android app and updates the web app automatically; database changes go live through the same pipeline after passing over 170 automated tests. iPhone builds go to TestFlight.',
+    who: ['The school', 'Developers'],
+    flow: ['<b>A change is pushed</b> to the code.', '<b>Tests run</b> (permissions, database rules, screens).', '<b>The web app, Android app and database update</b> automatically if everything passes.'],
+    safe: ['The database is the source of truth for every permission; nothing relies on the app hiding a button.', 'No secrets in the code; the repository is public.'] },
+];
+
+const ROLES = [
+  ['Parents', 'Planner, their children, car line, groups, forms, activities, Marketplace, Volunteer, Royal News.'],
+  ['Students', 'Their own Planner, classes, assignments, Ask the Teacher, activities, groups (when a parent gives them a login).'],
+  ['Teachers and staff', 'Car line board, emergency alerts, their classes and assignments, forms, groups they run.'],
+  ['Family (relatives)', 'Car line for linked children, Volunteer, following activities, public screens.'],
+  ['Office and admins', 'Admin portal: approvals, families, classes, calendar, notifications, routing questions.'],
+  ['Visitors (signed out)', 'School site, news, calendar, handbook, Royal News, Planner basics.'],
+];
+
+/* ------------------------------------------------------------------ costs */
+const USERS = { staff: 150, students: 275, total: 1300 };
+USERS.parents = USERS.total - USERS.staff - USERS.students;
+
+const PLANS = {
+  supa: {
+    name: 'Supabase', tag: 'Runs today',
+    lines: [
+      ['Pro plan (one project)', 25, 'Includes 100,000 monthly users, 8 GB database, 100 GB files, 250 GB transfer, 2M function calls, 500 live connections.'],
+      ['Database computer: Micro (1 GB RAM)', 0, '$10/month, covered by the Pro plan\'s $10 compute credit.'],
+      ['Usage above the plan', 0, 'None expected: ~1,100 monthly users, ~1 GB data, ~10 GB photos, ~40 GB transfer.'],
+      ['Email: Resend Pro (50,000/month)', 20, 'Pickup emails and sign-in codes, ~12,000 a month. The free tier stops at 3,000 a month and 100 a day.'],
+      ['Push notifications (Expo)', 0, 'Free.'],
+    ],
+    upgrades: [
+      ['Database computer: Small (2 GB RAM)', 15, 'Headroom for the afternoon car line rush ($25, less the $10 credit).'],
+      ['Custom domain (e.g. api.khroyals.com)', 10, 'Optional; makes sign-in emails and links show the school\'s domain.'],
+    ],
+    foot: 'One bill. Daily backups (7 days) included. Spend cap on by default.',
+  },
+  aws: {
+    name: 'AWS', tag: 'Same app, rebuilt on AWS',
+    lines: [
+      ['Accounts: Amazon Cognito', 0, 'Free up to 10,000 monthly users.'],
+      ['Database: RDS PostgreSQL db.t4g.micro', 11.68, '$0.016/hour, one zone.'],
+      ['Database storage: 20 GB gp3', 2.30, '$0.115/GB-month; automated backups free up to the database size.'],
+      ['API: API Gateway + Lambda', 0.30, '~300,000 requests a month; Lambda stays in its free tier.'],
+      ['Live updates: API Gateway WebSockets', 1.10, 'Car line board and chat: ~1M messages and ~400,000 connection minutes.'],
+      ['NAT gateway (functions reach the internet)', 36.95, '$0.045/hour + public IPv4 $0.005/hour + data. Needed for push and email from inside the private network.'],
+      ['Files: S3 + CloudFront', 0.23, '10 GB of photos; CloudFront\'s free tier covers the transfer.'],
+      ['Email: Amazon SES', 1.20, '~12,000 emails at $0.10 per 1,000.'],
+      ['Secrets Manager (3 keys)', 1.20, '$0.40 per secret.'],
+      ['Monitoring: CloudWatch logs and alarms', 3.00, 'Typical for this size.'],
+      ['Push notifications (Expo)', 0, 'Free.'],
+    ],
+    upgrades: [
+      ['Database in two zones (Multi-AZ)', 13.98, 'Automatic failover; doubles the instance and storage cost.'],
+    ],
+    foot: 'Many separate services and bills. Prices for us-east-1 (N. Virginia).',
+  },
+};
+const SHARED_YEARLY = [['Apple Developer Program (iPhone and iPad apps)', 99]];
+const SHARED_ONCE = [['Google Play developer account (one time)', 25]];
+const ASSUME = [
+  `${USERS.total.toLocaleString()} people: ${USERS.staff} staff, ${USERS.students} students with their own login, ${USERS.parents} parents and family.`,
+  'About 1,100 of them use the app in a typical month.',
+  'Database about 1 GB; photos and files about 10 GB; about 40 GB of downloads a month.',
+  'About 12,000 emails a month: pickup emails to both parents on school days, plus sign-in codes.',
+  'Push notifications go through Expo, which is free for this volume.',
+  'The web app and Android builds run on GitHub (free for this public repository).',
+];
+
+/* ------------------------------------------------------------------ render */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const money = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+
+$('stats').innerHTML = [[F.length, 'features'], ['6', 'kinds of users'], ['4', 'platforms'], ['170+', 'automated checks']]
+  .map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+$('roles').innerHTML = ROLES.map(([b, s]) => `<div class="role"><b>${b}</b><span>${s}</span></div>`).join('');
+
+const areas = ['All', ...new Set(F.map((f) => f.area))];
+let area = 'All';
+function drawGrid() {
+  $('areas').innerHTML = areas.map((a) => `<button class="chip" aria-pressed="${a === area}" data-area="${a}">${a}</button>`).join('');
+  $('grid').innerHTML = F.map((f, i) => (area === 'All' || f.area === area) ? `
+    <button class="feature" data-i="${i}">
+      <div class="top"><div class="icon" aria-hidden="true">${f.icon}</div><div><div class="area">${f.area}</div><h3>${esc(f.name)}</h3></div></div>
+      <p>${esc(f.short)}</p><span class="more">How it works ›</span>
+    </button>` : '').join('');
+}
+$('areas').addEventListener('click', (e) => { const a = e.target.closest('[data-area]'); if (a) { area = a.dataset.area; drawGrid(); } });
+$('grid').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) openFeature(+b.dataset.i); });
+drawGrid();
+
+let current = 0;
+function openFeature(i) {
+  current = (i + F.length) % F.length;
+  const f = F[current];
+  $('d-area').textContent = `${f.icon} ${f.area}`;
+  $('d-title').textContent = f.name;
+  $('d-body').innerHTML = `
+    <h4>What it does</h4><p>${esc(f.what)}</p>
+    <h4>Who uses it</h4><div class="who">${f.who.map((w) => `<span>${esc(w)}</span>`).join('')}</div>
+    <h4>How it works</h4><ol class="flow">${f.flow.map((s) => `<li>${s}</li>`).join('')}</ol>
+    <h4>Safeguards</h4><ul class="safe">${f.safe.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>`;
+  $('d-body').scrollTop = 0;
+  if (!$('detail').open) $('detail').showModal();
+}
+$('d-close').onclick = () => $('detail').close();
+$('d-prev').onclick = () => openFeature(current - 1);
+$('d-next').onclick = () => openFeature(current + 1);
+$('detail').addEventListener('click', (e) => { if (e.target === $('detail')) $('detail').close(); });
+
+// Tabs
+const tabs = [['tab-features', 'features'], ['tab-costs', 'costs']];
+tabs.forEach(([t, p]) => $(t).addEventListener('click', () => {
+  tabs.forEach(([t2, p2]) => { $(t2).setAttribute('aria-selected', t2 === t); $(p2).hidden = p2 !== p; });
+  history.replaceState(null, '', p === 'costs' ? '#costs' : '#');
+}));
+if (location.hash === '#costs') $('tab-costs').click();
+
+// Costs
+let yearly = false;
+$('users').innerHTML = [[USERS.total, 'people in all'], [USERS.staff, 'staff'], [USERS.students, 'students with a login'], [USERS.parents, 'parents and family']]
+  .map(([b, s]) => `<div><b>${b.toLocaleString()}</b><span>${s}</span></div>`).join('');
+function monthly(p, up) { return p.lines.reduce((a, l) => a + l[1], 0) + (up ? p.upgrades.reduce((a, l) => a + l[1], 0) : 0); }
+function drawCosts() {
+  const up = $('upgrades').checked;
+  const k = yearly ? 12 : 1, unit = yearly ? '/ year' : '/ month';
+  const totals = Object.fromEntries(Object.entries(PLANS).map(([id, p]) => [id, monthly(p, up)]));
+  const max = Math.max(...Object.values(totals));
+  $('plans').innerHTML = Object.entries(PLANS).map(([id, p]) => {
+    const rows = [...p.lines.map((l) => [...l, false]), ...(up ? p.upgrades.map((l) => [...l, true]) : [])];
+    return `<div class="plan ${id}">
+      <div class="ph"><div class="tag">${p.tag}</div><h3>${p.name}</h3>
+        <div class="total">${money(totals[id] * k)} <small>${unit}</small></div>
+        <div class="per">${money(totals[id] / USERS.total)} per person per month</div>
+        <div class="bar"><i style="width:${(totals[id] / max * 100).toFixed(1)}%;background:${id === 'supa' ? 'var(--green)' : '#D97706'}"></i></div></div>
+      <table>${rows.map(([n, a, note, opt]) => `<tr class="${opt ? 'opt' : ''}"><td>${opt ? '⬆️ ' : ''}${esc(n)}<span class="note">${esc(note)}</span></td><td class="amt">${money(a * k)}</td></tr>`).join('')}
+        <tr class="sum"><td>Total ${yearly ? 'per year' : 'per month'}</td><td class="amt">${money(totals[id] * k)}</td></tr></table>
+      <div class="foot">${p.foot}</div></div>`;
+  }).join('');
+  const sy = SHARED_YEARLY.reduce((a, l) => a + l[1], 0);
+  $('shared').innerHTML = `<b>Either way: app store accounts</b>
+    <ul>${SHARED_YEARLY.map(([n, a]) => `<li>${n}: ${money(yearly ? a : a / 12)} ${yearly ? 'a year' : 'a month (paid $99 yearly)'}</li>`).join('')}
+    ${SHARED_ONCE.map(([n, a]) => `<li>${n}: ${money(a)}</li>`).join('')}
+    <li>Expo push notifications, GitHub builds and the web app: free</li></ul>
+    <p class="small">All-in ${yearly ? 'first year' : 'per month'}: Supabase ${money(yearly ? totals.supa * 12 + sy + 25 : totals.supa + sy / 12)}, AWS ${money(yearly ? totals.aws * 12 + sy + 25 : totals.aws + sy / 12)}${yearly ? ' (including the one-time Google fee)' : ''}.</p>`;
+  const diff = totals.aws - totals.supa;
+  $('compare').innerHTML = `<b>How they compare</b>
+    <ul><li>${diff >= 0 ? 'Supabase' : 'AWS'} costs ${money(Math.abs(diff) * k)} less ${yearly ? 'a year' : 'a month'} at this size.</li>
+    <li>Supabase includes accounts, database, files, live updates and functions in one plan, with room to grow to 100,000 users before usage charges start.</li>
+    <li>On AWS the biggest single cost is the NAT gateway, a fixed charge whatever the number of users.</li>
+    <li>The app runs on Supabase today; staying there needs no rebuild.</li></ul>`;
+}
+$('per-month').onclick = () => { yearly = false; $('per-month').setAttribute('aria-pressed', 'true'); $('per-year').setAttribute('aria-pressed', 'false'); drawCosts(); };
+$('per-year').onclick = () => { yearly = true; $('per-year').setAttribute('aria-pressed', 'true'); $('per-month').setAttribute('aria-pressed', 'false'); drawCosts(); };
+$('upgrades').onchange = drawCosts;
+$('assume').innerHTML = ASSUME.map((a) => `<li>${esc(a)}</li>`).join('');
+drawCosts();
+</script>
+</body>
+</html>

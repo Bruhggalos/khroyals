@@ -33,6 +33,8 @@ jobs:
           CI: 1
       # Deep links (e.g. /khroyals/page/admissions) fall back to the app shell.
       - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+      # The demo overview (features and running costs): on the site, not linked from the app.
+      - run: cp -r overview dist/overview
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
