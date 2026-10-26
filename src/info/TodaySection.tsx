@@ -1,6 +1,6 @@
 /**
  * One day on the Planner tab: whether there's school, the uniform to wear (with boys' and
- * girls' photos, placeholders until the school adds them), assignments, a card for each
+ * girls' pictures of the approved pieces), assignments, a card for each
  * of a parent's children, and the day's school events, activities, volunteer sign-ups
  * and car line hours.
  */
@@ -13,7 +13,7 @@ import { C, Card, P, s } from '../ui';
 import { AssignmentsCard } from './AssignmentsCard';
 import type { DayPlan, Kid, Row } from './plan';
 import { UNIFORM_GUIDE, type Uniform } from './today';
-import { UNIFORM_IMAGES } from './uniformImages';
+import { UNIFORM_IMAGES, UNIFORM_STORE } from './uniformImages';
 
 const TONES = { accent: C.accent, muted: C.muted, green: '#15803D' };
 /** "today", "tomorrow", "on Monday": the day's label inside a sentence. */
@@ -109,7 +109,10 @@ function UniformCard({ u }: { u: Uniform }) {
           <Text style={{ flex: 1, color: C.ink }}>{n}</Text>
         </View>
       ))}
-      <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="link" onPress={() => Linking.openURL(UNIFORM_GUIDE)}>Uniform Guide ›</Text>
+      <View style={[s.row, { gap: 20, flexWrap: 'wrap' }]}>
+        <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="link" onPress={() => Linking.openURL(UNIFORM_GUIDE)}>Uniform Guide ›</Text>
+        <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="link" onPress={() => Linking.openURL(UNIFORM_STORE)}>Shop at French Toast ›</Text>
+      </View>
     </Card>
   );
 }
@@ -138,7 +141,11 @@ function Variant({ label, photo, lines }: { label: string; photo: React.Componen
   return (
     <View style={{ flex: 1, gap: 8 }}>
       {photo ? (
-        <Image source={photo} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, backgroundColor: C.bg }} resizeMode="contain" accessibilityLabel={`${label}' uniform`} />
+        // A square frame with the picture filling it (an Image sized by aspectRatio alone stretches on the web).
+        <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: C.line }}>
+          <Image source={photo} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
+            resizeMode="contain" accessibilityLabel={`${label}' uniform`} />
+        </View>
       ) : (
         <View accessible accessibilityLabel={`${label}' uniform photo coming soon`}
           style={{ width: '100%', aspectRatio: 1, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line,
