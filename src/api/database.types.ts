@@ -412,28 +412,34 @@ export type Database = {
       }
       gallery_albums: {
         Row: {
+          category_id: string | null
           created_at: string
           created_by: string | null
           description: string
           id: string
           taken_on: string
           title: string
+          visibility: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
           id?: string
           taken_on?: string
           title: string
+          visibility?: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
           id?: string
           taken_on?: string
           title?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -444,6 +450,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gallery_categories: {
+        Row: { icon: string; id: string; name: string; position: number }
+        Insert: { icon?: string; id?: string; name: string; position?: number }
+        Update: { icon?: string; id?: string; name?: string; position?: number }
+        Relationships: []
       }
       gallery_photos: {
         Row: {
@@ -3114,9 +3126,11 @@ export type Database = {
       gallery_add_photos: { Args: { p_album: string; p_photos: Json }; Returns: number }
       gallery_album_delete: { Args: { p_album: string }; Returns: string[] }
       gallery_album_save: {
-        Args: { p_description: string; p_id: string | null; p_notify?: boolean; p_taken_on: string; p_title: string }
+        Args: { p_category?: string; p_description: string; p_id: string | null; p_notify?: boolean; p_taken_on: string; p_title: string; p_visibility?: string }
         Returns: string
       }
+      gallery_category_delete: { Args: { p_id: string; p_move_to: string }; Returns: undefined }
+      gallery_category_save: { Args: { p_icon?: string; p_id: string | null; p_name: string; p_position?: number }; Returns: string }
       gallery_photo_delete: { Args: { p_photo: string }; Returns: string }
       group_abilities: { Args: { p_group: string }; Returns: Json }
       group_post_stats: {

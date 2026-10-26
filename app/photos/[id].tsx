@@ -7,10 +7,11 @@ import { Alert, Image, Modal, Platform, Pressable, ScrollView, Text, useWindowDi
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, isSchoolStaff, me, myAccess, session,
-  type GalleryAlbum, type GalleryPhoto,
+  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, isSchoolStaff, listCategories, me, myAccess, saveAlbum, session,
+  type GalleryAlbum, type GalleryCategory, type GalleryPhoto,
 } from '../../src/api/connect';
 import { albumDate } from '../../src/gallery/AlbumCard';
+import { AlbumForm } from '../../src/gallery/AlbumForm';
 import { pickGalleryPhotos } from '../../src/photos';
 import { Button, C, Card, Loading, P, s } from '../../src/ui';
 
@@ -24,6 +25,9 @@ export default function Album() {
   const [data, setData] = useState<{ album: GalleryAlbum; photos: GalleryPhoto[] } | null | undefined>(undefined);
   const [staff, setStaff] = useState(false);
   const [manage, setManage] = useState(false);
+  const [canNotify, setCanNotify] = useState(false);
+  const [categories, setCategories] = useState<GalleryCategory[]>([]);
+  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [upload, setUpload] = useState<{ done: number; of: number } | null>(null);
   const { width } = useWindowDimensions();
@@ -32,8 +36,14 @@ export default function Album() {
     try {
       const p = await session();
       setStaff(isSchoolStaff(p));
-      if (isSchoolStaff(p)) setManage(!!(await myAccess().catch(() => null))?.permissions.includes('gallery.manage'));
-      setData(await getAlbum(id));
+      if (isSchoolStaff(p)) {
+        const perms = (await myAccess().catch(() => null))?.permissions ?? [];
+        setManage(perms.includes('gallery.manage'));
+        setCanNotify(perms.includes('push.send'));
+      }
+      const [album, cats] = await Promise.all([getAlbum(id), listCategories()]);
+      setCategories(cats);
+      setData(album);
     } catch (e) {
       Alert.alert('Album didn\'t load', errorText(e));
       setData(null);
@@ -60,6 +70,11 @@ export default function Album() {
   const { album, photos } = data;
   const mine = album.createdBy === me()?.id;
   const canRemove = (ph: GalleryPhoto) => staff && (ph.createdBy === me()?.id || mine || manage);
+  const cat = categories.find((c) => c.id === album.categoryId);
+  const showToEveryone = () => saveAlbum({
+    id: album.id, title: album.title, description: album.description, takenOn: album.takenOn,
+    categoryId: album.categoryId ?? categories[0]?.id ?? '', visibility: 'everyone',
+  }).then(load).catch((e) => Alert.alert('Not changed', errorText(e)));
   const cols = width > 900 ? 5 : width > 600 ? 4 : 3;
   const size = (Math.min(width, 1100) - 32 - (cols - 1) * 4) / cols;
   const shown = open != null ? photos[open] : null;
@@ -67,11 +82,28 @@ export default function Album() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.pad, { gap: 12 }]}>
       {header}
-      <View style={{ gap: 2 }}>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{album.title}</Text>
-        <P muted>{albumDate(album.takenOn)} · {photos.length} photo{photos.length === 1 ? '' : 's'}</P>
-        {!!album.description && <P>{album.description}</P>}
-      </View>
+      {editing ? (
+        <AlbumForm categories={categories} canNotify={canNotify}
+          initial={{ id: album.id, title: album.title, description: album.description, takenOn: album.takenOn, categoryId: album.categoryId, visibility: album.visibility }}
+          onSaved={() => { setEditing(false); load(); }} onCancel={() => setEditing(false)} />
+      ) : (
+        <View style={{ gap: 2 }}>
+          {!!cat && <Text style={{ color: C.accent, fontSize: 12, fontWeight: '800' }}>{`${cat.icon} ${cat.name}`.toUpperCase()}</Text>}
+          <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{album.title}</Text>
+          <P muted>{albumDate(album.takenOn)} · {photos.length} photo{photos.length === 1 ? '' : 's'}</P>
+          {!!album.description && <P>{album.description}</P>}
+        </View>
+      )}
+      {staff && album.visibility === 'staff' && !editing && (
+        <Card style={{ gap: 6, backgroundColor: '#FFFBEB' }}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>🔒 Staff only</Text>
+          <P muted>Families and students can't see this album yet.</P>
+          {(mine || manage) && <Button label="Show to everyone at school" onPress={() => showToEveryone()} />}
+        </Card>
+      )}
+      {staff && (mine || manage) && !editing && (
+        <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="button" onPress={() => setEditing(true)}>Edit album (name, category, who sees it)</Text>
+      )}
       {staff && (upload
         ? <Card><P>Uploading {upload.done} of {upload.of}…</P></Card>
         : <Button label="+ Add photos" onPress={addPhotos} />)}

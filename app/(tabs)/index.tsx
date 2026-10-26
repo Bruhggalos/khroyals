@@ -143,7 +143,7 @@ function useLatestPhotos(person: Person | null) {
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
   const ok = !!person && !person.pending;
   useFocusEffect(useCallback(() => {
-    if (ok) listAlbums(6).then(setAlbums).catch(() => {}); else setAlbums([]);
+    if (ok) listAlbums({ limit: 6 }).then(setAlbums).catch(() => {}); else setAlbums([]);
   }, [ok]));
   return albums;
 }

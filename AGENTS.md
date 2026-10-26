@@ -142,7 +142,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`gallery_album_save`, `gallery_add_photos`; files go in their own `<uid>/` folder, a 1600 px JPEG
   plus a `_t.jpg` 400 px thumbnail made on the phone). The poster, the album's creator or
   `gallery.manage` remove; only `push.send` holders can notify everyone about an album. Apps → Photos,
-  and Latest Photos on the Planner.
+  and Latest Photos on the Planner. Albums have a category (`gallery_categories`, kept by
+  `gallery.manage`) and a visibility: `everyone` or `staff`; `app.sees_album` applies it to albums,
+  photos **and** the storage files (thumbnails `_t.jpg` follow their photo). Search is by album name,
+  description, category and photo captions.
 - **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
   (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
   browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`

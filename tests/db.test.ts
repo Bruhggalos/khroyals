@@ -2216,18 +2216,20 @@ test('student logins: parents (or the office) give a child a login with their em
 });
 
 test('photo gallery: staff post albums everyone approved can see; only the poster, album creator or gallery.manage remove', async () => {
+  await asSuper();
+  const events = (await one(`select id from gallery_categories where name = 'Events'`)).id;
   await as('u-eng');
-  const album = (await one(`select gallery_album_save(null, 'Fall Fest 2026', 'Bounce houses and face painting', '2026-10-30') as id`)).id;
+  const album = (await one(`select gallery_album_save(null, 'Fall Fest 2026', 'Bounce houses and face painting', '2026-10-30', false, '${events}') as id`)).id;
   const me = (await one(`select auth.uid()::text as u`)).u;
   assert.equal((await one(`select gallery_add_photos('${album}', '[{"path":"${me}/a.jpg","width":1600,"height":1200,"caption":"Dunk tank"},{"path":"${me}/b.jpg","width":1200,"height":1600}]') as n`)).n, 2);
   await rejects(`select gallery_add_photos('${album}', '[{"path":"someone-else/c.jpg","width":1,"height":1}]')`, /own folder/);
-  await rejects(`select gallery_album_save(null, 'x', '', null, true)`, /permission/);  // telling everyone needs push.send
+  await rejects(`select gallery_album_save(null, 'x', '', null, true, '${events}')`, /permission/);  // telling everyone needs push.send
 
   // Everyone approved sees it: parents, students, family; not people still waiting for approval.
   for (const u of ['u-p01', 'u-s01']) {
     await as(u);
     assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}'`)).length, 2, u);
-    await rejects(`select gallery_album_save(null, 'Mine', '', null)`, /Only staff/);
+    await rejects(`select gallery_album_save(null, 'Mine', '', null, false, '${events}')`, /Only staff/);
     await rejects(`select gallery_add_photos('${album}', '[]')`, /Only staff/);
   }
   await rejects(`insert into gallery_albums (title) values ('x')`, /permission denied/);
@@ -2240,11 +2242,56 @@ test('photo gallery: staff post albums everyone approved can see; only the poste
   await as('u-eng');
   assert.equal((await one(`select gallery_photo_delete('${photo}') as p`)).p, `${me}/a.jpg`);
   await as('u-ap', true);
-  const news = (await one(`select gallery_album_save('${album}', 'Fall Fest 2026', 'Updated', '2026-10-30', true) as id`)).id;
+  const news = (await one(`select gallery_album_save('${album}', 'Fall Fest 2026', 'Updated', '2026-10-30', true, '${events}') as id`)).id;
   assert.equal(news, album);
   await asSuper();
   assert.equal((await one(`select data->>'albumId' as a from notifications where data ? 'albumId' order by created_at desc limit 1`)).a, album);
   await as('u-ap', true);
   assert.deepEqual((await one(`select gallery_album_delete('${album}') as p`)).p, [`${me}/b.jpg`]);
   assert.equal((await rows(`select 1 from gallery_albums where id = '${album}'`)).length, 0);
+});
+
+test('photo gallery: categories, and staff-only albums hidden (files too) until shown to everyone', async () => {
+  await asSuper();
+  const sports = (await one(`select id from gallery_categories where name = 'Sports'`)).id;
+  await as('u-eng');
+  await rejects(`select gallery_album_save(null, 'Volleyball', '', '2026-10-20')`, /Pick a category/);
+  const album = (await one(`select gallery_album_save(null, 'Volleyball senior night', '', '2026-10-20', false, '${sports}', 'staff') as id`)).id;
+  const me = (await one(`select auth.uid()::text as u`)).u;
+  await one(`select gallery_add_photos('${album}', '[{"path":"${me}/v.jpg","width":10,"height":10,"caption":"Final point"}]')`);
+  await asSuper();
+  await db.exec(`insert into storage.objects (bucket_id, name, owner) values ('gallery', '${me}/v.jpg', '${me}'), ('gallery', '${me}/v_t.jpg', '${me}')`);
+
+  // Staff only: other staff see it; parents and students see nothing, not even the files.
+  await as('u-sci');
+  assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}'`)).length, 1);
+  for (const u of ['u-p01', 'u-s01']) {
+    await as(u);
+    assert.equal((await rows(`select 1 from gallery_albums where id = '${album}'`)).length, 0, u);
+    assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}'`)).length, 0, u);
+    assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'gallery' and name like '${me}/v%'`)).length, 0, u);
+  }
+  await as('u-ap', true);
+  await rejects(`select gallery_album_save('${album}', 'Volleyball senior night', '', '2026-10-20', true, '${sports}', 'staff')`, /before letting everyone know/);
+
+  // Shown to everyone: parents see the album, the photo and both files.
+  await as('u-eng');
+  await one(`select gallery_album_save('${album}', 'Volleyball senior night', '', '2026-10-20', false, '${sports}', 'everyone')`);
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}' and caption ilike '%final%'`)).length, 1);
+  assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'gallery' and name like '${me}/v%'`)).length, 2);
+  assert.ok((await rows(`select name from gallery_categories`)).length >= 8);
+
+  // Categories: only gallery.manage adds or removes; removing one moves its albums.
+  await rejects(`select gallery_category_save(null, 'Robotics')`, /permission/);
+  await as('u-eng');
+  await rejects(`select gallery_category_save(null, 'Robotics')`, /permission/);
+  await as('u-ap', true);
+  const robotics = (await one(`select gallery_category_save(null, 'Robotics', '🤖') as id`)).id;
+  await rejects(`select gallery_category_save(null, 'robotics')`, /already/);
+  await one(`select gallery_album_save('${album}', 'Volleyball senior night', '', '2026-10-20', false, '${robotics}', 'everyone')`);
+  await rejects(`select gallery_category_delete('${robotics}', '${robotics}')`, /move to/);
+  await one(`select gallery_category_delete('${robotics}', '${sports}')`);
+  assert.equal((await one(`select category_id from gallery_albums where id = '${album}'`)).category_id, sports);
+  await one(`select gallery_album_delete('${album}')`);
 });
