@@ -1,5 +1,5 @@
 /** One Royal News issue: its sections, items (with bold text and links) and pictures. */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Linking, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getNewsletter, issueDate, type NewsBlock, type Span } from '../../src/api/connect';
@@ -57,10 +57,12 @@ function Paragraph({ spans }: { spans: Span[] }) {
 /** A picture at its own shape (tap to open it full size). */
 function Picture({ src }: { src: string }) {
   const [ratio, setRatio] = useState(4 / 3);
+  // The picture's real shape (the web doesn't report it when it loads).
+  useEffect(() => { Image.getSize(src, (w, h) => { if (w && h) setRatio(w / h); }, () => {}); }, [src]);
   return (
     <Card style={{ padding: 0, overflow: 'hidden' }} onPress={() => Linking.openURL(src)}>
       <Image source={{ uri: src }} style={{ width: '100%', aspectRatio: ratio }} resizeMode="contain" accessibilityLabel="Newsletter picture"
-        onLoad={(e) => { const { width, height } = e.nativeEvent.source ?? {}; if (width && height) setRatio(width / height); }} />
+        />
     </Card>
   );
 }
