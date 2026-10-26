@@ -186,6 +186,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
 - **Every screen has a way back.** `app/_layout.tsx` sets `unstable_settings.initialRouteName
   = '(tabs)'`, so a screen opened straight from a link (khroyals://…, a web address, a
   notification that starts the app) still has the tabs underneath and a back button. Keep it.
+- **Long reading screens** (Royal News issues, news articles, website pages) use `ReadingScroll`
+  (`src/Reading.tsx`): a floating Top button once scrolled down and a Done button at the end, so
+  nobody has to scroll back up to leave. Use it for any new screen people read top to bottom.
 - **Light screens have a thin red edge line** (`src/ScreenEdge.tsx`): under the blue
   header, down the sides and along the bottom of the phone. Both navigators add it with
   `screenLayout={edgeLayout(…)}` and the tab bar draws its part (`tabBarBackground`), so

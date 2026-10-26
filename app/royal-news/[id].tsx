@@ -1,8 +1,9 @@
 /** One Royal News issue: its sections, items (with bold text and links) and pictures. */
 import { useEffect, useState } from 'react';
-import { Image, Linking, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { getNewsletter, issueDate, type NewsBlock, type Span } from '../../src/api/connect';
+import { ReadingScroll } from '../../src/Reading';
 import { C, Card, Loading, P, s, useLoad } from '../../src/ui';
 
 export default function Issue() {
@@ -15,7 +16,7 @@ export default function Issue() {
   if (!issue) return <View style={[s.screen, s.pad]}>{header}<P>That issue isn't here anymore.</P></View>;
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={[s.pad, { gap: 12 }]}>
+    <ReadingScroll doneLabel="Back to Royal News" doneHref="/royal-news" contentStyle={{ gap: 12 }}>
       {header}
       <View style={{ alignItems: 'center', gap: 2, paddingVertical: 6 }}>
         <Text style={{ fontSize: 28, fontWeight: '900', color: C.primary }} accessibilityRole="header">{issue.title}</Text>
@@ -24,7 +25,7 @@ export default function Issue() {
       {issue.blocks.map((b, i) => <Block key={i} b={b} />)}
       <Text style={{ color: C.primary, fontWeight: '700', textAlign: 'center', marginTop: 8 }} accessibilityRole="link"
         onPress={() => Linking.openURL(issue.sourceUrl)}>Open the original newsletter ›</Text>
-    </ScrollView>
+    </ReadingScroll>
   );
 }
 
