@@ -3,6 +3,7 @@ import appJson from '../../app.json';
 import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import { live, run, sb } from './client';
+import { askForCode } from './retryFetch';
 import { session } from './session';
 
 /** Email a 6-digit sign-in code (creates the account on first use; admins approve new people). */
@@ -15,14 +16,14 @@ export class NoAccountError extends Error {}
  * code to confirm the address.
  */
 export async function sendEmailCode(email: string, opts: { create: boolean; firstName?: string; lastName?: string }) {
-  const { error } = await sb().auth.signInWithOtp({
+  const error = await askForCode(() => sb().auth.signInWithOtp({
     email: email.trim().toLowerCase(),
     options: {
       shouldCreateUser: opts.create,
       emailRedirectTo: authRedirectUrl(),
       data: opts.create ? { first_name: opts.firstName?.trim() ?? '', last_name: opts.lastName?.trim() ?? '' } : undefined,
     },
-  });
+  }));
   if (!error) return;
   if (!opts.create && /signups? not allowed|user not found/i.test(error.message)) throw new NoAccountError('No account uses this email yet.');
   if (/rate limit|too many/i.test(error.message)) throw new Error('Too many codes were sent recently. Wait a few minutes and try again.');

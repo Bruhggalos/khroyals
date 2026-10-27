@@ -5,9 +5,10 @@
  * again: table reads (GET/HEAD), the database functions in READ_ONLY_RPCS (declared
  * STABLE, which Postgres won't let write; tests/retry-fetch.test.ts checks), and
  * refreshing the sign-in (Supabase accepts the same refresh token again for a few
- * seconds). Answers from the server, errors included, are never retried. No app
- * imports, so tests run it.
+ * seconds). Answers from the server, errors included, are never retried. Sign-in codes
+ * have their own rule (askForCode). No app imports, so tests run it.
  */
+import { isNetworkError } from './errors';
 
 /** The app's read-only database functions (all STABLE in supabase/migrations). */
 export const READ_ONLY_RPCS = new Set([
@@ -45,4 +46,24 @@ export function retryingFetch(base: typeof fetch, waits = [400, 1200], wait = sl
       }
     }
   };
+}
+
+/** Supabase's answer when that email was sent a code less than a minute ago. */
+export const codeAlreadySent = (message: string) => /only request this after/i.test(message);
+
+type CodeError = { message: string };
+
+/**
+ * Ask for an emailed sign-in code, asking again (after the same waits as reads) when the
+ * connection drops. A dropped request usually never reached the server; if it did, Supabase
+ * refuses another code for that email within a minute, so nobody gets two emails and the code
+ * already sent is the one to enter. Returns Supabase's error, or null once a code is on its way.
+ */
+export async function askForCode(ask: () => Promise<{ error: CodeError | null }>, waits = [400, 1200], wait = sleep) {
+  for (let i = 0; ; i++) {
+    const { error } = await ask().catch((e: CodeError) => ({ error: e }));
+    if (!error || codeAlreadySent(error.message)) return null;
+    if (!isNetworkError(error) || i >= waits.length) return error;
+    await wait(waits[i]);
+  }
 }

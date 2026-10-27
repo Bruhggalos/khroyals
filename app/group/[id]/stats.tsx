@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { groupPostStats, type GroupPostStat } from '../../../src/api/connect';
+import { errorText, groupPostStats, type GroupPostStat } from '../../../src/api/connect';
 import { Button, C, Card, Loading, P, s } from '../../../src/ui';
 import { Tile, pct } from '../../../src/comms/StatTile';
 
@@ -11,7 +11,7 @@ export default function GroupStats() {
   const [rows, setRows] = useState<GroupPostStat[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const load = useCallback(() => groupPostStats(id).then((r) => { setRows(r); setError(null); }).catch((e) => setError(e.message)), [id]);
+  const load = useCallback(() => groupPostStats(id).then((r) => { setRows(r); setError(null); }).catch((e) => setError(errorText(e))), [id]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const header = <Stack.Screen options={{ title: 'Group stats' }} />;

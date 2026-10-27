@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { READ_ONLY_RPCS, isReadOnly, retryingFetch } from '../src/api/retryFetch';
+import { READ_ONLY_RPCS, askForCode, codeAlreadySent, isReadOnly, retryingFetch } from '../src/api/retryFetch';
 import { errorText, isNetworkError } from '../src/api/errors';
 
 const API = 'https://x.supabase.co';
@@ -68,9 +68,41 @@ test('every function retried is STABLE in the migrations, so it cannot change da
   for (const f of ['carline_today', 'carline_board', 'carline_config', 'my_pickup_children']) assert.ok(READ_ONLY_RPCS.has(f), f);
 });
 
+test('asking for a sign-in code rides out a dropped connection without sending two', async () => {
+  const lost = { message: 'fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)' };
+  /** Supabase's answers in turn (null = code sent); counts the tries. */
+  const answers = (...list: ({ message: string } | null)[]) => {
+    let tries = 0;
+    return { ask: async () => ({ error: list[Math.min(tries++, list.length - 1)] }), tries: () => tries };
+  };
+
+  const ok = answers(lost, null);
+  assert.equal(await askForCode(ok.ask, [400, 1200], noWait), null);
+  assert.equal(ok.tries(), 2, 'asked again after the drop');
+
+  // The dropped request got there after all: Supabase refuses a second code, and the first one counts.
+  const arrived = answers(lost, { message: 'For security purposes, you can only request this after 59 seconds.' });
+  assert.equal(await askForCode(arrived.ask, [400, 1200], noWait), null);
+  assert.equal(arrived.tries(), 2);
+
+  const thrown = { tries: 0, ask: async () => { if (thrown.tries++ === 0) throw dropped(); return { error: null }; } };
+  assert.equal(await askForCode(thrown.ask, [400, 1200], noWait), null);
+
+  const refused = answers({ message: 'Signups not allowed for otp' });
+  assert.equal((await askForCode(refused.ask, [400, 1200], noWait))?.message, 'Signups not allowed for otp');
+  assert.equal(refused.tries(), 1, "the server's answer is never asked again");
+
+  const down = answers(lost);
+  assert.equal(await askForCode(down.ask, [400, 1200], noWait), lost);
+  assert.equal(down.tries(), 3, 'then it gives up');
+
+  assert.equal(codeAlreadySent('email rate limit exceeded'), false, 'the hourly email limit is a real refusal');
+});
+
 test('a dropped connection gets a plain message; other errors keep theirs', () => {
   assert.equal(isNetworkError(dropped()), true);
   assert.equal(isNetworkError(new TypeError('Network request failed')), true);
+  assert.equal(isNetworkError(new TypeError('Failed to fetch')), true, 'web browsers');
   assert.match(errorText(dropped()), /Couldn't reach the school's server/);
   assert.equal(errorText(new Error('You can check in from the pickup spot.')), 'You can check in from the pickup spot.');
 });

@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { router } from 'expo-router';
-import { completeSignInFromUrl, session } from '../src/api/connect';
+import { completeSignInFromUrl, errorText, session } from '../src/api/connect';
 import { Button, Loading, P, s } from '../src/ui';
 
 export default function AuthLanding() {
@@ -15,7 +15,7 @@ export default function AuthLanding() {
     const href = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : null;
     completeSignInFromUrl(href)
       .then(async () => { await session(); router.replace('/connect'); })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(errorText(e)));
   }, []);
   if (!error) return <Loading />;
   return (

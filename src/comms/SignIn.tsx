@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
-import { NoAccountError, sendEmailCode, verifyEmailCode } from '../api/connect';
+import { NoAccountError, errorText, sendEmailCode, verifyEmailCode } from '../api/connect';
 import { Button, C, Card, Field, H, P, s } from '../ui';
 
 type Step = 'login' | 'signup' | 'code';
@@ -48,13 +48,13 @@ export function SignIn({ onDone }: { onDone: () => void }) {
       if (e instanceof NoAccountError) {
         setStep('signup');
         setNotice(`There's no account for ${email.trim()} yet. Add your name to create one.`);
-      } else setError(e.message);
+      } else setError(errorText(e));
     } finally { setBusy(false); }
   };
 
   const verify = async () => {
     setBusy(true); setError(null);
-    try { await verifyEmailCode(email, code); onDone(); } catch (e: any) { setError(e.message); } finally { setBusy(false); }
+    try { await verifyEmailCode(email, code); onDone(); } catch (e: any) { setError(errorText(e)); } finally { setBusy(false); }
   };
 
   const switchTo = (next: 'login' | 'signup') => { setStep(next); setNotice(null); setError(null); };

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ROLE_LABELS, alertStatus, answerAlert, type AlertAnswer, type AlertStatusRow, type CriticalAlert } from '../api/connect';
+import { ROLE_LABELS, alertStatus, answerAlert, errorText, type AlertAnswer, type AlertStatusRow, type CriticalAlert } from '../api/connect';
 import { clock } from '../carline/time';
 import { C, P, PLACEHOLDER, s } from '../ui';
 import { rollCall, type RollCallTab } from './rollCall';
@@ -85,7 +85,7 @@ export function RollCall({ alertId, tick }: { alertId: string; tick: number }) {
   const [rows, setRows] = useState<AlertStatusRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<RollCallTab | null>(null);
-  useEffect(() => { alertStatus(alertId).then((r) => { setRows(r); setError(null); }).catch((e) => setError(e.message)); }, [alertId, tick]);
+  useEffect(() => { alertStatus(alertId).then((r) => { setRows(r); setError(null); }).catch((e) => setError(errorText(e))); }, [alertId, tick]);
   if (error) return <P muted>{error}</P>;
   if (!rows) return <P muted>Loading who’s answered…</P>;
 

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { acceptMarketTerms, live, marketTerms, session, type MarketTerms, type Person } from '../api/connect';
+import { acceptMarketTerms, errorText, live, marketTerms, session, type MarketTerms, type Person } from '../api/connect';
 import { Button, Card, H, Loading, P, s } from '../ui';
 
 export function MarketGate({ title, children }: { title: string; children: (me: Person) => React.ReactNode }) {
@@ -49,7 +49,7 @@ export function MarketGate({ title, children }: { title: string; children: (me: 
         <P>{terms.text}</P>
       </Card>
       <Button label="I agree" disabled={busy}
-        onPress={() => { setBusy(true); acceptMarketTerms(terms.version).then(load).catch((e) => setError(e.message)).finally(() => setBusy(false)); }} />
+        onPress={() => { setBusy(true); acceptMarketTerms(terms.version).then(load).catch((e) => setError(errorText(e))).finally(() => setBusy(false)); }} />
       <Button kind="ghost" label="Not now" onPress={() => router.back()} />
     </ScrollView>
   );

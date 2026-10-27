@@ -177,8 +177,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Keep it that way — new write paths need a function + a DB test.
 - **Reads ride out a dropped connection** (`src/api/retryFetch.ts`): table reads and the
   functions in `READ_ONLY_RPCS` are sent again when no answer came back; writes never
-  are. Only list `STABLE` functions there (`tests/retry-fetch.test.ts` checks). Show
-  failures with `errorText()` so a dropped connection reads as one.
+  are. Only list `STABLE` functions there (`tests/retry-fetch.test.ts` checks). Asking
+  for a sign-in code is asked again too (`askForCode`): Supabase refuses a second code for
+  the same email within a minute, and that refusal counts as sent. Show failures with
+  `errorText()` so a dropped connection reads as one.
 - Admin powers only count in an authenticator-verified session (`aal2`).
   Tests simulate this with `as(user, true)`.
 - **React is pinned to 19.2.3** to match `react-dom` for the web build. Use

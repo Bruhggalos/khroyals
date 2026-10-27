@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { postStats, type PostStats } from '../../src/api/connect';
+import { errorText, postStats, type PostStats } from '../../src/api/connect';
 import { Tile, pct } from '../../src/comms/StatTile';
 import { Button, C, Card, H, Loading, P, s } from '../../src/ui';
 
@@ -17,7 +17,7 @@ export default function PostStatsScreen() {
   const [st, setSt] = useState<PostStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const load = useCallback(() => postStats(id).then((x) => { setSt(x); setError(null); }).catch((e) => setError(e.message)), [id]);
+  const load = useCallback(() => postStats(id).then((x) => { setSt(x); setError(null); }).catch((e) => setError(errorText(e))), [id]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const header = <Stack.Screen options={{ title: 'Post stats' }} />;
