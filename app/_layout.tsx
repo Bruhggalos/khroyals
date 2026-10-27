@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
 import { AlertTakeover } from '../src/alerts/AlertTakeover';
@@ -33,6 +33,8 @@ function usePush() {
 
 export default function Root() {
   usePush();
+  // The car line board is for a big screen: dark and the full width of the monitor.
+  const board = useSegments()[0] === 'carline-board';
   const stack = (
     <Stack screenOptions={{
       headerStyle: { backgroundColor: C.primary }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: '700' },
@@ -41,8 +43,8 @@ export default function Root() {
       // The page color around the centered content column on iPads and tablets.
       contentStyle: { backgroundColor: C.bg },
     }}
-      // The red edge line under the header; the tabs draw their own, and the video player is black.
-      screenLayout={edgeLayout({ bottom: true, skip: ['(tabs)', 'video'] })}>
+      // The red edge line under the header; the tabs draw their own, and the video player and car line board are dark.
+      screenLayout={edgeLayout({ bottom: true, skip: ['(tabs)', 'video', 'carline-board'] })}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ title: 'My profile' }} />
     </Stack>
@@ -51,8 +53,8 @@ export default function Root() {
     <>
       <StatusBar style="light" />
       {Platform.OS === 'web'
-        // On a computer the app (and admin portal) sits in a readable centered column.
-        ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: 960, alignSelf: 'center' }}>{stack}</View></View>
+        // On a computer the app (and admin portal) sits in a readable centered column; the car line board fills the screen.
+        ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: board ? undefined : 960, alignSelf: 'center' }}>{stack}</View></View>
         : stack}
       {/* Teachers and staff: an active critical alert covers the app until they answer it. */}
       <AlertTakeover />

@@ -53,7 +53,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   checks the radius — never add a check-in path without it). All staff see the board
   (`carline_board`) with pickup numbers (`pickup_numbers`: staff + the child's parents
   only). **Car line leads** (`carline_duty`) and people.family set the spot, radius,
-  hours and "open now" (`carline_set_config`, `carline_open_now`).
+  hours and "open now" (`carline_set_config`, `carline_open_now`). The **big-screen board**
+  (`app/carline-board.tsx`, "Big screen" on the staff view; order in `src/carline/board.ts`) is the
+  same `carline_board` for a TV: waiting cars on top, picked-up rows greyed out below, and yellow
+  ripples from the shield when a new car checks in (`newArrivals`). It's dark and
+  full width on the web (the root layout's `skip` list and column width), so keep it out of both.
 - **Family accounts** (`school_role = 'family'`: grandparents, other relatives) are closed
   by default. They get car line pickup for the children the office links in
   `family_pickups` (never `guardians`), Volunteer, Activities (follow, no sign-ups) and the

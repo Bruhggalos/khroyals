@@ -1,7 +1,8 @@
-/** Staff side of the car line: arrivals appear live with pickup numbers; tap when each child is in the car. The traffic flow map is at the bottom. */
+/** Staff side of the car line: arrivals appear live with pickup numbers; tap when each child is in the car. Big screen opens the board for a TV; the traffic flow map is at the bottom. */
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { carlineConfirm, carlineReopen, type BoardRow } from '../api/connect';
 import { C, Card, P, s } from '../ui';
 import { clock, gradeLabel, minutesSince } from './format';
@@ -12,7 +13,7 @@ import { VehicleIcon } from './VehicleIcon';
 const GREEN = '#15803D';
 
 export function DutyView({ board, onChange }: { board: BoardRow[]; onChange: () => void }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState<string | null>(null);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
 
@@ -27,9 +28,15 @@ export function DutyView({ board, onChange }: { board: BoardRow[]; onChange: () 
     <View style={{ gap: 12 }}>
       <View style={[s.row, { justifyContent: 'space-between' }]}>
         <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{waiting.length} waiting</Text>
-        <View style={s.row}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: GREEN }} />
-          <Text style={{ color: C.muted, fontSize: 13 }}>Live</Text>
+        <View style={[s.row, { gap: 14 }]}>
+          <Pressable onPress={() => router.push('/carline-board')} accessibilityRole="button" hitSlop={8} style={[s.row, { gap: 5 }]}>
+            <Ionicons name="tv-outline" size={18} color={C.primary} />
+            <Text style={{ color: C.primary, fontWeight: '700' }}>Big screen</Text>
+          </Pressable>
+          <View style={s.row}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: GREEN }} />
+            <Text style={{ color: C.muted, fontSize: 13 }}>Live</Text>
+          </View>
         </View>
       </View>
 
