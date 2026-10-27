@@ -108,6 +108,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   (`child_assignments`, for the Planner tab), never the student's own entries or check-offs; Family
   accounts see none. Students' Main Page is the short list in
   `src/appTiles.ts` (`student: false` hides a tile from them).
+- **My calendar** (`personal_events`; `app/my-calendar`): staff only (`app.is_staff()`), and private to its
+  owner. An entry with `sport_event_id` follows that schedule item (`my_calendar` reads its time, place and
+  cancellation live), so never copy schedule details into it. **My students** (`student_events`) shows a
+  teacher the activity items students in the sections they lead are registered for (`app.class_students_in`):
+  names only, never RSVPs. `student_event_plan` with tell notifies those students (with a login) and their
+  parents once, when the item is first added.
 - **Forms** (`forms`, `form_recipients`, `form_responses`; the Forms app): teachers send to the
   class sections they lead, coaches and directors to their activity seasons' registered students
   (`app.can_manage_sport`), and `forms.send` holders to grades or the whole school (`form_send`).

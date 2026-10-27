@@ -4,7 +4,7 @@ import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   canVolunteer, carlineConfig, checkAssignment, childAssignments, isFamily, isSchoolStaff, listAssignments, listSports, listVolunteer,
-  listAlbums, listDressDays, live, me, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
+  listAlbums, listDressDays, live, me, myCalendar, myChildren, myForms, myPickupChildren, mySportSchedule, onAuthChange, session, sportRegistrations, subscribeAssignments,
   type Assignment, type DressDay, type GalleryAlbum, type Person,
 } from '../../src/api/connect';
 import { getCalendar, getNews } from '../../src/api/mockApi';
@@ -135,7 +135,7 @@ function usePerson() {
  * What the two weeks hold for the signed-in person, loaded once: a student's assignments
  * (or a teacher's for their classes); a parent's children with their class assignments,
  * activity sign-ups and forms to sign; activities; volunteer sign-ups; and car line hours for whoever
- * picks children up. Each part loads on its own and is left out if it fails. Reloads
+ * picks children up; and a teacher's or staff member's own calendar. Each part loads on its own and is left out if it fails. Reloads
  * when the screen comes back into view and when assignments change.
  */
 /** The newest photo albums, for signed-in, approved people; again whenever the Planner comes into view. */
@@ -175,11 +175,12 @@ function useInfoData(person: Person | null, today: string) {
       student ? [] : quiet(myPickupChildren(), [] as Person[]),
     ]);
     const seasons = [...new Set(schedule.map((e) => e.seasonId))];
-    const [kidAssignments, forms, registrations, config] = await Promise.all([
+    const [kidAssignments, forms, registrations, config, mine] = await Promise.all([
       kids.length ? quiet(childAssignments(today, addDays(today, 13)), []) : [],
       kids.length ? quiet(myForms(), []) : [],
       kids.length && seasons.length ? quiet(sportRegistrations(seasons), []) : [],
       pickup.length ? quiet(carlineConfig(), null) : null,
+      staff ? quiet(myCalendar(today, addDays(today, 13)), []) : [],
     ]);
     setInfo({
       assigns: student ? 'student' : staff ? 'teacher' : null,
@@ -192,6 +193,7 @@ function useInfoData(person: Person | null, today: string) {
       })),
       opportunities: volunteer.opportunities, signups: volunteer.signups.filter((x) => x.userId === id),
       carline: config ? { start: config.start, end: config.end, openNow: config.line.state === 'open' } : null,
+      myCalendar: mine,
     });
   }, [person, id, student, staff, today]);
   const tracks = !!id && (student || staff);

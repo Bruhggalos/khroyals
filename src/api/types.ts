@@ -283,6 +283,21 @@ export type ChildAssignment = { id: string; studentId: string; rosterId: string;
 
 export type Section = { id: string; name: string; students: number };
 
+/**
+ * On a staff member's own calendar: something they added, or an activity schedule item they
+ * plan to go to (`sportEventId`; its time, place and cancellation follow the schedule).
+ * Times are 24-hour HH:MM in school time.
+ */
+export type MyCalendarItem = {
+  id: string; sportEventId: string | null; sportId: string | null; title: string; date: string;
+  startTime: string | null; endTime: string | null; location: string | null; address: string | null; notes: string; cancelled: boolean;
+};
+
+/** For a teacher: an activity schedule item students in their classes take part in; `planned` = on their calendar. */
+export type StudentEvent = SportEvent & {
+  sportId: string; sportName: string; sportIcon: string; students: { id: string; name: string }[]; planned: boolean;
+};
+
 /** A form question: yes/no, short answer, or one of a few choices. */
 export type FormQuestion = { id: string; kind: 'yes_no' | 'text' | 'choice'; prompt: string; required: boolean; options: string[] };
 /** A parent's signature for one child: agreed or declined, the answers (by question id) and the typed name. */

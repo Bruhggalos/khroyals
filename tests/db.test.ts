@@ -1656,6 +1656,94 @@ test('critical alerts: admins send them to every teacher and staff member, who a
   await db.exec(`update app.settings set value = 'off' where key = 'critical_alerts'`);
 });
 
+test("teachers see their students' activities and keep a calendar of their own", async () => {
+  // `h` o'clock school time, `days` from today.
+  const at = (days: number, h = 16) => `((app.school_today() + ${days})::timestamp + interval '${h} hours') at time zone 'America/Chicago'`;
+  const ava = (await one(`select ${id('u-s01')} as u`)).u as string;
+  // A soccer team with a coach, and Ava (in Jennifer's English 10 – Period 3) registered.
+  await as('u-admin', true);
+  const team = await one(`select * from sport_save(null, 'Girls Soccer', '⚽', 'Fall soccer', 'sports')`);
+  await one(`select sport_set_coach('${team.id}', ${id('u-vbcoach')}, true)`);
+  await as('u-vbcoach');
+  const season = await one(`select * from season_save(null, '${team.id}', 'Fall 2026', app.school_today() - 1, app.school_today() + 40,
+    app.school_today() - 1, app.school_today() + 5)`);
+  await as('u-p01');
+  const reg = await one(`select * from sport_register('${season.id}', '${ava}')`);
+  await as('u-vbcoach');
+  await one(`select * from sport_decide('${reg.id}', true)`);
+  const game = await one(`select * from sport_event_save(null, '${season.id}', 'game', 'vs. Westminster', ${at(2)}, ${at(2, 18)}, 'Royals Field')`);
+  const later = await one(`select * from sport_event_save(null, '${season.id}', 'game', 'vs. Randolph', ${at(80)})`);
+
+  // Jennifer sees Ava's game (not ones past the days asked for); the coach, a parent and Ava see no class students.
+  await as('u-eng');
+  const mine = await rows(`select * from student_events() where sport_id = '${team.id}'`);
+  assert.deepEqual(mine.map((e) => [e.id, e.students, e.planned]), [[game.id, [{ id: ava, name: 'Ava Reyes' }], false]]);
+  assert.equal((await rows(`select 1 from student_events(app.school_today(), app.school_today() + 90) where id = '${later.id}'`)).length, 1);
+  for (const who of ['u-vbcoach', 'u-p01', 'u-s01']) {
+    await as(who);
+    assert.equal((await rows(`select 1 from student_events() where sport_id = '${team.id}'`)).length, 0, who);
+  }
+
+  // Only staff keep a calendar.
+  await as('u-p01');
+  await rejects(`select * from personal_event_save(null, 'Dentist', app.school_today())`, /teachers and staff/);
+  await rejects(`select student_event_plan('${game.id}', true)`, /teachers and staff/);
+  await rejects(`insert into personal_events (owner_id, title, starts_on) values (${id('u-p01')}, 'x', app.school_today())`, /permission denied/);
+
+  // Jennifer puts the game on her calendar and tells Ava: Ava and her mother hear, once.
+  await as('u-eng');
+  assert.equal((await one(`select student_event_plan('${game.id}', true, true) as n`)).n, 1);
+  assert.equal((await one(`select student_event_plan('${game.id}', true, true) as n`)).n, 0, 'already on it: nobody told twice');
+  assert.equal((await one(`select planned from student_events() where id = '${game.id}'`)).planned, true);
+  for (const who of ['u-s01', 'u-p01']) {
+    await as(who);
+    const told = await rows(`select title, body from my_notifications() where data->>'sportId' = '${team.id}' and title like '📣%'`);
+    assert.deepEqual(told.map((n) => n.title), ['📣 Jennifer Taylor is coming!'], who);
+    assert.match(told[0].body, /⚽ Girls Soccer · vs\. Westminster · /);
+  }
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from my_notifications() where title like '📣%'`)).length, 0);
+
+  // Her own events sit beside it, in order; times are checked.
+  await as('u-eng');
+  await rejects(`select * from personal_event_save(null, '  ', app.school_today() + 2)`, /title/);
+  await rejects(`select * from personal_event_save(null, 'Meeting', app.school_today() + 2, '15:00', '14:00')`, /after the start/);
+  await rejects(`select * from personal_event_save(null, 'Meeting', app.school_today() + 2, null, '14:00')`, /after the start/);
+  const mtg = await one(`select * from personal_event_save(null, 'Faculty meeting', app.school_today() + 2, '07:30', '08:15', 'Library')`);
+  await one(`select * from personal_event_save(null, 'Grades due', app.school_today() + 2)`);
+  const cal = await rows(`select * from my_calendar()`);
+  assert.deepEqual(cal.map((c) => [c.title, c.start_time, c.end_time, c.location]), [
+    ['Grades due', null, null, null],
+    ['Faculty meeting', '07:30', '08:15', 'Library'],
+    ['⚽ Girls Soccer · vs. Westminster', '16:00', '18:00', 'Royals Field'],
+  ]);
+  const gameRow = cal.find((c) => c.sport_event_id === game.id);
+  await rejects(`select * from personal_event_save('${gameRow.id}', 'Renamed', app.school_today())`, /your own events/);
+
+  // Nobody else sees it.
+  await as('u-sci');
+  assert.equal((await rows(`select * from my_calendar()`)).length, 0);
+  assert.equal((await rows(`select * from personal_events`)).length, 0);
+  await rejects(`select personal_event_delete('${mtg.id}')`, /isn't on your calendar/);
+  await rejects(`select * from personal_event_save('${mtg.id}', 'Mine now', app.school_today())`, /your own events/);
+
+  // The game follows the schedule: moved and cancelled.
+  await as('u-vbcoach');
+  await one(`select * from sport_event_save('${game.id}', '${season.id}', 'game', 'vs. Westminster', ${at(3, 17)}, null, 'Gym')`);
+  await one(`select * from sport_event_cancel('${game.id}', true)`);
+  await as('u-eng');
+  const moved = (await rows(`select * from my_calendar()`)).find((c) => c.sport_event_id === game.id);
+  assert.deepEqual([moved.start_time, moved.end_time, moved.location, moved.cancelled], ['17:00', null, 'Gym', true]);
+  await rejects(`select student_event_plan('${game.id}', true)`, /cancelled/);
+
+  // Taking it off, and removing her own.
+  await one(`select student_event_plan('${game.id}', false)`);
+  await one(`select personal_event_delete('${mtg.id}')`);
+  assert.deepEqual((await rows(`select title from my_calendar()`)).map((c) => c.title), ['Grades due']);
+  await asSuper();
+  await db.exec(`delete from personal_events; delete from sports where id = '${team.id}'`);
+});
+
 test('activity events: addresses, team photos, and families answer "Are you going?" for coaches to see', async () => {
   const at = (days: number) => `date_trunc('day', now()) + interval '${days} days 16 hours'`;
   const ava = (await one(`select ${id('u-s01')} as u`)).u as string;

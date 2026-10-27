@@ -1208,6 +1208,63 @@ export type Database = {
           },
         ]
       }
+      personal_events: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          location: string | null
+          notes: string
+          owner_id: string
+          sport_event_id: string | null
+          start_time: string | null
+          starts_on: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          notes?: string
+          owner_id: string
+          sport_event_id?: string | null
+          start_time?: string | null
+          starts_on?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          notes?: string
+          owner_id?: string
+          sport_event_id?: string | null
+          start_time?: string | null
+          starts_on?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_events_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_events_sport_event_id_fkey"
+            columns: ["sport_event_id"]
+            isOneToOne: false
+            referencedRelation: "sport_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pickup_authorizations: {
         Row: {
           created_at: string
@@ -3335,6 +3392,22 @@ export type Database = {
       }
       my_access: { Args: never; Returns: Json }
       my_children: { Args: never; Returns: Json }
+      my_calendar: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          address: string
+          cancelled: boolean
+          end_time: string
+          id: string
+          location: string
+          notes: string
+          sport_event_id: string
+          sport_id: string
+          start_time: string
+          starts_on: string
+          title: string
+        }[]
+      }
       my_class_students: {
         Args: never
         Returns: {
@@ -3465,6 +3538,19 @@ export type Database = {
           id: string
           opened: number
         }[]
+      }
+      personal_event_delete: { Args: { p_id: string }; Returns: undefined }
+      personal_event_save: {
+        Args: {
+          p_end?: string
+          p_id: string
+          p_location?: string
+          p_notes?: string
+          p_on: string
+          p_start?: string
+          p_title: string
+        }
+        Returns: Database["public"]["Tables"]["personal_events"]["Row"]
       }
       permission_catalog: {
         Args: never
@@ -3891,6 +3977,31 @@ export type Database = {
         Returns: undefined
       }
       sport_withdraw: { Args: { p_registration: string }; Returns: undefined }
+      student_event_plan: {
+        Args: { p_event: string; p_going: boolean; p_tell?: boolean }
+        Returns: number
+      }
+      student_events: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          address: string
+          cancelled: boolean
+          ends_at: string
+          home: boolean
+          id: string
+          kind: string
+          location: string
+          notes: string
+          planned: boolean
+          season_id: string
+          sport_icon: string
+          sport_id: string
+          sport_name: string
+          starts_at: string
+          students: Json
+          title: string
+        }[]
+      }
       student_login_remove: { Args: { p_student: string }; Returns: undefined }
       student_login_request: { Args: { p_email: string; p_student: string }; Returns: Json }
       student_login_status: { Args: { p_student: string }; Returns: Json }

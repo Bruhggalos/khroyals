@@ -61,7 +61,7 @@ set up) and a private repo. Do the data review before FACTS grades come into the
 | Agreement and ownership | Ben | Not started | Agreement on who owns the code and data, a data-privacy agreement and support terms | Settle first, at approval. |
 | School-owned developer accounts | — | Not started | Apple Developer enrollment as an organization (needs a D-U-N-S number, which can take a couple of weeks) and a Google Play account | Start right away: TestFlight and push notifications depend on it. |
 | Make the repo private | Ben | Not started | — | The repo is public today; fine for a prototype, not once it handles student data. |
-| Student data review (FERPA/COPPA) | — | Not started | Approval of how student data is stored and shown | Gate for the FACTS grades work. Include Ask the Teacher: students and teachers message each other, and parents and admins with Student messages can read it. |
+| Student data review (FERPA/COPPA) | — | Not started | Approval of how student data is stored and shown | Gate for the FACTS grades work. Include Ask the Teacher: students and teachers message each other, and parents and admins with Student messages can read it. Also My students: teachers see which of their class students are signed up for each activity. |
 | FACTS SIS API integration (read-only) | Ben | Not started | A read-only API key from someone with FACTS admin rights (People, Academics, Gradebook: Read; Admissions, Billing: None) | Also needs a vendor subscription key from FACTS. Nightly roster sync (including class sections and their teachers, which Ask the Teacher and Assignments use) plus grades, report cards and schedules in the Student app; keys stay on the server. |
 | Campus map image and places | — | Not started | The school's campus or building map, and the places to mark on it (office, gym, library, car line) | The Campus Map shows the address, front office and car line spot until then; add the map and pins in `src/campus/campus.ts`. |
 | Class sections on live | — | Not started | Each class's teacher and students | Set them up in Admin portal → Classes (or from FACTS). Until then students see no teachers in Ask the Teacher and get no class assignments. |
@@ -171,6 +171,7 @@ Working in the app and on the server today.
 | Student | Ask the Teacher | Students message the teachers of their classes; teachers reply or start a conversation; parents and admins with Student messages can read |
 | Student | Assignments | Teachers assign work to a class; students add their own, sorted overdue / today / coming up, and check them off privately |
 | Student | Campus Map | The school's map with numbered places once it's added; directions and the front office until then |
+| Staff | My calendar | Teachers' and staff's own events beside the activity items they'll go to (moved or cancelled games follow); My students shows their class students' games and performances, and "I'll be there" tells the students and their parents |
 | Admin portal | Classes | Class sections with their teacher and students, for Ask the Teacher and Assignments |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |

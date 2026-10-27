@@ -81,3 +81,23 @@ test("a teacher: what's due in their classes, once they've assigned something", 
   const t = planDay('2026-11-02', TODAY, CAL, { ...NO_DATA, assigns: 'teacher', assignments: [asg('a1', 'Essay', '2026-11-02'), asg('a2', 'Old', '2026-10-01')] });
   assert.deepEqual([t.assignments!.teacher, t.assignments!.overdue, t.assignments!.due.map((a) => a.title)], [true, [], ['Essay']]);
 });
+
+test("a teacher: their own calendar on the day, and a game they'll go to shows once", () => {
+  const item = (id: string, title: string, extra: object = {}) => ({
+    id, sportEventId: null, sportId: null, title, date: '2026-11-02', startTime: null, endTime: null,
+    location: null, address: null, notes: '', cancelled: false, ...extra,
+  });
+  const TEACHER: InfoData = {
+    ...NO_DATA, sports: [sport('vb', 'Volleyball')], seasons: [season('vb-f', 'vb')],
+    schedule: [game('g1', 'vb-f', '2026-11-02T22:00:00Z'), game('g3', 'vb-f', '2026-11-02T23:30:00Z', 'JV game')],
+    myCalendar: [
+      item('m1', 'Faculty meeting', { startTime: '07:30', endTime: '08:15', location: 'Library' }),
+      item('m2', '🏐 Volleyball · Game', { sportEventId: 'g1', sportId: 'vb', startTime: '17:00', cancelled: true }),
+    ],
+  };
+  const mon = planDay('2026-11-02', TODAY, CAL, TEACHER);
+  assert.deepEqual(mon.items.map((r) => r.key), ['my-m1', 'my-m2', 'sport-g3'], 'the planned game once, as My calendar has it');
+  assert.deepEqual(mon.items.slice(0, 2).map((r) => r.detail), ['7:30–8:15 AM · Library', 'Cancelled']);
+  assert.equal(mon.busy, true);
+  assert.equal(planDay('2026-11-03', TODAY, CAL, TEACHER).items.some((r) => r.key.startsWith('my-')), false);
+});

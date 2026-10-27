@@ -6,8 +6,9 @@
  * imports, so tests run it.
  */
 import type { Ionicons } from '@expo/vector-icons';
-import type { Assignment, ChildAssignment, Opportunity, Signup, Sport, SportEvent, SportRegistration, SportSeason } from '../api/types';
+import type { Assignment, ChildAssignment, MyCalendarItem, Opportunity, Signup, Sport, SportEvent, SportRegistration, SportSeason } from '../api/types';
 import { clock, hoursLabel } from '../carline/time';
+import { itemTime } from '../myCalendar/when';
 import { assignmentsOn, dayLabel, dayOf, eventsToday, noSchool, uniformFor, type DressTheme, type Uniform } from './today';
 
 type Icon = React.ComponentProps<typeof Ionicons>['name'];
@@ -33,6 +34,8 @@ export type InfoData = {
   signups: Signup[];
   /** Pickup hours, for whoever picks children up. */
   carline: { start: string; end: string; openNow: boolean } | null;
+  /** A teacher's or staff member's own calendar (My calendar). */
+  myCalendar?: MyCalendarItem[];
 };
 
 export const NO_DATA: InfoData = {
@@ -89,9 +92,16 @@ export function planDay(day: string, today: string, calendar: CalendarDay[], d: 
     ],
   })).filter((k) => k.rows.length || !dayOff);
 
+  // My calendar: the person's own events, and the activity items they plan to go to (shown once).
+  const mine = (d.myCalendar ?? []).filter((i) => i.date === day);
+  const planned = new Set(mine.map((i) => i.sportEventId).filter(Boolean));
   const items: Row[] = [
     ...eventsToday(day, calendar).map((e): Row => ({ key: `cal-${e.id}`, icon: 'calendar-outline', title: e.title, detail: e.category, href: '/calendar' })),
-    ...games.filter((e) => !going(e).some((id) => d.kids.some((k) => k.id === id))).map((e) => activity(e, `sport-${e.id}`)),
+    ...mine.map((i): Row => ({
+      key: `my-${i.id}`, icon: 'person-circle-outline', tone: i.cancelled ? 'muted' : undefined, title: i.title, href: '/my-calendar',
+      detail: i.cancelled ? 'Cancelled' : [itemTime(i.startTime, i.endTime), i.location].filter(Boolean).join(' · '),
+    })),
+    ...games.filter((e) => !planned.has(e.id) && !going(e).some((id) => d.kids.some((k) => k.id === id))).map((e) => activity(e, `sport-${e.id}`)),
   ];
   for (const sgn of d.signups) {
     const o = d.opportunities.find((x) => x.id === sgn.opportunityId);

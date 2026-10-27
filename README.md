@@ -306,6 +306,17 @@ pg_cron). Activities live in the `sports` tables (named before theater was added
 `sports.category` says which kind) and the `app/activities` screens. Without the school
 server the app shows sample activities (`src/sports/sample.ts`).
 
+**My calendar** (teachers, staff and admins: Apps → My Calendar in the Staff view, or
+Calendar → *My calendar*). Two tabs. **My calendar** holds their own events (meetings,
+duties, grades due; `personal_events`, private to them, `personal_event_save` /
+`personal_event_delete`) and the activity schedule items they plan to go to, which follow
+the schedule: a moved or cancelled game moves or shows *Cancelled* there too (`my_calendar`).
+**My students** lists the games, performances and meets that students in the class sections
+they lead are registered for, with which of their students take part (`student_events`;
+never "Are you going?" answers). *I'll be there* puts one on My calendar and tells those
+students (with a login) and their parents that the teacher is coming, once; *Just add it*
+doesn't tell anyone (`student_event_plan`). The Planner tab shows the day's My calendar items.
+
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the
 whole conversation, so they can come back for the answer and follow up. Routers (the

@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, SectionList, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { getCalendar } from '../src/api/mockApi';
-import { deleteEvent, editableCalendars, listEvents, live, myAccess, session, type GroupEvent } from '../src/api/connect';
+import { deleteEvent, editableCalendars, isSchoolStaff, listEvents, live, myAccess, session, type GroupEvent } from '../src/api/connect';
 import { isPastDay, splitPast } from '../src/calendar/past';
 import { PAST_STYLE, PastToggle, usePastToggle } from '../src/calendar/PastToggle';
 import { dateRange } from '../src/site/calendar';
@@ -28,12 +28,13 @@ export default function Calendar() {
   const [canEdit, setCanEdit] = useState<Set<string>>(new Set());
   const [canAdd, setCanAdd] = useState(false);
   const [dressUp, setDressUp] = useState(false);
+  const [staff, setStaff] = useState(false);
   const past = usePastToggle();
 
   const load = useCallback(async () => {
     try {
       if (live) {
-        await session();
+        setStaff(isSchoolStaff(await session()));
         const [evs, cals, access] = await Promise.all([listEvents(), editableCalendars(), myAccess().catch(() => null)]);
         setEvents(evs);
         setDressUp(!!access?.permissions.includes('calendar.school'));
@@ -80,6 +81,7 @@ export default function Calendar() {
             <Text style={{ fontWeight: '800', fontSize: 16, color: C.ink }}>2026–2027 School Calendar</Text>
             <P muted>Important dates from the official calendar{live ? ', plus events from your groups' : ''}. Tap to open the PDF.</P>
           </Card>
+          {staff && <Button kind="ghost" label="🗓️ My calendar and my students' events" onPress={() => router.push('/my-calendar')} />}
           {canAdd && <Button label="+ Add event" onPress={() => router.push('/event/new')} />}
           {dressUp && <Button kind="ghost" label="👕 Dress-up days (Spirit Week)" onPress={() => router.push('/dress-days')} />}
           <PastToggle count={split.past.length} shown={past.shown} onToggle={past.toggle} />
