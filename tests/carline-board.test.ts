@@ -1,7 +1,7 @@
 /** src/carline/board.ts: the big-screen board puts waiting cars on top and picked-up children below. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { boardOrder, boardTextSize, isNew, newArrivals } from '../src/carline/board';
+import { boardOrder, boardTextSize, isNew, newArrivals, splitInitial } from '../src/carline/board';
 
 const row = (id: string, status: 'waiting' | 'picked_up', arrivedAt: string, pickedUpAt: string | null = null) => ({ id, status, arrivedAt, pickedUpAt });
 
@@ -36,6 +36,13 @@ test('only a car the board has not seen yet sets off the ripples', () => {
   assert.deepEqual(newArrivals(seen, undone), [], 'an undone pickup is not a new car');
   const confirmed = first.map((r) => ({ ...r, status: 'picked_up' as const, pickedUpAt: '2026-10-27T20:05:00Z' }));
   assert.deepEqual(newArrivals(seen, confirmed), []);
+});
+
+test("the birthday crown sits on the name's first letter", () => {
+  assert.deepEqual(splitInitial('Avery Johnson'), ['A', 'very Johnson']);
+  assert.deepEqual(splitInitial(' Émile Durand'), ['É', 'mile Durand'], 'accents and stray spaces');
+  assert.deepEqual(splitInitial('J'), ['J', '']);
+  assert.deepEqual(splitInitial(''), ['', '']);
 });
 
 test('new arrivals are marked for a minute, and the text grows with the screen', () => {

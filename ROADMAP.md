@@ -155,7 +155,7 @@ Working in the app and on the server today.
 | Car Line | Parent check-in | Check In with a location check, pickup numbers, saved vehicles, and the traffic flow map with each family’s line (blue for K2–K4, red for K–12th) |
 | Car Line | Automatic check-in | Geofence checks children in on arrival; skips no-school days |
 | Car Line | Duty board | Live board for staff, "Picked up" with Undo, daily pickup record |
-| Car Line | Big-screen board | Staff open it on a TV or monitor (Big screen): every car that checked in today, live, with pickup number, child, vehicle and minutes waiting; yellow ripples spread from the Kingdom Heights shield when a car checks in; picked-up rows grey out and drop below the line |
+| Car Line | Big-screen board | Staff open it on a TV or monitor (Big screen): every car that checked in today, live, with pickup number, child, vehicle and minutes waiting; yellow ripples spread from the Kingdom Heights shield when a car checks in; on a child's birthday a crown hangs off their name and a fanfare (confetti, trumpets, Happy Birthday card) plays when they're announced; picked-up rows grey out and drop below the line |
 | Car Line | Pickup emails | Every parent is emailed who picked the child up, which staff member released them, and when (undo within a minute cancels it) |
 | Car Line | Approved pickup people | Parents (or the office) let another account holder pick a child up, for today, until a date, or until removed; at most one mother and one father per child |
 | Accounts | Duplicate children | One record per child: same name and birthday is refused; likely matches (typos, nicknames, birthday, grade) are shown to the office, which links the parent to the existing child |

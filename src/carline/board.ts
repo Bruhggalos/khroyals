@@ -25,6 +25,15 @@ export function newArrivals<T extends Row & { id: string }>(seen: ReadonlySet<st
   return seen ? rows.filter((r) => r.status === 'waiting' && !seen.has(r.id)) : [];
 }
 
+/** "Avery Johnson" → ["A", "very Johnson"]: on a birthday the crown hangs off the first letter. */
+export function splitInitial(name: string): [string, string] {
+  const [first = '', ...rest] = Array.from(name.trim());
+  return [first, rest.join('')];
+}
+
+/** How long a birthday fanfare stays on the board; several birthdays announced together take turns. */
+export const FANFARE_MS = 6000;
+
 /** Arrived in the last minute: marked New so staff notice the car. */
 export const isNew = (arrivedAt: string, now = Date.now()) => now - at(arrivedAt) < 60_000;
 

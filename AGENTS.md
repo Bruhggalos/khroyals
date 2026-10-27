@@ -56,7 +56,9 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   hours and "open now" (`carline_set_config`, `carline_open_now`). The **big-screen board**
   (`app/carline-board.tsx`, "Big screen" on the staff view; order in `src/carline/board.ts`) is the
   same `carline_board` for a TV: waiting cars on top, picked-up rows greyed out below, and yellow
-  ripples from the shield when a new car checks in (`newArrivals`). It's dark and
+  ripples from the shield when a new car checks in (`newArrivals`). On a child's birthday their name gets
+  a crown and their announcement a fanfare (`src/carline/Fanfare.tsx`); the board only gets `birthday`
+  true/false (`app.is_birthday`), never the date. It's dark and
   full width on the web (the root layout's `skip` list and column width), so keep it out of both.
 - **Family accounts** (`school_role = 'family'`: grandparents, other relatives) are closed
   by default. They get car line pickup for the children the office links in

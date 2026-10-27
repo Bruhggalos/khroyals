@@ -57,6 +57,8 @@ export type BoardRow = {
   distanceM: number | null; number: string | null; name: string; grade: number | null; parent: string; pickedUpBy: string;
   /** "Silver Honda SUV", when the driver saved their vehicle. */
   vehicle: string | null; vehicleColor: string | null; vehicleKind: string | null;
+  /** It's the child's birthday today (the board never gets the date itself). */
+  birthday?: boolean;
 };
 
 export type Arrival =

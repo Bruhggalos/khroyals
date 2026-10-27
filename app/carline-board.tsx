@@ -2,20 +2,22 @@
  * Car line board for a big screen (a TV or monitor in the office or at the door, or an iPad on a
  * stand): every car that has announced today, live. Cars still waiting are on top in the order
  * they arrived, new ones marked; once staff confirm a pickup on their phones, the row greys out
- * and drops below the line. Each new car sends yellow ripples out from the shield. Staff only
+ * and drops below the line. Each new car sends yellow ripples out from the shield; on a child's
+ * birthday a crown hangs off their name and a fanfare plays when they're announced. Staff only
  * (carline_board). Dark, full width, no header, and it keeps the screen awake; the X goes back to
  * the car line.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Image, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import {
   carlineBoard, carlineConfig, errorText, isSchoolStaff, live, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person,
 } from '../src/api/connect';
-import { LONG_WAIT_MINUTES, boardOrder, boardTextSize, isNew, newArrivals } from '../src/carline/board';
+import { LONG_WAIT_MINUTES, boardOrder, boardTextSize, isNew, newArrivals, splitInitial } from '../src/carline/board';
+import { Fanfare } from '../src/carline/Fanfare';
 import { clock, gradeLabel, hoursLabel, minutesSince } from '../src/carline/format';
 import { VehicleIcon } from '../src/carline/VehicleIcon';
 import { C } from '../src/ui';
@@ -27,6 +29,7 @@ const DONE_INK = '#8F98B0';
 const GREEN = '#22C55E';
 const AMBER = '#F59E0B';
 const NEW = '#FACC15';
+const GOLD = '#F5B800';
 
 type Cols = { grade: boolean; vehicle: boolean; arrived: boolean; driver: boolean };
 
@@ -35,7 +38,7 @@ const exit = () => router.dismissTo('/carline');
 
 export default function CarLineBoard() {
   useKeepAwake();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const u = boardTextSize(width);
   // Narrower screens drop the less needed columns (a phone keeps number, name and minutes).
   const cols: Cols = { grade: width >= 700, vehicle: width >= 560, arrived: width >= 700, driver: width >= 1000 };
@@ -49,10 +52,15 @@ export default function CarLineBoard() {
   const loaded = useRef(false);
   const seen = useRef<Set<string> | null>(null);  // ids on the board so far (null until the first load)
   const [ripples, setRipples] = useState(0);       // goes up whenever a new car checks in
+  const [party, setParty] = useState<BoardRow[]>([]);  // birthday children announced, each getting a fanfare in turn
+  const nextParty = useCallback(() => setParty((q) => q.slice(1)), []);
 
-  /** Show the latest board, rippling the shield when a car checked in since the last look. */
+  /** Show the latest board, rippling the shield when a car checked in since the last look (and celebrating birthdays). */
   const take = useCallback((rows: BoardRow[]) => {
-    if (newArrivals(seen.current, rows).length) setRipples((n) => n + 1);
+    const arrived = newArrivals(seen.current, rows);
+    if (arrived.length) setRipples((n) => n + 1);
+    const born = arrived.filter((r) => r.birthday);
+    if (born.length) setParty((q) => [...q, ...born]);
     seen.current = new Set(rows.map((r) => r.id));
     setBoard(rows);
   }, []);
@@ -139,6 +147,7 @@ export default function CarLineBoard() {
         )}
         {done.map((p) => <Line key={p.id} p={p} u={u} cols={cols} now={now} />)}
       </ScrollView>
+      {party[0] && <Fanfare key={party[0].id} name={party[0].name} number={party[0].number} u={u} width={width} height={height} onDone={nextParty} />}
     </>,
   );
 }
@@ -237,7 +246,7 @@ function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: nu
   const sub = done ? DONE_INK : C.muted;
   const said = done
     ? `${p.name}, picked up${p.pickedUpAt ? ` at ${clock(p.pickedUpAt)}` : ''}`
-    : `Pickup number ${p.number ?? 'none'}, ${p.name}${p.vehicle ? `, ${p.vehicle}` : ''}, waiting ${mins} minutes`;
+    : `Pickup number ${p.number ?? 'none'}, ${p.name}${p.birthday ? ' (birthday today)' : ''}${p.vehicle ? `, ${p.vehicle}` : ''}, waiting ${mins} minutes`;
   return (
     <View accessible accessibilityLabel={said}
       style={{ flexDirection: 'row', alignItems: 'center', gap: u * 0.75, backgroundColor: done ? DONE_BG : '#fff', borderRadius: u * 0.5,
@@ -246,7 +255,7 @@ function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: nu
         <Text style={{ color: done ? DONE_INK : '#fff', fontSize: u * (done ? 1.2 : 1.7), fontWeight: '900' }}>{p.number ?? '—'}</Text>
       </View>
       <View style={{ flex: W.student, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <Text style={{ color: ink, fontSize: u * 1.2, fontWeight: '800', flexShrink: 1 }}>{p.name}</Text>
+        <Name name={p.name} birthday={!!p.birthday} size={u * 1.2} color={ink} faded={done} />
         {fresh && (
           <Text style={{ backgroundColor: NEW, color: '#3D2E00', fontSize: u * 0.6, fontWeight: '900', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' }}>NEW</Text>
         )}
@@ -282,6 +291,24 @@ function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: nu
           </Text>
         )}
       </View>
+    </View>
+  );
+}
+
+/** A child's name; on their birthday a gold crown hangs at an angle off the first letter. */
+function Name({ name, birthday, size, color, faded }: { name: string; birthday: boolean; size: number; color: string; faded: boolean }) {
+  const style = { color, fontSize: size, fontWeight: '800' as const };
+  if (!birthday) return <Text style={[style, { flexShrink: 1 }]}>{name}</Text>;
+  const [first, rest] = splitInitial(name);
+  return (
+    <View style={{ flexDirection: 'row', flexShrink: 1 }}>
+      <View>
+        <Text style={style}>{first}</Text>
+        <MaterialCommunityIcons name="crown" size={size} color={GOLD}
+          style={{ position: 'absolute', top: -size * 0.6, left: -size * 0.4, opacity: faded ? 0.6 : 1, transform: [{ rotate: '-30deg' }],
+            textShadowColor: 'rgba(0, 0, 0, 0.25)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }} />
+      </View>
+      <Text style={[style, { flexShrink: 1 }]}>{rest}</Text>
     </View>
   );
 }

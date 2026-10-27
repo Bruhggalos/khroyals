@@ -413,6 +413,45 @@ test('car line: parents announce from the pickup spot; staff see the line and co
   await db.exec(`update app.settings set value = null where key = 'carline_open_on'`);
 });
 
+test("car line board: says whose birthday it is today, never the date", async () => {
+  const ava = id('u-s01');
+  await asSuper();
+  const avaId = (await one(`select ${ava} as u`)).u;
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on'`);
+  const birthday = (b: string) => db.exec(`insert into student_details (student_id, birthday) values (${ava}, ${b})
+    on conflict (student_id) do update set birthday = excluded.birthday`);
+  const avaOnBoard = async () => {
+    await as('u-sci');
+    return (await one(`select carline_board() as b`)).b.find((r: any) => r.studentId === avaId && r.status === 'waiting');
+  };
+  await as('u-p01');
+  await rows(`select * from carline_announce(array[${ava}], ${AT})`);
+
+  await asSuper();
+  await birthday(`(app.school_today() - interval '9 years')::date`);
+  const row = await avaOnBoard();
+  assert.equal(row.birthday, true, 'nine years ago today');
+  assert.equal(Object.values(row).some((v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)), false, 'no birth date on the board');
+  await asSuper();
+  await birthday(`(app.school_today() - interval '9 years')::date + 1`);
+  assert.equal((await avaOnBoard()).birthday, false, 'tomorrow');
+  await asSuper();
+  await db.exec(`update student_details set birthday = null where student_id = ${ava}`);
+  assert.equal((await avaOnBoard()).birthday, false, 'no birthday on file');
+
+  // Leap-day birthdays are celebrated on Feb 28 when there's no Feb 29.
+  const on = async (b: string, day: string) => (await one(`select app.is_birthday('${b}', '${day}') as y`)).y;
+  assert.equal(await on('2016-02-29', '2027-02-28'), true);
+  assert.equal(await on('2016-02-29', '2028-02-28'), false);
+  assert.equal(await on('2016-02-29', '2028-02-29'), true);
+  assert.equal(await on('2016-03-01', '2027-02-28'), false);
+
+  await asSuper();
+  await db.exec(`delete from student_details where student_id = ${ava}`);
+  await db.exec(`delete from carline_pickups where student_id = ${ava} and day = app.school_today()`);
+  await db.exec(`update app.settings set value = null where key = 'carline_open_on'`);
+});
+
 test('car line leads: the office names them; they set the spot, radius, hours and numbers', async () => {
   const set = `select carline_set_config(34.7300, -86.6200, 200, '14:30', '15:30')`;
   await as('u-s01');
