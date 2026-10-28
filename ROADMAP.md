@@ -116,6 +116,7 @@ Ongoing after release; bugs reported in beta and after release go here too.
 |---|---|---|---|
 | CarPlay | Ben | Waiting on Apple | Built; needs Apple's CarPlay entitlement and a first look at the car screen in the simulator ([DEVELOPING §8](DEVELOPING.md#8-carplay)). |
 | File and photo attachments in Connect posts | — | Not started | The storage bucket and "attach files" permission exist, but the app has no upload button. |
+| Better graphics for the car line's festive touches | Ben | Not started | The big screen's holiday and break scenes (`src/carline/SeasonScene.tsx`) are built from emoji piles and pop-out emoji characters, which look a little different on each TV and computer. Replace them with custom artwork: drawn piles and characters for each break and holiday, matched to the school's look. |
 | Tuition calculator | — | Not started | Links to the website's widget instead of running in the app. |
 | Notification switches for Activities and Ask the School | — | Needs a decision | My profile has switches for groups, replies, Marketplace, Volunteer and school announcements; these two can only be held back by quiet hours. |
 | Yearly upkeep | — | Recurring | Load the new school calendar (typed in by hand from the PDF), update the handbook, check the July 1 grade rollover, upgrade Expo once a year for new iOS and Android versions. |
