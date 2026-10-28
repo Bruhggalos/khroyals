@@ -482,6 +482,34 @@ test('car line leads: the office names them; they set the spot, radius, hours an
   await rejects(set, /car line leads and the office/);
 });
 
+test("car line board's festive touches: leads and the office switch them for every screen", async () => {
+  const festive = async (who: string) => { await as(who); return (await one(`select carline_config() as c`)).c.festive; };
+  assert.deepEqual(await festive('u-sci'), { enabled: true, off: [] }, 'all on to start');
+  await rejects(`select carline_set_festive(false, '{}')`, /car line leads and the office/);
+  await as('u-p01');
+  await rejects(`select carline_set_festive(false, '{}')`, /car line leads and the office/);
+
+  await as('u-admin', true);
+  await one(`select admin_set_carline_duty(${id('u-sci')}, true)`);
+  await as('u-sci');
+  const cfg = (await one(`select carline_set_festive(true, array['easter', 'valentines', 'easter']) as c`)).c;
+  assert.deepEqual(cfg.festive, { enabled: true, off: ['easter', 'valentines'] }, 'sorted, no repeats');
+  await rejects(`select carline_set_festive(true, array['halloween'])`, /Unknown festive touch: halloween/);
+  assert.deepEqual(await festive('u-eng'), { enabled: true, off: ['easter', 'valentines'] }, 'every screen gets the same choice');
+  assert.deepEqual(await festive('u-p01'), { enabled: true, off: ['easter', 'valentines'] });
+  await as('u-sci');
+  await one(`select carline_set_festive(false, null)`);
+  assert.deepEqual(await festive('u-sci'), { enabled: false, off: [] });
+  await asSuper();
+  assert.ok((await rows(`select 1 from audit_log where action = 'carline.festive'`)).length >= 2, 'logged');
+
+  // Put things back for the other tests.
+  await as('u-sci');
+  await one(`select carline_set_festive(true, '{}')`);
+  await as('u-admin', true);
+  await one(`select admin_set_carline_duty(${id('u-sci')}, false)`);
+});
+
 test('pickup numbers: every student gets one; only staff and their parents can see it', async () => {
   await asSuper();
   assert.equal((await one(`select count(*)::int n from profiles p where school_role = 'student'

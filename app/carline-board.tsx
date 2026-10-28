@@ -3,7 +3,10 @@
  * stand): every car that has announced today, live. Cars still waiting are on top in the order
  * they arrived, new ones marked; once staff confirm a pickup on their phones, the row greys out
  * and drops below the line. Each new car sends yellow ripples out from the shield; on a child's
- * birthday a crown hangs off their name and a fanfare plays when they're announced. Staff only
+ * birthday a crown hangs off their name and a fanfare plays when they're announced; in the last week
+ * before a break, and the school day before a holiday and the day itself, piles sit in the corners and
+ * a character pops out for each car (src/carline/festive.ts). Car line leads and the office switch these
+ * festive touches off, all or one by one, in Car line settings. Staff only
  * (carline_board). Dark, full width, no header, and it keeps the screen awake; the X goes back to
  * the car line.
  */
@@ -13,11 +16,14 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import {
-  carlineBoard, carlineConfig, errorText, isSchoolStaff, live, session, subscribeCarline,
+  carlineBoard, carlineConfig, errorText, isSchoolStaff, live, schoolBreaks, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person,
 } from '../src/api/connect';
 import { LONG_WAIT_MINUTES, boardOrder, boardTextSize, isNew, newArrivals, splitInitial } from '../src/carline/board';
+import { ALL_ON, festiveOn, festiveScene, type SchoolBreak } from '../src/carline/festive';
+import { schoolToday } from '../src/calendar/past';
 import { Fanfare } from '../src/carline/Fanfare';
+import { SeasonScene, Snowfall } from '../src/carline/SeasonScene';
 import { clock, gradeLabel, hoursLabel, minutesSince } from '../src/carline/format';
 import { VehicleIcon } from '../src/carline/VehicleIcon';
 import { C } from '../src/ui';
@@ -46,6 +52,7 @@ export default function CarLineBoard() {
   const [person, setPerson] = useState<Person | null | undefined>(undefined);
   const [board, setBoard] = useState<BoardRow[]>([]);
   const [config, setConfig] = useState<CarlineConfig | null>(null);
+  const [breaks, setBreaks] = useState<SchoolBreak[]>([]);  // No School days around today, for the festive scenes
   const [now, setNow] = useState(() => Date.now());
   const [stale, setStale] = useState(false);  // the last reload failed; the board stays up and says so
   const [error, setError] = useState<string | null>(null);
@@ -54,12 +61,16 @@ export default function CarLineBoard() {
   const [ripples, setRipples] = useState(0);       // goes up whenever a new car checks in
   const [party, setParty] = useState<BoardRow[]>([]);  // birthday children announced, each getting a fanfare in turn
   const nextParty = useCallback(() => setParty((q) => q.slice(1)), []);
+  const festive = config?.festive ?? ALL_ON;
+  const birthdays = festiveOn(festive, 'birthdays');
+  const birthdaysOn = useRef(true);  // for take(), which keeps no state of its own
+  useEffect(() => { birthdaysOn.current = birthdays; }, [birthdays]);
 
   /** Show the latest board, rippling the shield when a car checked in since the last look (and celebrating birthdays). */
   const take = useCallback((rows: BoardRow[]) => {
     const arrived = newArrivals(seen.current, rows);
     if (arrived.length) setRipples((n) => n + 1);
-    const born = arrived.filter((r) => r.birthday);
+    const born = birthdaysOn.current ? arrived.filter((r) => r.birthday) : [];
     if (born.length) setParty((q) => [...q, ...born]);
     seen.current = new Set(rows.map((r) => r.id));
     setBoard(rows);
@@ -72,8 +83,10 @@ export default function CarLineBoard() {
       const p = await session();
       setPerson(p);
       if (!isSchoolStaff(p)) return;
-      const [b, c] = await Promise.all([carlineBoard(), carlineConfig()]);
-      take(b); setConfig(c); setStale(false); setError(null);
+      // No School days from three weeks back to three weeks ahead: the breaks and holidays coming up, and the school days around them.
+      const [b, c, off] = await Promise.all([carlineBoard(), carlineConfig(),
+        schoolBreaks(schoolToday(new Date(Date.now() - 21 * 86_400_000)), schoolToday(new Date(Date.now() + 21 * 86_400_000))).catch(() => [])]);
+      take(b); setConfig(c); setBreaks(off); setStale(false); setError(null);
       loaded.current = true;
     } catch (e) {
       if (loaded.current) setStale(true); else setError(errorText(e));
@@ -101,12 +114,14 @@ export default function CarLineBoard() {
   if (!isSchoolStaff(person)) return screen(<Message title="For school staff" text="Sign in with a teacher or staff account to show the car line on this screen." />);
 
   const { waiting, done } = boardOrder(board);
+  const season = festiveScene(schoolToday(new Date(now)), breaks, festive);
   const line = config?.line.state;
   const status = line === 'open' ? (config?.line.openedNow ? 'Open now (opened by staff)' : 'Open now')
     : line === 'early' ? `Opens at ${hoursLabel(config!.start, config!.end).split('–')[0]}` : 'Closed';
 
   return screen(
     <>
+      {season === 'christmas' && <Snowfall width={width} height={height} />}
       {/* Title and line status, the shield in the middle, then counts, the time and the buttons. The two
           sides share the width equally so the shield sits in the center; a phone puts it on its own line. */}
       <View style={{ paddingHorizontal: u, paddingTop: u * 0.9, paddingBottom: u * 0.6, gap: u * 0.6, zIndex: 1 }}>
@@ -135,18 +150,20 @@ export default function CarLineBoard() {
       </View>
 
       <Header u={u} cols={cols} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: u, paddingBottom: u * 2, gap: u * 0.4 }}>
+      {/* Room at the end so the last rows can scroll clear of the holiday piles. */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: u, paddingBottom: u * (season ? 5 : 2), gap: u * 0.4 }}>
         {waiting.length === 0 && (
           <View style={{ paddingVertical: u * 1.5, alignItems: 'center' }}>
             <Text style={{ color: SOFT, fontSize: u * 1.1, fontWeight: '600', textAlign: 'center' }}>No cars waiting. They show up here the moment a parent checks in.</Text>
           </View>
         )}
-        {waiting.map((p) => <Line key={p.id} p={p} u={u} cols={cols} now={now} />)}
+        {waiting.map((p) => <Line key={p.id} p={p} u={u} cols={cols} now={now} crown={birthdays} />)}
         {done.length > 0 && (
           <Text style={{ color: DONE_INK, fontSize: u * 0.75, fontWeight: '800', letterSpacing: 1, marginTop: u * 0.8 }}>PICKED UP TODAY ({done.length})</Text>
         )}
-        {done.map((p) => <Line key={p.id} p={p} u={u} cols={cols} now={now} />)}
+        {done.map((p) => <Line key={p.id} p={p} u={u} cols={cols} now={now} crown={birthdays} />)}
       </ScrollView>
+      {season && <SeasonScene season={season} u={u} width={width} cameo={ripples} />}
       {party[0] && <Fanfare key={party[0].id} name={party[0].name} number={party[0].number} u={u} width={width} height={height} onDone={nextParty} />}
     </>,
   );
@@ -238,7 +255,7 @@ function Header({ u, cols }: { u: number; cols: Cols }) {
 }
 
 /** One child: white while waiting (yellow edge and New for the first minute); grey once picked up. */
-function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: number }) {
+function Line({ p, u, cols, now, crown }: { p: BoardRow; u: number; cols: Cols; now: number; crown: boolean }) {
   const done = p.status === 'picked_up';
   const fresh = !done && isNew(p.arrivedAt, now);
   const mins = minutesSince(p.arrivedAt, now);
@@ -246,7 +263,7 @@ function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: nu
   const sub = done ? DONE_INK : C.muted;
   const said = done
     ? `${p.name}, picked up${p.pickedUpAt ? ` at ${clock(p.pickedUpAt)}` : ''}`
-    : `Pickup number ${p.number ?? 'none'}, ${p.name}${p.birthday ? ' (birthday today)' : ''}${p.vehicle ? `, ${p.vehicle}` : ''}, waiting ${mins} minutes`;
+    : `Pickup number ${p.number ?? 'none'}, ${p.name}${crown && p.birthday ? ' (birthday today)' : ''}${p.vehicle ? `, ${p.vehicle}` : ''}, waiting ${mins} minutes`;
   return (
     <View accessible accessibilityLabel={said}
       style={{ flexDirection: 'row', alignItems: 'center', gap: u * 0.75, backgroundColor: done ? DONE_BG : '#fff', borderRadius: u * 0.5,
@@ -255,7 +272,7 @@ function Line({ p, u, cols, now }: { p: BoardRow; u: number; cols: Cols; now: nu
         <Text style={{ color: done ? DONE_INK : '#fff', fontSize: u * (done ? 1.2 : 1.7), fontWeight: '900' }}>{p.number ?? '—'}</Text>
       </View>
       <View style={{ flex: W.student, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <Name name={p.name} birthday={!!p.birthday} size={u * 1.2} color={ink} faded={done} />
+        <Name name={p.name} birthday={crown && !!p.birthday} size={u * 1.2} color={ink} faded={done} />
         {fresh && (
           <Text style={{ backgroundColor: NEW, color: '#3D2E00', fontSize: u * 0.6, fontWeight: '900', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' }}>NEW</Text>
         )}

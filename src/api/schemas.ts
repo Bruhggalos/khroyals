@@ -45,6 +45,7 @@ export const accessSchema = z.object({
 export const carlineConfigSchema = z.object({
   latitude: number, longitude: number, radius: number, start: text, end: text, canEdit: boolean,
   line: z.object({ state: z.enum(['open', 'early', 'closed']), opensAt: text.optional(), openedNow: boolean.optional() }),
+  festive: z.object({ enabled: boolean, off: text.array() }).optional(),
 }) satisfies z.ZodType<CarlineConfig>;
 export const teacherThreadSchema = z.object({
   id: text, studentId: text, teacherId: text, studentName: text, teacherName: text, canWrite: boolean,

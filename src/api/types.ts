@@ -47,6 +47,8 @@ export type CarlineConfig = {
   line: { state: 'open' | 'early' | 'closed'; opensAt?: string; openedNow?: boolean };
   /** Car line leads and the office can change these settings. */
   canEdit: boolean;
+  /** The big screen's festive touches (src/carline/festive.ts): all off, or the keys switched off. */
+  festive?: { enabled: boolean; off: string[] };
 };
 
 export type Spot = { lat: number; lng: number; accuracy: number | null };

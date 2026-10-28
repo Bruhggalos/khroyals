@@ -58,7 +58,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   same `carline_board` for a TV: waiting cars on top, picked-up rows greyed out below, and yellow
   ripples from the shield when a new car checks in (`newArrivals`). On a child's birthday their name gets
   a crown and their announcement a fanfare (`src/carline/Fanfare.tsx`); the board only gets `birthday`
-  true/false (`app.is_birthday`), never the date. It's dark and
+  true/false (`app.is_birthday`), never the date. **Festive touches** (`src/carline/festive.ts`, drawn by
+  `src/carline/SeasonScene.tsx`): piles and a character per new car in the last school week before each break
+  (Fall, Thanksgiving, Christmas, Spring; all but Thanksgiving come from the school calendar's No School events,
+  `schoolBreaks`) and on the school day before each holiday and the day itself. Car line leads and the office
+  switch them off for every screen, all or one by one (`carline_set_festive`, Car line settings; birthdays too).
+  The keys are in both `FESTIVE` and `app.festive_keys()` (`tests/carline-festive.test.ts` checks). It's dark and
   full width on the web (the root layout's `skip` list and column width), so keep it out of both.
 - **Family accounts** (`school_role = 'family'`: grandparents, other relatives) are closed
   by default. They get car line pickup for the children the office links in

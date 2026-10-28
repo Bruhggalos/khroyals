@@ -20,6 +20,14 @@ export async function createEvent(e: NewEvent) {
 
 export async function deleteEvent(id: string) { await run(sb().from('events').delete().eq('id', id)); }
 
+/** "No School" stretches on the school calendar that start between these dates (YYYY-MM-DD), for the car line board's festive scenes. */
+export async function schoolBreaks(from: string, to: string): Promise<{ title: string; date: string; end: string | null }[]> {
+  if (!live) return [];
+  const rows = await run(sb().from('events').select('title, starts_on, ends_on').is('group_id', null).eq('category', 'No School')
+    .gte('starts_on', from).lte('starts_on', to).order('starts_on'));
+  return rows.map((r) => ({ title: r.title, date: r.starts_on, end: r.ends_on }));
+}
+
 /** Calendars the person may add events to: the school calendar (admins) and groups they moderate. */
 export async function editableCalendars(): Promise<{ groupId: string | null; name: string }[]> {
   const p = current;
