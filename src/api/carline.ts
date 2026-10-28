@@ -70,6 +70,11 @@ export async function carlineOpenNow(open: boolean): Promise<CarlineConfig> {
   return carlineConfigSchema.parse(await rpc('carline_open_now', { p_open: open }));
 }
 
+/** Car line leads and the office: the big screen's festive touches, all off (`enabled` false) or the ones switched off, for every screen. */
+export async function carlineSetFestive(enabled: boolean, off: string[]): Promise<CarlineConfig> {
+  return carlineConfigSchema.parse(await rpc('carline_set_festive', { p_enabled: enabled, p_off: off }));
+}
+
 export async function setPickupNumber(studentId: string, number: string) {
   await rpc('set_pickup_number', { p_student: studentId, p_number: number });
 }

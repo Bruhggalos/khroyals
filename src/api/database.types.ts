@@ -2959,6 +2959,10 @@ export type Database = {
         }
         Returns: Json
       }
+      carline_set_festive: {
+        Args: { p_enabled: boolean; p_off: string[] }
+        Returns: Json
+      }
       carline_today: {
         Args: never
         Returns: {

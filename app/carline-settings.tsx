@@ -1,12 +1,16 @@
 /**
  * Car line settings, for car line leads and the office: the pickup spot
  * (stand there and tap "Use my location"), how close parents must be to
- * announce, the hours, and "Open now" for drills, demos or early dismissal.
+ * announce, the hours, "Open now" for drills, demos or early dismissal, and
+ * the big screen's festive touches (holiday scenes and birthdays), all off or
+ * one by one, for every screen at once.
  */
 import { useCallback, useState } from 'react';
-import { Alert, Linking, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
-import { carlineConfig, carlineOpenNow, carlineSetConfig, type CarlineConfig } from '../src/api/connect';
+import { Ionicons } from '@expo/vector-icons';
+import { carlineConfig, carlineOpenNow, carlineSetConfig, carlineSetFestive, type CarlineConfig } from '../src/api/connect';
+import { ALL_ON, FESTIVE } from '../src/carline/festive';
 import { hoursLabel } from '../src/carline/format';
 import { currentSpot, distanceLabel } from '../src/carline/location';
 import { Button, C, Card, Field, H, Loading, P, s } from '../src/ui';
@@ -25,6 +29,7 @@ export default function CarlineSettings() {
   const [end, setEnd] = useState('');
   const [busy, setBusy] = useState(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [festiveOpen, setFestiveOpen] = useState(false);  // the festive list starts folded away
 
   const show = (c: CarlineConfig) => {
     setCfg(c); setLat(String(c.latitude)); setLng(String(c.longitude)); setFeet(String(Math.round(c.radius * FEET)));
@@ -56,6 +61,10 @@ export default function CarlineSettings() {
     step(() => carlineSetConfig({ latitude: la, longitude: lo, radius: ft / FEET, start, end }), 'Parents can now announce from within ' + `${Math.round(ft)} feet of this spot.`);
   };
   const open = cfg.line.state === 'open' && cfg.line.openedNow;
+  const festive = cfg.festive ?? ALL_ON;
+  const festiveCount = FESTIVE.filter((f) => !festive.off.includes(f.key)).length;
+  const turn = (key: string, on: boolean) =>
+    step(() => carlineSetFestive(true, on ? festive.off.filter((k) => k !== key) : [...festive.off, key]));
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
@@ -110,6 +119,34 @@ export default function CarlineSettings() {
           <Switch value={!!open} disabled={busy} trackColor={{ true: C.primary }} accessibilityLabel="Open the car line now"
             onValueChange={(v) => step(() => carlineOpenNow(v))} />
         </View>
+      </Card>
+
+      <Card>
+        <View style={[s.row, { justifyContent: 'space-between', gap: 12 }]}>
+          <Pressable style={{ flex: 1 }} onPress={() => setFestiveOpen(!festiveOpen)} accessibilityRole="button"
+            accessibilityState={{ expanded: festiveOpen }} accessibilityLabel={`Festive touches: ${festiveOpen ? 'hide' : 'show'} each holiday`}>
+            <View style={[s.row, { gap: 6 }]}>
+              <H>Festive touches</H>
+              <Ionicons name={festiveOpen ? 'chevron-up' : 'chevron-down'} size={20} color={C.muted} />
+            </View>
+            <P muted>{festive.enabled ? `On: ${festiveCount} of ${FESTIVE.length}` : 'Off on every screen'}</P>
+          </Pressable>
+          <Switch value={festive.enabled} disabled={busy} trackColor={{ true: C.primary }} accessibilityLabel="Festive touches on the big screen"
+            onValueChange={(v) => step(() => carlineSetFestive(v, festive.off))} />
+        </View>
+        {festiveOpen && (
+          <P muted>Holiday scenes and birthday celebrations on the car line big screen, for every screen at once. Breaks get the whole school week before them; holidays get the school day before and the day itself.</P>
+        )}
+        {festiveOpen && festive.enabled && FESTIVE.map((f) => (
+          <View key={f.key} style={[s.row, { justifyContent: 'space-between', gap: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.ink, fontWeight: '700' }}>{f.name}</Text>
+              <P muted>{f.what}</P>
+            </View>
+            <Switch value={!festive.off.includes(f.key)} disabled={busy} trackColor={{ true: C.primary }} accessibilityLabel={f.name}
+              onValueChange={(v) => turn(f.key, v)} />
+          </View>
+        ))}
       </Card>
     </ScrollView>
   );
