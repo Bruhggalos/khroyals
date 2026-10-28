@@ -317,6 +317,17 @@ never "Are you going?" answers). *I'll be there* puts one on My calendar and tel
 students (with a login) and their parents that the teacher is coming, once; *Just add it*
 doesn't tell anyone (`student_event_plan`). The Planner tab shows the day's My calendar items.
 
+**Feedback** (Apps → Feedback, or My profile → *Send feedback*). Anyone with an approved
+account reports a problem or suggests an idea: what it is, where in the app, a title and
+details; the phone and app version go along (`feedback_send`). They see their own reports
+with the status (New, Being reviewed, Planned, Being worked on, Done, Not planned) and the
+team's reply, and are told when either changes. Triage (the *Triage feedback* permission,
+`feedback.triage`: a ready-made **IT** role, directors and administrators) gets every report
+with the sender, high priority and new ones first, filtered by status; sets status, priority
+and the reply (`feedback_triage`); and keeps **Workshops** (`feedback_workshops`): sessions,
+with a date and what students will do, that group reports for students to learn on by fixing
+real bugs and building requested features. New reports notify the triage team.
+
 **Ask the School** (Apps → Ask the School). Anyone with an approved account sends
 the school a question (topic, subject, message); it stays in *My questions* with the
 whole conversation, so they can come back for the answer and follow up. Routers (the

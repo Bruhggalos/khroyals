@@ -63,6 +63,7 @@ set up) and a private repo. Do the data review before FACTS grades come into the
 | Make the repo private | Ben | Not started | — | The repo is public today; fine for a prototype, not once it handles student data. |
 | Student data review (FERPA/COPPA) | — | Not started | Approval of how student data is stored and shown | Gate for the FACTS grades work. Include Ask the Teacher: students and teachers message each other, and parents and admins with Student messages can read it. Also My students: teachers see which of their class students are signed up for each activity. |
 | FACTS SIS API integration (read-only) | Ben | Not started | A read-only API key from someone with FACTS admin rights (People, Academics, Gradebook: Read; Admissions, Billing: None) | Also needs a vendor subscription key from FACTS. Nightly roster sync (including class sections and their teachers, which Ask the Teacher and Assignments use) plus grades, report cards and schedules in the Student app; keys stay on the server. |
+| Blackbaud integration | — | Needs a decision | Which Blackbaud product the school uses (Raiser's Edge NXT for donors, or Blackbaud's school suite) and what it should send to the app | The school's student system is FACTS, so Blackbaud is likely fundraising. Its SKY API has webhooks (e.g. a new gift), so it can push to us; the app would add an Edge Function that receives them and posts a notification or updates a page. Nothing built yet. |
 | Campus map image and places | — | Not started | The school's campus or building map, and the places to mark on it (office, gym, library, car line) | The Campus Map shows the address, front office and car line spot until then; add the map and pins in `src/campus/campus.ts`. |
 | Class sections on live | — | Not started | Each class's teacher and students | Set them up in Admin portal → Classes (or from FACTS). Until then students see no teachers in Ask the Teacher and get no class assignments. |
 | Custom email (SMTP) | — | Not started | DNS access for khroyals.com, to send sign-in emails from the school's address | Needed before beta: Supabase's built-in email sends only a few messages an hour, and its template can't be changed to carry the sign-in code. |
@@ -92,7 +93,7 @@ feedback comes in.
 | Check the app on iPhone Duo | — | Not started | The inner display runs it in both orientations (iPhone Duo ignores the portrait lock), and the app resizes as it folds. Built for it but never seen: needs an iPhone Duo simulator (not in Xcode 27.0) or a device. |
 | Penetration testing | — | Not started | Must pass before Full release. Run on the integrated beta build: phone apps, admin web portal, database permissions and API functions, sign-in, and the FACTS connection. Fix and retest any findings before Phase 4. |
 | Account deletion in the app | Ben | Not started | Apple requires it for any app that lets people create accounts; App Store review rejects the app without it. None exists today. |
-| Beta plan | Ben | Not started | Who's in the beta, how testers send feedback, and what has to be true to go ahead with release. |
+| Beta plan | Ben | Not started | Who's in the beta, how testers send feedback (the Feedback app is built; give someone the IT role to triage), and what has to be true to go ahead with release. |
 
 ## Phase 4 — Full release
 
@@ -130,6 +131,10 @@ Ongoing after release; bugs reported in beta and after release go here too.
   screen itself is open to everyone, so a link elsewhere would do it without opening Ask the School.
 - [ ] Ask FACTS how a developer gets a vendor subscription key for the SIS API, and
   what it costs ([FACTS partners](https://factsmgt.com/become-a-partner/)).
+- [ ] Blackbaud: which product does the school use, and what should flow to the app (donation
+  thank-yous, campaign progress, event registrations, alumni news)? And does Blackbaud already send
+  those to families another way? Either way it would come into the app through Blackbaud's SKY API
+  (needs a SKY developer account and the school's approval of the app in Blackbaud).
 - [ ] Confirm who at the school has FACTS admin rights to generate the read-only
   API key.
 
@@ -172,6 +177,7 @@ Working in the app and on the server today.
 | Student | Assignments | Teachers assign work to a class; students add their own, sorted overdue / today / coming up, and check them off privately |
 | Student | Campus Map | The school's map with numbered places once it's added; directions and the front office until then |
 | Staff | My calendar | Teachers' and staff's own events beside the activity items they'll go to (moved or cancelled games follow); My students shows their class students' games and performances, and "I'll be there" tells the students and their parents |
+| Everyone | Feedback | Anyone approved reports a problem or suggests an idea (where in the app, details, phone and app version) and sees the status and the team's reply; the IT role triages (status, priority, reply) and groups reports into student workshops |
 | Admin portal | Classes | Class sections with their teacher and students, for Ask the Teacher and Assignments |
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |

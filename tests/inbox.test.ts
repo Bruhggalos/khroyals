@@ -51,6 +51,7 @@ test('tapping a notification opens what it is about', () => {
   assert.equal(notificationHref({ questionId: 'q1' }), '/questions/q1');
   assert.equal(notificationHref({ sportId: 's1', eventId: 'e1' }), '/activities/s1');
   assert.equal(notificationHref({ groupId: 'g1', postId: 'p1' }), '/group/g1');
+  assert.equal(notificationHref({ feedbackId: 'f1' }), '/feedback/f1');
   assert.equal(notificationHref({}), null);
   assert.equal(notificationHref(null), null);
 });

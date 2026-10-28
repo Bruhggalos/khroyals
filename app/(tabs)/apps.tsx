@@ -38,6 +38,7 @@ const APPS: App[] = [
   { label: 'Ask the Teacher', image: require('../../assets/apps/teachers.png'), color: '#0A1F4D', href: '/teachers', family: false, studentApp: true },
   { label: 'Assignments', image: require('../../assets/apps/assignments.png'), color: '#0A1F4D', href: '/assignments', family: false, studentApp: true },
   { label: 'Campus Map', image: require('../../assets/apps/campusmap.png'), color: '#0A1F4D', href: '/campus-map' },
+  { label: 'Feedback', icon: 'chatbubble-ellipses', color: '#0A1F4D', href: '/feedback' },
   { label: 'Admin', icon: 'shield-checkmark', color: NAVY, href: '/admin', adminOnly: true },
 ];
 

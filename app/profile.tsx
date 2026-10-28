@@ -218,6 +218,19 @@ export default function Profile() {
       )}
       </>)}
 
+      {!person.pending && (
+        <Card onPress={() => router.push('/feedback')}>
+          <View style={s.row}>
+            <Text style={{ fontSize: 22 }}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: C.ink }}>Send feedback</Text>
+              <P muted>Report a problem with the app or suggest an idea</P>
+            </View>
+            <Text style={{ color: C.muted, fontSize: 18 }}>›</Text>
+          </View>
+        </Card>
+      )}
+
       <Button kind="ghost" label="Sign out" onPress={() => disablePush().then(disableAutoCheckIn).then(forgetCarPass).then(signOut).then(() => router.replace('/connect'))} />
     </ScrollView>
   );

@@ -119,6 +119,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   teacher the activity items students in the sections they lead are registered for (`app.class_students_in`):
   names only, never RSVPs. `student_event_plan` with tell notifies those students (with a login) and their
   parents once, when the item is first added.
+- **Feedback** (`feedback`, `feedback_workshops`; the Feedback app, My profile → Send feedback): any approved
+  account sends (`feedback_send`, 20 a day) and sees only its own (`feedback_list`), with the status and the
+  team's reply. `feedback.triage` (the **IT** role, directors, administrators; an admin power, so `aal2`) sees
+  everyone's, sets status, priority, reply and workshop (`feedback_triage`; the sender is told when the status or
+  reply changes) and keeps workshops. Kinds, areas and statuses are in both `src/feedback/kinds.ts` and the
+  database checks (`tests/feedback.test.ts` compares them).
 - **Forms** (`forms`, `form_recipients`, `form_responses`; the Forms app): teachers send to the
   class sections they lead, coaches and directors to their activity seasons' registered students
   (`app.can_manage_sport`), and `forms.send` holders to grades or the whole school (`form_send`).

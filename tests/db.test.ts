@@ -1772,6 +1772,61 @@ test("teachers see their students' activities and keep a calendar of their own",
   await db.exec(`delete from personal_events; delete from sports where id = '${team.id}'`);
 });
 
+test('feedback: anyone approved reports bugs and ideas; triage (the IT role) replies, sets status and plans workshops', async () => {
+  const told = async (fid: string) => (await rows(`select title, body from my_notifications() where data->>'feedbackId' = '${fid}'`));
+  // Lisa (u-libr) is given the IT role; she needs her authenticator app like any admin.
+  await asSuper();
+  await db.exec(`update profiles set admin_tier = 'it' where id = ${id('u-libr')}`);
+  assert.ok((await rows(`select 1 from permission_catalog() where key = 'feedback.triage'`)).length === 1);
+  assert.ok((await one(`select 'feedback.triage' = any (app.tier_permissions('director')) as ok`)).ok);
+
+  // A student sends a bug; checks on what they send.
+  await as('u-s01');
+  await rejects(`select * from feedback_send('rant', 'other', 'x')`, /bug or an idea/);
+  await rejects(`select * from feedback_send('bug', 'other', '  ')`, /short title/);
+  await rejects(`select * from feedback_send('bug', 'moon', 'x')`, /feedback_area_check/);
+  const bug = await one(`select * from feedback_send('bug', 'carline', 'Map spins', 'It keeps spinning on my phone.', 'ios 27.0 · app 0.1.0')`);
+  assert.deepEqual([bug.status, bug.area, bug.device], ['new', 'carline', 'ios 27.0 · app 0.1.0']);
+  await rejects(`insert into feedback (author_id, kind, title) values (${id('u-s01')}, 'bug', 'x')`, /permission denied/);
+  await as('u-p01');
+  const idea = await one(`select * from feedback_send('idea', 'calendar', 'Add to my phone calendar')`);
+
+  // Each sees only their own; triage needs the permission and a verified session.
+  assert.deepEqual((await rows(`select title from feedback_list()`)).map((f) => f.title), ['Add to my phone calendar']);
+  assert.equal((await rows(`select 1 from feedback`)).length, 1);
+  await rejects(`select * from feedback_triage('${bug.id}', 'planned')`, /permission/);
+  await as('u-libr');
+  assert.equal((await rows(`select 1 from feedback_list()`)).length, 0, 'not without the authenticator');
+  await rejects(`select * from feedback_triage('${bug.id}', 'planned')`, /MFA_REQUIRED/);
+  await as('u-libr', true);
+  assert.match((await told(bug.id)).map((n) => n.title).join(), /🐞 Bug report: Map spins/);
+  const list = await rows(`select * from feedback_list()`);
+  assert.deepEqual(list.map((f) => [f.title, f.author_role]), [['Add to my phone calendar', 'parent'], ['Map spins', 'student']]);
+
+  // A workshop; the bug goes into it, with a reply, and the student hears.
+  await rejects(`select * from feedback_workshop_save(null, ' ')`, /title/);
+  const ws = await one(`select * from feedback_workshop_save(null, 'Debugging maps', 'Find out why the map spins.', app.school_today() + 7)`);
+  await rejects(`select * from feedback_triage('${bug.id}', 'maybe')`, /Choose a status/);
+  await rejects(`select * from feedback_triage('${bug.id}', 'planned', 'urgent')`, /low, medium or high/);
+  await one(`select * from feedback_triage('${bug.id}', 'planned', 'high', 'Thanks! Students will look at it.', '${ws.id}')`);
+  await one(`select * from feedback_triage('${bug.id}', 'planned', 'medium', 'Thanks! Students will look at it.', '${ws.id}')`);
+  assert.equal((await one(`select workshop_title from feedback_list() where id = '${bug.id}'`)).workshop_title, 'Debugging maps');
+  await as('u-s01');
+  const notes = await told(bug.id);
+  assert.deepEqual(notes.map((n) => n.body), ['Planned · Thanks! Students will look at it.'], 'a priority change alone tells no one');
+  const mine = await one(`select * from feedback_list()`);
+  assert.deepEqual([mine.status, mine.reply, mine.priority], ['planned', 'Thanks! Students will look at it.', 'medium']);
+  assert.equal((await rows(`select 1 from feedback_workshops`)).length, 0, 'workshops are for triage');
+  await rejects(`select * from feedback_workshop_save(null, 'Mine')`, /permission/);
+
+  // Deleting the workshop keeps the feedback.
+  await as('u-libr', true);
+  await one(`select feedback_workshop_delete('${ws.id}')`);
+  assert.equal((await one(`select workshop_id from feedback where id = '${bug.id}'`)).workshop_id, null);
+  await asSuper();
+  await db.exec(`delete from feedback where id in ('${bug.id}', '${idea.id}'); update profiles set admin_tier = null where id = ${id('u-libr')}`);
+});
+
 test('activity events: addresses, team photos, and families answer "Are you going?" for coaches to see', async () => {
   const at = (days: number) => `date_trunc('day', now()) + interval '${days} days 16 hours'`;
   const ava = (await one(`select ${id('u-s01')} as u`)).u as string;

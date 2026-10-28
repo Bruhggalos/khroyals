@@ -1,4 +1,5 @@
 /** types: internal API implementation. Screens import the connect facade. */
+import type { FeedbackPriority, FeedbackStatus } from '../feedback/kinds';
 import type { Decision } from '../comms/permissions';
 import type { Group, GroupRole, Post, SchoolRole, User } from '../comms/types';
 import type { VehicleColor, VehicleKind } from '../carline/vehicles';
@@ -308,6 +309,15 @@ export type FormAudience = 'section' | 'season' | 'grades' | 'school';
 export type PaymentMethod = 'cash' | 'check' | 'card' | 'online' | 'other';
 /** A fee paid for one child, as the form's sender recorded it; `note` and `recordedBy` only for the sender. */
 export type FormPayment = { amountCents: number; method: PaymentMethod; deliveredTo: string; receivedOn: string; note?: string; recordedBy?: string | null };
+/** A bug report or feature idea from the app. Senders see their own; triage sees everyone's (with names). */
+export type Feedback = {
+  id: string; authorId: string; authorName: string; authorRole: string | null; kind: 'bug' | 'idea'; area: string;
+  title: string; details: string; device: string; status: FeedbackStatus; priority: FeedbackPriority | null; reply: string;
+  workshopId: string | null; workshopTitle: string | null; createdAt: string; updatedAt: string;
+};
+/** A session where students learn by working on reports from the app (triage only). */
+export type FeedbackWorkshop = { id: string; title: string; description: string; heldOn: string | null; createdAt: string };
+
 /** A permission slip, release or acknowledgment. `sentTo` names the class, activity season or grades. */
 export type SchoolForm = {
   id: string; title: string; details: string; link: string | null; dueOn: string; status: 'open' | 'closed';

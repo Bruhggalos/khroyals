@@ -410,6 +410,117 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          area: string
+          author_id: string
+          created_at: string
+          details: string
+          device: string
+          id: string
+          kind: string
+          priority: string | null
+          reply: string
+          status: string
+          title: string
+          triaged_by: string | null
+          updated_at: string
+          workshop_id: string | null
+        }
+        Insert: {
+          area?: string
+          author_id: string
+          created_at?: string
+          details?: string
+          device?: string
+          id?: string
+          kind: string
+          priority?: string | null
+          reply?: string
+          status?: string
+          title: string
+          triaged_by?: string | null
+          updated_at?: string
+          workshop_id?: string | null
+        }
+        Update: {
+          area?: string
+          author_id?: string
+          created_at?: string
+          details?: string
+          device?: string
+          id?: string
+          kind?: string
+          priority?: string | null
+          reply?: string
+          status?: string
+          title?: string
+          triaged_by?: string | null
+          updated_at?: string
+          workshop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_triaged_by_fkey"
+            columns: ["triaged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_workshop_id_fkey"
+            columns: ["workshop_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_workshops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_workshops: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          held_on: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          held_on?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          held_on?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_workshops_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery_albums: {
         Row: {
           category_id: string | null
@@ -3148,6 +3259,40 @@ export type Database = {
       email_done: {
         Args: { p_error?: string; p_id: string }
         Returns: undefined
+      }
+      feedback_list: {
+        Args: never
+        Returns: {
+          area: string
+          author_id: string
+          author_name: string
+          author_role: string
+          created_at: string
+          details: string
+          device: string
+          id: string
+          kind: string
+          priority: string
+          reply: string
+          status: string
+          title: string
+          updated_at: string
+          workshop_id: string
+          workshop_title: string
+        }[]
+      }
+      feedback_send: {
+        Args: { p_area: string; p_details?: string; p_device?: string; p_kind: string; p_title: string }
+        Returns: Database["public"]["Tables"]["feedback"]["Row"]
+      }
+      feedback_triage: {
+        Args: { p_id: string; p_priority?: string; p_reply?: string; p_status: string; p_workshop?: string }
+        Returns: Database["public"]["Tables"]["feedback"]["Row"]
+      }
+      feedback_workshop_delete: { Args: { p_id: string }; Returns: undefined }
+      feedback_workshop_save: {
+        Args: { p_description?: string; p_held_on?: string; p_id: string; p_title: string }
+        Returns: Database["public"]["Tables"]["feedback_workshops"]["Row"]
       }
       form_clear_payment: { Args: { p_form: string; p_student: string }; Returns: undefined }
       form_close: { Args: { p_form: string }; Returns: undefined }
