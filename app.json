@@ -9,6 +9,7 @@
     "ios": {
       "bundleIdentifier": "com.khroyals.app",
       "supportsTablet": true,
+      "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -27,6 +28,8 @@
       "expo-router",
       "expo-video",
       "expo-notifications",
+      "expo-apple-authentication",
+      "expo-web-browser",
       [
         "expo-location",
         {

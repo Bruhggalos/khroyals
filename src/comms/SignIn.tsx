@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { NoAccountError, errorText, sendEmailCode, verifyEmailCode } from '../api/connect';
 import { Button, C, Card, Field, H, P, s } from '../ui';
+import { SsoButtons } from './SsoButtons';
 
 type Step = 'login' | 'signup' | 'code';
 const RESEND_SECONDS = 60;
@@ -17,8 +18,10 @@ const tab = (label: string, on: boolean, onPress: () => void) => (
  *   Log in         → email → we email a 6-digit code → enter it.
  *   Create account → name + email → code → account created (an admin approves it).
  * An email with no account on "Log in" moves to "Create account" with the email filled in.
+ * Continue with Apple / Google sit above both when the school has switched them on (SsoButtons).
+ * `embedded`: just the card, for the welcome screen (src/AccountGate.tsx), which brings its own logo.
  */
-export function SignIn({ onDone }: { onDone: () => void }) {
+export function SignIn({ onDone, embedded }: { onDone: () => void; embedded?: boolean }) {
   const [step, setStep] = useState<Step>('login');
   const [creating, setCreating] = useState(false);   // which flow the code step belongs to
   const [email, setEmail] = useState('');
@@ -59,10 +62,9 @@ export function SignIn({ onDone }: { onDone: () => void }) {
 
   const switchTo = (next: 'login' | 'signup') => { setStep(next); setNotice(null); setError(null); };
 
-  return (
-    <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">
+  const card = (
       <Card>
-        <H>Royals Connect</H>
+        {!embedded && <H>Royals Connect</H>}
         {step !== 'code' && (
           <View style={{ flexDirection: 'row' }}>
             {tab('Log in', step === 'login', () => switchTo('login'))}
@@ -73,6 +75,7 @@ export function SignIn({ onDone }: { onDone: () => void }) {
 
         {step === 'login' && (
           <>
+            <SsoButtons creating={false} onDone={onDone} onError={setError} />
             <Field label="Email" placeholder="you@example.com" autoCapitalize="none" autoComplete="email" keyboardType="email-address"
               textContentType="emailAddress" value={email} onChangeText={setEmail} error={error} returnKeyType="send"
               onSubmitEditing={() => emailOk && send(false)} />
@@ -83,6 +86,7 @@ export function SignIn({ onDone }: { onDone: () => void }) {
 
         {step === 'signup' && (
           <>
+            <SsoButtons creating onDone={onDone} onError={setError} />
             <View style={s.row}>
               <Field label="First name" placeholder="Jordan" autoComplete="given-name" textContentType="givenName"
                 value={first} onChangeText={setFirst} style={{ flex: 1, minWidth: 0 }} />
@@ -115,6 +119,6 @@ export function SignIn({ onDone }: { onDone: () => void }) {
           </>
         )}
       </Card>
-    </ScrollView>
   );
+  return embedded ? card : <ScrollView style={s.screen} contentContainerStyle={s.pad} keyboardShouldPersistTaps="handled">{card}</ScrollView>;
 }

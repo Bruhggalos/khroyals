@@ -2,7 +2,7 @@
 export { live } from './client';
 export { errorText, isNetworkError } from './errors';
 export { Abilities, GroupView, Person, GroupEvent, NewEvent, DressDay, Member, Pickup, PickupVehicle, CarlineConfig, Spot, BoardRow, Arrival, Vehicle, Sport, SportSeason, SportEventKind, SportEvent, SportRegistration, MySport, SportRsvp, SportAttendance, Condition, Listing, MarketLine, MarketTerms, Opportunity, Signup, VolunteerMessage, ROLE_LABELS, QUESTION_TOPICS, QuestionTopic, SchoolQuestion, QuestionMessage, ParentRelation, FamilyLink, CriticalAlert, AlertAnswer, AlertStatusRow, AccessPoint, Access, PermissionInfo, AdminPerson, AdminRole, PeopleFilter, Notice, MySettings, GroupPref, PostStats, GroupPostStat, Child, FamilyRequest, AdminStudent, AdminFamilyRequest, SimilarStudent, PickupRelationship, ApprovedPickup, ChildPickupPeople, TeacherContact, TeacherConversation, ClassStudent, TeacherMessage, TeacherThread, Assignment, ChildAssignment, Section, MyCalendarItem, StudentEvent, Feedback, FeedbackWorkshop, FormQuestion, FormSignature, FormAudience, FormPayment, PaymentMethod, SchoolForm, MyForm, SentForm, FormStatus, NewForm, AdminSection, SectionStudent } from './types';
-export { session, me, getUser, listUsers, signOut, onAuthChange, setMockUser } from './session';
+export { session, me, getUser, listUsers, signOut, hasSignIn, onAuthChange, setMockUser } from './session';
 export { marketPhotoUrls } from './storage';
 export { listMyGroups, listDiscoverableGroups, getGroup, getComments, createPost, addComment, moderatePost, toggleReaction, votePoll, updateGroupSettings, createGroup, joinGroup, leaveGroup, listMembers, setMembership, subscribeGroup } from './groups';
 export { listEvents, createEvent, deleteEvent, editableCalendars, listDressDays, saveDressDay, deleteDressDay, schoolBreaks } from './calendar';
@@ -15,7 +15,7 @@ export { marketTerms, acceptMarketTerms, listMarket, getListing, uploadMarketPho
 export { listVolunteer, getOpportunity, volunteerPost, volunteerSayYes, volunteerPledge, volunteerWithdraw, volunteerDelete, volunteerSend, adminSetVolunteerLead, subscribeVolunteer } from './volunteer';
 export { listQuestions, getQuestion, askSchool, questionReply, questionAssign, questionClose, subscribeQuestions } from './questions';
 export { adminUpdateProfile, adminLinkGuardian, adminSetParentRelation, adminSetCarlineDuty, adminFamilyLinks, listAudit, permissionCatalog, adminListPeople, adminRoles, adminSaveRole, adminDeleteRole, adminSetAccess, adminSetDirector, adminDeleteUser, transferDirector } from './admin';
-export { NoAccountError, sendEmailCode, authRedirectUrl, completeSignInFromUrl, verifyEmailCode, mfaStatus, mfaEnroll, mfaVerify } from './auth';
+export { NoAccountError, sendEmailCode, authRedirectUrl, completeSignInFromUrl, verifyEmailCode, ssoProviders, signInWithGoogle, signInWithApple, mfaStatus, mfaEnroll, mfaVerify } from './auth';
 export { listAlerts, myAlertAnswers, sendCriticalAlert, answerAlert, endAlert, alertStatus, shareAlertLocation, myLocationConsent, setLocationConsent, listAccessPoints, saveAccessPoint, deleteAccessPoint, importAccessPoints, subscribeAlerts } from './alerts';
 export { myAccess } from './access';
 export { listNotifications, myNotifications, sendNotification, setNotificationPref, registerPushToken, unregisterPushToken, markNotificationsOpened, openedNotifications, notificationOpenCounts, dismissNotifications, clearMyNotifications } from './notifications';

@@ -200,6 +200,35 @@ cancels it). They're sent by the `send-email` Edge Function through **Resend**:
 3. `node scripts/supabase_setup.mjs` deploys the function; pg_cron (`send-email` job)
    runs it every minute.
 
+### Google and Apple sign-in
+
+The sign-in screen shows **Continue with Apple** (iPhones) and **Continue with Google**
+(iPhone, Android, web) above the email code, but only for providers switched on in
+Supabase: the app asks `/auth/v1/settings` each time. Switching one on or off needs no new
+build. Someone whose Google or Apple email matches their account lands in that account;
+anyone new waits for the office to approve them, as with the email code.
+
+**Apple** (Sign in with Apple, on the iPhone's own sheet):
+
+1. Apple Developer → Identifiers → `com.khroyals.app`: **Sign In with Apple** is ticked.
+   The TestFlight script's automatic signing turns it on; check it's there.
+2. Supabase → Authentication → Sign In / Providers → **Apple**: enable it and put
+   `com.khroyals.app` in **Client IDs**. The secret key is only for Apple sign-in on the
+   web or Android, which the app doesn't offer.
+
+**Google** (in the phone's browser, then back to the app):
+
+1. Google Cloud console → APIs & Services → **OAuth consent screen**: app name KH Royals,
+   a support email, and add the Supabase project's domain (`<project>.supabase.co`, from
+   `supabaseUrl` in app.json) as an authorized domain. Publish it.
+2. **Credentials** → Create OAuth client ID → **Web application**, with the authorized
+   redirect URI `https://<project>.supabase.co/auth/v1/callback`.
+3. Supabase → Authentication → Sign In / Providers → **Google**: enable it and paste the
+   client ID and secret. Never put the secret in the repo.
+
+Authentication → URL Configuration already allows `khroyals://**` and
+`https://royalrockinapps.github.io/khroyals/**`, where the app comes back after signing in.
+
 ## 6. Refresh the school website content
 
 ```bash

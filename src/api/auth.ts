@@ -1,10 +1,14 @@
 /** auth: internal API implementation. Screens import the connect facade. */
 import appJson from '../../app.json';
 import { Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { live, run, sb } from './client';
+import { updateMyName } from './profile';
 import { askForCode } from './retryFetch';
 import { session } from './session';
+import { supabaseKey, supabaseUrl } from './supabase';
 
 /** Email a 6-digit sign-in code (creates the account on first use; admins approve new people). */
 export class NoAccountError extends Error {}
@@ -50,6 +54,65 @@ export async function completeSignInFromUrl(url: string | null): Promise<boolean
   else if (code) await sb().auth.exchangeCodeForSession(code).then((r) => { if (r.error) throw r.error; });
   else return false;
   await session();
+  return true;
+}
+
+/**
+ * Which of Google and Apple the school has switched on (Supabase → Authentication → Providers); the
+ * sign-in screen only shows those buttons. Apple also needs an iPhone (its own sign-in sheet).
+ */
+export async function ssoProviders(): Promise<{ google: boolean; apple: boolean }> {
+  const none = { google: false, apple: false };
+  if (!live || !supabaseUrl || !supabaseKey) return none;
+  try {
+    const settings = await (await fetch(`${supabaseUrl}/auth/v1/settings`, { headers: { apikey: supabaseKey } })).json();
+    const apple = !!settings?.external?.apple && Platform.OS === 'ios' && (await AppleAuthentication.isAvailableAsync());
+    return { google: !!settings?.external?.google, apple };
+  } catch {
+    return none;
+  }
+}
+
+/**
+ * Sign in (or sign up) with Google: in the phone's browser, coming back to the app with the sign-in,
+ * or on the web by going to Google and back to /auth (app/auth.tsx finishes there). An account
+ * with the same email is the same account; someone new waits for the office to approve them.
+ * Returns whether this device is now signed in (false if they cancelled, or on the web).
+ */
+export async function signInWithGoogle(): Promise<boolean> {
+  const redirectTo = authRedirectUrl();
+  if (Platform.OS === 'web') {
+    const { error } = await sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    if (error) throw new Error(error.message);
+    return false;
+  }
+  const { data, error } = await sb().auth.signInWithOAuth({ provider: 'google', options: { redirectTo, skipBrowserRedirect: true } });
+  if (error || !data?.url) throw new Error(error?.message ?? "Couldn't reach Google. Try again.");
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type !== 'success') return false;
+  return completeSignInFromUrl(result.url);
+}
+
+/**
+ * Sign in (or sign up) with Apple, on an iPhone's own Sign in with Apple sheet. Apple shares the
+ * person's name only the first time, so a brand-new account saves it then. Returns false if they cancelled.
+ */
+export async function signInWithApple(): Promise<boolean> {
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+    });
+  } catch (e) {
+    if ((e as { code?: string })?.code === 'ERR_REQUEST_CANCELED') return false;
+    throw e;
+  }
+  if (!credential.identityToken) throw new Error("Apple didn't finish signing you in. Try again.");
+  const { error } = await sb().auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken });
+  if (error) throw new Error(error.message);
+  const me = await session();
+  const first = credential.fullName?.givenName?.trim(), last = credential.fullName?.familyName?.trim();
+  if (me && !me.firstName && !me.lastName && first && last) await updateMyName(first, last).catch(() => {});
   return true;
 }
 

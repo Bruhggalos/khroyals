@@ -291,14 +291,14 @@ that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
 
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
-with search that highlights every match and jumps to its page; works signed out. The
+with search that highlights every match and jumps to its page. The
 text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated with
 `swift scripts/import_handbook.swift`) and rebuilt into headings and paragraphs by
 `src/handbook/handbook.ts`. Page numbers are the PDF's.
 
 **Activities** (Apps → Activities: the basketball-and-masks tile). Sports, theater,
 music, art and clubs, picked with the category pills at the top (or All). Anyone
-(signed out too) sees what's **happening now**, seasons **coming up** with dates,
+signed in sees what's **happening now**, seasons **coming up** with dates,
 eligible grades, details, an info link and sign-up dates, and each activity's
 **schedule**: games, practices, tryouts and tournaments for sports; rehearsals,
 auditions and performances for theater and music; meetings, competitions and exhibits

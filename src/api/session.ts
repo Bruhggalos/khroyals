@@ -50,6 +50,13 @@ export const getUser = (id: string): Person | undefined => (live ? directory.get
 
 export const listUsers = async (): Promise<Person[]> => (live ? [...directory.values()] : mock.listUsers());
 
+/** Whether this device has a saved sign-in (no network needed): keeps someone in when their profile can't load offline. */
+export async function hasSignIn(): Promise<boolean> {
+  if (!live) return true;
+  const { data } = await sb().auth.getSession();
+  return !!data.session;
+}
+
 export async function signOut() {
   if (live) { const { error } = await sb().auth.signOut(); if (error) throw error; }
   accountId = null; clearSession();

@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { Platform, View } from 'react-native';
-import { Stack, useSegments } from 'expo-router';
+import { Stack, usePathname, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
+import { AccountGate, useAccountGate } from '../src/AccountGate';
 import { AlertTakeover } from '../src/alerts/AlertTakeover';
 import { LocationConsent } from '../src/alerts/LocationConsent';
 import { offerDndAccess } from '../src/alerts/loudness';
@@ -34,6 +35,10 @@ function usePush() {
 
 export default function Root() {
   usePush();
+  // Only approved accounts use the app: everyone else sees the welcome screen over it.
+  const { gate, recheck } = useAccountGate();
+  const open = gate === 'in';
+  const path = usePathname();
   // The car line board is for a big screen: dark and the full width of the monitor.
   const board = useSegments()[0] === 'carline-board';
   const stack = (
@@ -51,16 +56,20 @@ export default function Root() {
     </Stack>
   );
   return (
-    <>
-      <StatusBar style="light" />
-      {Platform.OS === 'web'
-        // On a computer the app (and admin portal) sits in a readable centered column; the car line board fills the screen.
-        ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: board ? undefined : 960, alignSelf: 'center' }}>{stack}</View></View>
-        : stack}
+    <View style={{ flex: 1 }}>
+      <StatusBar style={open ? 'light' : 'dark'} />
+      {/* Hidden from screen readers while the welcome screen covers it. */}
+      <View style={{ flex: 1 }} importantForAccessibility={open ? 'auto' : 'no-hide-descendants'} accessibilityElementsHidden={!open} aria-hidden={!open}>
+        {Platform.OS === 'web'
+          // On a computer the app (and admin portal) sits in a readable centered column; the car line board fills the screen.
+          ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: board ? undefined : 960, alignSelf: 'center' }}>{stack}</View></View>
+          : stack}
+      </View>
       {/* Teachers and staff: asked once about sharing their location with alert answers, and an
           active critical alert covers the app until they answer it. */}
       <LocationConsent />
       <AlertTakeover />
-    </>
+      {!open && <AccountGate gate={gate} recheck={recheck} linking={path === '/auth'} />}
+    </View>
   );
 }

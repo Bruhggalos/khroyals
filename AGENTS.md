@@ -40,7 +40,10 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   the repo (`app.json → expo.extra`). Service-role keys, `sb_secret_…` keys and
   `sbp_…` access tokens go in environment variables. The repo is public.
 - **Sign-in is passwordless**: email → 6-digit code (`sendEmailCode` /
-  `verifyEmailCode`). Don't reintroduce passwords or demo logins in the app.
+  `verifyEmailCode`), or Continue with Apple / Google (`signInWithApple`, `signInWithGoogle`;
+  `src/comms/SsoButtons.tsx` shows only the providers switched on in Supabase, `ssoProviders`).
+  Same-email accounts are linked; new people still wait for approval, and `app.handle_new_user`
+  names them from what the provider sends. Don't reintroduce passwords or demo logins in the app.
 - **Demo accounts (`--demo` only) must never get admin powers.** Admin roles
   (`admin_roles`; director is built in) and permissions are only for real accounts.
   There may be several directors but never zero (trigger `app.keep_a_director`);
@@ -228,6 +231,12 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Expo module: CarLineCarService + a car pass in SharedPreferences). The Kotlin only
   compiles in the CI APK build, so check it after changes. Car passes may only ever
   reach `car_carline_status` / `car_carline_check_in`.
+- **Approved accounts only.** `src/AccountGate.tsx` (mounted last in `app/_layout.tsx`) covers every
+  screen until an approved account is signed in: the welcome screen (the Kingdom Heights shield, Log in /
+  Create account) or Waiting for approval. The app stays mounted underneath, so sign-in links and
+  notification taps still finish there; demo builds without the server stay open. `tests/gate.test.ts`
+  checks it's mounted. Database reads open to signed-out visitors (`anon`) stay as they are, but the app
+  shows nothing until approval.
 - **Every screen has a way back.** `app/_layout.tsx` sets `unstable_settings.initialRouteName
   = '(tabs)'`, so a screen opened straight from a link (khroyals://…, a web address, a
   notification that starts the app) still has the tabs underneath and a back button. Keep it.

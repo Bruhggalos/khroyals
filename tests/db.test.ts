@@ -227,6 +227,24 @@ test('calendar: anyone reads the school calendar; only admins edit it; group eve
   assert.equal((await rows(`select title from events where title = 'Team dinner'`)).length, 0, 'non-members do not');
 });
 
+test('new accounts from Google or Apple get their names from what the provider sends', async () => {
+  await asSuper();
+  const signUp = async (n: number, meta: object | null) => {
+    const uid = `00000000-0000-0000-0000-0000000005${String(n).padStart(2, '0')}`;
+    await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)`, [uid, `sso${n}@example.com`, meta && JSON.stringify(meta)]);
+    return one(`select first_name, last_name, school_role from profiles where id = '${uid}'`);
+  };
+  assert.deepEqual(await signUp(1, { full_name: 'Grace Brewster Hopper', name: 'Grace Brewster Hopper', email_verified: true }),
+    { first_name: 'Grace', last_name: 'Brewster Hopper', school_role: null }, 'Google: full_name, waiting for approval');
+  assert.deepEqual(await signUp(2, { given_name: 'Ada', family_name: 'Lovelace' }), { first_name: 'Ada', last_name: 'Lovelace', school_role: null });
+  assert.deepEqual(await signUp(3, { name: 'Cher' }), { first_name: 'Cher', last_name: '', school_role: null }, 'one name');
+  assert.deepEqual(await signUp(4, {}), { first_name: '', last_name: '', school_role: null }, 'Apple sends no name in its token');
+  assert.deepEqual(await signUp(5, null), { first_name: '', last_name: '', school_role: null });
+  assert.deepEqual(await signUp(6, { first_name: 'New', last_name: 'Parent', full_name: 'Ignored Name' }),
+    { first_name: 'New', last_name: 'Parent', school_role: null }, 'the email sign-up form still wins');
+  await db.exec(`delete from auth.users where email like 'sso%@example.com'`);
+});
+
 test('admin console: approve sign-ups and manage roles', async () => {
   await asSuper();
   await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000aa', 'new@demo.khroyals.test', '{"first_name":"New","last_name":"Parent"}')`);

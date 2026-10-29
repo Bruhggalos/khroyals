@@ -92,6 +92,7 @@ feedback comes in.
 | Build the iPhone app in CI | — | Not started | GitHub Actions builds Android only; iPhone builds are made on a Mac. |
 | Check the app on iPhone Duo | — | Not started | The inner display runs it in both orientations (iPhone Duo ignores the portrait lock), and the app resizes as it folds. Built for it but never seen: needs an iPhone Duo simulator (not in Xcode 27.0) or a device. |
 | Penetration testing | — | Not started | Must pass before Full release. Run on the integrated beta build: phone apps, admin web portal, database permissions and API functions, sign-in, and the FACTS connection. Fix and retest any findings before Phase 4. |
+| Switch on Google and Apple sign-in | Ben | Not started | Built and hidden until switched on: create the Google OAuth client and turn on the Apple and Google providers in Supabase ([DEVELOPING §5](DEVELOPING.md#google-and-apple-sign-in)). Then try both on an iPhone and Android, including an existing account (it should land in the same account) and Apple's Hide My Email. |
 | Account deletion in the app | Ben | Not started | Apple requires it for any app that lets people create accounts; App Store review rejects the app without it. None exists today. |
 | Beta plan | Ben | Not started | Who's in the beta, how testers send feedback (the Feedback app is built; give someone the IT role to triage), and what has to be true to go ahead with release. |
 
@@ -123,6 +124,10 @@ Ongoing after release; bugs reported in beta and after release go here too.
 
 ## Open decisions
 
+- [ ] How do Apple's reviewers get in? The app opens only for approved accounts, so App Review (and
+  Beta App Review for a new version) needs a working sign-in. They can't read an emailed code; options
+  are a reviewer account the team watches and approves on request, or Sign in with Apple (once
+  switched on) with the team approving the reviewer quickly. Decide before the next version's review.
 - [ ] Public App Store listing, or Apple's unlisted distribution? Unlisted is a normal App Store
   app that only opens from a link the school shares (it doesn't show in search); it needs a request
   to Apple. Decide with the school before publishing (Phase 4).
@@ -164,6 +169,7 @@ Working in the app and on the server today.
 | Car Line | Big-screen board | Staff open it on a TV or monitor (Big screen): every car that checked in today, live, with pickup number, child, vehicle and minutes waiting; yellow ripples spread from the Kingdom Heights shield when a car checks in; on a child's birthday a crown hangs off their name and a fanfare (confetti, trumpets, Happy Birthday card) plays when they're announced; the week before Thanksgiving, leaf piles fill the bottom corners and a turkey pops out to gobble for each car, the week before Christmas break, snow piles, falling snow and a snowman saying Merry Christmas; the weeks before Fall Break (acorns and a squirrel) and Spring Break (sand, shells and a crab); and holiday scenes the school day before and the day of Labor Day, Veterans Day, MLK Day, Valentine's Day, Presidents' Day, St. Patrick's Day, Easter, Mother's Day and Memorial Day; car line leads and the office switch any of these (and birthdays) off for every screen in Car line settings; picked-up rows grey out and drop below the line |
 | Car Line | Pickup emails | Every parent is emailed who picked the child up, which staff member released them, and when (undo within a minute cancels it) |
 | Car Line | Approved pickup people | Parents (or the office) let another account holder pick a child up, for today, until a date, or until removed; at most one mother and one father per child |
+| Accounts | Approved accounts only | The app opens on the Kingdom Heights welcome screen (Log in / Create account) and shows nothing else until an approved account signs in; new accounts wait there for the office, can add their name, and the app opens when they're approved |
 | Accounts | Duplicate children | One record per child: same name and birthday is refused; likely matches (typos, nicknames, birthday, grade) are shown to the office, which links the parent to the existing child |
 | Car Line | Car line settings | Spot, radius and hours set by leads and the office |
 | Car Line | Android Auto | Car-screen status and "I'm here" button |

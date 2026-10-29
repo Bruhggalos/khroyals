@@ -275,7 +275,7 @@
     <details class="fold big" data-fold>
       <summary>Getting an account</summary>
       <ol class="flow">
-        <li><b>Open the app.</b> Everyone starts as a visitor; no account needed.</li>
+        <li><b>Open the app.</b> It opens on the sign-in screen; nothing else shows until an approved account signs in.</li>
         <li><b>Sign in with an email code.</b> The app emails a 6-digit code; there are no passwords.</li>
         <li><b>The office approves the account</b> as a parent, student or family, and links parents and grandparents to their children. The office can also make someone a teacher or staff.</li>
         <li><b>Parents give a child their own login</b> when the family decides they're ready. The child keeps the same classes and activities.</li>
@@ -380,7 +380,7 @@
 const F = [
   { area: 'Everyday', icon: '📅', name: 'Planner', short: 'Today at a glance: date, greeting, what to wear, assignments, each child, events and car line hours, two weeks ahead.',
     what: 'The home tab. It opens on today and pages through the next two weeks one day at a time (swipe or tap the date strip). Each day shows whether there is school, the uniform for that day, assignments, a card per child for parents, school events, activities, volunteer sign-ups and car line hours. Below: what is coming up on the school calendar, Royal News and the latest school news.',
-    who: ['Parents', 'Students', 'Staff', 'Visitors (signed out)'],
+    who: ['Parents', 'Students', 'Staff'],
     flow: ['<b>Open the app.</b> The Planner shows today in the school\'s time zone, with "Good morning Ava!" for students.',
       '<b>Check what to wear.</b> Daily uniform Monday, Tuesday, Thursday and Friday; Chapel uniform on Wednesday, with pictures of the approved pieces and the Chapel details for each child\'s grade.',
       '<b>See each child.</b> Parents get one card per child: assignments due, activities and forms still to sign.',
@@ -397,7 +397,7 @@ const F = [
     safe: ['Only people with the School calendar permission (and their authenticator code) can add or change themes.', 'Every change is in the activity log.'] },
   { area: 'Everyday', icon: '📰', name: 'Royal News', short: 'The emailed newsletter, kept in the app: this week\'s issue and every past one.',
     what: 'Every issue of the school newsletter (made in Smore) reads in the app with its sections, bold text, pictures and working links, newest first by month. Long issues have a floating "Top" button and a "Back to Royal News" button at the end.',
-    who: ['Everyone (even signed out)', 'Office staff add issues'],
+    who: ['Everyone signed in', 'Office staff add issues'],
     flow: ['<b>The office sends the newsletter</b> from Smore as usual.',
       '<b>They paste its link</b> into Royal News → Add an issue. The app reads the page and adds it.',
       '<b>Families tap Royal News</b> on the Planner to read it, or browse past issues.',
@@ -560,8 +560,8 @@ const F = [
     flow: ['<b>Open the person</b> in Admin → People.', '<b>Tap "Delete account…"</b> and confirm the name.', '<b>The account and its content are gone</b>; the log keeps a record.'],
     safe: ['You can\'t delete yourself or a director; deleting an admin also needs Manage admins.'] },
   { area: 'School site', icon: '🏫', name: 'School website in the app', short: 'All khroyals.com pages, news, calendar, handbook (searchable) and videos.',
-    what: 'The school\'s public site is imported into the app: every page, news articles, the 2026–27 calendar, a searchable student handbook and videos. It works signed out, so prospective families can explore.',
-    who: ['Everyone, signed out too'],
+    what: 'The school\'s public site is imported into the app: every page, news articles, the 2026–27 calendar, a searchable student handbook and videos.',
+    who: ['Everyone signed in'],
     flow: ['<b>Browse More</b> for pages like Admissions and Student Life.', '<b>Read news</b> and the handbook (search highlights matches).', '<b>Share</b> the app with a QR code from the Share tab.'],
     safe: ['Long pages have a Top button and a Done button at the end.'] },
   { area: 'Platform', icon: '📱', name: 'Android, iPhone, iPad and web', short: 'One codebase; Android APK and the web app build automatically on every change.',
@@ -577,13 +577,13 @@ const ROLES = [
   ['Teachers and staff', 'Car line board, emergency alerts, their classes and assignments, forms, groups they run.'],
   ['Family (relatives)', 'Car line for linked children, Volunteer, following activities, public screens.'],
   ['Office and admins', 'Admin portal: approvals, families, classes, calendar, notifications, routing questions.'],
-  ['Visitors (signed out)', 'School site, news, calendar, handbook, Royal News, Planner basics.'],
+  ['Visitors (signed out)', 'Only the sign-in screen: Log in or Create account. New accounts wait there for approval.'],
 ];
 
 /* ------------------------------------------------------------------ user roles */
 const KINDS = [
   { id: 'visitor', as: 'a visitor', icon: '🌐', name: 'Visitor', who: 'Anyone who opens the app without signing in, and new accounts waiting for the office to approve them.',
-    can: ['Planner with the school\'s next two weeks', 'School website, news, Royal News and calendar', 'The student handbook', 'Browse and search activities'] },
+    can: ['The sign-in screen: Log in or Create account', 'Ask for an account, then wait for the office', 'Nothing else until approved'] },
   { id: 'student', as: 'a student', icon: '🎒', name: 'Student', who: 'A student with their own login, given by a parent or the office. Until then, their parents use the app for them.',
     can: ['Planner with their uniform and assignments', 'Ask the Teacher: message their teachers', 'Assignments to check off', 'Photo gallery, groups and activities'] },
   { id: 'parent', as: 'a parent', icon: '👨‍👩‍👧', name: 'Parent', who: 'Parents approved by the office and linked to their children: up to two per child, a mother and a father.',
@@ -671,6 +671,8 @@ const MX = [
     ['Delete an account and everything it posted', ['n', 'n', 'n', 'n', 'n', ['y', 'Directors, and anyone they allow']]],
   ]],
 ];
+// Visitors only get the sign-in screen: the app opens for approved accounts only (src/AccountGate.tsx).
+for (const [, rows] of MX) for (const row of rows) row[1] = ['n', ...row[1].slice(1)];
 
 const DUTIES = [
   ['Teachers and staff', 'Class teacher', 'Leads a class the office sets up: answers its students in Ask the Teacher, gives them assignments and sends forms to their parents.'],
@@ -881,6 +883,10 @@ function drawMatrix() {
       return shown.length ? `<tr class="grp"><th scope="rowgroup">${esc(group)}</th>${cols.map(() => '<td></td>').join('')}</tr>`
         + shown.map(([name, cells]) => `<tr><th scope="row">${esc(name)}</th>${cols.map(([, i]) => mxCell(cells[i])).join('')}</tr>`).join('') : '';
     }).join('') + '</tbody>';
+  // Visitors have no features: say so instead of an empty table.
+  if (one && !$('mx').querySelector('tbody tr')) {
+    $('mx').querySelector('tbody').innerHTML = `<tr><th scope="row">Only the sign-in screen, until an approved account signs in.</th><td>${mxCell('n')}</td></tr>`;
+  }
   $('mx-foot').textContent = (one ? `Showing what ${cols[0][0].as} can do; pick Compare all to see what they can't. ` : '')
     + 'Staff who are also parents at the school get the parent features for their own children.';
 }
