@@ -1,4 +1,4 @@
-/** Marketplace: items for sale, your posts, and what you're buying. */
+/** Marketplace: items for sale, your posts, and what you're buying, two to a row with the price and title under each photo. */
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -6,9 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { listMarket, marketPhotoUrls, marketRemove, subscribeMarket, type Listing, type MarketLine, type Person } from '../../src/api/connect';
 import { MarketGate } from '../../src/market/MarketGate';
 import { conditionLabel, deleteWarning, inLine, money } from '../../src/market/format';
-import { Button, C, Card, Loading, P, ask, s } from '../../src/ui';
+import { Button, C, Card, Loading, P, ask, s, useContentWidth } from '../../src/ui';
 
 type Tab = 'shop' | 'selling' | 'buying';
+const GAP = 12;
 
 export default function Market() {
   return <MarketGate title="Marketplace">{(me) => <Browse me={me} />}</MarketGate>;
@@ -18,6 +19,7 @@ function Browse({ me }: { me: Person }) {
   const [data, setData] = useState<{ listings: Listing[]; lines: MarketLine[] } | null>(null);
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<Tab>('shop');
+  const tile = Math.floor((useContentWidth() - GAP) / 2);  // two across the page column
 
   const load = useCallback(async () => {
     const d = await listMarket().catch(() => ({ listings: [], lines: [] }));
@@ -61,6 +63,7 @@ function Browse({ me }: { me: Person }) {
 
   return (
     <FlatList style={s.screen} contentContainerStyle={s.pad} data={lists[tab]} keyExtractor={(l) => l.id}
+      numColumns={2} columnWrapperStyle={{ gap: GAP }}
       ListHeaderComponent={
         <View style={{ gap: 12 }}>
           <Button label="+ Sell an item" onPress={() => router.push('/market/new')} />
@@ -76,25 +79,31 @@ function Browse({ me }: { me: Person }) {
         </View>}
       ListEmptyComponent={<Card><P muted>{empty[tab]}</P></Card>}
       renderItem={({ item: l }) => (
-        <Card onPress={() => router.push(`/market/${l.id}`)} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          {l.photoPath && photos[l.photoPath]
-            ? <Image source={{ uri: photos[l.photoPath] }} style={{ width: 76, height: 76, borderRadius: 10 }} />
-            : <View style={{ width: 76, height: 76, borderRadius: 10, backgroundColor: C.primary + '14', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="pricetag" size={28} color={C.primary} />
-              </View>}
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text numberOfLines={2} style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{l.title}</Text>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: C.primary }}>{money(l.priceCents)}</Text>
-            <P muted>{note(l)}</P>
+        <Pressable onPress={() => router.push(`/market/${l.id}`)} accessibilityRole="button" accessibilityLabel={`${l.title}, ${money(l.priceCents)}`}
+          style={({ pressed }) => ({ width: tile, borderRadius: 12, overflow: 'hidden', backgroundColor: C.card, borderWidth: 1, borderColor: C.line,
+            opacity: pressed ? 0.85 : 1 })}>
+          <View>
+            {l.photoPath && photos[l.photoPath]
+              ? <Image source={{ uri: photos[l.photoPath] }} style={{ width: tile, height: tile }} resizeMode="cover" />
+              : <View style={{ width: tile, height: tile, backgroundColor: C.primary + '14', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="pricetag" size={36} color={C.primary} />
+                </View>}
+            {l.sellerId === me.id && (
+              <Pressable hitSlop={8} accessibilityRole="button" accessibilityLabel={`Delete ${l.title}`}
+                onPress={() => ask('Delete this post?', deleteWarning(l), 'Delete',
+                  () => marketRemove(l.id).then(load).catch((e) => Alert.alert('Marketplace', e.message)))}
+                style={{ position: 'absolute', top: 8, right: 8, width: 34, height: 34, borderRadius: 17, backgroundColor: '#fff',
+                  alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line }}>
+                <Ionicons name="trash-outline" size={18} color={C.danger} />
+              </Pressable>
+            )}
           </View>
-          {l.sellerId === me.id && (
-            <Pressable hitSlop={10} accessibilityRole="button" accessibilityLabel={`Delete ${l.title}`}
-              onPress={() => ask('Delete this post?', deleteWarning(l), 'Delete',
-                () => marketRemove(l.id).then(load).catch((e) => Alert.alert('Marketplace', e.message)))}>
-              <Ionicons name="trash-outline" size={22} color={C.danger} />
-            </Pressable>
-          )}
-        </Card>
+          <View style={{ padding: 10, gap: 2 }}>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: C.ink }}>{money(l.priceCents)}</Text>
+            <Text numberOfLines={2} style={{ fontSize: 15, color: C.ink }}>{l.title}</Text>
+            <Text numberOfLines={2} style={{ fontSize: 12, color: C.muted }}>{note(l)}</Text>
+          </View>
+        </Pressable>
       )} />
   );
 }
