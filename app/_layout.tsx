@@ -4,6 +4,7 @@ import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
 import { AlertTakeover } from '../src/alerts/AlertTakeover';
+import { LocationConsent } from '../src/alerts/LocationConsent';
 import { offerDndAccess } from '../src/alerts/loudness';
 import { syncCarPass } from '../src/carline/carPass';
 import { enablePush, handleNotificationTaps } from '../src/comms/push';
@@ -56,7 +57,9 @@ export default function Root() {
         // On a computer the app (and admin portal) sits in a readable centered column; the car line board fills the screen.
         ? <View style={{ flex: 1, backgroundColor: '#E9EDF5' }}><View style={{ flex: 1, width: '100%', maxWidth: board ? undefined : 960, alignSelf: 'center' }}>{stack}</View></View>
         : stack}
-      {/* Teachers and staff: an active critical alert covers the app until they answer it. */}
+      {/* Teachers and staff: asked once about sharing their location with alert answers, and an
+          active critical alert covers the app until they answer it. */}
+      <LocationConsent />
       <AlertTakeover />
     </>
   );

@@ -10,6 +10,7 @@ import {
   isSchoolStaff, live, myGroupPrefs, mySettings, removeMyAvatar, session, setNotificationPref, signOut, updateMyName, updateMySettings,
   uploadMyAvatar, type GroupPref, type MySettings, type Person,
 } from '../src/api/connect';
+import { AlertLocationCard } from '../src/alerts/AlertLocationCard';
 import { EmergencyAlertsCard } from '../src/alerts/EmergencyAlertsCard';
 import { forgetCarPass } from '../src/carline/carPass';
 import { disableAutoCheckIn } from '../src/carline/autoCheckIn';
@@ -203,6 +204,7 @@ export default function Profile() {
       </Card>
 
       {isSchoolStaff(person) && <EmergencyAlertsCard />}
+      {isSchoolStaff(person) && <AlertLocationCard />}
 
       {groups.length > 0 && (
         <Card>

@@ -322,6 +322,13 @@ export type Database = {
       }
       critical_alert_responses: {
         Row: {
+          accuracy_m: number | null
+          bssid: string | null
+          lat: number | null
+          lng: number | null
+          located_at: string | null
+          location_error: string | null
+          ssid: string | null
           alert_id: string
           note: string | null
           status: string
@@ -329,6 +336,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accuracy_m?: number | null
+          bssid?: string | null
+          lat?: number | null
+          lng?: number | null
+          located_at?: string | null
+          location_error?: string | null
+          ssid?: string | null
           alert_id: string
           note?: string | null
           status: string
@@ -336,6 +350,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accuracy_m?: number | null
+          bssid?: string | null
+          lat?: number | null
+          lng?: number | null
+          located_at?: string | null
+          location_error?: string | null
+          ssid?: string | null
           alert_id?: string
           note?: string | null
           status?: string
@@ -611,6 +632,32 @@ export type Database = {
             foreignKeyName: "gallery_photos_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      location_consents: {
+        Row: {
+          allowed: boolean
+          answered_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed: boolean
+          answered_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          answered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2683,6 +2730,44 @@ export type Database = {
           },
         ]
       }
+      wifi_access_points: {
+        Row: {
+          bssid: string
+          building: string
+          floor: string
+          notes: string
+          place: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bssid: string
+          building?: string
+          floor?: string
+          notes?: string
+          place: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bssid?: string
+          building?: string
+          floor?: string
+          notes?: string
+          place?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wifi_access_points_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -2895,6 +2980,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      alert_location_consent: { Args: { p_allowed: boolean }; Returns: undefined }
       anonymous_author: { Args: { p_post: string }; Returns: string }
       ask_school: {
         Args: { p_body: string; p_subject: string; p_topic: string }
@@ -3230,6 +3316,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      critical_alert_share_location: {
+        Args: {
+          p_accuracy?: number
+          p_alert: string
+          p_bssid?: string
+          p_error?: string
+          p_lat?: number
+          p_lng?: number
+          p_located_at?: string
+          p_ssid?: string
+        }
+        Returns: undefined
       }
       critical_alert_status: { Args: { p_alert: string }; Returns: Json }
       dismiss_notifications: { Args: { p_ids: string[] }; Returns: undefined }
@@ -4364,6 +4463,19 @@ export type Database = {
       }
       vote_poll: { Args: { p_option: string }; Returns: undefined }
       vote_post: { Args: { p_post: string; p_value: number }; Returns: number }
+      wifi_ap_delete: { Args: { p_bssid: string }; Returns: undefined }
+      wifi_ap_import: { Args: { p_rows: Json }; Returns: number }
+      wifi_ap_save: {
+        Args: {
+          p_bssid: string
+          p_building?: string
+          p_floor?: string
+          p_notes?: string
+          p_old?: string
+          p_place: string
+        }
+        Returns: Database["public"]["Tables"]["wifi_access_points"]["Row"]
+      }
     }
     Enums: {
       [_ in never]: never

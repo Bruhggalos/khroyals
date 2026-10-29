@@ -81,6 +81,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   On Android they ring on the `emergency` channel (`src/alerts/loudness.ts`: alarm volume, so
   silent mode doesn't mute it; Do Not Disturb access lets it through DND); `send-push/delivery.ts`
   names the same channel. Channel sound settings can't change once made: change the id instead.
+  **Alert locations:** staff consent once (`location_consents`); answers then send GPS + the Wi-Fi BSSID
+  (`critical_alert_share_location`, after the answer so it's never held up), placed on the **Alert map**
+  (`wifi_access_points`, `alerts.map`, `app.ap_place`). Only the person and `alerts.send` holders read them;
+  `app.purge_alert_locations` erases them after `alert_location_days`. Never read location at any other time
+  or in the background for alerts, and never keep it without consent.
 - **Parents and pickup people:** a child has at most two parents, one mother and one
   father (`guardians.relation`, enforced by `app.check_parents`); links made before that
   may have no relation until the office sets it. Anyone else who picks up must have an

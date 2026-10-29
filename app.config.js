@@ -39,6 +39,8 @@ module.exports = ({ config }) => {
       entitlements: {
         ...config.ios?.entitlements,
         'com.apple.developer.usernotifications.time-sensitive': true,
+        // Critical alert answers send the Wi-Fi access point the phone is on (the room, on the Alert map).
+        'com.apple.developer.networking.wifi-info': true,
         ...(process.env.CRITICAL_ALERTS_ENTITLEMENT === '1' ? { 'com.apple.developer.usernotifications.critical-alerts': true } : {}),
       },
     },

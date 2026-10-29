@@ -13,6 +13,7 @@ import {
   ROLE_LABELS, sendNotification, subscribeQuestions,
   type Access, type AdminPerson, type AdminRole, type FamilyLink, type Notice, type PeopleFilter, type PermissionInfo, type SchoolQuestion,
 } from '../../src/api/connect';
+import { AlertMapPanel } from '../../src/admin/AlertMapPanel';
 import { ClassesPanel } from '../../src/admin/ClassesPanel';
 import { StudentsPanel } from '../../src/admin/StudentsPanel';
 import { GradePicker } from '../../src/comms/GradePicker';
@@ -531,6 +532,7 @@ function Portal({ access }: { access: Access }) {
     can('admins.manage') && ['admins', 'Admins & roles'],
     ['notify', 'Notifications'],
     can('questions.manage') && ['questions', 'Questions'],
+    can('alerts.map') && ['alertmap', 'Alert map'],
     can('audit.view') && ['audit', 'Activity log'],
   ].filter(Boolean) as [string, string][];
   const [tab, setTab] = useState(tabs[0][0]);
@@ -549,6 +551,7 @@ function Portal({ access }: { access: Access }) {
       {tab === 'admins' && <Admins catalog={catalog} roles={roles} reloadRoles={loadRoles} />}
       {tab === 'notify' && <Notifications access={access} />}
       {tab === 'questions' && <QuestionsPanel />}
+      {tab === 'alertmap' && <AlertMapPanel />}
       {tab === 'audit' && <Audit />}
     </ScrollView>
   );

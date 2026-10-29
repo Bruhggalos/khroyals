@@ -30,9 +30,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Your location isn't stored or shared.",
-          "locationAlwaysPermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Your location isn't stored or shared.",
-          "locationWhenInUsePermission": "KH Royals uses your location when you tap I'm here at car line pickup, so the school knows you've arrived. Your location isn't stored or shared.",
+          "locationAlwaysAndWhenInUsePermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Teachers and staff who agree also send it when they answer a critical alert, so the office can find them; only alert senders see that, and it's erased after the alert. Your location is never tracked.",
+          "locationAlwaysPermission": "KH Royals uses your location when you announce car line pickup and, if you turn on automatic check-in, to notice when you arrive at school. Teachers and staff who agree also send it when they answer a critical alert, so the office can find them; only alert senders see that, and it's erased after the alert. Your location is never tracked.",
+          "locationWhenInUsePermission": "KH Royals uses your location when you tap I'm here at car line pickup, so the school knows you've arrived. Teachers and staff who agree also send it when they answer a critical alert, so the office can find them; only alert senders see that, and it's erased after the alert. Your location is never tracked.",
           "isAndroidBackgroundLocationEnabled": true,
           "isIosBackgroundLocationEnabled": true
         }

@@ -1907,6 +1907,72 @@ test('every public table grants its access explicitly (Supabase stops auto-grant
   assert.deepEqual(missing, [], 'add "grant select on public.<table> to authenticated" (and service_role) in the migration that creates it');
 });
 
+test('critical alert answers carry the location of staff who agreed, placed on the Wi-Fi map for the senders', async () => {
+  const [eng, sci] = [(await one(`select ${id('u-eng')} as u`)).u as string, (await one(`select ${id('u-sci')} as u`)).u as string];
+  // The map: alerts.map holders (directors here) keep it; nobody else can.
+  await as('u-eng');
+  await rejects(`select * from wifi_ap_save('3c:84:6a:00:00:10', 'Room 112')`, /permission/);
+  await rejects(`select alert_location_consent(null)`, /yes or no/);
+  await one(`select alert_location_consent(true)`);
+  await as('u-sci');
+  await one(`select alert_location_consent(false)`);
+  await as('u-p01');
+  await rejects(`select alert_location_consent(true)`, /teachers and staff/);
+  await as('u-admin', true);
+  await rejects(`select * from wifi_ap_save('not-a-mac', 'Room 112')`, /isn't a MAC address/);
+  const ap = await one(`select * from wifi_ap_save('3C-84-6A-00-00-10', 'Room 112', 'Main building', '1st floor')`);
+  assert.equal(ap.bssid, '3c:84:6a:00:00:10');
+  await rejects(`select wifi_ap_import('[{"bssid":"3c846a000020","place":"Gym"},{"bssid":"zz","place":"Library"}]')`, /Line 2/);
+  assert.equal((await rows(`select 1 from wifi_access_points where place = 'Gym'`)).length, 0, 'a bad line saves nothing');
+  assert.equal((await one(`select wifi_ap_import('[{"bssid":"3c846a000020","place":"Gym"},{"bssid":"3c:84:6a:00:01:30","place":"Library","floor":"2nd floor"}]') as n`)).n, 2);
+  await one(`select * from wifi_ap_save('3c:84:6a:00:00:21', 'Gymnasium', '', '', '', '3c:84:6a:00:00:20')`);
+  assert.deepEqual((await rows(`select bssid, place from wifi_access_points order by bssid`)).map((r) => [r.bssid, r.place]),
+    [['3c:84:6a:00:00:10', 'Room 112'], ['3c:84:6a:00:00:21', 'Gymnasium'], ['3c:84:6a:00:01:30', 'Library']]);
+  await as('u-eng');
+  assert.equal((await rows(`select 1 from wifi_access_points`)).length, 0, 'staff without the map or alerts see none');
+
+  // An alert: Jennifer answers and her phone sends where it is; Jessica said no, so hers isn't kept.
+  await as('u-admin', true);
+  const alert = await one(`select * from critical_alert_send('weather', 'Tornado warning', 'Go to your shelter area.')`);
+  await as('u-eng');
+  await rejects(`select critical_alert_share_location('${alert.id}', 34.72, -86.61)`, /Answer the alert first/);
+  await one(`select * from critical_alert_respond('${alert.id}', 'help', 'Two students hurt')`);
+  await rejects(`select critical_alert_share_location('${alert.id}', 34.72, null)`, /both latitude and longitude/);
+  await one(`select critical_alert_share_location('${alert.id}', 34.7264, -86.6177, 12, now(), '3C:84:6A:00:00:1A', 'KH-Staff')`);
+  await as('u-sci');
+  await one(`select * from critical_alert_respond('${alert.id}', 'safe')`);
+  await one(`select critical_alert_share_location('${alert.id}', 34.7, -86.6, 5, now(), '3c:84:6a:00:01:30')`);
+  assert.deepEqual(await one(`select lat, bssid, location_error from critical_alert_responses where alert_id = '${alert.id}' and user_id = '${sci}'`),
+    { lat: null, bssid: null, location_error: 'no_consent' });
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from critical_alert_responses where alert_id = '${alert.id}'`)).length, 0);
+
+  // The senders see it, with the place from the map (this BSSID is another radio of Room 112's access point).
+  await as('u-admin', true);
+  const roll = (await one(`select critical_alert_status('${alert.id}') as r`)).r as any[];
+  const jen = roll.find((r) => r.id === eng);
+  assert.deepEqual([jen.status, jen.lat, jen.lng, jen.accuracy, jen.bssid, jen.ssid, jen.consent],
+    ['help', 34.7264, -86.6177, 12, '3c:84:6a:00:00:1a', 'KH-Staff', true]);
+  assert.deepEqual(jen.place, { place: 'Room 112', building: 'Main building', floor: '1st floor', approx: true });
+  assert.deepEqual([roll.find((r) => r.id === sci).locationError, roll.find((r) => r.id === sci).consent], ['no_consent', false]);
+  await one(`select * from wifi_ap_save('3c:84:6a:00:00:1a', 'Room 112', 'Main building', '1st floor')`);
+  assert.equal((await one(`select critical_alert_status('${alert.id}') as r`)).r.find((r: any) => r.id === eng).place.approx, false);
+
+  // No fix: the reason is kept. Locations are erased once the alert has been over long enough.
+  await as('u-eng');
+  await one(`select critical_alert_share_location('${alert.id}', null, null, null, null, null, null, 'denied')`);
+  assert.equal((await one(`select location_error from critical_alert_responses where alert_id = '${alert.id}' and user_id = '${eng}'`)).location_error, 'denied');
+  await one(`select critical_alert_share_location('${alert.id}', 34.7264, -86.6177, 12)`);
+  await as('u-admin', true);
+  await one(`select * from critical_alert_end('${alert.id}', 'All clear.')`);
+  await asSuper();
+  assert.equal((await one(`select app.purge_alert_locations() as n`)).n, 0, 'kept for alert_location_days after the all clear');
+  await db.exec(`update critical_alerts set ended_at = now() - interval '31 days' where id = '${alert.id}'`);
+  assert.equal((await one(`select app.purge_alert_locations() as n`)).n, 1);
+  assert.equal((await one(`select lat from critical_alert_responses where alert_id = '${alert.id}' and user_id = '${eng}'`)).lat, null);
+  await db.exec(`delete from wifi_access_points; delete from location_consents`);
+});
+
 test('car line pickups email every parent who picked the child up; an undo cancels the email', async () => {
   await asSuper();
   await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on';

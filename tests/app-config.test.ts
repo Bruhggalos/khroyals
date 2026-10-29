@@ -55,3 +55,9 @@ test('automatic car line check-in has background location on iPhone and Android'
   assert.equal(loc?.isIosBackgroundLocationEnabled, true, 'iPhone: the "location" background mode, or startGeofencingAsync fails');
   assert.equal(loc?.isAndroidBackgroundLocationEnabled, true);
 });
+
+test('iPhone builds can read the Wi-Fi access point, and the location prompt says alert answers use it', () => {
+  assert.equal(withArgs(['prebuild']).ios.entitlements['com.apple.developer.networking.wifi-info'], true);
+  const loc = (appJson.expo.plugins as any[]).find((p) => Array.isArray(p) && p[0] === 'expo-location')?.[1];
+  for (const k of ['locationWhenInUsePermission', 'locationAlwaysAndWhenInUsePermission']) assert.match(loc[k], /critical alert/, k);
+});

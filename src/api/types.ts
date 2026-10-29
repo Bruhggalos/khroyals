@@ -173,7 +173,18 @@ export type CriticalAlert = {
 export type AlertAnswer = { alertId: string; userId: string; status: 'safe' | 'help'; note: string | null; updatedAt: string };
 
 /** For the senders: one teacher or staff member and their answer ('none' = hasn't answered). */
-export type AlertStatusRow = { id: string; name: string; role: SchoolRole; status: 'safe' | 'help' | 'none'; note: string | null; updatedAt: string | null };
+/** One person in a critical alert's roll call, with where they answered from (see src/alerts/whereabouts.ts). */
+export type AlertStatusRow = {
+  id: string; name: string; role: SchoolRole; status: 'safe' | 'help' | 'none'; note: string | null; updatedAt: string | null;
+  lat?: number | null; lng?: number | null; accuracy?: number | null; locatedAt?: string | null; bssid?: string | null; ssid?: string | null;
+  place?: { place: string; building: string; floor: string; approx: boolean } | null;
+  locationError?: 'no_consent' | 'denied' | 'unavailable' | null;
+  /** Whether they agreed to share their location with alert answers (null: not asked yet). */
+  consent?: boolean | null;
+};
+
+/** One of the school's Wi-Fi access points on the Alert map. */
+export type AccessPoint = { bssid: string; place: string; building: string; floor: string; notes: string; updatedAt: string };
 
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 

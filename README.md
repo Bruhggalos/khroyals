@@ -200,6 +200,23 @@ answer **I'm safe** or **I need help** (with where they are). Senders see a live
 (need help first, then no answer, then safe) and give the **all clear**, which everyone is
 told about. Parents, students and Family accounts never see alerts.
 
+**Where they answered from.** After signing in, teachers and staff are asked once whether
+their location may go with their alert answers (`LocationConsent`; `location_consents`,
+`alert_location_consent`; changeable in My profile). Yes asks the phone for location
+permission. From then on, tapping I'm safe or I need help sends the answer at once and,
+right behind it, a GPS fix with its accuracy and the BSSID of the Wi-Fi access point the
+phone is on (`src/alerts/locate.ts`, `critical_alert_share_location`; nothing is kept from
+anyone who said no). Senders tap anyone in the roll call to see their answer, the place
+("Room 112 · Main building · 1st floor"), the GPS spot with **Open in Maps**, or why there's
+no location. The place comes from the **Alert map** (Admin portal → Alert map; `alerts.map`:
+directors, administrators and IT): the school's access points and the room or area each is in,
+added one at a time (on a phone, *Use this phone's access point* while standing in the room)
+or pasted from IT's list (`wifi_access_points`, `wifi_ap_save` / `wifi_ap_import`). A BSSID
+that's only off by its last hex digit from a mapped one (another radio of the same access
+point) shows as "Probably" that place (`app.ap_place`). Locations are erased
+`alert_location_days` (30) after the all clear (`app.purge_alert_locations`, daily). iPhones
+need the Access Wi-Fi Information capability (`app.config.js`) to read the BSSID.
+
 **Notifications.** Everything sent to a person lands on the Notifications page
 (the bell in the top bar, `app/notifications.tsx`): the school's notifications
 (`public.notifications` via `my_notifications()`: group posts, announcements,
