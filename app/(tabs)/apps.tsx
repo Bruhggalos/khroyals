@@ -15,7 +15,7 @@ import { visibleTiles, type TileRules } from '../../src/appTiles';
 import { NewsCarousel } from '../../src/site/NewsCarousel';
 import { GOLD, NAVY } from '../../src/sports/ui';
 import { useStaffViewSetting } from '../../src/staffView';
-import { CONTENT_MAX, C, P, s, useContentWidth } from '../../src/ui';
+import { CONTENT_MAX, C, s, useContentWidth } from '../../src/ui';
 
 /** A tile shows its own artwork or an Ionicons glyph; who sees it is in src/appTiles.ts. */
 type App = { label: string; color: string; href: Href } & TileRules
@@ -128,7 +128,6 @@ export default function Apps() {
           </Pressable>
         ))}
       </View>
-      <P muted>More school apps will show up here.</P>
       </ScrollView>
     </View>
   );
@@ -149,14 +148,9 @@ function ViewSwitch({ staffView, onChange }: { staffView: boolean; onChange: (st
     );
   };
   return (
-    <View style={{ gap: 6 }}>
-      <View style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: C.line }}>
-        {option(false, 'person-outline', 'Standard')}
-        {option(true, 'shield-checkmark', 'Staff')}
-      </View>
-      <Text style={{ fontSize: 13, color: C.muted, textAlign: 'center' }}>
-        {staffView ? 'Staff versions are marked in gold.' : 'The apps as parents see them, for your own children.'}
-      </Text>
+    <View style={{ flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: C.line }}>
+      {option(false, 'person-outline', 'Standard')}
+      {option(true, 'shield-checkmark', 'Staff')}
     </View>
   );
 }
