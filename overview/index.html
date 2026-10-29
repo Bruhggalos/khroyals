@@ -560,7 +560,7 @@ const F = [
     flow: ['<b>Open the person</b> in Admin → People.', '<b>Tap "Delete account…"</b> and confirm the name.', '<b>The account and its content are gone</b>; the log keeps a record.'],
     safe: ['You can\'t delete yourself or a director; deleting an admin also needs Manage admins.'] },
   { area: 'School site', icon: '🏫', name: 'School website in the app', short: 'All khroyals.com pages, news, calendar, handbook (searchable) and videos.',
-    what: 'The school\'s public site is imported into the app: every page, news articles, the 2026–27 calendar, a searchable student handbook, the campus map and videos. It works signed out, so prospective families can explore.',
+    what: 'The school\'s public site is imported into the app: every page, news articles, the 2026–27 calendar, a searchable student handbook and videos. It works signed out, so prospective families can explore.',
     who: ['Everyone, signed out too'],
     flow: ['<b>Browse More</b> for pages like Admissions and Student Life.', '<b>Read news</b> and the handbook (search highlights matches).', '<b>Share</b> the app with a QR code from the Share tab.'],
     safe: ['Long pages have a Top button and a Done button at the end.'] },
@@ -583,7 +583,7 @@ const ROLES = [
 /* ------------------------------------------------------------------ user roles */
 const KINDS = [
   { id: 'visitor', as: 'a visitor', icon: '🌐', name: 'Visitor', who: 'Anyone who opens the app without signing in, and new accounts waiting for the office to approve them.',
-    can: ['Planner with the school\'s next two weeks', 'School website, news, Royal News and calendar', 'Handbook and campus map', 'Browse and search activities'] },
+    can: ['Planner with the school\'s next two weeks', 'School website, news, Royal News and calendar', 'The student handbook', 'Browse and search activities'] },
   { id: 'student', as: 'a student', icon: '🎒', name: 'Student', who: 'A student with their own login, given by a parent or the office. Until then, their parents use the app for them.',
     can: ['Planner with their uniform and assignments', 'Ask the Teacher: message their teachers', 'Assignments to check off', 'Photo gallery, groups and activities'] },
   { id: 'parent', as: 'a parent', icon: '👨‍👩‍👧', name: 'Parent', who: 'Parents approved by the office and linked to their children: up to two per child, a mother and a father.',
@@ -612,7 +612,7 @@ const PICKUP = ['d', 'When a child\'s parents approve them'];
 const MX = [
   ['Everyday', [
     ['Planner: today and the next two weeks', [['s', 'School events'], ['y', 'Plus their uniform or dress-up theme, and assignments'], ['y', 'A card per child: uniform, assignments, activities, forms to sign'], ['s', 'School events, volunteering, car line hours'], ['y', 'Plus their classes\' assignments'], ['y', 'Plus their classes\' assignments']]],
-    ['School website, news, handbook and campus map', ALL],
+    ['School website, news and handbook', ALL],
     ['School calendar', ['y', 'y', 'y', 'y', 'y', ['y', 'Also adds school events and dress-up days']]],
     ['Royal News: this week\'s issue and every past one', ['y', 'y', 'y', 'y', 'y', ['y', 'Also adds new issues']]],
     ['Photo gallery: browse and search albums', ['n', 'y', 'y', 'y', ['y', 'Plus staff-only albums'], ['y', 'Plus staff-only albums']]],
