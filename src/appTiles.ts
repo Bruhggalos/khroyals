@@ -7,6 +7,9 @@
  * - `staffVersion` tiles (Car Line, Ask the School) open in their staff version in staff view.
  * - `studentApp` tiles (Ask the Teacher, Assignments) are for students, and for staff in
  *   staff view (the teacher side).
+ *
+ * In staff view the staff versions (elevated, marked in gold) come first, then the rest, each
+ * group in the order the tiles are listed.
  */
 export type TileRules = { family?: false; student?: false; staffOnly?: true; adminOnly?: true; staffVersion?: true; studentApp?: true };
 
@@ -23,5 +26,6 @@ export function visibleTiles<T extends TileRules>(tiles: T[], v: Viewer): (T & {
       : t.studentApp ? !!v.student || v.staffView
       : v.student ? t.student !== false
       : !(v.family && t.family === false)))
-    .map((t) => ({ ...t, elevated: v.staffView && !!(t.staffOnly || t.adminOnly || t.staffVersion || t.studentApp) }));
+    .map((t) => ({ ...t, elevated: v.staffView && !!(t.staffOnly || t.adminOnly || t.staffVersion || t.studentApp) }))
+    .sort((a, b) => Number(b.elevated) - Number(a.elevated));
 }

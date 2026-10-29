@@ -22,9 +22,9 @@ test('parents, and staff on the Standard view, see the standard apps', () => {
   assert.deepEqual(elevated({ staffView: false, family: false, admin: true }), []);
 });
 
-test('the Staff view adds Alerts (and Admin for admins) and marks the staff versions', () => {
-  assert.deepEqual(labels({ staffView: true, family: false, admin: false }), ['Alerts', 'Car Line', 'Student', 'Calendar', 'Ask the School', 'Ask the Teacher']);
-  assert.deepEqual(labels({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Student', 'Calendar', 'Ask the School', 'Ask the Teacher', 'Admin']);
+test('the Staff view adds Alerts (and Admin for admins) and puts the staff versions first', () => {
+  assert.deepEqual(labels({ staffView: true, family: false, admin: false }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Student', 'Calendar']);
+  assert.deepEqual(labels({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Admin', 'Student', 'Calendar']);
   assert.deepEqual(elevated({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Admin']);
 });
 
