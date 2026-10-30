@@ -5,20 +5,22 @@
  * An item request has Bring by / Drop off at, how much is pledged, and a quantity
  * picker to pledge, change or take back. Saying yes or pledging is celebrated with
  * clapping hands. The leader can delete it with a reason that every volunteer is sent.
+ * One that's part of an event (Harvest Fest) links to it, and its leader can move it into
+ * or out of an event.
  */
 import { useCallback, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  getOpportunity, subscribeVolunteer, volunteerDelete, volunteerPledge, volunteerSayYes, volunteerSend, volunteerWithdraw,
-  type Opportunity, type Person, type Signup, type VolunteerMessage,
+  getOpportunity, listVolunteerEvents, subscribeVolunteer, volunteerDelete, volunteerPledge, volunteerSayYes, volunteerSend, volunteerSetEvent,
+  volunteerWithdraw, type Opportunity, type Person, type Signup, type VolunteerEvent, type VolunteerMessage,
 } from '../../src/api/connect';
-import { NAVY } from '../../src/sports/ui';
+import { GOLD, NAVY } from '../../src/sports/ui';
 import { Cheer } from '../../src/volunteer/Cheer';
 import { detailSections, durationLabel, pledgedTotal, sectionIcon, spotsLeft, startsLabel, stillNeeded } from '../../src/volunteer/details';
 import { countLabel, isPast, longDayLabel, nameOf, timeLabel } from '../../src/volunteer/format';
-import { GREEN, OpportunityBanner, QuantityStepper, Section, SectionTitle, SpotsBar } from '../../src/volunteer/parts';
+import { EventChips, GREEN, OpportunityBanner, Pill, QuantityStepper, Section, SectionTitle, SpotsBar } from '../../src/volunteer/parts';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Chip, Field, H, Input, Loading, P, s, ask, useBottomInset } from '../../src/ui';
 
@@ -28,7 +30,7 @@ export default function OpportunityScreen() {
 }
 
 function Detail({ id, me }: { id: string; me: Person }) {
-  const [data, setData] = useState<{ opportunity: Opportunity | null; signups: Signup[]; messages: VolunteerMessage[] } | null>(null);
+  const [data, setData] = useState<{ opportunity: Opportunity | null; signups: Signup[]; messages: VolunteerMessage[]; events: VolunteerEvent[] } | null>(null);
   const [showPeople, setShowPeople] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);   // the reason, while the leader is deleting
   const [draft, setDraft] = useState('');
@@ -38,7 +40,9 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const bottomInset = useBottomInset();
   const scroll = useRef<ScrollView>(null);
 
-  const load = useCallback(() => getOpportunity(id).then(setData).catch(() => setData({ opportunity: null, signups: [], messages: [] })), [id]);
+  const load = useCallback(() => Promise.all([getOpportunity(id), listVolunteerEvents().catch(() => [])])
+    .then(([o, events]) => setData({ ...o, events }))
+    .catch(() => setData({ opportunity: null, signups: [], messages: [], events: [] })), [id]);
   useFocusEffect(useCallback(() => { load(); return subscribeVolunteer(load); }, [load]));
 
   const act = (fn: () => Promise<unknown>, after?: () => void) => {
@@ -63,6 +67,9 @@ function Detail({ id, me }: { id: string; me: Person }) {
   const pick = Math.min(Math.max(amount ?? myRow?.quantity ?? 1, 1), Math.max(room, 1));
   const past = isPast(o);
   const inChat = leading || signedUp;
+  const event = data.events.find((e) => e.id === o.eventId);
+  // Its leader can move it to an event still to come (or keep the one it's in).
+  const movable = leading && o.status === 'open' && !past ? data.events.filter((e) => !isPast(e) || e.id === o.eventId) : [];
   const length = durationLabel(o);
   const soon = o.status === 'open' ? startsLabel(o) : null;
   const left = items ? stillNeeded(n, o.quantity ?? 0) : spotsLeft(n, o.spots);
@@ -82,6 +89,18 @@ function Detail({ id, me }: { id: string; me: Person }) {
         <Stack.Screen options={{ title: o.title }} />
         <OpportunityBanner o={o} hero leader={leading ? 'You lead this opportunity' : `Led by ${nameOf(o.leadId)}`}
           style={{ borderRadius: 18, borderBottomWidth: 4 }} />
+
+        {!!event && (
+          <Pressable onPress={() => router.push(`/volunteer/event/${event.id}`)} accessibilityRole="link" accessibilityLabel={`Part of ${event.title}`}
+            style={({ pressed }) => [s.card, s.row, { padding: 14, gap: 12, borderColor: GOLD, borderWidth: 2 }, pressed && { opacity: 0.85 }]}>
+            <MaterialCommunityIcons name="calendar-star" size={26} color={C.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1.2, color: C.accent }}>PART OF</Text>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: NAVY }} numberOfLines={1}>{event.title}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={C.muted} />
+          </Pressable>
+        )}
 
         <Section icon="calendar-outline" title={items ? 'Bring by' : 'When'}>
           <Text style={big}>{longDayLabel(o)}</Text>
@@ -142,6 +161,12 @@ function Detail({ id, me }: { id: string; me: Person }) {
             </View>
           )}
         </Section>
+
+        {movable.length > 0 && (
+          <Section icon="calendar-outline" title="Part of an event" tint={C.accent}>
+            <EventChips events={movable} value={o.eventId} disabled={busy} onChange={(ev) => act(() => volunteerSetEvent(o.id, ev))} />
+          </Section>
+        )}
 
         {o.status === 'deleted' ? (
           <Card style={{ borderColor: C.danger, borderWidth: 1 }}>
@@ -251,16 +276,6 @@ function Detail({ id, me }: { id: string; me: Person }) {
 const big = { fontSize: 19, fontWeight: '800', color: NAVY } as const;
 const sub = { fontSize: 16, color: C.ink, fontWeight: '600' } as const;
 const paragraph = { fontSize: 16, lineHeight: 24, color: C.ink } as const;
-
-/** A small rounded label with an icon: "45 min", "In 2 days". */
-function Pill({ icon, text, color }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string; color: string }) {
-  return (
-    <View style={[s.row, { gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: `${color}14` }]}>
-      <Ionicons name={icon} size={14} color={color} />
-      <Text style={{ fontSize: 13, fontWeight: '700', color }}>{text}</Text>
-    </View>
-  );
-}
 
 /** A chat message. The leader's are filled in the school color with a star, so they stand out. */
 function Bubble({ m, lead, mine }: { m: VolunteerMessage; lead: boolean; mine: boolean }) {

@@ -4,21 +4,27 @@ import { isPastDay, schoolToday } from '../calendar/past';
 const pad = (n: number) => String(n).padStart(2, '0');
 export const todayIso = schoolToday;
 
-export const isPast = (o: Opportunity) => isPastDay(o.endsOn ?? o.startsOn);
+/** An opportunity's or event's days. */
+type Days = { startsOn: string; endsOn: string | null };
+
+export const isPast = (o: Days) => isPastDay(o.endsOn ?? o.startsOn);
 
 const day = (iso: string) => new Date(`${iso}T12:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 const time = (hm: string) => { const [h, m] = hm.split(':').map(Number); return `${((h + 11) % 12) + 1}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`; };
 
+/** "Thu, Oct 22", or "Fri, Nov 6 – Sat, Nov 7" for more than one day. */
+export const daysLabel = (o: Days) => (o.endsOn && o.endsOn !== o.startsOn ? `${day(o.startsOn)} – ${day(o.endsOn)}` : day(o.startsOn));
+
 /** "Thu, Oct 22 · 3:00 PM–5:00 PM", or "Bring by Thu, Oct 22" for an item request. */
 export const whenLabel = (o: Opportunity) => {
   if (o.kind === 'items') return `Bring by ${day(o.startsOn)}`;
-  const days = o.endsOn && o.endsOn !== o.startsOn ? `${day(o.startsOn)} – ${day(o.endsOn)}` : day(o.startsOn);
+  const days = daysLabel(o);
   const hours = o.startTime ? ` · ${time(o.startTime)}${o.endTime ? `–${time(o.endTime)}` : ''}` : '';
   return days + hours;
 };
 
 /** "Thursday, October 22", or "Mon, Nov 16 – Thu, Nov 19" for more than one day. */
-export const longDayLabel = (o: Opportunity) => o.endsOn && o.endsOn !== o.startsOn
+export const longDayLabel = (o: Days) => o.endsOn && o.endsOn !== o.startsOn
   ? `${day(o.startsOn)} – ${day(o.endsOn)}`
   : new Date(`${o.startsOn}T12:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 

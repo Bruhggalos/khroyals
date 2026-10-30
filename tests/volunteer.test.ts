@@ -1,7 +1,9 @@
 /** src/volunteer/details.ts: banner art, lengths, countdowns and detail sections. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dateTile, detailSections, durationLabel, HELPING_HANDS, pledgedTotal, sectionIcon, spotsLeft, startsLabel, stillNeeded, themeOf } from '../src/volunteer/details';
+import {
+  dateTile, detailSections, durationLabel, HELPING_HANDS, inEventOrder, moved, pledgedTotal, sectionIcon, spotsLeft, startsLabel, stillNeeded, themeOf,
+} from '../src/volunteer/details';
 
 const day = (startsOn: string, endsOn: string | null = null, startTime: string | null = null, endTime: string | null = null) =>
   ({ startsOn, endsOn, startTime, endTime });
@@ -13,6 +15,9 @@ test('the banner art comes from the title first, then the details', () => {
   assert.equal(themeOf({ title: 'Christmas Program ushers', description: '' }).label, 'Christmas', 'the first match wins');
   assert.equal(themeOf({ title: 'Saturday help', description: 'Weeding the front garden' }).label, 'Grounds');
   assert.deepEqual(themeOf({ title: 'Saturday help', description: 'Anything goes' }), HELPING_HANDS);
+  assert.equal(themeOf({ title: 'Harvest Fest', description: '' }).label, 'Harvest');
+  assert.equal(themeOf({ title: 'Spring Fest', description: '' }).label, 'Celebration');
+  assert.equal(themeOf({ title: 'Water for Harvest Fest', description: '', kind: 'items', item: 'cases of bottled water' }).glyph, 'cup-water');
 });
 
 test('lengths read in minutes, hours or days', () => {
@@ -82,4 +87,13 @@ test('item requests: "Items needed" art, pledge totals and what is still needed'
   assert.equal(pledgedTotal([{ quantity: 10 }, { quantity: 2 }, { quantity: null }]), 12);
   assert.equal(stillNeeded(14, 24), '10 still needed');
   assert.equal(stillNeeded(24, 24), 'All pledged!');
+});
+
+test("an event's opportunities go in its leader's order, then the rest by date", () => {
+  const o = (id: string, position: number | null) => ({ id, position });
+  assert.deepEqual(inEventOrder([o('water', null), o('setup', 2), o('booths', 1), o('cleanup', null)]).map((x) => x.id),
+    ['booths', 'setup', 'water', 'cleanup']);
+  assert.deepEqual(moved(['a', 'b', 'c'], 2, 1), ['a', 'c', 'b']);
+  assert.deepEqual(moved(['a', 'b', 'c'], 0, 2), ['b', 'c', 'a']);
+  assert.deepEqual(moved(['a', 'b', 'c'], 0, -1), ['a', 'b', 'c'], 'the first one stays first');
 });

@@ -6,7 +6,7 @@
 import type { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { schoolToday } from '../calendar/past';
 
-type When = { startsOn: string; endsOn: string | null; startTime: string | null; endTime: string | null };
+type When = { startsOn: string; endsOn: string | null; startTime?: string | null; endTime?: string | null };
 type Glyph = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 type Icon = React.ComponentProps<typeof Ionicons>['name'];
 export type Theme = { glyph: Glyph; label: string };
@@ -14,12 +14,14 @@ export type Theme = { glyph: Glyph; label: string };
 /** Banner art by the words in an opportunity's title (then its details); the first match wins. */
 const THEMES: [RegExp, Theme][] = [
   [/christmas|nativity|advent/i, { glyph: 'pine-tree', label: 'Christmas' }],
+  [/harvest|pumpkin|hayride|fall fest/i, { glyph: 'leaf-maple', label: 'Harvest' }],
   [/car ?line|carpool|parking|traffic|pick-?up|drop-?off/i, { glyph: 'car-side', label: 'Car line' }],
   [/book|library|reading/i, { glyph: 'book-open-variant', label: 'Books' }],
   [/\bcop(y|ies|ying)\b|laminat|workroom|bulletin board|classroom/i, { glyph: 'printer', label: 'Classroom help' }],
+  [/\bwater\b|\bdrinks?\b|juice|lemonade|coffee/i, { glyph: 'cup-water', label: 'Drinks' }],
   [/lunch|snack|food|bake|meal|kitchen|concession|breakfast|potluck/i, { glyph: 'food-apple', label: 'Food' }],
   [/usher|program|concert|recital|musical|performance|assembly|graduation/i, { glyph: 'ticket', label: 'Program' }],
-  [/festival|party|carnival|celebrat|dance/i, { glyph: 'party-popper', label: 'Celebration' }],
+  [/\bfest\b|festival|party|carnival|celebrat|dance/i, { glyph: 'party-popper', label: 'Celebration' }],
   [/field day|tournament|\bgames?\b|athletic|\bsports?\b/i, { glyph: 'trophy-outline', label: 'Athletics' }],
   [/garden|landscap|grounds|clean-?up|beautif|planting/i, { glyph: 'flower', label: 'Grounds' }],
   [/fundrais|auction|donat|\bsale\b/i, { glyph: 'hand-coin', label: 'Fundraising' }],
@@ -61,6 +63,18 @@ export function startsLabel(o: When, today = schoolToday()): string | null {
   if ((o.endsOn ?? o.startsOn) < today) return null;
   const n = daysBetween(today, o.startsOn);
   return n < 0 ? 'Happening now' : n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`;
+}
+
+/** An event's opportunities in its leader's order, most important first; ones without a place follow as given (by date). */
+export const inEventOrder = <T extends { position: number | null }>(list: T[]) =>
+  [...list].sort((a, b) => (a.position ?? Number.MAX_SAFE_INTEGER) - (b.position ?? Number.MAX_SAFE_INTEGER));
+
+/** The list with the item at `from` moved to `to`. */
+export function moved<T>(list: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= list.length) return list;
+  const next = [...list];
+  next.splice(to, 0, ...next.splice(from, 1));
+  return next;
 }
 
 /** "3 spots left", "Last spot!" or "Full"; null without a limit. */

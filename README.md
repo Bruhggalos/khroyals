@@ -290,6 +290,17 @@ leader's messages are highlighted. A leader deletes an opportunity with a reason
 that every volunteer is sent. Students can't take part. The seed makes the demo
 Teacher a Volunteer Leader.
 
+Opportunities can be grouped under an **event** (`volunteer_events`): Harvest Fest
+is one card in the Volunteer list, and tapping it opens the event with its
+opportunities inside (bringing bottled water, setting up the day of); the rest
+follow under *Other opportunities*. Any Volunteer Leader starts an event (+ Event)
+and adds opportunities to it from the event's page or the event picker on a new
+opportunity; an opportunity's leader can move it into or out of an event. The
+leader who started an event puts its opportunities in order, most important first
+(**Reorder** on the event's page; everyone sees that order, and ones added later
+follow by date), changes the event, or removes it, which keeps its opportunities,
+on their own.
+
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
 with search that highlights every match and jumps to its page. The
 text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated with

@@ -169,7 +169,7 @@ function useInfoData(person: Person | null, today: string) {
       student || staff ? quiet(listAssignments(), []) : [],
       quiet(mySportSchedule(15), []),
       quiet(listSports(), { sports: [], seasons: [] }),
-      canVolunteer(person) ? quiet(listVolunteer(), { opportunities: [], signups: [] }) : { opportunities: [], signups: [] },
+      canVolunteer(person) ? quiet(listVolunteer(), { opportunities: [], signups: [], events: [] }) : { opportunities: [], signups: [], events: [] },
       // Parents (staff too, when they're parents); Family accounts aren't.
       !student && !isFamily(person) ? quiet(myChildren(), [] as Person[]) : [],
       student ? [] : quiet(myPickupChildren(), [] as Person[]),

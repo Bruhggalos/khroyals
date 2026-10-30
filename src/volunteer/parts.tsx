@@ -1,11 +1,11 @@
 /**
  * Pieces the Volunteer screens share, in the Kingdom Heights colors (navy and gold, like
- * the Activities event banners): an opportunity's banner, section cards, the spots bar
- * and the quantity picker for item pledges.
+ * the Activities event banners): an opportunity's or event's banner, section cards, the
+ * spots bar, the quantity picker for item pledges and the event picker.
  */
 import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import type { Opportunity } from '../api/connect';
+import type { Opportunity, VolunteerEvent } from '../api/connect';
 import { GOLD, NAVY } from '../sports/ui';
 import { C, s } from '../ui';
 import { dateTile, durationLabel, themeOf } from './details';
@@ -33,10 +33,7 @@ export function OpportunityBanner({ o, hero, leader, style }: {
       <MaterialCommunityIcons name={theme.glyph} size={hero ? 170 : 140} color={GOLD} accessible={false}
         style={{ position: 'absolute', right: hero ? -22 : -18, top: hero ? -30 : -16, opacity: hero ? 0.8 : 0.9, transform: [{ rotate: '-14deg' }] }} />
       <View style={[s.row, { gap: 12, alignItems: 'center' }]}>
-        <View style={{ width: 60, paddingVertical: 6, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center' }}>
-          <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1, color: C.accent }}>{tile.month}</Text>
-          <Text style={{ fontSize: tile.days.length > 2 ? 17 : 24, fontWeight: '900', color: NAVY }} numberOfLines={1}>{tile.days}</Text>
-        </View>
+        <DateTile tile={tile} />
         <View style={{ gap: 6, flexShrink: 1 }}>
           <View style={[s.row, { gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999,
             backgroundColor: cancelled ? C.danger : PILL, borderWidth: 1, borderColor: cancelled ? C.danger : GOLD }]}>
@@ -45,12 +42,7 @@ export function OpportunityBanner({ o, hero, leader, style }: {
               {(cancelled ? 'Cancelled' : theme.label).toUpperCase()}
             </Text>
           </View>
-          {!!length && (
-            <View style={[s.row, { gap: 4 }]}>
-              <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.85)" />
-              <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' }}>{length}</Text>
-            </View>
-          )}
+          {!!length && <Length text={length} />}
         </View>
       </View>
       {hero && (
@@ -70,7 +62,93 @@ export function OpportunityBanner({ o, hero, leader, style }: {
   );
 }
 
+/** The days on a white calendar tile: "NOV" over "16–19". */
+function DateTile({ tile }: { tile: { month: string; days: string } }) {
+  return (
+    <View style={{ width: 60, paddingVertical: 6, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center' }}>
+      <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 1, color: C.accent }}>{tile.month}</Text>
+      <Text style={{ fontSize: tile.days.length > 2 ? 17 : 24, fontWeight: '900', color: NAVY }} numberOfLines={1}>{tile.days}</Text>
+    </View>
+  );
+}
+
+const Length = ({ text }: { text: string }) => (
+  <View style={[s.row, { gap: 4 }]}>
+    <Ionicons name="time-outline" size={14} color="rgba(255,255,255,0.85)" />
+    <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' }}>{text}</Text>
+  </View>
+);
+
+/**
+ * An event's banner (Harvest Fest), on its card and, larger, at the top of its screen:
+ * like an opportunity's, with a gold EVENT label and the event's name on it, so events
+ * stand out from the opportunities inside them. The card shows where; the screen, who leads it.
+ */
+export function EventBanner({ e, hero, leader, style }: {
+  e: VolunteerEvent; hero?: boolean; leader?: string; style?: StyleProp<ViewStyle>;
+}) {
+  const length = durationLabel(e);
+  const line = hero ? leader : e.location;
+  return (
+    <View style={[{ height: hero ? 210 : 168, backgroundColor: NAVY, padding: 14, overflow: 'hidden', justifyContent: 'space-between',
+      borderBottomWidth: 3, borderBottomColor: GOLD }, style]}>
+      <View accessible={false} style={{ position: 'absolute', left: -50, bottom: -70, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+      <MaterialCommunityIcons name={themeOf(e).glyph} size={hero ? 170 : 150} color={GOLD} accessible={false}
+        style={{ position: 'absolute', right: -22, top: -26, opacity: 0.8, transform: [{ rotate: '-14deg' }] }} />
+      <View style={[s.row, { gap: 12, alignItems: 'center' }]}>
+        <DateTile tile={dateTile(e)} />
+        <View style={{ gap: 6, flexShrink: 1 }}>
+          <View style={[s.row, { gap: 6, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: GOLD }]}>
+            <MaterialCommunityIcons name="calendar-star" size={14} color={NAVY} />
+            <Text style={{ color: NAVY, fontWeight: '900', fontSize: 12, letterSpacing: 1 }}>EVENT</Text>
+          </View>
+          {!!length && <Length text={length} />}
+        </View>
+      </View>
+      <View style={{ gap: 4 }}>
+        <Text accessibilityRole={hero ? 'header' : undefined} numberOfLines={2}
+          style={{ fontSize: hero ? 26 : 22, fontWeight: '900', color: '#fff', textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8, textShadowOffset: { width: 0, height: 1 } }}>
+          {e.title}
+        </Text>
+        {!!line && (
+          <View style={[s.row, { gap: 6 }]}>
+            <Ionicons name={hero ? 'star' : 'location'} size={14} color={GOLD} />
+            <Text style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600' }} numberOfLines={1}>{line}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+/** Which event an opportunity is part of: None, or one of these events. */
+export function EventChips({ events, value, onChange, disabled }: {
+  events: VolunteerEvent[]; value: string | null; onChange: (id: string | null) => void; disabled?: boolean;
+}) {
+  const chip = (id: string | null, label: string) => {
+    const on = value === id;
+    return (
+      <Text key={id ?? 'none'} onPress={disabled || on ? undefined : () => onChange(id)} accessibilityRole="button" accessibilityState={{ selected: on, disabled }}
+        style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: on ? C.primary : C.line,
+          backgroundColor: on ? C.primary : '#fff', color: on ? '#fff' : C.ink, fontWeight: '600', opacity: disabled ? 0.6 : 1 }}>
+        {label}
+      </Text>
+    );
+  };
+  return <View style={[s.row, { gap: 6, flexWrap: 'wrap' }]}>{chip(null, 'None')}{events.map((e) => chip(e.id, e.title))}</View>;
+}
+
 type Icon = React.ComponentProps<typeof Ionicons>['name'];
+
+/** A small rounded label with an icon: "45 min", "In 2 days". */
+export function Pill({ icon, text, color }: { icon: Icon; text: string; color: string }) {
+  return (
+    <View style={[s.row, { gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: `${color}14` }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text style={{ fontSize: 13, fontWeight: '700', color }}>{text}</Text>
+    </View>
+  );
+}
 
 /** A section's title: an icon on a tinted square and the name in capitals. */
 export function SectionTitle({ icon, title, tint = C.primary, right }: { icon: Icon; title: string; tint?: string; right?: React.ReactNode }) {

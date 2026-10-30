@@ -166,6 +166,11 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   "Are you going?" answers (`sport_event_rsvps`, `sport_rsvp`) are only for registered
   participants, given by their parents (`app.my_students()`, so never Family accounts) or
   themselves; only the activity's leaders see attendance.
+- **Volunteer events** (`volunteer_events`; `volunteer_opportunities.event_id`): an event (Harvest Fest) is one
+  card in the Volunteer app holding its opportunities. Any Volunteer Leader starts one (`volunteer_event_save`) and
+  posts into any open event (`volunteer_post` with `p_event`); an opportunity's leader moves it (`volunteer_set_event`).
+  Only the event's starter (or `groups.manage`) puts its opportunities in order (`volunteer_event_reorder`, `position`;
+  unplaced ones follow by date, `inEventOrder`) or removes it (`volunteer_event_delete`), which keeps its opportunities.
 - **Dress-up days** (Spirit Week; `dress_days`): a theme for a school day, for everyone or a grade
   range. Everyone reads them (signed out too); `calendar.school` holders add, change and remove them
   (`dress_day_save` / `dress_day_delete`; the Calendar app → Dress-up days). The Planner's "What to

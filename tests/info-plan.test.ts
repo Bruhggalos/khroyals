@@ -29,7 +29,7 @@ const PARENT: InfoData = {
   schedule: [game('g1', 'vb-f', '2026-11-02T22:00:00Z'), game('g2', 'ch-f', '2026-11-02T20:30:00Z', 'Chess Club meet')],
   registrations: [{ id: 'r', seasonId: 'vb-f', studentId: 'liam', requestedBy: 'p', status: 'registered', note: '', decisionNote: '', createdAt: '' }],
   opportunities: [{
-    id: 'o1', leadId: 'x', title: 'Book fair helpers', description: '', startsOn: '2026-11-02', endsOn: null, startTime: '08:00', endTime: '10:00',
+    eventId: null, position: null, id: 'o1', leadId: 'x', title: 'Book fair helpers', description: '', startsOn: '2026-11-02', endsOn: null, startTime: '08:00', endTime: '10:00',
     location: 'Library', spots: 4, kind: 'help', item: null, quantity: null, status: 'open', deleteReason: null, createdAt: '',
   }],
   signups: [{ opportunityId: 'o1', userId: 'p', createdAt: '', quantity: null }],

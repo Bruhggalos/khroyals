@@ -2629,6 +2629,42 @@ export type Database = {
           },
         ]
       }
+      volunteer_events: {
+        Row: {
+          created_at: string
+          description: string
+          ends_on: string | null
+          id: string
+          lead_id: string
+          location: string | null
+          starts_on: string
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          ends_on?: string | null
+          id?: string
+          lead_id: string
+          location?: string | null
+          starts_on: string
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          ends_on?: string | null
+          id?: string
+          lead_id?: string
+          location?: string | null
+          starts_on?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       volunteer_opportunities: {
         Row: {
           created_at: string
@@ -2636,11 +2672,13 @@ export type Database = {
           description: string
           end_time: string | null
           ends_on: string | null
+          event_id: string | null
           id: string
           item: string | null
           kind: string
           lead_id: string
           location: string | null
+          position: number | null
           quantity: number | null
           spots: number | null
           start_time: string | null
@@ -2654,11 +2692,13 @@ export type Database = {
           description?: string
           end_time?: string | null
           ends_on?: string | null
+          event_id?: string | null
           id?: string
           item?: string | null
           kind?: string
           lead_id: string
           location?: string | null
+          position?: number | null
           quantity?: number | null
           spots?: number | null
           start_time?: string | null
@@ -2672,11 +2712,13 @@ export type Database = {
           description?: string
           end_time?: string | null
           ends_on?: string | null
+          event_id?: string | null
           id?: string
           item?: string | null
           kind?: string
           lead_id?: string
           location?: string | null
+          position?: number | null
           quantity?: number | null
           spots?: number | null
           start_time?: string | null
@@ -4415,11 +4457,19 @@ export type Database = {
         Args: { p_opportunity: string; p_quantity: number }
         Returns: undefined
       }
+      volunteer_event_delete: { Args: { p_id: string }; Returns: undefined }
+      volunteer_event_reorder: { Args: { p_event: string; p_order: string[] }; Returns: undefined }
+      volunteer_event_save: {
+        Args: { p_description: string; p_ends_on?: string | null; p_id: string | null; p_location?: string | null; p_starts_on: string; p_title: string }
+        Returns: string
+      }
+      volunteer_set_event: { Args: { p_event: string | null; p_opportunity: string }; Returns: undefined }
       volunteer_post: {
         Args: {
           p_description: string
           p_end_time?: string
           p_ends_on?: string
+          p_event?: string | null
           p_item?: string
           p_kind?: string
           p_location?: string
@@ -4435,11 +4485,13 @@ export type Database = {
           description: string
           end_time: string | null
           ends_on: string | null
+          event_id: string | null
           id: string
           item: string | null
           kind: string
           lead_id: string
           location: string | null
+          position: number | null
           quantity: number | null
           spots: number | null
           start_time: string | null

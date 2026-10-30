@@ -2715,3 +2715,80 @@ test('event check-out: teachers and coaches release each child only to someone o
   await asSuper();
   await db.exec(`delete from checkout_lists; delete from sports where id = '${sport}'; delete from notifications where data ? 'checkoutListId'`);
 });
+
+test('volunteer events: leaders group opportunities under an event like Harvest Fest', async () => {
+  const save = (args: string) => `select volunteer_event_save(${args}) as id`;
+  await as('u-p01');
+  await rejects(save(`null, 'Harvest Fest', '', app.school_today() + 10`), /Only Volunteer Leaders/);
+  await as('u-eng');
+  await rejects(save(`null, '  ', '', app.school_today() + 10`), /Give the event a name/);
+  await rejects(save(`null, 'Harvest Fest', '', app.school_today() + 10, app.school_today() + 9`), /end on or after/);
+  const fest = (await one(save(`null, 'Harvest Fest', 'Our fall festival.', app.school_today() + 10, null, 'Front lawn'`))).id;
+  const water = (await one(`select id from volunteer_post('Bring bottled water', '', app.school_today() + 9, null, null, null, null, null,
+    'items', 'cases of water', 6, '${fest}')`)).id;
+  const setup = (await one(`select id from volunteer_post('Set up the day of', 'Tables and tents.', app.school_today() + 10, null, '07:00', '09:00', 'Front lawn', 8)`)).id;
+  await one(`select volunteer_set_event('${setup}', '${fest}')`);
+
+  // Parents see the event and the opportunities inside it.
+  await as('u-p01');
+  assert.equal((await one(`select title from volunteer_events where id = '${fest}'`)).title, 'Harvest Fest');
+  assert.deepEqual((await rows(`select title from volunteer_opportunities where event_id = '${fest}' order by title`)).map((o) => o.title),
+    ['Bring bottled water', 'Set up the day of']);
+  await rejects(`select volunteer_set_event('${setup}', null)`, /only move opportunities you lead/);
+  await rejects(save(`'${fest}', 'Fall Fest', '', app.school_today() + 10`), /Only Volunteer Leaders/);
+
+  // Only its leader changes or removes it; removing keeps the opportunities, on their own.
+  await asSuper();
+  await db.exec(`update profiles set volunteer_lead = true where id = ${id('u-sci')}`);
+  await as('u-sci');
+  await rejects(save(`'${fest}', 'Fall Fest', '', app.school_today() + 10`), /only change events you started/);
+  await rejects(`select volunteer_event_delete('${fest}')`, /only remove events you started/);
+  await as('u-eng');
+  assert.equal((await one(save(`'${fest}', 'Harvest Fest 2026', 'Our fall festival.', app.school_today() + 10, app.school_today() + 11, 'Front lawn'`))).id, fest);
+  await one(`select volunteer_event_delete('${fest}')`);
+  assert.equal((await rows(`select 1 from volunteer_opportunities where event_id = '${fest}'`)).length, 0);
+  assert.equal((await rows(`select 1 from volunteer_opportunities where id in ('${water}', '${setup}') and status = 'open'`)).length, 2);
+  await rejects(`select volunteer_set_event('${setup}', '${fest}')`, /isn't open anymore/);
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from volunteer_events where id = '${fest}'`)).length, 0, 'removed events are hidden');
+
+  await asSuper();
+  await db.exec(`update profiles set volunteer_lead = false where id = ${id('u-sci')};
+    delete from volunteer_opportunities where id in ('${water}', '${setup}'); delete from volunteer_events`);
+});
+
+test("volunteer events: the event's leader puts its opportunities in order", async () => {
+  await as('u-eng');
+  const fest = (await one(`select volunteer_event_save(null, 'Harvest Fest', '', app.school_today() + 10) as id`)).id;
+  const post = async (title: string, days: number) =>
+    (await one(`select id from volunteer_post('${title}', '', app.school_today() + ${days}, p_event => '${fest}')`)).id;
+  const water = await post('Bring bottled water', 9);
+  const setup = await post('Set up the day of', 10);
+  const booths = await post('Run the game booths', 10);
+  const order = async () => (await rows(`select title from volunteer_opportunities where event_id = '${fest}'
+    order by position nulls last, starts_on, title`)).map((o) => o.title);
+
+  // Most important first; one left out of the list (added since) follows.
+  await one(`select volunteer_event_reorder('${fest}', array['${booths}', '${water}']::uuid[])`);
+  assert.deepEqual(await order(), ['Run the game booths', 'Bring bottled water', 'Set up the day of']);
+  await one(`select volunteer_event_reorder('${fest}', array['${setup}', '${booths}', '${water}']::uuid[])`);
+  assert.deepEqual(await order(), ['Set up the day of', 'Run the game booths', 'Bring bottled water']);
+
+  // Only the event's leader: not parents, and not another Volunteer Leader.
+  await as('u-p01');
+  await rejects(`select volunteer_event_reorder('${fest}', array['${water}']::uuid[])`, /Only the event's leader/);
+  await asSuper();
+  await db.exec(`update profiles set volunteer_lead = true where id = ${id('u-sci')}`);
+  await as('u-sci');
+  await rejects(`select volunteer_event_reorder('${fest}', array['${water}']::uuid[])`, /Only the event's leader/);
+
+  // Moving one out of the event drops its place.
+  await as('u-eng');
+  await one(`select volunteer_set_event('${setup}', null)`);
+  assert.equal((await one(`select position from volunteer_opportunities where id = '${setup}'`)).position, null);
+  assert.deepEqual(await order(), ['Run the game booths', 'Bring bottled water']);
+
+  await asSuper();
+  await db.exec(`update profiles set volunteer_lead = false where id = ${id('u-sci')};
+    delete from volunteer_opportunities where id in ('${water}', '${setup}', '${booths}'); delete from volunteer_events`);
+});

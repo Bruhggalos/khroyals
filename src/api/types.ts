@@ -128,7 +128,14 @@ export type MarketTerms = { version: number; text: string; accepted: boolean; el
  * `spots`); 'items' asks for things: `quantity` of `item` ("24 boxes of tissues"),
  * brought by `startsOn`, which people pledge toward.
  */
+/** A volunteer event (Harvest Fest) that opportunities are grouped under. */
+export type VolunteerEvent = {
+  id: string; leadId: string; title: string; description: string; startsOn: string; endsOn: string | null; location: string | null;
+};
+
 export type Opportunity = {
+  /** The event it's part of, if any, and its place in the event's order (most important first; null: after, by date). */
+  eventId: string | null; position: number | null;
   id: string; leadId: string; title: string; description: string; startsOn: string; endsOn: string | null;
   startTime: string | null; endTime: string | null; location: string | null; spots: number | null;
   kind: 'help' | 'items'; item: string | null; quantity: number | null;

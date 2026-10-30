@@ -1,11 +1,15 @@
-import { isDate, isTime } from '../../src/forms/dates';
-/** A Volunteer Leader posts an opportunity: asking for people's time, or for items (how many of what, brought by a date). */
-import { useState } from 'react';
+/**
+ * A Volunteer Leader posts an opportunity: asking for people's time, or for items (how many
+ * of what, brought by a date), on its own or as part of an event (?event= from the event's page).
+ */
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { isVolunteerLead, volunteerPost } from '../../src/api/connect';
-import { todayIso } from '../../src/volunteer/format';
+import { isVolunteerLead, listVolunteerEvents, volunteerPost, type VolunteerEvent } from '../../src/api/connect';
+import { isDate, isTime } from '../../src/forms/dates';
+import { isPast, todayIso } from '../../src/volunteer/format';
+import { EventChips } from '../../src/volunteer/parts';
 import { VolunteerGate } from '../../src/volunteer/VolunteerGate';
 import { Button, C, Card, Field, P, s } from '../../src/ui';
 import { DateField, TimeField } from '../../src/forms/DateTimeField';
@@ -20,6 +24,9 @@ export default function NewOpportunity() {
 }
 
 function Form() {
+  const { event } = useLocalSearchParams<{ event?: string }>();
+  const [events, setEvents] = useState<VolunteerEvent[]>([]);
+  const [eventId, setEventId] = useState<string | null>(event ?? null);
   const [kind, setKind] = useState<'help' | 'items'>('help');
   const [item, setItem] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -32,6 +39,23 @@ function Form() {
   const [location, setLocation] = useState('');
   const [spots, setSpots] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // The events still to come. Choosing one (or coming from its page) starts with its day and place.
+  const fillFrom = (e: VolunteerEvent | undefined) => {
+    if (!e) return;
+    setDate((d) => (d === todayIso() && e.startsOn > d ? e.startsOn : d));
+    if (e.location) setLocation((l) => l || e.location!);
+  };
+  useEffect(() => {
+    listVolunteerEvents().then((list) => {
+      setEvents(list.filter((e) => !isPast(e)));
+      fillFrom(list.find((e) => e.id === event));
+    }).catch(() => {});
+  }, [event]);
+  const chooseEvent = (id: string | null) => {
+    setEventId(id);
+    fillFrom(events.find((x) => x.id === id));
+  };
 
   const items = kind === 'items';
   const post = async () => {
@@ -51,9 +75,9 @@ function Form() {
     try {
       const o = await volunteerPost(items
         ? { title: title.trim(), description: description.trim(), startsOn: date, endsOn: null, startTime: null, endTime: null,
-            location: location.trim() || null, spots: null, items: { item: item.trim(), quantity: q } }
+            location: location.trim() || null, spots: null, items: { item: item.trim(), quantity: q }, eventId }
         : { title: title.trim(), description: description.trim(), startsOn: date, endsOn: endDate || null,
-            startTime: start || null, endTime: end || null, location: location.trim() || null, spots: n });
+            startTime: start || null, endTime: end || null, location: location.trim() || null, spots: n, eventId });
       router.replace(`/volunteer/${o.id}`);
     } catch (e: any) {
       Alert.alert("Couldn't post", e.message);
@@ -81,6 +105,12 @@ function Form() {
         <P muted>{items ? 'Ask families to bring things, like tissues or snacks. They pledge how many, and everyone sees how much is still needed.'
           : "Ask for people's time. They Say Yes! until the spots fill."}</P>
       </View>
+      {events.length > 0 && (
+        <Card>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>Part of an event (optional)</Text>
+          <EventChips events={events} value={eventId} onChange={chooseEvent} />
+        </Card>
+      )}
       <Card>
         <Field label={items ? "What's the request?" : "What's the opportunity?"} placeholder={items ? 'e.g. Tissues for every homeroom' : 'e.g. Book fair helpers'}
           value={title} onChangeText={setTitle} maxLength={100} />

@@ -1,6 +1,6 @@
 /** mappers: internal API implementation. Screens import the connect facade. */
 import type { Comment, Group, Post, SchoolRole } from '../comms/types';
-import type { CriticalAlert, FamilyRequest, GroupEvent, Listing, MarketLine, MySettings, Notice, Opportunity, Person, Pickup, QuestionMessage, SchoolQuestion, Signup, SportEvent, SportRegistration, SportSeason, Vehicle, VolunteerMessage } from './types';
+import type { CriticalAlert, FamilyRequest, GroupEvent, Listing, MarketLine, MySettings, Notice, Opportunity, Person, Pickup, QuestionMessage, SchoolQuestion, Signup, SportEvent, SportRegistration, SportSeason, Vehicle, VolunteerEvent, VolunteerMessage } from './types';
 import type { Tables } from './database.types';
 import { enumValue, jsonObject } from './validation';
 import { KIND_LABELS } from '../sports/categories';
@@ -85,8 +85,12 @@ export const toLine = (r: Tables<'market_responses'>): MarketLine => ({
   counterCents: r.counter_cents, message: r.message, agreedCents: r.agreed_cents, createdAt: r.created_at, status: enumValue(r.status, ['agreed', 'offered', 'countered', 'declined', 'withdrawn', 'selected']),
 });
 
+export const toVolunteerEvent = (r: Tables<'volunteer_events'>): VolunteerEvent => ({
+  id: r.id, leadId: r.lead_id, title: r.title, description: r.description, startsOn: r.starts_on, endsOn: r.ends_on, location: r.location,
+});
+
 export const toOpportunity = (r: Tables<'volunteer_opportunities'>): Opportunity => ({
-  id: r.id, leadId: r.lead_id, title: r.title, description: r.description, startsOn: r.starts_on, endsOn: r.ends_on,
+  eventId: r.event_id ?? null, position: r.position ?? null, id: r.id, leadId: r.lead_id, title: r.title, description: r.description, startsOn: r.starts_on, endsOn: r.ends_on,
   startTime: r.start_time?.slice(0, 5) ?? null, endTime: r.end_time?.slice(0, 5) ?? null, location: r.location,
   spots: r.spots, kind: enumValue(r.kind ?? 'help', ['help', 'items']), item: r.item ?? null, quantity: r.quantity ?? null,
   status: enumValue(r.status, ['open', 'deleted']), deleteReason: r.delete_reason, createdAt: r.created_at,
