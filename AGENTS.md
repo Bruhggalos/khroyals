@@ -133,6 +133,14 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   everyone's, sets status, priority, reply and workshop (`feedback_triage`; the sender is told when the status or
   reply changes) and keeps workshops. Kinds, areas and statuses are in both `src/feedback/kinds.ts` and the
   database checks (`tests/feedback.test.ts` compares them).
+- **Checking children in and out** (`school_checks`, `checkout_lists`, `checkout_list_students`, `checkout_releases`):
+  a child is only ever released to someone on their pickup list (`app.pickup_people`: parents, `family_pickups`,
+  today's `pickup_authorizations`); the database refuses anyone else. **School:** `checkin.manage` (office,
+  administrators, directors; an admin power, so `aal2`) records late arrivals and early check-outs with a reason
+  (`school_check`, Check In & Out). **Events:** check-out lists for an Activities event (its registered students; the
+  activity's coaches and directors, `checkout_list_for_event`) or a teacher's own list from the sections they lead
+  (`checkout_list_save`); `app.manages_checkout` decides who runs one. Parents are notified of every check-in and
+  release (`app.notify_parents`). Reasons are in both `src/checkin/labels.ts` and the database check.
 - **Forms** (`forms`, `form_recipients`, `form_responses`; the Forms app): teachers send to the
   class sections they lead, coaches and directors to their activity seasons' registered students
   (`app.can_manage_sport`), and `forms.send` holders to grades or the whole school (`form_send`).

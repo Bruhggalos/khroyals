@@ -2589,3 +2589,129 @@ test('photo gallery: categories, and staff-only albums hidden (files too) until 
   assert.equal((await one(`select category_id from gallery_albums where id = '${album}'`)).category_id, sports);
   await one(`select gallery_album_delete('${album}')`);
 });
+
+test('school check-in and check-out: the office records them, only to someone on the pickup list; parents hear', async () => {
+  await asSuper();
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, rosa, other] = [await uid('u-s01'), await uid('u-p01'), await uid('u-p02')];
+  const told = async () => { await asSuper(); return rows(`select title, body from notifications where user_id = '${rosa}' and data ? 'schoolCheckId' order by created_at`); };
+  assert.ok((await rows(`select 1 from permission_catalog() where key = 'checkin.manage'`)).length === 1);
+  for (const role of ['director', 'administrator', 'office']) {
+    assert.ok((await one(`select permissions from admin_roles where id = '${role}'`)).permissions.includes('checkin.manage'), role);
+  }
+
+  await as('u-sci');
+  await rejects(`select school_check('${ava}', 'in', null, 'late')`, /permission/);
+  await as('u-admin');
+  await rejects(`select school_check('${ava}', 'in', null, 'late')`, /MFA_REQUIRED/);
+  await as('u-admin', true);
+  await rejects(`select school_check('${rosa}', 'in')`, /Choose a student/);
+  await rejects(`select school_check('${ava}', 'sideways')`, /check in or check out/);
+  await one(`select school_check('${ava}', 'in', null, 'late') as id`);
+  await rejects(`select school_check('${ava}', 'out')`, /Choose who is taking/);
+  await rejects(`select school_check('${ava}', 'out', '${other}', 'appointment')`, /isn't on .*pickup list/);
+  const out = (await one(`select school_check('${ava}', 'out', '${rosa}', 'appointment', 'Dentist') as id`)).id;
+
+  const notes = await told();
+  assert.equal(notes.length, 2);
+  assert.match(notes[0].title, /checked in at school/);
+  assert.match(notes[0].body, /Late arrival/);
+  assert.match(notes[1].title, /checked out of school/);
+  assert.match(notes[1].body, /with .* · Appointment/);
+
+  await as('u-admin', true);
+  const found = (await one(`select checkin_students('${(await one(`select first_name from profiles where id = '${ava}'`)).first_name}') as s`)).s;
+  assert.equal(found.find((s: any) => s.id === ava).status, 'out', 'where Ava stands today');
+  const today = (await one(`select checkin_today() as t`)).t;
+  assert.deepEqual(today.slice(0, 2).map((c: any) => c.kind), ['out', 'in'], 'newest first');
+  assert.equal(today[0].note, 'Dentist');
+
+  // Parents see their own child's; nobody else does.
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from school_checks where student_id = '${ava}'`)).length, 2);
+  await as('u-p02');
+  assert.equal((await rows(`select 1 from school_checks`)).length, 0);
+  await rejects(`select checkin_today()`, /permission/);
+
+  // An approved pickup person for today may take her; a mis-tap can be undone, today only.
+  await asSuper();
+  await db.exec(`insert into pickup_authorizations (student_id, person_id, relationship) values ('${ava}', '${other}', 'family_friend')`);
+  await as('u-admin', true);
+  const withFriend = (await one(`select school_check('${ava}', 'out', '${other}', 'family') as id`)).id;
+  await one(`select school_check_undo('${withFriend}')`);
+  await rejects(`select school_check_undo('${withFriend}')`, /Only today's/);
+  await asSuper();
+  await db.exec(`update school_checks set day = day - 1 where id = '${out}'`);
+  await as('u-admin', true);
+  await rejects(`select school_check_undo('${out}')`, /Only today's/);
+
+  await asSuper();
+  await db.exec(`delete from pickup_authorizations where student_id = '${ava}' and person_id = '${other}';
+    delete from school_checks; delete from notifications where data ? 'schoolCheckId'`);
+});
+
+test('event check-out: teachers and coaches release each child only to someone on their pickup list', async () => {
+  await asSuper();
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, liv, rosa, other, eng] = [await uid('u-s01'), await uid('u-s02'), await uid('u-p01'), await uid('u-p02'), await uid('u-eng')];
+
+  // A teacher's own list, from the sections they lead.
+  await as('u-p01');
+  await rejects(`select checkout_list_save('Zoo', app.school_today(), array['${ava}']::uuid[])`, /teachers and staff/);
+  await as('u-sci');
+  await rejects(`select checkout_list_save('Zoo', app.school_today(), array['${ava}']::uuid[])`, /isn't in a class you lead/);
+  await as('u-eng');
+  await rejects(`select checkout_list_save('Zoo', app.school_today() - 1, array['${ava}']::uuid[])`, /today or a day coming up/);
+  assert.ok((await one(`select checkout_my_students() as s`)).s.some((s: any) => s.id === ava), 'their section\'s students');
+  const zoo = (await one(`select checkout_list_save('Zoo field trip', app.school_today(), array['${ava}', '${liv}']::uuid[]) as id`)).id;
+  let list = (await one(`select checkout_list('${zoo}') as l`)).l;
+  assert.equal(list.students.length, 2);
+  assert.equal(list.canDelete, true);
+
+  // The release sheet shows the child's pickup list; anyone else is refused.
+  const people = (await one(`select checkout_people('${ava}') as p`)).p;
+  assert.deepEqual(people.map((p: any) => p.id), [rosa]);
+  await rejects(`select checkout_release('${zoo}', '${ava}', '${other}')`, /isn't on .*pickup list/);
+  await one(`select checkout_release('${zoo}', '${ava}', '${rosa}')`);
+  list = (await one(`select checkout_list('${zoo}') as l`)).l;
+  assert.deepEqual(list.students.map((s: any) => s.id), [liv, ava], 'still waiting first');
+  assert.ok(list.students[1].releasedTo && list.students[1].releasedAt);
+  const lists = (await one(`select checkout_my_lists() as l`)).l;
+  assert.deepEqual(lists.filter((l: any) => l.id === zoo).map((l: any) => [l.students, l.released]), [[2, 1]]);
+  await asSuper();
+  assert.match((await one(`select title from notifications where user_id = '${rosa}' and data ? 'checkoutListId'`)).title, /checked out of Zoo field trip/);
+
+  // Other teachers can't see or run it; parents see their own child's row.
+  await as('u-sci');
+  await rejects(`select checkout_list('${zoo}')`, /Only the people running/);
+  await rejects(`select checkout_release('${zoo}', '${liv}', '${other}')`, /Only the people running/);
+  await rejects(`select checkout_people('${ava}')`, /Only the office/);
+  await as('u-p01');
+  assert.equal((await rows(`select 1 from checkout_releases where student_id = '${ava}'`)).length, 1);
+  assert.equal((await rows(`select 1 from checkout_list_students where student_id = '${liv}'`)).length, 0);
+  await as('u-eng');
+  await one(`select checkout_unrelease('${zoo}', '${ava}')`);
+  assert.equal((await one(`select checkout_list('${zoo}') as l`)).l.students.every((s: any) => !s.releasedTo), true);
+
+  // An Activities event: its coaches get a list of the registered students.
+  await asSuper();
+  const sport = (await one(`insert into sports (name) values ('Chess club') returning id`)).id;
+  const season = (await one(`insert into sport_seasons (sport_id, name, starts_on, ends_on) values ('${sport}', 'Fall', app.school_today() - 30, app.school_today() + 30) returning id`)).id;
+  const event = (await one(`insert into sport_events (season_id, title, starts_at) values ('${season}', 'Tournament', now() + interval '2 hours') returning id`)).id;
+  await db.exec(`insert into sport_registrations (season_id, student_id, status) values ('${season}', '${ava}', 'registered'), ('${season}', '${liv}', 'pending')`);
+  await as('u-eng');
+  await rejects(`select checkout_list_for_event('${event}')`, /coaches and directors/);
+  await asSuper();
+  await db.exec(`insert into sport_coaches (sport_id, user_id) values ('${sport}', '${eng}')`);
+  await as('u-eng');
+  assert.ok((await one(`select checkout_event_options() as e`)).e.some((e: any) => e.id === event && !e.listId));
+  const chess = (await one(`select checkout_list_for_event('${event}') as id`)).id;
+  assert.equal((await one(`select checkout_list_for_event('${event}') as id`)).id, chess, 'one list per event');
+  const roster = (await one(`select checkout_list('${chess}') as l`)).l;
+  assert.deepEqual(roster.students.map((s: any) => s.id), [ava], 'registered students only');
+  assert.match(roster.title, /Chess club: Tournament/);
+
+  await one(`select checkout_list_delete('${zoo}')`);
+  await asSuper();
+  await db.exec(`delete from checkout_lists; delete from sports where id = '${sport}'; delete from notifications where data ? 'checkoutListId'`);
+});

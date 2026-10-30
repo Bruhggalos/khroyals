@@ -186,6 +186,19 @@ export type AlertStatusRow = {
 /** One of the school's Wi-Fi access points on the Alert map. */
 export type AccessPoint = { bssid: string; place: string; building: string; floor: string; notes: string; updatedAt: string };
 
+/** Checking children in and out (src/api/checkin.ts). */
+export type CheckinStudent = { id: string; name: string; grade: number | null; status: 'in' | 'out' | null; at: string | null };
+export type SchoolCheck = {
+  id: string; studentId: string; studentName: string; kind: 'in' | 'out'; person: string | null; reason: string; note: string; by: string; at: string;
+};
+/** Someone a child may go home with: `relation` is mother, father, parent, family, or a pickup person's relationship. */
+export type CheckoutPerson = { id: string; name: string; relation: string };
+export type CheckoutListSummary = { id: string; title: string; day: string; sportEventId: string | null; students: number; released: number; mine: boolean };
+export type CheckoutList = {
+  id: string; title: string; day: string; sportEventId: string | null; canDelete: boolean;
+  students: { id: string; name: string; grade: number | null; releasedTo: string | null; releasedAt: string | null; releasedBy: string | null }[];
+};
+
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 
 export type PermissionInfo = { key: string; label: string; description: string };

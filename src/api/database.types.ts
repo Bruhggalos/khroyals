@@ -3146,6 +3146,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      checkin_students: { Args: { p_query?: string }; Returns: Json }
+      checkin_today: { Args: never; Returns: Json }
+      checkout_event_options: { Args: never; Returns: Json }
+      checkout_list: { Args: { p_id: string }; Returns: Json }
+      checkout_list_delete: { Args: { p_id: string }; Returns: undefined }
+      checkout_list_for_event: { Args: { p_event: string }; Returns: string }
+      checkout_list_save: { Args: { p_day: string; p_students: string[]; p_title: string }; Returns: string }
+      checkout_my_lists: { Args: never; Returns: Json }
+      checkout_my_students: { Args: never; Returns: Json }
+      checkout_people: { Args: { p_student: string }; Returns: Json }
+      checkout_release: { Args: { p_list: string; p_person: string; p_student: string }; Returns: undefined }
+      checkout_unrelease: { Args: { p_list: string; p_student: string }; Returns: undefined }
+      school_check: { Args: { p_kind: string; p_note?: string; p_person?: string | null; p_reason?: string; p_student: string }; Returns: string }
+      school_check_undo: { Args: { p_id: string }; Returns: undefined }
       carline_set_config: {
         Args: {
           p_end: string
