@@ -73,6 +73,8 @@ src/comms/            types, presets, permission engine, roster auto-assignment,
 src/carline/          Car Line parent and duty views, automatic check-in
 src/market/           Marketplace terms gate and helpers
 src/volunteer/        Volunteer gate and helpers
+src/attendance/       Attendance: marks, a class's roll in words, school-day stepping, class cards
+src/checkin/          checking students in and out: reasons, pickup-list picker, field trip lists
 src/handbook/         Handbook reader: pages, paragraphs, search
 src/questions/        Ask the School gate and helpers
 src/share/            QR codes drawn with plain views (qrcode-generator encodes)
@@ -300,6 +302,18 @@ leader who started an event puts its opportunities in order, most important firs
 (**Reorder** on the event's page; everyone sees that order, and ones added later
 follow by date), changes the event, or removes it, which keeps its opportunities,
 on their own.
+
+**Attendance** (Apps → Attendance; teachers and staff). A teacher's class sections
+(`rosters` with kind 'section', Admin portal → Classes) each show the day's roll at a
+glance: a bar of present / late / absent and "Roll not taken yet" until it's started.
+Tapping one opens the roll: P, L or A for each student (tap again to clear) and
+*Mark the rest present*. The office's late arrivals and early check-outs (Check In &
+Out) show on the student's row, a late check-in counts as Late whatever the teacher
+marked, and the teacher gets a notification for each. Earlier school days are a tap
+away; the last two weeks can still be changed. The office (`checkin.manage`) opens
+*All classes* to see every section's roll, the ones still to take first, and can
+take roll for a teacher who's out. Field trip and Activities event check-out lists
+sit below the classes.
 
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
 with search that highlights every match and jumps to its page. The

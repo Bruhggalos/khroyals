@@ -2647,7 +2647,7 @@ test('school check-in and check-out: the office records them, only to someone on
 
   await asSuper();
   await db.exec(`delete from pickup_authorizations where student_id = '${ava}' and person_id = '${other}';
-    delete from school_checks; delete from notifications where data ? 'schoolCheckId'`);
+    delete from school_checks; delete from notifications where data ? 'schoolCheckId' or data ? 'classAttendance'`);
 });
 
 test('event check-out: teachers and coaches release each child only to someone on their pickup list', async () => {
@@ -2714,6 +2714,87 @@ test('event check-out: teachers and coaches release each child only to someone o
   await one(`select checkout_list_delete('${zoo}')`);
   await asSuper();
   await db.exec(`delete from checkout_lists; delete from sports where id = '${sport}'; delete from notifications where data ? 'checkoutListId'`);
+});
+
+test("class attendance: teachers take their sections' roll and see the office's check-ins; the office sees every class", async () => {
+  await asSuper();
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, liv, s03, rosa, eng] = [await uid('u-s01'), await uid('u-s02'), await uid('u-s03'), await uid('u-p01'), await uid('u-eng')];
+  const sec = 'eng10-p3';
+  const mark = (ids: string[], status: string | null, day = 'app.school_today()') =>
+    `select class_attendance_mark('${sec}', ${day}, array[${ids.map((x) => `'${x}'`).join(', ')}]::uuid[], ${status ? `'${status}'` : 'null'})`;
+  let roll: any;
+  const load = async () => { roll = (await one(`select class_attendance_roll('${sec}') as r`)).r; };
+  const st = (sid: string) => roll.students.find((s: any) => s.id === sid);
+
+  // Only the section's teacher (and the office) take its roll.
+  await as('u-p01');
+  await rejects(mark([ava], 'present'), /Only the class's teacher/);
+  await rejects(`select class_attendance_roll('${sec}')`, /Only the class's teacher/);
+  await as('u-sci');
+  await rejects(mark([ava], 'present'), /Only the class's teacher/);
+  assert.deepEqual((await one(`select my_class_attendance() as c`)).c, [], 'leads no section');
+  await as('u-eng');
+  let mine = (await one(`select my_class_attendance() as c`)).c;
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0].unmarked, mine[0].students, 'nobody marked yet');
+  assert.equal(mine[0].takenAt, null);
+  await rejects(mark([rosa], 'present'), /isn't in this class/);
+  await rejects(mark([eng], 'present'), /isn't in this class/);
+  await rejects(mark([ava], 'here'), /present, late or absent/);
+  await rejects(mark([ava], 'present', 'app.school_today() + 1'), /ahead of the day/);
+  await rejects(mark([ava], 'present', 'app.school_today() - 15'), /last two weeks/);
+  await one(mark([ava, liv, ava], 'present'));
+  await one(mark([s03], 'absent'));
+  await one(mark([liv], 'late'));
+  await load();
+  assert.ok(roll.canMark);
+  assert.ok(!roll.students.some((s: any) => s.id === eng), 'students only, not the teacher');
+  assert.deepEqual([st(ava).state, st(liv).state, st(s03).state], ['present', 'late', 'absent']);
+  assert.equal(st(ava).markedBy, 'Jennifer Taylor');
+
+  // The office checks one in late and another out early; the teacher hears about both, and the roll follows.
+  await as('u-admin', true);
+  await one(`select school_check('${s03}', 'in', null, 'appointment')`);
+  await one(`select school_check('${ava}', 'out', '${rosa}', 'illness')`);
+  await asSuper();
+  const told = await rows(`select title, body, data from notifications where user_id = '${eng}' and data ? 'classAttendance' order by created_at`);
+  assert.equal(told.length, 2);
+  assert.match(told[0].title, /arrived late/);
+  assert.match(told[1].title, /left early/);
+  assert.match(told[1].body, /with .* · Sick/);
+  assert.equal(told[0].data.classAttendance, sec);
+  await as('u-eng');
+  await load();
+  assert.equal(st(s03).state, 'late', "the office's late check-in counts over Absent");
+  assert.equal(st(s03).mark, 'absent');
+  assert.equal(st(ava).left, true);
+  assert.deepEqual([st(ava).checks[0].kind, st(ava).checks[0].reason], ['out', 'illness']);
+  mine = (await one(`select my_class_attendance() as c`)).c;
+  assert.deepEqual([mine[0].present, mine[0].late, mine[0].absent, mine[0].left], [1, 2, 0, 1]);
+  assert.ok(mine[0].takenAt);
+  await one(mark([liv], null));
+  await load();
+  assert.equal(st(liv).state, null, 'cleared');
+  assert.equal((await one(`select class_attendance_roll('${sec}', app.school_today() - 20) as r`)).r.canMark, false, 'older days are read-only');
+
+  // Parents see their own child's marks; nobody else does, and only the office sees every class.
+  await as('u-p01');
+  assert.deepEqual((await rows(`select status from class_attendance`)).map((r) => r.status), ['present']);
+  await as('u-p05');
+  assert.equal((await rows(`select 1 from class_attendance`)).length, 0);
+  await rejects(`select attendance_overview()`, /permission/);
+  await as('u-admin');
+  await rejects(`select attendance_overview()`, /MFA_REQUIRED/);
+  await as('u-admin', true);
+  const all = (await one(`select attendance_overview() as o`)).o;
+  assert.ok(all.some((c: any) => c.id === sec && c.teacher === 'Jennifer Taylor' && c.absent === 0));
+  // The office takes roll for a teacher who's out.
+  await one(mark([liv], 'present'));
+
+  await asSuper();
+  await db.exec(`delete from class_attendance; delete from school_checks;
+    delete from notifications where data ? 'classAttendance' or data ? 'schoolCheckId'`);
 });
 
 test('volunteer events: leaders group opportunities under an event like Harvest Fest', async () => {

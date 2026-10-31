@@ -141,6 +141,13 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   activity's coaches and directors, `checkout_list_for_event`) or a teacher's own list from the sections they lead
   (`checkout_list_save`); `app.manages_checkout` decides who runs one. Parents are notified of every check-in and
   release (`app.notify_parents`). Reasons are in both `src/checkin/labels.ts` and the database check.
+- **Class attendance** (`class_attendance`; the Attendance app, which also holds the event check-out lists): a
+  section's lead teacher marks each student present, late or absent (`class_attendance_mark`, today or the last two
+  weeks); `checkin.manage` holders take any section's and see every one (`attendance_overview`). `app.takes_roll`
+  decides who may. Where a student stands (`app.attendance_state`) is the teacher's mark, except the office's late
+  check-in counts as late; `app.left_school` once the office checks them out. Every office check-in and check-out
+  notifies the teachers of the student's sections (trigger on `school_checks`). Parents and the student read their
+  own marks only. Marks are in both `src/attendance/labels.ts` and the database check (`tests/attendance.test.ts`).
 - **Forms** (`forms`, `form_recipients`, `form_responses`; the Forms app): teachers send to the
   class sections they lead, coaches and directors to their activity seasons' registered students
   (`app.can_manage_sport`), and `forms.send` holders to grades or the whole school (`form_send`).

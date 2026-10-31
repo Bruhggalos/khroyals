@@ -12,10 +12,10 @@ import { isNetworkError } from './errors';
 
 /** The app's read-only database functions (all STABLE in supabase/migrations). */
 export const READ_ONLY_RPCS = new Set([
-  'admin_family_requests', 'admin_list_people', 'admin_list_sections', 'admin_section_students', 'admin_similar_students',
+  'admin_family_requests', 'attendance_overview', 'admin_list_people', 'admin_list_sections', 'admin_section_students', 'admin_similar_students',
   'carline_board', 'carline_config', 'checkin_students', 'checkin_today', 'checkout_event_options', 'checkout_list',
-  'checkout_my_lists', 'checkout_my_students', 'checkout_people', 'feedback_list', 'carline_today', 'child_assignments', 'child_pickup_people', 'critical_alert_status',
-  'form_status', 'group_abilities', 'group_post_stats', 'market_terms', 'my_access', 'my_calendar', 'my_class_students', 'my_forms', 'my_groups', 'my_notifications',
+  'checkout_my_lists', 'checkout_my_students', 'checkout_people', 'class_attendance_roll', 'feedback_list', 'carline_today', 'child_assignments', 'child_pickup_people', 'critical_alert_status',
+  'form_status', 'group_abilities', 'group_post_stats', 'market_terms', 'my_access', 'my_calendar', 'my_class_attendance', 'my_class_students', 'my_forms', 'my_groups', 'my_notifications',
   'my_pickup_children', 'my_sections', 'my_sport_schedule', 'my_sports', 'my_teachers', 'notification_open_counts',
   'permission_catalog', 'post_stats', 'sent_forms', 'sport_event_attendance', 'student_events', 'teacher_conversations', 'teacher_thread', 'teacher_thread_for',
 ]);

@@ -43,6 +43,7 @@ test('the page keeps the last 50, for 30 days', () => {
 
 test('tapping a notification opens what it is about', () => {
   assert.equal(notificationHref({ carline: 'checked-in', pickupIds: ['p'] }), '/carline');
+  assert.equal(notificationHref({ classAttendance: 'eng10-p3' }), '/attendance/eng10-p3');
   assert.equal(notificationHref({ children: true }), '/children');
   assert.equal(notificationHref({ listingId: 'l1' }), '/market/l1');
   assert.equal(notificationHref({ opportunityId: 'o1' }), '/volunteer/o1');

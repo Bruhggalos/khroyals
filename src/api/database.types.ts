@@ -3075,6 +3075,7 @@ export type Database = {
         Returns: undefined
       }
       assignment_delete: { Args: { p_assignment: string }; Returns: undefined }
+      attendance_overview: { Args: { p_day?: string }; Returns: Json }
       cancel_family_request: { Args: { p_request: string }; Returns: undefined }
       car_carline_check_in: {
         Args: {
@@ -3200,6 +3201,19 @@ export type Database = {
       checkout_people: { Args: { p_student: string }; Returns: Json }
       checkout_release: { Args: { p_list: string; p_person: string; p_student: string }; Returns: undefined }
       checkout_unrelease: { Args: { p_list: string; p_student: string }; Returns: undefined }
+      class_attendance_mark: {
+        Args: {
+          p_day: string
+          p_section: string
+          p_status: string | null
+          p_students: string[]
+        }
+        Returns: undefined
+      }
+      class_attendance_roll: {
+        Args: { p_day?: string; p_section: string }
+        Returns: Json
+      }
       school_check: { Args: { p_kind: string; p_note?: string; p_person?: string | null; p_reason?: string; p_student: string }; Returns: string }
       school_check_undo: { Args: { p_id: string }; Returns: undefined }
       carline_set_config: {
@@ -3712,6 +3726,7 @@ export type Database = {
           title: string
         }[]
       }
+      my_class_attendance: { Args: { p_day?: string }; Returns: Json }
       my_class_students: {
         Args: never
         Returns: {

@@ -206,6 +206,17 @@ export type CheckoutList = {
   students: { id: string; name: string; grade: number | null; releasedTo: string | null; releasedAt: string | null; releasedBy: string | null }[];
 };
 
+/** Class attendance (src/api/attendance.ts). `state` is where a student stands: the teacher's mark, or late when the office checked them in late; null before roll. */
+export type AttendanceMark = 'present' | 'late' | 'absent';
+export type ClassRollSummary = {
+  id: string; name: string; teacher: string | null; students: number; present: number; late: number; absent: number; unmarked: number; left: number; takenAt: string | null;
+};
+export type RollCheck = { kind: 'in' | 'out'; at: string; reason: string; person: string | null };
+export type RollStudent = {
+  id: string; name: string; grade: number | null; mark: AttendanceMark | null; markedBy: string | null; state: AttendanceMark | null; left: boolean; checks: RollCheck[];
+};
+export type ClassRoll = { id: string; name: string; teacher: string | null; day: string; canMark: boolean; students: RollStudent[] };
+
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 
 export type PermissionInfo = { key: string; label: string; description: string };
