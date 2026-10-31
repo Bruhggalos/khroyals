@@ -188,6 +188,15 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   posts into any open event (`volunteer_post` with `p_event`); an opportunity's leader moves it (`volunteer_set_event`).
   Only the event's starter (or `groups.manage`) puts its opportunities in order (`volunteer_event_reorder`, `position`;
   unplaced ones follow by date, `inEventOrder`) or removes it (`volunteer_event_delete`), which keeps its opportunities.
+- **Event tickets** (`ticketed_events`, `ticket_types`, `ticket_orders`, `tickets`; all inside Activities: My Tickets
+  from its header, *Sell tickets* on an event): an activity's leaders (`app.runs_tickets`: coaches, directors, `sports.manage`) set kinds, prices, limits and
+  sales (`ticket_event_save`) and check tickets at the door (`ticket_admit`: the QR code `KHT-<code>` or the short code, once
+  each). Parents, staff and Family accounts buy (`app.can_buy_tickets`; never students or substitutes): the `tickets` Edge
+  Function holds them as the buyer (`ticket_order_start`, 30 minutes) and opens Stripe Checkout; only Stripe's signed
+  webhook marks an order paid (`ticket_order_paid`, service role only), and a payment always wins over an expired hold.
+  Wallet passes are made by the same function (`ticket_for_wallet` as the buyer; `ticket_pass` behind a signed
+  ten-minute link). Card data never touches the app or the database. Stripe and Wallet keys are function secrets
+  (DEVELOPING.md), never in the repo. Orders keep the event's title and time, so deleting an event keeps the payments.
 - **Dress-up days** (Spirit Week; `dress_days`): a theme for a school day, for everyone or a grade
   range. Everyone reads them (signed out too); `calendar.school` holders add, change and remove them
   (`dress_day_save` / `dress_day_delete`; the Calendar app → Dress-up days). The Planner's "What to

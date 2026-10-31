@@ -2932,6 +2932,108 @@ test('substitutes: closed by default; the class teacher or the office schedules 
     delete from auth.users where id = '${sub}'`);
 });
 
+test('event tickets: leaders sell them, parents and staff buy through Stripe, and each paid ticket admits once', async () => {
+  await asSuper();
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [eng, rosa] = [await uid('u-eng'), await uid('u-p01')];
+  const sport = (await one(`insert into sports (name, category) values ('Fall Play', 'theater') returning id`)).id;
+  const season = (await one(`insert into sport_seasons (sport_id, name, starts_on, ends_on) values ('${sport}', 'Fall', app.school_today() - 30, app.school_today() + 30) returning id`)).id;
+  const show = (await one(`insert into sport_events (season_id, kind, title, starts_at) values ('${season}', 'performance', 'Opening night', now() + interval '3 days') returning id`)).id;
+  const save = (on: boolean, types: object[], closes = 'null') => `select ticket_event_save('${show}', ${on}, ${closes}, '${JSON.stringify(types)}'::jsonb)`;
+  const asService = async () => { await asSuper(); await db.exec('set role service_role'); };
+
+  // Only the activity's leaders sell its tickets.
+  await as('u-eng');
+  await rejects(save(true, [{ name: 'Adult', priceCents: 1000 }]), /coaches and directors/);
+  await asSuper();
+  await db.exec(`insert into sport_coaches (sport_id, user_id) values ('${sport}', '${eng}')`);
+  await as('u-eng');
+  await rejects(save(true, []), /at least one kind/);
+  await rejects(save(true, [{ name: 'Adult', priceCents: -5 }]), /from free to/);
+  await rejects(save(true, [{ name: 'Adult', priceCents: 1000 }], `now() + interval '9 days'`), /by the time the event ends/);
+  await one(save(true, [{ name: 'Adult', priceCents: 1000, capacity: 3 }, { name: 'Student', priceCents: 500 }]));
+  let ev = (await one(`select ticket_event('${show}') as e`)).e;
+  assert.equal(ev.leader, true);
+  assert.deepEqual(ev.types.map((t: any) => [t.name, t.priceCents, t.left]), [['Adult', 1000, 3], ['Student', 500, null]]);
+  const [adult, student] = ev.types.map((t: any) => t.id);
+  const start = (a: number, s: number) => `select ticket_order_start('${show}', '[{"typeId":"${adult}","quantity":${a}},{"typeId":"${student}","quantity":${s}}]'::jsonb) as o`;
+
+  // Students don't buy; parents see it on sale, and a hold counts against the limit.
+  await as('u-s01');
+  await rejects(start(1, 0), /parents, staff and family/);
+  await as('u-p01');
+  assert.ok((await one(`select tickets_on_sale() as t`)).t.some((t: any) => t.eventId === show && t.fromCents === 500));
+  await rejects(start(4, 0), /Only 3 Adult tickets left/);
+  await rejects(start(0, 0), /Choose how many/);
+  const order = (await one(start(2, 1))).o;
+  assert.deepEqual([order.totalCents, order.free, order.title, order.email], [2500, false, 'Fall Play: Opening night', 'u-p01@demo.khroyals.test']);
+  await as('u-p02');
+  await rejects(start(2, 0), /Only 1 Adult ticket left/);
+
+  // Not paid yet: nothing to show, and only the service role (Stripe's webhook) marks it paid.
+  await as('u-p01');
+  assert.deepEqual((await one(`select my_tickets() as t`)).t, []);
+  assert.equal((await one(`select ticket_order_status('${order.orderId}') as s`)).s.status, 'pending');
+  await rejects(`select ticket_order_paid('${order.orderId}', 'cs_test', 'pi_test')`, /permission denied/);
+  await asService();
+  await one(`select ticket_order_checkout('${order.orderId}', 'cs_test_1', now() + interval '30 minutes')`);
+  await one(`select ticket_order_paid('${order.orderId}', 'cs_test_1', 'pi_test_1')`);
+  await one(`select ticket_order_paid('${order.orderId}', 'cs_test_1', 'pi_test_1')`);
+  await asSuper();
+  assert.equal((await rows(`select 1 from notifications where user_id = '${rosa}' and data->>'ticketOrderId' = '${order.orderId}'`)).length, 1, 'told once');
+
+  await as('u-p01');
+  const mine = (await one(`select my_tickets() as t`)).t;
+  assert.equal(mine.length, 3);
+  assert.equal(new Set(mine.map((t: any) => t.code)).size, 3);
+  assert.equal((await one(`select ticket_for_wallet('${mine[0].id}') as w`)).w.title, 'Fall Play: Opening night');
+  await rejects(`select ticket_pass('${mine[0].id}')`, /permission denied/);
+  await as('u-p02');
+  await rejects(`select ticket_for_wallet('${mine[0].id}')`, /isn't yours/);
+  assert.equal((await rows(`select 1 from tickets`)).length, 0);
+
+  // At the door: the leaders scan, and each ticket admits once.
+  await rejects(`select ticket_admit('${show}', '${mine[0].code}')`, /coaches and directors/);
+  await as('u-eng');
+  const first = (await one(`select ticket_admit('${show}', 'KHT-${mine[0].code.toUpperCase()}') as r`)).r;
+  assert.deepEqual([first.ok, first.type, first.admitted, first.sold], [true, mine[0].type, 1, 3]);
+  assert.match((await one(`select ticket_admit('${show}', '${mine[0].code}') as r`)).r.message, /Already used/);
+  assert.match((await one(`select ticket_admit('${show}', 'abc')`)).ticket_admit.message, /Not a KH Royals ticket/);
+  const typed = (await one(`select ticket_admit('${show}', '${mine[1].code.slice(0, 8).toUpperCase()}') as r`)).r;
+  assert.deepEqual([typed.ok, typed.admitted], [true, 2], 'the short code typed at the door');
+  ev = (await one(`select ticket_event('${show}') as e`)).e;
+  assert.deepEqual([ev.types[0].sold, ev.takingsCents], [2, 2500]);
+  assert.equal((await one(`select ticket_sales('${show}') as s`)).s[0].tickets, '2 Adult, 1 Student');
+  await rejects(save(true, [{ id: adult, name: 'Adult', priceCents: 1000, capacity: 1 }, { id: student, name: 'Student', priceCents: 500 }]), /has 2 sold already/);
+
+  // An expired checkout lets its hold go; free tickets are issued at once.
+  await as('u-p02');
+  const held = (await one(start(1, 0))).o;
+  await asService();
+  await one(`select ticket_order_expired('${held.orderId}')`);
+  await as('u-eng');
+  await one(save(true, [{ id: adult, name: 'Adult', priceCents: 1000, capacity: 3 }, { id: student, name: 'Student', priceCents: 500 }, { name: 'Under 5', priceCents: 0 }]));
+  const under5 = (await one(`select ticket_event('${show}') as e`)).e.types[2].id;
+  await as('u-p02');
+  assert.equal((await one(`select ticket_order_status('${held.orderId}') as s`)).s.status, 'cancelled');
+  const free = (await one(`select ticket_order_start('${show}', '[{"typeId":"${under5}","quantity":2}]'::jsonb) as o`)).o;
+  assert.equal(free.free, true);
+  assert.equal((await one(`select my_tickets() as t`)).t.length, 2);
+
+  // A kind with tickets sold stays; off sale, nothing more is sold.
+  await as('u-eng');
+  await rejects(save(true, [{ id: adult, name: 'Adult', priceCents: 1000, capacity: 3 }]), /has tickets sold, so it can't be removed/);
+  await one(save(false, [{ id: adult, name: 'Adult', priceCents: 1000, capacity: 3 }, { id: student, name: 'Student', priceCents: 500 },
+    { id: under5, name: 'Under 5', priceCents: 0 }]));
+  await as('u-p01');
+  assert.ok(!(await one(`select tickets_on_sale() as t`)).t.some((t: any) => t.eventId === show));
+  await rejects(start(1, 0), /aren't on sale/);
+
+  await asSuper();
+  await db.exec(`delete from ticket_orders where event_id = '${show}'; delete from sports where id = '${sport}';
+    delete from notifications where data ? 'ticketOrderId'`);
+});
+
 test('volunteer events: leaders group opportunities under an event like Harvest Fest', async () => {
   const save = (args: string) => `select volunteer_event_save(${args}) as id`;
   await as('u-p01');

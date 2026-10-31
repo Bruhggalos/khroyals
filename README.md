@@ -315,6 +315,18 @@ away; the last two weeks can still be changed. The office (`checkin.manage`) ope
 take roll for a teacher who's out. Field trip and Activities event check-out lists
 sit below the classes.
 
+**Event tickets** (Activities). An activity's coaches and directors tap *Sell tickets* on
+an event: kinds of ticket with prices and optional limits (Adult $10, Student $5, Under 5
+free), on sale or not, when sales close, and how many one order holds. Parents, staff and
+Family accounts then see *Tickets · from $5* on the event, choose how many of each, and pay
+on Stripe's page (card, Apple Pay, Google Pay); tickets are held for 30 minutes while they
+pay. Paid tickets land in **My Tickets** (in Activities: the ticket button at the top, and a
+card while they hold tickets) with a QR code and a short code, and can be
+added to Apple Wallet or Google Wallet. At the door the leaders scan each ticket (or type
+its short code); each admits once, and the screen counts who's in. *Sell tickets* also
+shows what's sold, who bought and what's come in. Stripe and the Wallets switch on when the
+school adds its keys (DEVELOPING.md); until then only free tickets are issued.
+
 **Substitutes.** A Substitute account (Admin portal → People → role Substitute) is
 closed by default: Apps shows only *Sub Days* and the public apps (Calendar, News,
 Handbook, Feedback), and they're in no groups. A teacher schedules a sub for the

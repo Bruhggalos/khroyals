@@ -4,14 +4,15 @@
  * for, or you opened lately; "Upcoming events" counts down to what's next for them, with
  * where it is and Are you going? for registered children. Below: what's happening now,
  * seasons coming up with sign-up info, and every other activity to follow. Anyone can
- * browse; following, sign-ups and answers need an approved account.
+ * browse; following, sign-ups and answers need an approved account. Ticket buyers get My Tickets
+ * here: the ticket button in the header, and a card at the top while they hold tickets.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  listSports, myAccess, mySports, mySportSchedule, session, sportSchedule, subscribeSports,
+  canBuyTickets, listSports, myAccess, mySports, mySportSchedule, myTickets, session, sportSchedule, subscribeSports,
   type Access, type MySport, type Person, type Sport, type SportEvent, type SportSeason,
 } from '../../src/api/connect';
 import { PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
@@ -21,7 +22,8 @@ import { useEventPeople, useNow } from '../../src/sports/hooks';
 import { recentActivities } from '../../src/sports/recent';
 import { dateRange, schoolToday, seasonState, shortDay, signupState, sportSections } from '../../src/sports/seasons';
 import { searchActivities } from '../../src/sports/search';
-import { EventRow, SportRow } from '../../src/sports/ui';
+import { EventRow, GOLD, NAVY, SportRow } from '../../src/sports/ui';
+import { ticketCount } from '../../src/tickets/labels';
 import { Button, C, Card, H, Loading, P, PLACEHOLDER, s } from '../../src/ui';
 
 const Section = ({ title }: { title: string }) => (
@@ -83,6 +85,7 @@ export default function ActivitiesHome() {
   const pastHits = usePastToggle();
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [tickets, setTickets] = useState(0);   // the person's tickets for events from yesterday on
   const scroll = useRef<ScrollView>(null);
   const [allY, setAllY] = useState(0);
   const now = useNow();
@@ -94,6 +97,7 @@ export default function ActivitiesHome() {
       const approved = p && !p.pending;
       const [m, sch, a] = approved ? await Promise.all([mySports(), mySportSchedule(), myAccess().catch(() => null)]) : [[], [], null];
       setData(d); setMe(p); setMine(m); setSchedule(sch); setAccess(a); setRecent(r); setError(null); setAllEvents(null);
+      if (canBuyTickets(p)) myTickets().then((t) => setTickets(t.length)).catch(() => {});
     } catch (e: any) {
       setError(e.message ?? String(e));
     }
@@ -117,10 +121,17 @@ export default function ActivitiesHome() {
     <Stack.Screen options={{
       title: 'Activities',
       headerRight: () => (
-        <Pressable onPress={() => { setSearching(!searching); setQuery(''); }} hitSlop={10} accessibilityRole="button"
-          accessibilityLabel={searching ? 'Close search' : 'Search activities'} style={{ marginRight: 8 }}>
-          <Ionicons name={searching ? 'close' : 'search'} size={22} color="#fff" />
-        </Pressable>
+        <View style={[s.row, { gap: 18, marginRight: 8 }]}>
+          {canBuyTickets(me ?? null) && (
+            <Pressable onPress={() => router.push('/tickets')} hitSlop={10} accessibilityRole="button" accessibilityLabel="My Tickets">
+              <Ionicons name="ticket-outline" size={22} color="#fff" />
+            </Pressable>
+          )}
+          <Pressable onPress={() => { setSearching(!searching); setQuery(''); }} hitSlop={10} accessibilityRole="button"
+            accessibilityLabel={searching ? 'Close search' : 'Search activities'}>
+            <Ionicons name={searching ? 'close' : 'search'} size={22} color="#fff" />
+          </Pressable>
+        </View>
       ),
     }} />
   );
@@ -187,6 +198,18 @@ export default function ActivitiesHome() {
         </>
       ) : (
         <>
+          {tickets > 0 && (
+            <Pressable onPress={() => router.push('/tickets')} accessibilityRole="button"
+              style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, backgroundColor: NAVY,
+                borderWidth: 2, borderColor: GOLD }, pressed && { opacity: 0.85 }]}>
+              <Ionicons name="ticket" size={24} color={GOLD} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>My Tickets</Text>
+                <Text style={{ color: '#fff', opacity: 0.85 }}>{ticketCount(tickets)} for coming events</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#fff" />
+            </Pressable>
+          )}
           <CategoryPills value={filter} onChange={setFilter} />
 
           {yours.length > 0 && (

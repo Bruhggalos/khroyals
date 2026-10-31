@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
-  canManageSport, decideSportRegistration, followSport, getUser, isFamily, listSports, listUsers, myAccess, myChildren, mySports,
+  canBuyTickets, canManageSport, decideSportRegistration, followSport, getUser, isFamily, listSports, listUsers, myAccess, myChildren, mySports,
   registerForSport, removeSportPhoto, session, setSportCoach, sportRegistrations, sportSchedule, subscribeSports, uploadSportPhoto,
   withdrawSportRegistration, type Access, type Person, type Sport, type SportEvent, type SportRegistration, type SportSeason,
 } from '../../src/api/connect';
@@ -22,6 +22,7 @@ import { PastToggle, usePastToggle } from '../../src/calendar/PastToggle';
 import { categoryInfo, leaders } from '../../src/sports/categories';
 import { activeSeasons, dateRange, eligible, gradesLabel, schoolToday, seasonState, shortDay, signupState } from '../../src/sports/seasons';
 import { EventRow, StarButton, Tag } from '../../src/sports/ui';
+import { TicketButtons, useTicketsOnSale } from '../../src/tickets/parts';
 import { Button, C, Card, H, Loading, P, s } from '../../src/ui';
 
 const name = (id: string | null) => { const p = id ? getUser(id) : undefined; return p ? `${p.firstName} ${p.lastName}` : 'Someone'; };
@@ -68,6 +69,7 @@ export default function SportPage() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const upcomingEvents = events.filter((e) => !isPastTime(e.startsAt, e.endsAt));
   const rsvp = useEventPeople(me, upcomingEvents);
+  const onSale = useTicketsOnSale();
   useEffect(() => subscribeSports(() => { load(); rsvp.reload(); }), [load, rsvp.reload]);
   const refresh = async () => { setRefreshing(true); await Promise.all([load(), rsvp.reload()]); setRefreshing(false); };
 
@@ -117,10 +119,11 @@ export default function SportPage() {
         return (
           <EventRow key={e.id} e={e} past={past.shown && schedule.past.includes(e)}
             onPress={manage ? () => router.push({ pathname: '/activities/event', params: { sport: sport.id, id: e.id } }) : undefined}
-            footer={people.length || att.length ? (
+            footer={people.length || att.length || onSale.has(e.id) || manage ? (
               <>
                 <AttendanceLine rows={att} />
                 <RsvpButton e={e} people={people} answers={rsvp.answers} onChange={rsvp.reload} />
+                <TicketButtons eventId={e.id} onSale={onSale.get(e.id)} buyer={canBuyTickets(me)} leader={manage} />
               </>
             ) : undefined} />
         );

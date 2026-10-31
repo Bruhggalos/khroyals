@@ -44,8 +44,16 @@
         "expo-image-picker",
         {
           "photosPermission": "KH Royals lets you choose photos for your profile, your children, activities, school photo albums and Marketplace items.",
-          "cameraPermission": "KH Royals lets you take a photo for your profile, your children, an activity or a Marketplace item.",
+          "cameraPermission": "KH Royals uses the camera to take a photo for your profile, your children, an activity or a Marketplace item, and to scan event tickets at the door.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "KH Royals uses the camera to take a photo for your profile, your children, an activity or a Marketplace item, and to scan event tickets at the door.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
       ],
       "./plugins/withSceneLifecycle",

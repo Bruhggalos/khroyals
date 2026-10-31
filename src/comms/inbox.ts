@@ -50,6 +50,7 @@ export function notificationHref(data: Record<string, unknown> | null | undefine
   if (data.carline) return '/carline';
   if (data.classAttendance) return `/attendance/${data.classAttendance}`;
   if (data.subDays) return '/sub';
+  if (data.ticketOrderId) return '/tickets';
   if (data.subSchedule) return '/subs';
   if (data.children) return '/children';
   if (data.listingId) return `/market/${data.listingId}`;

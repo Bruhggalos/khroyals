@@ -6,10 +6,11 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, Text } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import { listSports, mySportSchedule, session, subscribeSports, type Person, type Sport, type SportEvent, type SportSeason } from '../../src/api/connect';
+import { canBuyTickets, listSports, mySportSchedule, session, subscribeSports, type Person, type Sport, type SportEvent, type SportSeason } from '../../src/api/connect';
 import { AttendanceLine, RsvpButton } from '../../src/sports/cards';
 import { useEventPeople } from '../../src/sports/hooks';
 import { EventRow } from '../../src/sports/ui';
+import { TicketButtons, useTicketsOnSale } from '../../src/tickets/parts';
 import { C, Card, Loading, P, s } from '../../src/ui';
 
 const dayLabel = (iso: string) => new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -26,6 +27,7 @@ export default function ActivitySchedule() {
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const rsvp = useEventPeople(me ?? null, events);
+  const onSale = useTicketsOnSale();
   useEffect(() => subscribeSports(() => { load(); rsvp.reload(); }), [load, rsvp.reload]);
 
   const header = <Stack.Screen options={{ title: 'Your schedule' }} />;
@@ -47,10 +49,11 @@ export default function ActivitySchedule() {
           <Fragment key={e.id}>
             {newDay && <Text style={{ fontSize: 13, fontWeight: '800', color: C.muted, letterSpacing: 0.5, marginTop: 6 }}>{dayLabel(e.startsAt).toUpperCase()}</Text>}
             <EventRow e={e} sport={sport} onPress={sport ? () => router.push(`/activities/${sport.id}`) : undefined}
-              footer={people.length || att.length ? (
+              footer={people.length || att.length || onSale.has(e.id) ? (
                 <>
                   <AttendanceLine rows={att} />
                   <RsvpButton e={e} people={people} answers={rsvp.answers} onChange={rsvp.reload} />
+                  <TicketButtons eventId={e.id} onSale={onSale.get(e.id)} buyer={canBuyTickets(me)} leader={false} />
                 </>
               ) : undefined} />
           </Fragment>

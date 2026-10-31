@@ -229,6 +229,53 @@ anyone new waits for the office to approve them, as with the email code.
 Authentication → URL Configuration already allows `khroyals://**` and
 `https://royalrockinapps.github.io/khroyals/**`, where the app comes back after signing in.
 
+### Event tickets: card payments and Wallet passes
+
+Activity leaders sell tickets for an event (Activities → the event → *Sell tickets*); parents,
+staff and Family accounts buy them and keep them in **My Tickets**. One Edge Function,
+`tickets` (deployed without JWT verification; each route checks for itself), handles Stripe
+Checkout, Stripe's webhook and the Wallet passes. Each part switches on when its secrets are
+set (Supabase → Edge Functions → **Secrets**, or `supabase secrets set NAME="$(cat file)"`);
+the app asks `/functions/v1/tickets/setup`, so no new build is needed. Never put any of these
+in the repo. Until Stripe is set up, only free tickets can be issued.
+
+**Stripe** (card, Apple Pay and Google Pay on Stripe's own page), with the school's account:
+
+1. Developers → API keys: the secret key → `STRIPE_SECRET_KEY`. Start with the test-mode key
+   (`sk_test_…`) and pay with card `4242 4242 4242 4242`.
+2. Developers → Webhooks → Add endpoint
+   `https://<project>.supabase.co/functions/v1/tickets/stripe` for the events
+   `checkout.session.completed`, `checkout.session.expired`,
+   `checkout.session.async_payment_succeeded` and `checkout.session.async_payment_failed`;
+   its signing secret → `STRIPE_WEBHOOK_SECRET`.
+3. Settings → Payment methods: cards, Apple Pay and Google Pay on. Going live means swapping
+   both secrets for the live-mode ones (and a live webhook).
+4. Refunds are made in Stripe (Payments → Refund) for now; the ticket stays in the app.
+
+**Apple Wallet** (Add to Apple Wallet in My Tickets):
+
+1. Apple Developer → Identifiers → + → **Pass Type IDs**: `pass.com.khroyals.tickets`.
+2. Make its certificate (a CSR from Keychain Access), download it, open it in Keychain Access
+   and export it with its key as `pass.p12`. Then
+   `openssl pkcs12 -legacy -in pass.p12 -clcerts -nokeys -out pass-cert.pem` and
+   `openssl pkcs12 -legacy -in pass.p12 -nocerts -nodes -out pass-key.pem`.
+3. Apple's WWDR G4 intermediate (apple.com/certificateauthority, `AppleWWDRCAG4.cer`):
+   `openssl x509 -inform der -in AppleWWDRCAG4.cer -out wwdr.pem`.
+4. Secrets: `APPLE_PASS_TYPE_ID` (`pass.com.khroyals.tickets`), `APPLE_TEAM_ID`,
+   `APPLE_PASS_CERT` (pass-cert.pem), `APPLE_PASS_KEY` (pass-key.pem), `APPLE_WWDR_CERT`
+   (wwdr.pem), and `APPLE_PASS_KEY_PASSWORD` only if the key has one. Delete the .pem files
+   afterwards.
+
+**Google Wallet** (Save to Google Wallet in My Tickets):
+
+1. pay.google.com/business/console → Google Wallet API: the issuer account's **Issuer ID** →
+   `GOOGLE_WALLET_ISSUER_ID`.
+2. Google Cloud: enable the Google Wallet API, make a service account and a JSON key for it,
+   and add the service account's email as a user in the Wallet console. The whole JSON key →
+   `GOOGLE_WALLET_SERVICE_ACCOUNT`.
+3. Until Google grants publishing access (request it in the Wallet console), only the
+   issuer's test accounts can save passes.
+
 ## 6. Refresh the school website content
 
 ```bash

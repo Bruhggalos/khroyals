@@ -225,6 +225,21 @@ export type SubDay = {
 };
 export type SubOptions = { classes: { id: string; name: string; teacher: string | null }[]; people: { id: string; name: string; role: string }[] };
 
+/** Event tickets (src/api/tickets.ts). `left` is null without a limit; `sold`, `admitted` and `takingsCents` are for the event's leaders. */
+export type TicketKind = { id: string; name: string; priceCents: number; capacity: number | null; left: number | null; sold?: number | null; admitted?: number | null };
+export type TicketEvent = {
+  eventId: string; title: string; startsAt: string; endsAt: string | null; location: string | null; address: string | null; cancelled: boolean;
+  onSale: boolean; closesAt: string | null; maxPerOrder: number; open: boolean; canBuy: boolean; leader: boolean;
+  types: TicketKind[]; mine: number; takingsCents: number | null;
+};
+export type MyTicket = {
+  id: string; code: string; type: string; priceCents: number; admittedAt: string | null; orderId: string; eventId: string | null;
+  title: string; startsAt: string; location: string | null; address: string | null; cancelled: boolean; holder: string;
+};
+export type TicketSale = { id: string; buyer: string; totalCents: number; paidAt: string; tickets: string; admitted: number; count: number };
+export type TicketSetup = { stripe: boolean; apple: boolean; google: boolean };
+export type AdmitResult = { ok: boolean; message?: string; holder?: string; type?: string; admitted?: number; sold?: number };
+
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 
 export type PermissionInfo = { key: string; label: string; description: string };

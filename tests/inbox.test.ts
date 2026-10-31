@@ -45,6 +45,7 @@ test('tapping a notification opens what it is about', () => {
   assert.equal(notificationHref({ carline: 'checked-in', pickupIds: ['p'] }), '/carline');
   assert.equal(notificationHref({ classAttendance: 'eng10-p3' }), '/attendance/eng10-p3');
   assert.equal(notificationHref({ subDays: true }), '/sub');
+  assert.equal(notificationHref({ ticketOrderId: 'o1' }), '/tickets');
   assert.equal(notificationHref({ subSchedule: true }), '/subs');
   assert.equal(notificationHref({ children: true }), '/children');
   assert.equal(notificationHref({ listingId: 'l1' }), '/market/l1');

@@ -18,6 +18,8 @@ export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent'
  * Marketplace or Ask the School; the database refuses those too.
  */
 export const isFamily = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'family';
+/** Who buys event tickets: approved parents, teachers, staff and Family accounts (not students or substitutes). */
+export const canBuyTickets = (p: Person | null | undefined) => !!p && !p.pending && ['parent', 'teacher', 'staff', 'admin', 'family'].includes(p.schoolRole);
 /** A Substitute: closed by default; class tools come from the sub schedule, only while on duty (the server decides). */
 export const isSubstitute = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'substitute';
 

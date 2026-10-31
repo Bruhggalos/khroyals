@@ -3214,6 +3214,7 @@ export type Database = {
         Args: { p_day?: string; p_section: string }
         Returns: Json
       }
+      my_tickets: { Args: never; Returns: Json }
       school_check: { Args: { p_kind: string; p_note?: string; p_person?: string | null; p_reason?: string; p_student: string }; Returns: string }
       school_check_undo: { Args: { p_id: string }; Returns: undefined }
       carline_set_config: {
@@ -4376,6 +4377,23 @@ export type Database = {
         Returns: string
       }
       teacher_thread_read: { Args: { p_thread: string }; Returns: undefined }
+      ticket_admit: { Args: { p_code: string; p_event: string }; Returns: Json }
+      ticket_event: { Args: { p_event: string }; Returns: Json }
+      ticket_event_save: {
+        Args: {
+          p_closes_at: string | null
+          p_event: string
+          p_max_per_order?: number
+          p_on_sale: boolean
+          p_types: Json
+        }
+        Returns: undefined
+      }
+      ticket_for_wallet: { Args: { p_ticket: string }; Returns: Json }
+      ticket_order_cancel: { Args: { p_order: string }; Returns: undefined }
+      ticket_order_status: { Args: { p_order: string }; Returns: Json }
+      ticket_sales: { Args: { p_event: string }; Returns: Json }
+      tickets_on_sale: { Args: never; Returns: Json }
       toggle_reaction: {
         Args: { p_emoji: string; p_post: string }
         Returns: undefined

@@ -118,6 +118,8 @@ async function deployPush() {
   await deployFunction('import-newsletter', { verifyJwt: true });
   // Parents give a child their own login (signed-in callers only).
   await deployFunction('student-login', { verifyJwt: true });
+  // Event tickets: Stripe checkout and its webhook, Wallet passes (each route checks for itself; see the function).
+  await deployFunction('tickets', { verifyJwt: false });
   await sql(`create extension if not exists pg_net with schema extensions;
              update app.settings set value = '${URL}/functions/v1' where key = 'functions_url';`);
 }
