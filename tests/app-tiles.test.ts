@@ -6,7 +6,7 @@ import { visibleTiles, type TileRules } from '../src/appTiles';
 const TILES: (TileRules & { label: string })[] = [
   { label: 'Alerts', staffOnly: true },
   { label: 'Car Line', staffVersion: true, student: false },
-  { label: 'Student', family: false },
+  { label: 'Student', family: false, inStaffView: false },
   { label: 'Calendar' },
   { label: 'Ask the School', family: false, student: false, staffVersion: true },
   { label: 'Ask the Teacher', family: false, studentApp: true },
@@ -22,9 +22,9 @@ test('parents, and staff on the Standard view, see the standard apps', () => {
   assert.deepEqual(elevated({ staffView: false, family: false, admin: true }), []);
 });
 
-test('the Staff view adds Alerts (and Admin for admins) and puts the staff versions first', () => {
-  assert.deepEqual(labels({ staffView: true, family: false, admin: false }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Student', 'Calendar']);
-  assert.deepEqual(labels({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Admin', 'Student', 'Calendar']);
+test('the Staff view adds Alerts (and Admin for admins), leaves out the parent apps, and puts the staff versions first', () => {
+  assert.deepEqual(labels({ staffView: true, family: false, admin: false }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Calendar']);
+  assert.deepEqual(labels({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Admin', 'Calendar']);
   assert.deepEqual(elevated({ staffView: true, family: false, admin: true }), ['Alerts', 'Car Line', 'Ask the School', 'Ask the Teacher', 'Admin']);
 });
 

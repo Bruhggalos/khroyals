@@ -312,8 +312,10 @@ Out) show on the student's row, a late check-in counts as Late whatever the teac
 marked, and the teacher gets a notification for each. Earlier school days are a tap
 away; the last two weeks can still be changed. The office (`checkin.manage`) opens
 *All classes* to see every section's roll, the ones still to take first, and can
-take roll for a teacher who's out. Field trip and Activities event check-out lists
-sit below the classes.
+take roll for a teacher who's out, and *Check a student in or out* to record late
+arrivals and early pickups (with a reason, and only to someone on the child's pickup
+list; parents and the class's teachers are notified). Field trip and Activities event
+check-out lists sit below the classes.
 
 **Event tickets** (Activities). An activity's coaches and directors tap *Sell tickets* on
 an event: kinds of ticket with prices and optional limits (Adult $10, Student $5, Under 5

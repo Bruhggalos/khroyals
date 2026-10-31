@@ -1,5 +1,6 @@
 /**
- * Check In & Out, for the front office (checkin.manage, behind the authenticator check): find a
+ * Check In & Out (Attendance → Check a student in or out), for the front office (checkin.manage,
+ * behind the authenticator check): find a
  * student, check them in when they arrive late or out when they leave early, only with someone on
  * their pickup list, with a reason. Their parents are notified. Today's check-ins are listed below,
  * newest first, with Undo for a mis-tap.

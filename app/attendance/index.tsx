@@ -1,7 +1,8 @@
 /**
  * Attendance, for teachers and staff: the class sections they lead with today's roll at a glance
- * (tap one to take roll and see the office's late arrivals and early check-outs), every class for the
- * office (checkin.manage), and check-out lists for field trips and Activities events below.
+ * (tap one to take roll and see the office's late arrivals and early check-outs). The office
+ * (checkin.manage) also gets every class's roll and Check in & out, where it records late arrivals and
+ * early pickups. Check-out lists for field trips and Activities events are below.
  */
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
@@ -45,6 +46,18 @@ export default function Attendance() {
             <Text style={{ color: '#fff', opacity: 0.85 }}>Every class&apos;s roll for the day</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#fff" />
+        </Pressable>
+      )}
+      {office && (
+        <Pressable onPress={() => router.push('/checkin')} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, backgroundColor: '#fff',
+            borderWidth: 1, borderColor: C.primary }, pressed && { opacity: 0.85 }]}>
+          <Ionicons name="log-in-outline" size={24} color={C.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: C.ink }}>Check a student in or out</Text>
+            <Text style={{ color: C.muted }}>Late arrivals and early pickups, and today&apos;s list</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.muted} />
         </Pressable>
       )}
 

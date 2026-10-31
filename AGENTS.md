@@ -147,7 +147,7 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   a child is only ever released to someone on their pickup list (`app.pickup_people`: parents, `family_pickups`,
   today's `pickup_authorizations`); the database refuses anyone else. **School:** `checkin.manage` (office,
   administrators, directors; an admin power, so `aal2`) records late arrivals and early check-outs with a reason
-  (`school_check`, Check In & Out). **Events:** check-out lists for an Activities event (its registered students; the
+  (`school_check`; Attendance → Check a student in or out, `app/checkin.tsx`). **Events:** check-out lists for an Activities event (its registered students; the
   activity's coaches and directors, `checkout_list_for_event`) or a teacher's own list from the sections they lead
   (`checkout_list_save`); `app.manages_checkout` decides who runs one. Parents are notified of every check-in and
   release (`app.notify_parents`). Reasons are in both `src/checkin/labels.ts` and the database check.
