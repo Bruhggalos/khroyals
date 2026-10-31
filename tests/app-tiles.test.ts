@@ -32,6 +32,15 @@ test('Family accounts keep their closed set', () => {
   assert.deepEqual(labels({ staffView: false, family: true, admin: false }), ['Car Line', 'Calendar']);
 });
 
+test('Substitutes see only their Sub Days and the public apps; nobody else sees Sub Days', () => {
+  const tiles = [...TILES, { label: 'Sub Days', subOnly: true as const, sub: true as const }, { label: 'Handbook', sub: true as const }];
+  const see = (v: Parameters<typeof visibleTiles>[1]) => visibleTiles(tiles, v).map((t) => t.label);
+  assert.deepEqual(see({ staffView: false, family: false, admin: false, substitute: true }), ['Sub Days', 'Handbook']);
+  assert.ok(!see({ staffView: true, family: false, admin: true }).includes('Sub Days'));
+  assert.ok(!see({ staffView: false, family: true, admin: false }).includes('Sub Days'));
+  assert.ok(!see({ staffView: false, family: false, admin: false, student: true }).includes('Sub Days'));
+});
+
 test("students see only their apps, including Ask the Teacher", () => {
   assert.deepEqual(labels({ staffView: false, family: false, admin: false, student: true }), ['Student', 'Calendar', 'Ask the Teacher']);
   assert.deepEqual(elevated({ staffView: false, family: false, admin: false, student: true }), []);

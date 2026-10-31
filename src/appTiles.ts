@@ -7,21 +7,24 @@
  * - `staffVersion` tiles (Car Line, Ask the School) open in their staff version in staff view.
  * - `studentApp` tiles (Ask the Teacher, Assignments) are for students, and for staff in
  *   staff view (the teacher side).
+ * - Substitutes see only the tiles marked `sub` (their Sub Days and the public apps); `subOnly`
+ *   tiles are theirs alone.
  *
  * In staff view the staff versions (elevated, marked in gold) come first, then the rest, each
  * group in the order the tiles are listed.
  */
-export type TileRules = { family?: false; student?: false; staffOnly?: true; adminOnly?: true; staffVersion?: true; studentApp?: true };
+export type TileRules = { family?: false; student?: false; staffOnly?: true; adminOnly?: true; staffVersion?: true; studentApp?: true; sub?: true; subOnly?: true };
 
 /**
  * `staffView`: a teacher, staff member or admin with the Main Page switch on Staff.
- * `student`: a student account. `admin`: has admin powers.
+ * `student`: a student account. `substitute`: a Substitute account. `admin`: has admin powers.
  */
-export type Viewer = { staffView: boolean; family: boolean; admin: boolean; student?: boolean };
+export type Viewer = { staffView: boolean; family: boolean; admin: boolean; student?: boolean; substitute?: boolean };
 
 export function visibleTiles<T extends TileRules>(tiles: T[], v: Viewer): (T & { elevated: boolean })[] {
   return tiles
-    .filter((t) => (t.adminOnly ? v.staffView && v.admin
+    .filter((t) => (t.subOnly || v.substitute ? !!v.substitute && !!t.sub
+      : t.adminOnly ? v.staffView && v.admin
       : t.staffOnly ? v.staffView
       : t.studentApp ? !!v.student || v.staffView
       : v.student ? t.student !== false

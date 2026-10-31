@@ -315,6 +315,19 @@ away; the last two weeks can still be changed. The office (`checkin.manage`) ope
 take roll for a teacher who's out. Field trip and Activities event check-out lists
 sit below the classes.
 
+**Substitutes.** A Substitute account (Admin portal → People → role Substitute) is
+closed by default: Apps shows only *Sub Days* and the public apps (Calendar, News,
+Handbook, Feedback), and they're in no groups. A teacher schedules a sub for the
+classes they lead (Attendance → Substitutes → *Schedule a sub*): who, which classes,
+the first and last day, the hours, and sub plans; the office (Schedule substitutes
+permission) does it for any class. The sub gets a notification and sees which classes
+and when. Only during those days and hours does *Sub Days* open the classes: the
+roll (today's), the office's late arrivals and early check-outs with their
+notifications, the sub plans, field trip check-out lists from the class's students,
+the car line board, and critical alerts (they answer and appear on the roll call
+like staff). Afterwards none of it is visible to them. Teachers and staff can be
+scheduled to cover a class too.
+
 **Handbook** (Apps → Handbook). The Student / Parent Handbook to read page by page,
 with search that highlights every match and jumps to its page. The
 text is extracted from the school's PDF (`src/handbook/text.ts`, regenerated with

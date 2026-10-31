@@ -80,7 +80,8 @@ export default function Profile() {
 
   // Family accounts have no groups, children to manage or Marketplace, so those settings stay out of the way.
   const family = person.schoolRole === 'family';
-  const adult = person.schoolRole !== 'student' && !family;
+  const sub = person.schoolRole === 'substitute';   // Substitutes: no groups, children, Marketplace or Volunteer either
+  const adult = person.schoolRole !== 'student' && !family && !sub;
   const step = async (key: string, fn: () => Promise<unknown>) => {
     setBusy(key);
     try { await fn(); } catch (e: any) { fail(e); } finally { setBusy(null); }
@@ -176,9 +177,9 @@ export default function Profile() {
         <P muted>Choose what reaches your phone. Everything still shows under the bell in the app.</P>
         <Toggle label="School announcements" hint="News from the school office. Urgent ones (closures, safety) always come through." value={settings.pushSchool}
           onChange={(v) => saveSettings({ ...settings, pushSchool: v })} />
-        {!family && <Toggle label="Group posts" hint="Fine-tune each group below." value={settings.pushGroups}
+        {!family && !sub && <Toggle label="Group posts" hint="Fine-tune each group below." value={settings.pushGroups}
           onChange={(v) => saveSettings({ ...settings, pushGroups: v })} />}
-        {!family && <Toggle label="Replies" hint="Replies on posts you follow. You follow your own posts and ones you reply to; tap 🔔 on any post to change." value={settings.pushReplies}
+        {!family && !sub && <Toggle label="Replies" hint="Replies on posts you follow. You follow your own posts and ones you reply to; tap 🔔 on any post to change." value={settings.pushReplies}
           onChange={(v) => saveSettings({ ...settings, pushReplies: v })} />}
         {adult && <Toggle label="Marketplace" hint="Dibs, offers and sales on your items." value={settings.pushMarketplace}
           onChange={(v) => saveSettings({ ...settings, pushMarketplace: v })} />}
@@ -203,8 +204,9 @@ export default function Profile() {
         )}
       </Card>
 
-      {isSchoolStaff(person) && <EmergencyAlertsCard />}
-      {isSchoolStaff(person) && <AlertLocationCard />}
+      {/* Substitutes get critical alerts while on duty, so they set these up too. */}
+      {(isSchoolStaff(person) || sub) && <EmergencyAlertsCard />}
+      {(isSchoolStaff(person) || sub) && <AlertLocationCard />}
 
       {groups.length > 0 && (
         <Card>

@@ -24,7 +24,7 @@ import type { Group, SchoolRole } from '../../src/comms/types';
 import { Avatar, Button, C, Card, Chip, Field, H, Loading, P, s } from '../../src/ui';
 
 const PAGE = 20;
-const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'parent', 'family', 'student'];
+const ROLES: SchoolRole[] = ['admin', 'teacher', 'staff', 'substitute', 'parent', 'family', 'student'];
 const FILTERS: [PeopleFilter, string][] = [
   ['all', 'All'], ['pending', 'Needs approval'], ['staff', 'Staff'], ['parents', 'Parents'], ['family', 'Family'], ['students', 'Students'], ['admins', 'Admins'],
 ];
@@ -120,7 +120,7 @@ function PersonCard({ p, links, access, roles, onChange }: {
                 () => adminSetCarlineDuty(p.id, !p.carlineDuty).then(onChange).catch(fail), '#15803D')}
             </View>
           )}
-          {!p.pending && p.schoolRole !== 'student' && p.schoolRole !== 'family' && can('people.family') && (
+          {!p.pending && p.schoolRole !== 'student' && p.schoolRole !== 'family' && p.schoolRole !== 'substitute' && can('people.family') && (
             <View style={[s.row, { flexWrap: 'wrap' }]}>
               {pill(p.volunteerLead ? '🙋 Volunteer Leader' : '🙋 Make Volunteer Leader', !!p.volunteerLead,
                 () => adminSetVolunteerLead(p.id, !p.volunteerLead).then(onChange).catch(fail), '#DB2777')}
@@ -315,7 +315,7 @@ function AccessCard({ p, roles, catalog, onChange }: { p: AdminPerson; roles: Ad
             </View>
           ) : <P muted>Admin roles are for staff accounts; you can still grant individual permissions.</P>}
           {label('EXTRA PERMISSIONS')}
-          <PermissionChecks catalog={catalog} value={granted} fixed={fixed} onChange={setGranted} disabled={p.schoolRole === 'student' || p.schoolRole === 'family'} />
+          <PermissionChecks catalog={catalog} value={granted} fixed={fixed} onChange={setGranted} disabled={p.schoolRole === 'student' || p.schoolRole === 'family' || p.schoolRole === 'substitute'} />
           <Button label="Save access" onPress={save} />
           <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
             {staff ? link(`Make ${p.firstName || 'them'} a director…`, () => confirm('Add a director?',

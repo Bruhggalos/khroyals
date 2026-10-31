@@ -8,7 +8,7 @@ import { Image, Pressable, ScrollView, Text, View, type ImageSourcePropType } fr
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  isFamily, isSchoolStaff, listAlerts, me, myAccess, onAuthChange, session, subscribeAlerts, type CriticalAlert, type Person,
+  isFamily, isSchoolStaff, isSubstitute, listAlerts, me, myAccess, onAuthChange, session, subscribeAlerts, type CriticalAlert, type Person,
 } from '../../src/api/connect';
 import { alertKind } from '../../src/alerts/kinds';
 import { visibleTiles, type TileRules } from '../../src/appTiles';
@@ -22,24 +22,25 @@ type App = { label: string; color: string; href: Href } & TileRules
   & ({ icon: ComponentProps<typeof Ionicons>['name'] } | { image: ImageSourcePropType });
 
 const APPS: App[] = [
+  { label: 'Sub Days', icon: 'briefcase', color: '#0A1F4D', href: '/sub', subOnly: true, sub: true },
   { label: 'Alerts', icon: 'warning', color: '#B42318', href: '/alerts', staffOnly: true },
   { label: 'Car Line', image: require('../../assets/apps/carline.png'), color: '#0A1F4D', href: '/carline', staffVersion: true, student: false },
   { label: 'Student', image: require('../../assets/apps/student.png'), color: '#0A1F4D', href: '/student', family: false },
-  { label: 'Calendar', image: require('../../assets/apps/calendar.png'), color: '#0A1F4D', href: '/calendar' },
+  { label: 'Calendar', image: require('../../assets/apps/calendar.png'), color: '#0A1F4D', href: '/calendar', sub: true },
   { label: 'My Calendar', icon: 'calendar-number', color: '#0A1F4D', href: '/my-calendar', staffOnly: true },
   { label: 'Attendance', icon: 'clipboard', color: '#0A1F4D', href: '/attendance', staffOnly: true },
   { label: 'Check In & Out', icon: 'log-in', color: '#0A1F4D', href: '/checkin', adminOnly: true },
-  { label: 'News', image: require('../../assets/apps/news.png'), color: '#0A1F4D', href: '/news' },
+  { label: 'News', image: require('../../assets/apps/news.png'), color: '#0A1F4D', href: '/news', sub: true },
   { label: 'Photos', icon: 'images', color: '#0A1F4D', href: '/photos' },
   { label: 'Activities', image: require('../../assets/apps/activities.png'), color: '#0A1F4D', href: '/activities' },
   { label: 'Marketplace', image: require('../../assets/apps/market.png'), color: '#0A1F4D', href: '/market', family: false, student: false },
   { label: 'Volunteer', image: require('../../assets/apps/volunteer.png'), color: '#0A1F4D', href: '/volunteer', student: false },
   { label: 'Forms', icon: 'document-text', color: '#0A1F4D', href: '/forms', family: false, student: false, staffVersion: true },
-  { label: 'Handbook', image: require('../../assets/apps/handbook.png'), color: '#0A1F4D', href: '/handbook' },
+  { label: 'Handbook', image: require('../../assets/apps/handbook.png'), color: '#0A1F4D', href: '/handbook', sub: true },
   { label: 'Ask the School', image: require('../../assets/apps/questions.png'), color: '#0A1F4D', href: '/questions', family: false, student: false, staffVersion: true },
   { label: 'Ask the Teacher', image: require('../../assets/apps/teachers.png'), color: '#0A1F4D', href: '/teachers', family: false, studentApp: true },
   { label: 'Assignments', image: require('../../assets/apps/assignments.png'), color: '#0A1F4D', href: '/assignments', family: false, studentApp: true },
-  { label: 'Feedback', icon: 'chatbubble-ellipses', color: '#0A1F4D', href: '/feedback' },
+  { label: 'Feedback', icon: 'chatbubble-ellipses', color: '#0A1F4D', href: '/feedback', sub: true },
   { label: 'Admin', icon: 'shield-checkmark', color: NAVY, href: '/admin', adminOnly: true },
 ];
 
@@ -86,7 +87,7 @@ export default function Apps() {
   const [staffSetting, setStaffSetting] = useStaffViewSetting();
   const staffView = staff && staffSetting;
   const student = !!person && !person.pending && person.schoolRole === 'student';
-  const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin, student });
+  const apps = visibleTiles(APPS, { staffView, family: isFamily(person), admin, student, substitute: isSubstitute(person) });
   // Three tiles across on phones, up to five on iPads and tablets.
   const columns = Math.max(3, Math.min(5, Math.floor(useContentWidth() / 140)));
   return (

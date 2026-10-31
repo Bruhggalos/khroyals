@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  ROLE_LABELS, isFamily, joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, onAuthChange, session,
+  ROLE_LABELS, isFamily, isSubstitute, joinGroup, listDiscoverableGroups, listMyGroups, listUsers, live, onAuthChange, session,
   setMockUser, signOut, type Person,
 } from '../../src/api/connect';
 import { forgetCarPass } from '../../src/carline/carPass';
@@ -44,8 +44,8 @@ export default function Connect() {
     try {
       const p = await session();
       setPerson(p);
-      if (isFamily(p)) {
-        setGroups([]);  // Family accounts aren't in groups
+      if (isFamily(p) || isSubstitute(p)) {
+        setGroups([]);  // Family and Substitute accounts aren't in groups
       } else if (p && !p.pending) {
         setGroups(await listMyGroups());
         setDiscover(await listDiscoverableGroups());
@@ -124,7 +124,16 @@ export default function Connect() {
         {canCreateGroup(person) && <View style={{ flex: 1 }}><Button label="+ New group" onPress={() => router.push('/group/new')} /></View>}
       </View>
 
-      {groups.length === 0 && !isFamily(person) && <P muted>You're not in any groups yet.</P>}
+      {isSubstitute(person) && (
+        <Card>
+          <Text style={{ fontWeight: '800', fontSize: 17, color: C.ink }}>Substitute account</Text>
+          <P>Your sub days are in Apps → Sub Days. While you're on duty, that's where you'll find your classes, the roll and the teacher's sub plans.</P>
+          <P muted>Groups are for parents, students and staff, so they don't appear here.</P>
+          <Button label="Open Sub Days" onPress={() => router.push('/sub')} />
+        </Card>
+      )}
+
+      {groups.length === 0 && !isFamily(person) && !isSubstitute(person) && <P muted>You're not in any groups yet.</P>}
       {groups.map((g) => <GroupRow key={g.id} g={g} onPress={() => router.push(`/group/${g.id}`)} />)}
 
       {discover.length > 0 && (

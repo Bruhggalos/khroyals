@@ -18,6 +18,8 @@ export const canVolunteer = (p: Person | null) => !!p && !p.pending && ['parent'
  * Marketplace or Ask the School; the database refuses those too.
  */
 export const isFamily = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'family';
+/** A Substitute: closed by default; class tools come from the sub schedule, only while on duty (the server decides). */
+export const isSubstitute = (p: Person | null | undefined) => !!p && !p.pending && p.schoolRole === 'substitute';
 
 /** Teachers, staff and admins (who also get critical alerts). */
 export const isSchoolStaff = (p: Person | null | undefined) => !!p && !p.pending && ['admin', 'teacher', 'staff'].includes(p.schoolRole);

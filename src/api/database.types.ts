@@ -3834,6 +3834,7 @@ export type Database = {
           sport_id: string
         }[]
       }
+      my_sub_days: { Args: never; Returns: Json }
       my_teachers: {
         Args: never
         Returns: {
@@ -4324,6 +4325,22 @@ export type Database = {
       student_login_remove: { Args: { p_student: string }; Returns: undefined }
       student_login_request: { Args: { p_email: string; p_student: string }; Returns: Json }
       student_login_status: { Args: { p_student: string }; Returns: Json }
+      sub_options: { Args: never; Returns: Json }
+      sub_schedule_delete: { Args: { p_id: string }; Returns: undefined }
+      sub_schedule_list: { Args: never; Returns: Json }
+      sub_schedule_save: {
+        Args: {
+          p_end_time: string
+          p_ends_on: string
+          p_id: string | null
+          p_plans?: string
+          p_sections: string[]
+          p_start_time: string
+          p_starts_on: string
+          p_substitute: string
+        }
+        Returns: string
+      }
       teacher_conversations: {
         Args: { p_student?: string }
         Returns: {

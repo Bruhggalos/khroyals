@@ -50,7 +50,7 @@ export default function ClassAttendance() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={s.pad} refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}>
       {header}
-      <DayStepper day={day} onChange={changeDay} />
+      {roll.otherDays !== false && <DayStepper day={day} onChange={changeDay} />}
       <View style={{ padding: 14, borderRadius: 14, backgroundColor: done ? '#15803D' : C.primary, gap: 4 }}>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900' }}>{done ? `✓ ${rollLine(counts)}` : rollLine(counts)}</Text>
         <Text style={{ color: '#fff', opacity: 0.9 }}>

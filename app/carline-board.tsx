@@ -16,7 +16,7 @@ import { Stack, router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useKeepAwake } from 'expo-keep-awake';
 import {
-  carlineBoard, carlineConfig, errorText, isSchoolStaff, live, schoolBreaks, session, subscribeCarline,
+  carlineBoard, carlineConfig, errorText, isSchoolStaff, isSubstitute, live, schoolBreaks, session, subscribeCarline,
   type BoardRow, type CarlineConfig, type Person,
 } from '../src/api/connect';
 import { LONG_WAIT_MINUTES, boardOrder, boardTextSize, isNew, newArrivals, splitInitial } from '../src/carline/board';
@@ -82,7 +82,7 @@ export default function CarLineBoard() {
     try {
       const p = await session();
       setPerson(p);
-      if (!isSchoolStaff(p)) return;
+      if (!isSchoolStaff(p) && !isSubstitute(p)) return;   // a sub's board opens only while on duty (the server says)
       // No School days from three weeks back to three weeks ahead: the breaks and holidays coming up, and the school days around them.
       const [b, c, off] = await Promise.all([carlineBoard(), carlineConfig(),
         schoolBreaks(schoolToday(new Date(Date.now() - 21 * 86_400_000)), schoolToday(new Date(Date.now() + 21 * 86_400_000))).catch(() => [])]);
@@ -111,7 +111,7 @@ export default function CarLineBoard() {
   if (!live) return screen(<Message title="Car line needs the school server" text="This build is running on demo data without Royals Connect." />);
   if (error) return screen(<Message title="Couldn't load the car line" text={error} onRetry={() => { setError(null); load(); }} />);
   if (person === undefined) return screen(<View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator color="#fff" size="large" /></View>);
-  if (!isSchoolStaff(person)) return screen(<Message title="For school staff" text="Sign in with a teacher or staff account to show the car line on this screen." />);
+  if (!isSchoolStaff(person) && !isSubstitute(person)) return screen(<Message title="For school staff" text="Sign in with a teacher or staff account to show the car line on this screen." />);
 
   const { waiting, done } = boardOrder(board);
   const season = festiveScene(schoolToday(new Date(now)), breaks, festive);

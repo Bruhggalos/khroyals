@@ -2797,6 +2797,141 @@ test("class attendance: teachers take their sections' roll and see the office's 
     delete from notifications where data ? 'classAttendance' or data ? 'schoolCheckId'`);
 });
 
+test('substitutes: closed by default; the class teacher or the office schedules them; class tools only while on duty', async () => {
+  await asSuper();
+  const uid = async (l: string) => (await one(`select ${id(l)} as u`)).u as string;
+  const [ava, eng] = [await uid('u-s01'), await uid('u-eng')];
+  const sub = await uid('u-sub');
+  await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ('${sub}', 'u-sub@demo.khroyals.test', '{"first_name":"Sam","last_name":"Sub"}')`);
+  const sec = 'eng10-p3';
+  const save = (o: { who?: string; from?: string; to?: string; start?: string; end?: string; plans?: string; id?: string } = {}) =>
+    `select sub_schedule_save(${o.id ? `'${o.id}'` : 'null'}, '${o.who ?? sub}', array['${sec}'], ${o.from ?? 'app.school_today()'}, ${o.to ?? o.from ?? 'app.school_today()'},
+      '${o.start ?? '00:00'}', '${o.end ?? '23:59:59'}', '${o.plans ?? 'Read chapter 4 aloud; quiz is in the top drawer.'}') as id`;
+  const told = async (u: string, key: string) => { await asSuper(); return rows(`select title, body from notifications where user_id = '${u}' and data ? '${key}' order by created_at`); };
+
+  // The office makes them a Substitute (Change roles); they never hold admin powers and leave every group.
+  await as('u-admin', true);
+  await one(`select admin_update_profile('${sub}', 'substitute')`);
+  await rejects(`select admin_set_access('${sub}', null, array['push.send'])`, /Substitutes can't have admin powers/);
+  assert.ok((await rows(`select 1 from permission_catalog() where key = 'subs.manage'`)).length === 1);
+  for (const role of ['director', 'administrator', 'office']) {
+    assert.ok((await one(`select permissions from admin_roles where id = '${role}'`)).permissions.includes('subs.manage'), role);
+  }
+
+  // Closed by default.
+  await as('u-sub');
+  assert.equal((await rows(`select id from groups`)).length, 0, 'no groups');
+  assert.equal((await rows(`select id from rosters`)).length, 0, 'no class list');
+  assert.equal((await rows(`select 1 from roster_members`)).length, 0, 'no rosters');
+  await rejects(`select join_group(${id('g-announce')})`, /Substitute accounts/);
+  await rejects(`select ask_school('Other', 'Hello', 'A question')`, /Substitute accounts/);
+  await rejects(`select request_child('Pat', 'Doe', 3, null, null, 'mother')`, /Only approved parents and staff/);
+  assert.deepEqual((await one(`select my_class_attendance() as c`)).c, []);
+  assert.deepEqual((await one(`select my_sub_days() as d`)).d, []);
+  await rejects(`select class_attendance_roll('${sec}')`, /Only the class's teacher/);
+  await rejects(`select carline_board()`, /school staff/);
+  await rejects(`select sub_options()`, /teachers and the office/);
+
+  // Only the class's teacher (or the office) schedules a sub for it.
+  await as('u-sci');
+  await rejects(save(), /permission/);
+  await as('u-p01');
+  await rejects(save(), /permission/);
+  await as('u-eng');
+  const opts = (await one(`select sub_options() as o`)).o;
+  assert.deepEqual(opts.classes.map((c: any) => c.id), [sec]);
+  assert.equal(opts.people[0].id, sub, 'substitutes first');
+  assert.ok(!opts.people.some((p: any) => p.role === 'parent' || p.id === eng));
+  await rejects(save({ who: await uid('u-p01') }), /Choose a substitute/);
+  await rejects(save({ who: eng }), /already teaches/);
+  await rejects(save({ from: 'app.school_today() + 2', to: 'app.school_today() + 1' }), /last day can't be before/);
+  await rejects(save({ from: 'app.school_today() - 2', to: 'app.school_today() - 1' }), /today or a day coming up/);
+  await rejects(save({ start: '15:00', end: '08:00' }), /end time must be after/);
+  const later = (await one(save({ from: 'app.school_today() + 3', to: 'app.school_today() + 4', start: '07:30', end: '15:30' }))).id;
+
+  // Before the day: when and which class, but not the plans or the class itself.
+  await as('u-sub');
+  let days = (await one(`select my_sub_days() as d`)).d;
+  assert.equal(days.length, 1);
+  assert.deepEqual([days[0].onDuty, days[0].plans, days[0].classes[0].id, days[0].startTime], [false, null, sec, '07:30']);
+  await rejects(`select class_attendance_roll('${sec}')`, /Only the class's teacher/);
+  assert.match((await told(sub, 'subDays'))[0].title, /You're subbing: English 10/);
+
+  // On duty today: the class's roll (today's only), the plans, today's check-out lists, the car line board and alerts.
+  await as('u-eng');
+  const today = (await one(save())).id;
+  await as('u-sub');
+  days = (await one(`select my_sub_days() as d`)).d;
+  const now = days.find((d: any) => d.id === today);
+  assert.equal(now.onDuty, true);
+  assert.match(now.plans, /chapter 4/);
+  assert.deepEqual((await one(`select my_class_attendance() as c`)).c.map((c: any) => c.id), [sec]);
+  assert.equal((await one(`select class_attendance_roll('${sec}') as r`)).r.canMark, true);
+  await one(`select class_attendance_mark('${sec}', app.school_today(), array['${ava}']::uuid[], 'present')`);
+  await rejects(`select class_attendance_mark('${sec}', app.school_today() - 1, array['${ava}']::uuid[], 'absent')`, /today's roll only/);
+  await rejects(`select class_attendance_roll('${sec}', app.school_today() - 1)`, /today's roll only/);
+  assert.equal((await one(`select class_attendance_roll('${sec}') as r`)).r.otherDays, false);
+  assert.ok((await one(`select checkout_my_students() as s`)).s.some((s: any) => s.id === ava));
+  await rejects(`select checkout_list_save('Library', app.school_today() + 1, array['${ava}']::uuid[])`, /today only/);
+  const walk = (await one(`select checkout_list_save('Library walk', app.school_today(), array['${ava}']::uuid[]) as id`)).id;
+  assert.ok((await one(`select checkout_my_lists() as l`)).l.some((l: any) => l.id === walk));
+  assert.ok(Array.isArray((await one(`select carline_board() as b`)).b));
+  assert.deepEqual((await one(`select sub_schedule_list() as l`)).l, [], 'the sub never sees the schedule itself');
+
+  await as('u-admin', true);
+  await one(`select school_check('${ava}', 'in', null, 'appointment')`);
+  const alert = (await one(`select id from critical_alert_send('other', 'Drill', '')`)).id;
+  assert.equal((await told(sub, 'classAttendance')).length, 1, "the office's check-ins reach the sub on duty");
+  assert.equal((await told(sub, 'alertId')).length, 1, 'and so do critical alerts');
+  await as('u-sub');
+  assert.equal((await rows(`select 1 from critical_alerts where id = '${alert}'`)).length, 1);
+  await one(`select critical_alert_respond('${alert}', 'safe')`);
+  await as('u-admin', true);
+  assert.ok((await one(`select critical_alert_status('${alert}') as s`)).s.some((p: any) => p.id === sub), 'on the roll call');
+  await one(`select critical_alert_end('${alert}')`);
+
+  // Off duty again: nothing of the class.
+  await asSuper();
+  await db.exec(`update sub_assignments set starts_on = app.school_today() - 1, ends_on = app.school_today() - 1 where id = '${today}'`);
+  await as('u-sub');
+  assert.deepEqual((await one(`select my_class_attendance() as c`)).c, []);
+  await rejects(`select class_attendance_roll('${sec}')`, /Only the class's teacher/);
+  await rejects(`select checkout_list('${walk}')`, /Only the people running/);
+  assert.equal((await rows(`select 1 from checkout_lists`)).length, 0);
+  assert.equal((await rows(`select 1 from critical_alerts`)).length, 0);
+  await rejects(`select carline_board()`, /school staff/);
+  days = (await one(`select my_sub_days() as d`)).d;
+  assert.deepEqual(days.map((d: any) => [d.id, d.plans]), [[later, null]]);
+
+  // Only during its hours.
+  await asSuper();
+  assert.equal((await one(`select app.duty_now('2026-11-02', '2026-11-03', '07:30', '15:30', '2026-11-03 08:00 America/Chicago') as x`)).x, true);
+  assert.equal((await one(`select app.duty_now('2026-11-02', '2026-11-03', '07:30', '15:30', '2026-11-03 15:30 America/Chicago') as x`)).x, false);
+  assert.equal((await one(`select app.duty_now('2026-11-02', '2026-11-03', '07:30', '15:30', '2026-11-04 08:00 America/Chicago') as x`)).x, false);
+
+  // The office schedules for any class (behind the authenticator); the teacher hears and sees it, other teachers don't.
+  await as('u-admin');
+  await rejects(save({ from: 'app.school_today() + 5' }), /MFA_REQUIRED/);
+  await as('u-admin', true);
+  await one(save({ from: 'app.school_today() + 5' }));
+  assert.match((await told(eng, 'subSchedule'))[0].title, /Sub scheduled: Sam Sub/);
+  await as('u-eng');
+  assert.equal((await one(`select sub_schedule_list() as l`)).l.length, 2);
+  await as('u-sci');
+  assert.deepEqual((await one(`select sub_schedule_list() as l`)).l, []);
+  await rejects(`select sub_schedule_delete('${later}')`, /Only the class's teacher or the office/);
+  await as('u-eng');
+  await one(save({ id: later, from: 'app.school_today() + 3', plans: 'New plans.' }));
+  await one(`select sub_schedule_delete('${later}')`);
+  const subNotes = (await told(sub, 'subDays')).map((n) => n.title);
+  assert.ok(subNotes.some((t) => /Your sub day changed/.test(t)) && subNotes.some((t) => /Sub day cancelled/.test(t)));
+
+  await asSuper();
+  await db.exec(`delete from sub_assignments; delete from checkout_lists; delete from class_attendance; delete from school_checks;
+    delete from critical_alerts; delete from notifications where user_id in ('${sub}', '${eng}') or data ? 'alertId' or data ? 'schoolCheckId';
+    delete from auth.users where id = '${sub}'`);
+});
+
 test('volunteer events: leaders group opportunities under an event like Harvest Fest', async () => {
   const save = (args: string) => `select volunteer_event_save(${args}) as id`;
   await as('u-p01');

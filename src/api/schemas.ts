@@ -6,7 +6,7 @@ import type { GroupSettings } from '../comms/types';
 const text = z.string(), number = z.number(), boolean = z.boolean();
 const nullableText = text.nullable();
 export const groupRole = z.enum(['owner', 'moderator', 'member', 'subscriber']);
-export const schoolRole = z.enum(['admin', 'teacher', 'staff', 'parent', 'student', 'family']);
+export const schoolRole = z.enum(['admin', 'teacher', 'staff', 'parent', 'student', 'family', 'substitute']);
 export const postStatus = z.enum(['published', 'pending', 'rejected', 'removed', 'scheduled']);
 const audience = z.enum(['nobody', 'owners', 'moderators', 'members', 'subscribers']);
 const decision = z.object({ allowed: boolean, needsApproval: boolean.optional(), reason: text.optional() });

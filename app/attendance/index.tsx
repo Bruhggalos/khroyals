@@ -16,13 +16,14 @@ export default function Attendance() {
   const [person, setPerson] = useState<Person | null | undefined>(undefined);
   const [classes, setClasses] = useState<ClassRollSummary[] | null>(null);
   const [office, setOffice] = useState(false);
+  const [subs, setSubs] = useState(false);   // leads a class, or schedules subs for every class
 
   const load = useCallback(async () => {
     const p = await session().catch(() => null);
     setPerson(p);
     if (!isSchoolStaff(p)) return;
     const [c, a] = await Promise.all([myClassAttendance().catch(() => []), myAccess().catch(() => null)]);
-    setClasses(c); setOffice(!!a?.permissions.includes('checkin.manage'));
+    setClasses(c); setOffice(!!a?.permissions.includes('checkin.manage')); setSubs(c.length > 0 || !!a?.permissions.includes('subs.manage'));
   }, []);
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -51,6 +52,19 @@ export default function Attendance() {
       {classes.length === 0
         ? !office && <P muted>{"You don't lead a class section yet. The office sets up sections in Admin portal → Classes."}</P>
         : classes.map((c) => <ClassCard key={c.id} c={c} onPress={() => router.push(`/attendance/${c.id}`)} />)}
+
+      {subs && (
+        <Pressable onPress={() => router.push('/subs')} accessibilityRole="button"
+          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 14, backgroundColor: '#fff',
+            borderWidth: 1, borderColor: C.line }, pressed && { opacity: 0.85 }]}>
+          <Ionicons name="people" size={22} color={C.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: C.ink }}>Substitutes</Text>
+            <Text style={{ color: C.muted }}>Schedule a sub, with your sub plans</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.muted} />
+        </Pressable>
+      )}
 
       <CheckoutLists />
     </ScrollView>

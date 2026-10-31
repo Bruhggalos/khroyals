@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  getUser, isSchoolStaff, listAlerts, live, me, myAlertAnswers, onAuthChange, session, subscribeAlerts,
+  getUser, isSchoolStaff, isSubstitute, listAlerts, live, me, myAlertAnswers, onAuthChange, session, subscribeAlerts,
   type AlertAnswer, type CriticalAlert,
 } from '../api/connect';
 import { clock } from '../carline/time';
@@ -33,7 +33,8 @@ export function AlertTakeover() {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!isSchoolStaff(me())) { setAlerts([]); return; }
+    // Substitutes see alerts only while on duty: the database shows them none otherwise.
+    if (!isSchoolStaff(me()) && !isSubstitute(me())) { setAlerts([]); return; }
     try {
       const [a, r] = await Promise.all([listAlerts(5), myAlertAnswers()]);
       setAlerts(a.filter((x) => !x.endedAt)); setAnswers(r);

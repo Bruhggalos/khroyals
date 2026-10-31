@@ -149,7 +149,7 @@ export type VolunteerMessage = { id: string; opportunityId: string; authorId: st
 
 /** How a school role reads on screen. */
 export const ROLE_LABELS: Record<SchoolRole, string> = {
-  admin: 'Admin', teacher: 'Teacher', staff: 'Staff', parent: 'Parent', student: 'Student', family: 'Family',
+  admin: 'Admin', teacher: 'Teacher', staff: 'Staff', parent: 'Parent', student: 'Student', family: 'Family', substitute: 'Substitute',
 };
 
 export const QUESTION_TOPICS = [
@@ -215,7 +215,15 @@ export type RollCheck = { kind: 'in' | 'out'; at: string; reason: string; person
 export type RollStudent = {
   id: string; name: string; grade: number | null; mark: AttendanceMark | null; markedBy: string | null; state: AttendanceMark | null; left: boolean; checks: RollCheck[];
 };
-export type ClassRoll = { id: string; name: string; teacher: string | null; day: string; canMark: boolean; students: RollStudent[] };
+/** `otherDays`: false for a sub, who sees and takes today's roll only. */
+export type ClassRoll = { id: string; name: string; teacher: string | null; day: string; canMark: boolean; otherDays?: boolean; students: RollStudent[] };
+
+/** A sub day (src/api/subs.ts): who covers which classes, on which days and hours. `plans` is null for the sub until they're on duty. */
+export type SubDay = {
+  id: string; substituteId: string; substitute: string; startsOn: string; endsOn: string; startTime: string; endTime: string;
+  onDuty: boolean; plans: string | null; scheduledBy: string | null; classes: { id: string; name: string; teacher: string | null }[];
+};
+export type SubOptions = { classes: { id: string; name: string; teacher: string | null }[]; people: { id: string; name: string; role: string }[] };
 
 export type Access = { tier: string | null; roleName: string | null; isDirector: boolean; granted: string[]; permissions: string[]; mfaRequired: boolean; mfaVerified: boolean };
 

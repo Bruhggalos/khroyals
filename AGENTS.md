@@ -75,6 +75,16 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   trigger, `app.rule_targets`), and so do Ask the School, the Marketplace, child details and
   family requests. Car line code reads `app.pickup_children()` / `app.can_pick_up()`, not
   `guardians` directly. A new feature stays closed to Family unless you open it on purpose.
+- **Substitutes** (`school_role = 'substitute'`; `sub_assignments`, `sub_assignment_sections`) are closed by default
+  like Family accounts: no groups, rosters, photo gallery, Ask the School, children, Marketplace or Volunteer, and never
+  admin powers (`app.substitute_profile`). A class's teacher schedules a sub for the sections they lead, and `subs.manage`
+  holders (office, administrators, directors; an admin power, so `aal2`) for any section (`sub_schedule_save`; Attendance →
+  Substitutes); the sub is notified. Only while a duty window runs (`app.duty_now`: between its days and hours, Central
+  time; `app.on_duty_for(section)`, `app.on_duty()`) does the sub take that class's roll (today's only: `app.takes_roll`
+  vs `app.keeps_roll`), get the office's check-in notifications, read the sub plans (`my_sub_days`), run today's check-out
+  lists from its students, see the car line board, and get critical alerts (`app.alert_reader`, `app.alert_staff`, and the
+  `alerts_reach_subs` trigger copying each alert to them). Teachers and staff can be scheduled to cover a class too. A new
+  class tool stays closed to subs unless it checks `app.on_duty_for` on purpose.
 - **Critical alerts** (`critical_alerts`, `critical_alert_responses`) are for teachers, staff
   and admins only (`app.is_staff()`); only `alerts.send` holders send them and give the all
   clear. Anything with `data.alertId` always pushes (`app.wants_push`), and `data.level` sets

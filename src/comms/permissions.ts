@@ -29,9 +29,9 @@ export interface Context {
 
 const isStaff = (u: User) => u.schoolRole === 'admin' || u.schoolRole === 'teacher' || u.schoolRole === 'staff';
 
-/** Effective role in the group. School admins act as owners everywhere; Family accounts aren't in groups. */
+/** Effective role in the group. School admins act as owners everywhere; Family and Substitute accounts aren't in groups. */
 export function effectiveRole(ctx: Context): GroupRole | null {
-  if (ctx.user.schoolRole === 'family') return null;
+  if (ctx.user.schoolRole === 'family' || ctx.user.schoolRole === 'substitute') return null;
   if (ctx.user.schoolRole === 'admin') return 'owner';
   if (ctx.membership) return ctx.membership.role;
   const v = ctx.group.settings.visibility;
