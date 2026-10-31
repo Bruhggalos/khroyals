@@ -215,10 +215,15 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   `newsletter_save` as the caller) or delete one. The parser drops Smore's tracking links (they can
   carry the reader's email); keep it that way.
 - **Photo gallery** (`gallery_albums`, `gallery_photos`, private `gallery` bucket): every approved
-  account sees it (Family and students too); any staff member starts albums and adds photos
-  (`gallery_album_save`, `gallery_add_photos`; files go in their own `<uid>/` folder, a 1600 px JPEG
-  plus a `_t.jpg` 400 px thumbnail made on the phone). The poster, the album's creator or
-  `gallery.manage` remove; only `push.send` holders can notify everyone about an album. Apps → Photos,
+  account sees it (Family and students too; never Substitutes); any staff member starts albums
+  (`gallery_album_save`). **Everyone who can see an album adds photos** (`gallery_add_photos`,
+  `app.sees_album`; files go in their own `<uid>/` folder, a 1600 px JPEG plus a `_t.jpg` 400 px
+  thumbnail made on the phone; 100 a day unless staff). Anyone removes their own photos; teachers,
+  staff and admins (`app.is_staff()`) remove anyone's with a reason (`gallery_photo_delete`; the
+  reasons are in both `src/gallery/removal.ts` and `app.photo_removal_reasons()`), and the person who
+  added it is told who removed it, why and the note. Removing an album (its creator or
+  `gallery.manage`) tells everyone else who added photos. Only `push.send` holders can notify
+  everyone about an album. Apps → Photos,
   and Latest Photos on the Planner. Albums have a category (`gallery_categories`, kept by
   `gallery.manage`) and a visibility: `everyone` or `staff`; `app.sees_album` applies it to albums,
   photos **and** the storage files (thumbnails `_t.jpg` follow their photo). Search is by album name,

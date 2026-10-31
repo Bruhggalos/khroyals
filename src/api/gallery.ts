@@ -3,6 +3,7 @@
  * Each photo is stored twice in the private 'gallery' bucket: "<uid>/<id>.jpg" (up to 1600 px)
  * and a thumbnail "<uid>/<id>_t.jpg" (400 px) for grids, so browsing stays light.
  */
+import type { RemovalReason } from '../gallery/removal';
 import { schoolYearOf } from '../gallery/years';
 import { live, rpc, run, sb } from './client';
 import type { Database } from './database.types';
@@ -128,7 +129,7 @@ export async function deleteCategory(id: string, moveTo: string) { await rpc('ga
 
 const bytes = (base64: string) => Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)).buffer;
 
-/** Staff: upload photos (already resized, base64 JPEG) to your folder and add them to the album. */
+/** Upload photos (already resized, base64 JPEG) to your folder and add them to an album you can see. */
 export async function addGalleryPhotos(albumId: string, photos: NewGalleryPhoto[], onProgress?: (done: number) => void): Promise<number> {
   const me = current?.id;
   if (!me) throw new Error('Sign in first.');
@@ -149,8 +150,9 @@ export async function addGalleryPhotos(albumId: string, photos: NewGalleryPhoto[
   }
 }
 
-export async function deleteGalleryPhoto(id: string) {
-  const path = await rpc('gallery_photo_delete', { p_photo: id });
+/** Remove a photo: your own, or (teachers, staff, admins) anyone's with a reason; whoever added it is told. */
+export async function deleteGalleryPhoto(id: string, why?: { reason: RemovalReason; note?: string }) {
+  const path = await rpc('gallery_photo_delete', { p_photo: id, p_reason: why?.reason, p_note: why?.note?.trim() || undefined });
   if (path) await sb().storage.from('gallery').remove([path, thumbPath(path)]).catch(() => {});
 }
 

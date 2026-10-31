@@ -1,8 +1,8 @@
 /**
  * Photo gallery, by school year: each grade's album (only its families and staff see it; staff in the Standard
  * view see just their own children's, as a parent would), then the year's other albums (events, games, field
- * trips) by category. Search looks through every year. Staff start albums; gallery.manage holders keep the
- * category list.
+ * trips) by category. Search looks through every year. Staff start albums, and everyone adds photos to the ones
+ * they can see; gallery.manage holders keep the category list.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, View } from 'react-native';
@@ -69,7 +69,7 @@ export default function Photos() {
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.pad, { gap: 12 }]} keyboardShouldPersistTaps="handled">
       {header}
-      <P muted>Photos from each grade and from school events, games and trips, shared by teachers and staff.</P>
+      <P muted>Photos from each grade and from school events, games and trips. Open an album to add your own.</P>
       {staff && !creating && <Button label="+ New album" onPress={() => setCreating(true)} />}
       {creating && (
         <AlbumForm categories={categories} canNotify={perms.includes('push.send')}

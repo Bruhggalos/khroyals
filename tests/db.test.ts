@@ -11,6 +11,7 @@ import { PGlite } from '@electric-sql/pglite';
 import users from '../mock-db/comms/users.json';
 import { accessSchema } from '../src/api/schemas';
 import { notificationHref } from '../src/comms/inbox';
+import { REMOVAL_REASONS } from '../src/gallery/removal';
 
 const ROOT = join(__dirname, '..');
 const sql = (p: string) => readFileSync(join(ROOT, p), 'utf8');
@@ -2635,14 +2636,14 @@ test('photo gallery: staff post albums everyone approved can see; only the poste
     await as(u);
     assert.equal((await rows(`select 1 from gallery_photos where album_id = '${album}'`)).length, 2, u);
     await rejects(`select gallery_album_save(null, 'Mine', '', null, false, '${events}')`, /Only staff/);
-    await rejects(`select gallery_add_photos('${album}', '[]')`, /Only staff/);
   }
   await rejects(`insert into gallery_albums (title) values ('x')`, /permission denied/);
 
-  // Another teacher can't remove it; the poster can remove a photo; gallery.manage can remove the album.
+  // Another teacher removes someone's photo only with a reason, and not the album; the poster removes their own;
+  // gallery.manage removes the album.
   await as('u-sci');
   const photo = (await one(`select id from gallery_photos where album_id = '${album}' and caption = 'Dunk tank'`)).id;
-  await rejects(`select gallery_photo_delete('${photo}')`, /photos you posted/);
+  await rejects(`select gallery_photo_delete('${photo}')`, /Choose why/);
   await rejects(`select gallery_album_delete('${album}')`, /albums you started/);
   await as('u-eng');
   assert.equal((await one(`select gallery_photo_delete('${photo}') as p`)).p, `${me}/a.jpg`);
@@ -3220,6 +3221,82 @@ test("volunteer events: the event's leader puts its opportunities in order", asy
   await asSuper();
   await db.exec(`update profiles set volunteer_lead = false where id = ${id('u-sci')};
     delete from volunteer_opportunities where id in ('${water}', '${setup}', '${booths}'); delete from volunteer_events`);
+});
+
+test("photos: anyone who sees an album adds photos; staff remove anyone's with a reason, and whoever added it is told", async () => {
+  await asSuper();
+  const events = (await one(`select id from gallery_categories where name = 'Events'`)).id;
+  await one('select app.make_grade_albums(app.school_year_end())');
+  const grade = async (g: number) => (await one(`select id from gallery_albums where grade = ${g} and school_year = app.school_year_end()`)).id;
+  const [ninth, tenth] = [await grade(9), await grade(10)];
+  await as('u-eng');
+  const album = (await one(`select gallery_album_save(null, 'Field Day', '', '2026-11-06', false, '${events}') as id`)).id;
+  const staffOnly = (await one(`select gallery_album_save(null, 'Teacher lunch', '', '2026-11-06', false, '${events}', 'staff') as id`)).id;
+  const me = async () => (await one(`select auth.uid()::text as u`)).u as string;
+  const uidOf = async (l: string) => (await one(`select ${id(l)}::text as u`)).u as string;
+  const add = async (a: string, file: string) => one(`select gallery_add_photos('${a}', '[{"path":"${await me()}/${file}","width":10,"height":10}]') as n`);
+
+  // A parent, a student and a Family account add photos (and upload the files) to their own folder only.
+  for (const u of ['u-p01', 'u-s01', 'u-gran']) {
+    await as(u);
+    assert.equal((await add(album, `${u}.jpg`)).n, 1, u);
+  }
+  await as('u-p01');
+  const rosa = await me();
+  await rejects(`select gallery_add_photos('${album}', '[{"path":"${await uidOf('u-p02')}/x.jpg","width":1,"height":1}]')`, /own folder/);
+  await db.exec(`insert into storage.objects (bucket_id, name, owner) values ('gallery', '${rosa}/f1.jpg', '${rosa}')`);
+  await rejects(`insert into storage.objects (bucket_id, name, owner) values ('gallery', '${await uidOf('u-p02')}/f1.jpg', '${rosa}')`, /row-level security/);
+  await db.exec(`delete from storage.objects where name = '${rosa}/f1.jpg'`);
+
+  // Only to albums they can see: their own grade's, not another's or a staff-only one; substitutes none.
+  await as('u-p07');
+  assert.equal((await add(ninth, 'ninth.jpg')).n, 1);
+  await rejects(`select gallery_add_photos('${tenth}', '[{"path":"${await me()}/t.jpg","width":1,"height":1}]')`, /albums you can see/);
+  await rejects(`select gallery_add_photos('${staffOnly}', '[{"path":"${await me()}/s.jpg","width":1,"height":1}]')`, /albums you can see/);
+  await as('u-sub');
+  await rejects(`select gallery_add_photos('${album}', '[{"path":"${await me()}/s.jpg","width":1,"height":1}]')`, /albums you can see/);
+
+  // A parent removes their own photo, no reason needed; not someone else's.
+  const photoOf = async (u: string) => {
+    await asSuper();
+    return (await one(`select id from gallery_photos where album_id = '${album}' and created_by = ${id(u)}`)).id as string;
+  };
+  const [rosasPhoto, avasPhoto] = [await photoOf('u-p01'), await photoOf('u-s01')];
+  await as('u-p01');
+  await rejects(`select gallery_photo_delete('${avasPhoto}')`, /photos you added/);
+  assert.equal((await one(`select gallery_photo_delete('${rosasPhoto}') as p`)).p, `${rosa}/u-p01.jpg`);
+
+  // A teacher who didn't start the album removes Ava's photo with a reason and a note; Ava is told who and why.
+  await as('u-sci');
+  await rejects(`select gallery_photo_delete('${avasPhoto}')`, /Choose why/);
+  await rejects(`select gallery_photo_delete('${avasPhoto}', 'nope')`, /Choose why/);
+  await rejects(`select gallery_photo_delete('${avasPhoto}', 'other')`, /Add a note/);
+  assert.ok((await one(`select gallery_photo_delete('${avasPhoto}', 'permission', 'Please check with families before posting their children.') as p`)).p);
+  await asSuper();
+  const notice = await one(`select title, body, data from notifications where user_id = ${id('u-s01')} order by created_at desc limit 1`);
+  assert.equal(notice.title, '📷 A photo you added was removed');
+  assert.equal(notice.body, 'Jessica Allen removed it from "Field Day". Reason: Shows a student without photo permission. '
+    + 'Note: Please check with families before posting their children.');
+  assert.equal(notice.data.albumId, album);
+
+  // The app and the database list the same reasons.
+  assert.deepEqual(await rows(`select key, label from app.photo_removal_reasons()`), REMOVAL_REASONS.map((r) => ({ ...r })));
+
+  // Up to 100 a day for families (staff have no limit).
+  await as('u-gran');
+  const gran = await me();
+  const many = JSON.stringify(Array.from({ length: 99 }, (_, i) => ({ path: `${gran}/bulk-${i}.jpg`, width: 1, height: 1 })));
+  assert.equal((await one(`select gallery_add_photos('${album}', '${many}') as n`)).n, 99);
+  await rejects(`select gallery_add_photos('${album}', '[{"path":"${gran}/one-more.jpg","width":1,"height":1}]')`, /100 photos a day/);
+
+  // Removing the album tells everyone else who added photos to it.
+  await as('u-eng');
+  await one(`select gallery_album_delete('${album}')`);
+  await one(`select gallery_album_delete('${staffOnly}')`);
+  await asSuper();
+  assert.equal((await one(`select body from notifications where user_id = ${id('u-gran')} and data ? 'photos' order by created_at desc limit 1`)).body,
+    'Jennifer Taylor removed "Field Day", with 100 photos you added.');
+  await db.exec(`delete from gallery_photos where album_id = '${ninth}'`);
 });
 
 test("grade albums: only that grade's families and staff see them, and keep them; event albums are for everyone", async () => {

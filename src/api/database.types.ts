@@ -3590,7 +3590,7 @@ export type Database = {
       gallery_category_delete: { Args: { p_id: string; p_move_to: string }; Returns: undefined }
       gallery_category_save: { Args: { p_icon?: string; p_id: string | null; p_name: string; p_position?: number }; Returns: string }
       gallery_event_album: { Args: { p_calendar_event?: string; p_volunteer_event?: string }; Returns: string }
-      gallery_photo_delete: { Args: { p_photo: string }; Returns: string }
+      gallery_photo_delete: { Args: { p_note?: string; p_photo: string; p_reason?: string }; Returns: string }
       group_abilities: { Args: { p_group: string }; Returns: Json }
       group_post_stats: {
         Args: { p_group: string; p_limit?: number }

@@ -1,6 +1,7 @@
 /**
  * One photo album: a grid of thumbnails; tap one for the full picture (swipe-free: arrows and
- * Close). Staff add photos; whoever posted a photo, the album's creator or gallery.manage remove.
+ * Close) and who added it. Everyone who can see the album adds photos and removes their own; teachers,
+ * staff and admins remove anyone's, with a reason the person who added it is told.
  * A grade album says who sees it; the people on it can take it off their account, and gallery.manage
  * holders see the list of people and put people on or take them off.
  */
@@ -9,12 +10,13 @@ import { Alert, Image, Modal, Platform, Pressable, ScrollView, Text, useWindowDi
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, isSchoolStaff, leaveAlbum, listCategories, me, myAccess, saveAlbum, session,
+  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, getUser, isSchoolStaff, leaveAlbum, listCategories, me, myAccess, saveAlbum, session,
   type GalleryAlbum, type GalleryCategory, type GalleryPhoto,
 } from '../../src/api/connect';
 import { albumDate } from '../../src/gallery/AlbumCard';
 import { AlbumForm } from '../../src/gallery/AlbumForm';
 import { AlbumPeople } from '../../src/gallery/AlbumPeople';
+import { RemovePhoto } from '../../src/gallery/RemovePhoto';
 import { schoolYearLabel } from '../../src/gallery/years';
 import { gradeLabel } from '../../src/comms/grades';
 import { pickGalleryPhotos } from '../../src/photos';
@@ -31,6 +33,7 @@ const gradeWords = (g: number) => (g <= 0 ? gradeLabel(g) : `the ${gradeLabel(g)
 export default function Album() {
   const { id, add } = useLocalSearchParams<{ id: string; add?: string }>();
   const [data, setData] = useState<{ album: GalleryAlbum; photos: GalleryPhoto[] } | null | undefined>(undefined);
+  const [signedIn, setSignedIn] = useState(false);
   const [staff, setStaff] = useState(false);
   const [manage, setManage] = useState(false);
   const [canNotify, setCanNotify] = useState(false);
@@ -38,11 +41,13 @@ export default function Album() {
   const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [upload, setUpload] = useState<{ done: number; of: number } | null>(null);
+  const [removing, setRemoving] = useState(false);   // a staff member choosing why they're removing someone's photo
   const { width } = useWindowDimensions();
 
   const load = useCallback(async () => {
     try {
       const p = await session();
+      setSignedIn(!!p && !p.pending);
       setStaff(isSchoolStaff(p));
       if (isSchoolStaff(p)) {
         const perms = (await myAccess().catch(() => null))?.permissions ?? [];
@@ -77,7 +82,20 @@ export default function Album() {
   if (!data) return <View style={[s.screen, s.pad]}>{header}<P>That album isn't here anymore.</P></View>;
   const { album, photos } = data;
   const started = album.createdBy === me()?.id;
-  const canRemove = (ph: GalleryPhoto) => staff && (ph.createdBy === me()?.id || started || manage);
+  const own = (ph: GalleryPhoto) => !!ph.createdBy && ph.createdBy === me()?.id;
+  const canRemove = (ph: GalleryPhoto) => own(ph) || staff;
+  /** Who added a photo: "you", their name, or null once their account is gone. */
+  const addedBy = (ph: GalleryPhoto) => {
+    if (own(ph)) return 'you';
+    const u = ph.createdBy ? getUser(ph.createdBy) : undefined;
+    return u ? `${u.firstName} ${u.lastName}`.trim() : null;
+  };
+  // After a photo goes, stay on the one that took its place (or close when it was the last).
+  const removed = (at: number) => load().then(() => setOpen(photos.length > 1 ? Math.min(at, photos.length - 2) : null));
+  const removeOwn = (ph: GalleryPhoto) => confirm('Delete this photo?', 'It will be removed for everyone.', () => {
+    const at = open!;
+    deleteGalleryPhoto(ph.id).then(() => removed(at)).catch((e) => Alert.alert('Not deleted', errorText(e)));
+  });
   const leave = () => confirm('Remove this album from your Photos?',
     `You won't see "${album.title}" anymore. The school office can give it back.`,
     () => leaveAlbum(album.id).then(() => router.back()).catch((e) => Alert.alert('Not removed', errorText(e))), 'Remove');
@@ -124,9 +142,12 @@ export default function Album() {
       {staff && (started || manage) && !editing && (
         <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="button" onPress={() => setEditing(true)}>Edit album (name, category, who sees it)</Text>
       )}
-      {staff && (upload
+      {signedIn && (upload
         ? <Card><P>Uploading {upload.done} of {upload.of}…</P></Card>
         : <Button label="+ Add photos" onPress={addPhotos} />)}
+      {signedIn && !staff && !upload && (
+        <P muted>Photos you add are seen by everyone who can see this album. Teachers and staff may remove any photo that doesn't fit.</P>
+      )}
       {!photos.length && <Card><P muted>No photos in this album yet.</P></Card>}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
         {photos.map((ph, i) => (
@@ -141,12 +162,12 @@ export default function Album() {
             () => deleteAlbum(album.id).then(() => router.back()).catch((e) => Alert.alert('Not deleted', errorText(e))))}>Delete album…</Text>
       )}
 
-      <Modal visible={!!shown} animationType="fade" transparent={false} onRequestClose={() => setOpen(null)}>
+      <Modal visible={!!shown} animationType="fade" transparent={false} onRequestClose={() => { setRemoving(false); setOpen(null); }}>
         {shown && (
           <View style={{ flex: 1, backgroundColor: '#000' }}>
             <View style={[s.row, { justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 54 : 16, paddingBottom: 8 }]}>
               <Text style={{ color: '#fff', fontWeight: '700' }}>{open! + 1} of {photos.length}</Text>
-              <Pressable onPress={() => setOpen(null)} accessibilityRole="button" accessibilityLabel="Close" hitSlop={12}>
+              <Pressable onPress={() => { setRemoving(false); setOpen(null); }} accessibilityRole="button" accessibilityLabel="Close" hitSlop={12}>
                 <Ionicons name="close" size={30} color="#fff" />
               </Pressable>
             </View>
@@ -156,17 +177,14 @@ export default function Album() {
             </View>
             <View style={{ padding: 16, paddingBottom: 34, gap: 10 }}>
               {!!shown.caption && <Text style={{ color: '#fff', textAlign: 'center' }}>{shown.caption}</Text>}
+              {!!addedBy(shown) && <Text style={{ color: '#9CA3AF', textAlign: 'center', fontSize: 13 }}>Added by {addedBy(shown)}</Text>}
               <View style={[s.row, { justifyContent: 'space-between' }]}>
                 <Pressable onPress={() => setOpen(Math.max(0, open! - 1))} disabled={open === 0} accessibilityRole="button" accessibilityLabel="Previous photo" hitSlop={12}>
                   <Ionicons name="chevron-back-circle" size={44} color={open === 0 ? '#555' : '#fff'} />
                 </Pressable>
                 {canRemove(shown) && (
                   <Text style={{ color: '#FCA5A5', fontWeight: '700' }} accessibilityRole="button"
-                    onPress={() => confirm('Delete this photo?', 'It will be removed for everyone.', () => {
-                      const at = open!;
-                      deleteGalleryPhoto(shown.id).then(load).then(() => setOpen(photos.length > 1 ? Math.min(at, photos.length - 2) : null))
-                        .catch((e) => Alert.alert('Not deleted', errorText(e)));
-                    })}>Delete photo</Text>
+                    onPress={() => (own(shown) ? removeOwn(shown) : setRemoving(true))}>{own(shown) ? 'Delete photo' : 'Remove photo'}</Text>
                 )}
                 <Pressable onPress={() => setOpen(Math.min(photos.length - 1, open! + 1))} disabled={open === photos.length - 1}
                   accessibilityRole="button" accessibilityLabel="Next photo" hitSlop={12}>
@@ -174,6 +192,14 @@ export default function Album() {
                 </Pressable>
               </View>
             </View>
+            {removing && (
+              <RemovePhoto owner={addedBy(shown)} onCancel={() => setRemoving(false)}
+                onRemove={(why) => {
+                  const at = open!;
+                  return deleteGalleryPhoto(shown.id, why).then(() => { setRemoving(false); return removed(at); })
+                    .catch((e) => Alert.alert('Not removed', errorText(e)));
+                }} />
+            )}
           </View>
         )}
       </Modal>
