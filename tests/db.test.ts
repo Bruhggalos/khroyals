@@ -1613,10 +1613,20 @@ test('car line vehicles: your own, the last one used is the default, and staff s
   const [switched] = await rows(`select * from carline_announce(null, ${AT}, null, '${suv.id}')`);
   assert.deepEqual([switched.id, switched.vehicle.label], [first.id, 'Silver Honda SUV'], 'same place in line, new vehicle');
 
-  // Choosing a default in My profile; the car screen then arrives in it. (PGlite's clock ticks in
-  // milliseconds, so wait one to keep "last used" in order.)
+  // Choosing today's vehicle (the button under Check In) while in line: staff see it, same place in line.
+  // Someone else's vehicle is refused and changes nothing. (PGlite's clock ticks in milliseconds, so wait
+  // one to keep "last used" in order.)
   await new Promise((r) => setTimeout(r, 5));
+  await as('u-p02');
+  await rejects(`select vehicle_use('${truck.id}')`, /isn't one of yours/);
+  await as('u-p01');
   await one(`select vehicle_use('${truck.id}')`);
+  await as('u-sci');
+  const moved = (await one(`select carline_board() as b`)).b.find((b: any) => b.id === first.id);
+  assert.deepEqual([moved.status, moved.vehicle], ['waiting', 'Red Ford Truck']);
+
+  // It's also the default; the car screen then arrives in it.
+  await as('u-p01');
   await one(`select carline_cancel('${first.id}')`);
   const pass = (await one(`select create_car_pass() as t`)).t as string;
   await asSuper();
@@ -2104,6 +2114,104 @@ test('approved pickup people: parents add an account by email, for a day or long
 
   await asSuper();
   await db.exec(`delete from pickup_authorizations; update app.settings set value = null where key = 'carline_open_on'`);
+});
+
+test('pickup transfers: a parent hands pickup to an approved account for a day; they accept or decline', async () => {
+  const noah = id('u-s04');
+  await asSuper();
+  await db.exec(`update app.settings set value = app.school_today()::text where key = 'carline_open_on';
+                 delete from carline_pickups where student_id = ${noah}`);
+  const [sun, priya, noahId] = Object.values(await one(`select ${id('u-p04')} as a, ${id('u-p07')} as b, ${noah} as c`));
+  const told = async (re: RegExp) =>
+    (await rows(`select title from my_notifications() where data->>'carline' = 'transfer'`)).some((n) => re.test(n.title));
+
+  // Parents find people by name: approved adults only (never students, never themselves), and only their names.
+  await as('u-p04');
+  const found = (await one(`select pickup_transfer_people('priya sha') as p`)).p;
+  assert.deepEqual(found, [{ id: priya, name: 'Priya Shah' }]);
+  assert.deepEqual((await one(`select pickup_transfer_people('noah kim') as p`)).p, [], 'never students');
+  assert.deepEqual((await one(`select pickup_transfer_people('sun kim') as p`)).p, [], 'never yourself');
+  assert.deepEqual((await one(`select pickup_transfer_people('p') as p`)).p, [], 'two letters at least');
+  await as('u-s01');
+  await rejects(`select pickup_transfer_people('priya')`, /Only parents/);
+
+  // Only the child's parents ask, only of an approved adult, and only for today or ahead.
+  await as('u-p02');
+  await rejects(`select pickup_transfer(array[${noah}], '${priya}')`, /Only a child's parents/);
+  await as('u-p04');
+  await rejects(`select pickup_transfer(array[${noah}], ${id('u-s01')})`, /approved Royals Connect account/);
+  await rejects(`select pickup_transfer(array[${noah}], '${sun}')`, /approved Royals Connect account/);
+  await rejects(`select pickup_transfer(array[${noah}], '${priya}', app.school_today() - 1)`, /today or a day ahead/);
+  const ask = (await one(`select pickup_transfer(array[${noah}], '${priya}') as r`)).r;
+  await rejects(`select pickup_transfer(array[${noah}], ${id('u-p02')})`, /already handed/);
+
+  // Priya is asked; until she accepts, Noah isn't hers to pick up.
+  await as('u-p07');
+  assert.ok(await told(/Can you pick up Noah\?/));
+  const asked = (await one(`select my_pickup_transfers() as t`)).t.asked;
+  assert.deepEqual([asked.length, asked[0].requestId, asked[0].status, asked[0].children[0].studentId], [1, ask, 'pending', noahId]);
+  await rejects(`select * from carline_announce(array[${noah}], ${AT})`, /own children|pick up/);
+
+  // She declines and Sun hears. Sun asks again; only Priya can answer, and this time she accepts.
+  await one(`select pickup_transfer_answer('${ask}', false)`);
+  await rejects(`select pickup_transfer_answer('${ask}', true)`, /isn't waiting/);
+  await as('u-p04');
+  assert.ok(await told(/Priya Shah can't pick up Noah/));
+  const again = (await one(`select pickup_transfer(array[${noah}], '${priya}') as r`)).r;
+  await as('u-p02');
+  await rejects(`select pickup_transfer_answer('${again}', true)`, /isn't waiting/);
+  await as('u-p07');
+  await one(`select pickup_transfer_answer('${again}', true)`);
+  assert.ok((await rows(`select x as id from my_pickup_children() x`)).some((r) => r.id === noahId), 'Noah is in her car line today');
+  await as('u-p04');
+  assert.ok(await told(/Priya Shah will pick up Noah/));
+
+  // Now only Priya checks Noah in: Sun's check-in skips him.
+  const handed = (await one(`select my_pickup_transfers() as t`)).t.children.find((k: any) => k.status === 'accepted');
+  assert.deepEqual([handed.child, handed.to, handed.from], ['Noah', 'Priya Shah', 'Sun Kim']);
+  assert.deepEqual(await rows(`select * from carline_announce(array[${noah}], ${AT})`), []);
+  await as('u-p07');
+  const [hers] = await rows(`select * from carline_announce(array[${noah}], ${AT})`);
+  assert.equal(hers.guardian_id, priya);
+
+  // Sun calls it off: Priya's check-in for Noah goes with it and she hears; Sun can check him in again.
+  await as('u-p04');
+  await one(`select pickup_transfer_cancel('${handed.id}')`);
+  await rejects(`select pickup_transfer_cancel('${handed.id}')`, /can't be changed/);
+  await asSuper();
+  assert.equal((await one(`select status from carline_pickups where id = '${hers.id}'`)).status, 'cancelled');
+  await as('u-p07');
+  assert.equal((await rows(`select x from my_pickup_children() x where x = ${noah}`)).length, 0);
+  assert.ok(await told(/Pickup of Noah called off/));
+  await as('u-p04');
+  const [mine] = await rows(`select * from carline_announce(array[${noah}], ${AT})`);
+  assert.equal(mine.guardian_id, sun);
+
+  // A parent checking in while an ask waits for an answer calls the ask off.
+  await one(`select carline_cancel('${mine.id}')`);
+  const third = (await one(`select pickup_transfer(array[${noah}], '${priya}') as r`)).r;
+  await rows(`select * from carline_announce(array[${noah}], ${AT})`);
+  await asSuper();
+  assert.equal((await one(`select status from pickup_transfers where request_id = '${third}'`)).status, 'cancelled');
+
+  // A day ahead: accepted, but not hers until then; she can still say she can't make it, and Sun hears.
+  await as('u-p04');
+  const later = (await one(`select pickup_transfer(array[${noah}], '${priya}', app.school_today() + 1) as r`)).r;
+  await as('u-p07');
+  await one(`select pickup_transfer_answer('${later}', true)`);
+  assert.equal((await rows(`select x from my_pickup_children() x where x = ${noah}`)).length, 0, 'not until that day');
+  const ahead = (await one(`select my_pickup_transfers() as t`)).t.asked;
+  assert.deepEqual(ahead.map((a: any) => [a.requestId, a.status]), [[later, 'accepted']]);
+  await one(`select pickup_transfer_cancel('${ahead[0].children[0].id}')`);
+  await as('u-p04');
+  assert.ok(await told(/Priya Shah can't pick up Noah/));
+  assert.deepEqual((await one(`select my_pickup_transfers() as t`)).t.children.filter((k: any) => k.status !== 'declined'), []);
+  await rejects(`insert into pickup_transfers (request_id, student_id, to_id, day) values (gen_random_uuid(), ${noah}, '${priya}', app.school_today())`,
+    /permission denied/);
+
+  await asSuper();
+  await db.exec(`delete from pickup_transfers; delete from carline_pickups where student_id = ${noah};
+                 update app.settings set value = null where key = 'carline_open_on'`);
 });
 
 test('duplicate children: the same child is never added twice; likely matches are caught; twins are not', async () => {

@@ -1504,6 +1504,64 @@ export type Database = {
           },
         ]
       }
+      pickup_transfers: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          day: string
+          from_id: string | null
+          id: string
+          request_id: string
+          status: string
+          student_id: string
+          to_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          day: string
+          from_id?: string | null
+          id?: string
+          request_id: string
+          status?: string
+          student_id: string
+          to_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          day?: string
+          from_id?: string | null
+          id?: string
+          request_id?: string
+          status?: string
+          student_id?: string
+          to_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_transfers_from_id_fkey"
+            columns: ["from_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_transfers_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_transfers_to_id_fkey"
+            columns: ["to_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poll_options: {
         Row: {
           id: string
@@ -3794,6 +3852,7 @@ export type Database = {
         }
       }
       my_pickup_children: { Args: never; Returns: string[] }
+      my_pickup_transfers: { Args: never; Returns: Json }
       my_sections: {
         Args: never
         Returns: {
@@ -3881,6 +3940,16 @@ export type Database = {
           label: string
         }[]
       }
+      pickup_transfer: {
+        Args: { p_day?: string; p_students: string[]; p_to: string }
+        Returns: string
+      }
+      pickup_transfer_answer: {
+        Args: { p_accept: boolean; p_request: string }
+        Returns: undefined
+      }
+      pickup_transfer_cancel: { Args: { p_id: string }; Returns: undefined }
+      pickup_transfer_people: { Args: { p_query: string }; Returns: Json }
       post_stats: { Args: { p_post: string }; Returns: Json }
       push_claim: {
         Args: never

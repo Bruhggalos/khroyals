@@ -24,3 +24,10 @@ test('outside pickup hours it stays, greyed out', () => {
 test('no car line settings yet: the button works', () => {
   assert.deepEqual(checkInButton(undefined, 0, 1), { kind: 'ready' });
 });
+
+test('children whose pickup is transferred to someone else today leave the button greyed out', () => {
+  assert.deepEqual(checkInButton(open, 0, 0, 2), { kind: 'transferred' });
+  assert.deepEqual(checkInButton(open, 0, 1, 1), { kind: 'ready' }, 'one child still yours to check in');
+  assert.deepEqual(checkInButton(open, 1, 0, 1), { kind: 'checked-in' }, 'yours are in line');
+  assert.deepEqual(checkInButton(closed, 0, 0, 1), { kind: 'outside' });
+});

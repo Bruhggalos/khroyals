@@ -105,6 +105,13 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   account and is added by the child's parents or the office (`pickup_authorizations`,
   `add_pickup_person`, optionally for a date range); they get the car line for that child
   only, through `app.pickup_children()`, never `guardians`.
+  **Pickup transfers** (`pickup_transfers`; Car Line → Transfer pickup, `app/carline-transfer.tsx`): a parent
+  (`app.is_guardian_of`, never Family) asks another approved adult (`app.can_take_pickup`: never students or
+  substitutes), found by name (`pickup_transfer_people`, names only), to pick up on a day (today or up to 60 days
+  ahead). They accept or decline (`pickup_transfer_answer`). Until then the parents keep pickup, and a parent's
+  check-in calls the ask off. Once accepted, the child is in their `app.pickup_children()` that day and nobody else
+  can check the child in (trigger `pickup_transfer_check_in` skips the child), until a parent cancels or they
+  can't make it (`pickup_transfer_cancel`).
 - **Student logins:** a child added by the office has no login (`profiles.managed`). Their parents
   (`app.is_guardian_of`, so never Family accounts) or `people.family` give them one by email: the
   `student-login` Edge Function runs `student_login_request` as the caller, then creates the auth

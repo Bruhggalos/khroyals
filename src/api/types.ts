@@ -310,6 +310,22 @@ export type ApprovedPickup = {
   startsOn: string; endsOn: string | null; pending: boolean; active: boolean; grantedBy: string;
 };
 
+/** A handoff of one child's pickup on a day (Car Line → Transfer pickup), as the child's parents see it. */
+export type PickupTransfer = {
+  id: string; requestId: string; studentId: string; child: string; toId: string; to: string; from: string;
+  /** "YYYY-MM-DD" */
+  day: string; status: 'pending' | 'accepted' | 'declined';
+};
+
+/** An ask made of you: pick up these children on a day. */
+export type PickupAsk = {
+  requestId: string; from: string; day: string; status: 'pending' | 'accepted';
+  /** `id`: that child's handoff, for "can't make it". */
+  children: { id: string; studentId: string; name: string }[];
+};
+
+export type PickupTransfers = { children: PickupTransfer[]; asked: PickupAsk[] };
+
 export type ChildPickupPeople = {
   parents: { id: string; name: string; relation: ParentRelation | null }[];
   family: { id: string; name: string }[];

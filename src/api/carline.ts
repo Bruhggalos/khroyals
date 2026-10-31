@@ -86,9 +86,9 @@ export async function pickupNumbers(): Promise<Record<string, string>> {
   return Object.fromEntries(rows.map((r) => [r.student_id, r.number]));
 }
 
-/** Live car line changes (row-level security limits them to what this person may see). */
+/** Live car line changes and pickup handoffs (row-level security limits them to what this person may see). */
 export function subscribeCarline(onChange: () => void): () => void {
-  return subscribeChanges('subscribeCarline', [{ event: '*', table: 'carline_pickups' }], onChange);
+  return subscribeChanges('subscribeCarline', [{ event: '*', table: 'carline_pickups' }, { event: '*', table: 'pickup_transfers' }], onChange);
 }
 
 /** A car pass for this phone: lets the car screen show and check in only this parent's children. */

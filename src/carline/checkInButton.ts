@@ -7,17 +7,19 @@ export type CheckInButton =
   | { kind: 'ready' }                         // "Check In": choose children and check in
   | { kind: 'checked-in' }                    // "Checked In!": everyone still to pick up is in line
   | { kind: 'outside'; opensAt?: string }     // greyed out: before or after pickup hours (or no school)
-  | { kind: 'done' };                         // greyed out: everyone is picked up for today
+  | { kind: 'done' }                          // greyed out: everyone is picked up for today
+  | { kind: 'transferred' };                  // greyed out: the rest are someone else's to pick up today
 
 /**
  * `line`: the car line's state now ('early' is a school day before pickup starts).
  * `waiting` / `ready`: how many of your children are in line / not checked in yet today.
+ * `handedOff`: how many aren't in line yet because their pickup is transferred to someone else today.
  */
 export function checkInButton(line: { state: 'open' | 'early' | 'closed'; opensAt?: string } | undefined,
-  waiting: number, ready: number): CheckInButton {
+  waiting: number, ready: number, handedOff = 0): CheckInButton {
   if (line?.state === 'closed') return { kind: 'outside' };
   if (waiting > 0 && ready === 0) return { kind: 'checked-in' };
   if (line?.state === 'early') return { kind: 'outside', opensAt: line.opensAt };
-  if (ready === 0) return { kind: 'done' };
+  if (ready === 0) return handedOff > 0 ? { kind: 'transferred' } : { kind: 'done' };
   return { kind: 'ready' };
 }
