@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Stack, usePathname, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isSchoolStaff, live, onAuthChange, session } from '../src/api/connect';
 import { AccountGate, useAccountGate } from '../src/AccountGate';
+import type { Gate } from '../src/gate';
 import { AlertTakeover } from '../src/alerts/AlertTakeover';
 import { LocationConsent } from '../src/alerts/LocationConsent';
 import { offerDndAccess } from '../src/alerts/loudness';
@@ -38,6 +39,14 @@ export default function Root() {
   // Only approved accounts use the app: everyone else sees the welcome screen over it.
   const { gate, recheck } = useAccountGate();
   const open = gate === 'in';
+  // Signing in (or being approved) on the welcome screen: it stays up a moment, as it was, while its
+  // shield flies into the Home button. Opening the app already signed in just opens it.
+  const [seen, setSeen] = useState(gate);
+  const [leaving, setLeaving] = useState<Gate | null>(null);
+  if (gate !== seen) {
+    setSeen(gate);
+    setLeaving(gate === 'in' && (seen === 'out' || seen === 'waiting') ? seen : null);
+  }
   const path = usePathname();
   // The car line board is for a big screen: dark and the full width of the monitor.
   const board = useSegments()[0] === 'carline-board';
@@ -69,7 +78,8 @@ export default function Root() {
           active critical alert covers the app until they answer it. */}
       <LocationConsent />
       <AlertTakeover />
-      {!open && <AccountGate gate={gate} recheck={recheck} linking={path === '/auth'} />}
+      {(!open || leaving) && <AccountGate gate={leaving ?? gate} recheck={recheck} linking={path === '/auth'}
+        leaving={!!leaving} onGone={() => setLeaving(null)} />}
     </View>
   );
 }

@@ -266,7 +266,8 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   Create account) or Waiting for approval. The app stays mounted underneath, so sign-in links and
   notification taps still finish there; demo builds without the server stay open. `tests/gate.test.ts`
   checks it's mounted. Database reads open to signed-out visitors (`anon`) stay as they are, but the app
-  shows nothing until approval.
+  shows nothing until approval. Signing in (or being approved) there keeps it up for a moment while its shield
+  flies into the Home tab button (`src/homeShield.ts`: the button registers itself and hides until the shield lands).
 - **Every screen has a way back.** `app/_layout.tsx` sets `unstable_settings.initialRouteName
   = '(tabs)'`, so a screen opened straight from a link (khroyals://…, a web address, a
   notification that starts the app) still has the tabs underneath and a back button. Keep it.

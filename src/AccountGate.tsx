@@ -4,10 +4,13 @@
  * they've asked for an account, Waiting for approval. Everything underneath stays mounted, so sign-in
  * links (email, Google on the web) and notification taps still finish there. Demo builds without the
  * school server stay open. Mounted last in app/_layout.tsx, over the whole app. The shield fades in
- * first, then everything below it (straight away for people who turn on Reduce Motion).
+ * first, then everything below it (straight away for people who turn on Reduce Motion). Once someone
+ * signs in (or is approved), the page fades away while the shield shrinks into the Home button in the
+ * middle of the tab bar, as if it turns into the button (a plain fade with Reduce Motion, or when the
+ * button isn't on screen).
  */
-import { useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Animated, AppState, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, ActivityIndicator, Animated, AppState, Easing, Keyboard, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { errorText, hasSignIn, live, me, onAuthChange, session, signOut, updateMyName } from './api/connect';
 import { disableAutoCheckIn } from './carline/autoCheckIn';
@@ -15,6 +18,7 @@ import { forgetCarPass } from './carline/carPass';
 import { SignIn } from './comms/SignIn';
 import { disablePush } from './comms/push';
 import { gateFor, type Gate } from './gate';
+import { flightPath, frameOf, hideHomeButton, homeButtonFrame } from './homeShield';
 import { Shield } from './Shield';
 import { Button, C, Card, Field, H, P, s } from './ui';
 
@@ -64,18 +68,72 @@ function useWelcomeFade() {
   return { shield, rest };
 }
 
-/** `linking`: the app opened on a sign-in link (/auth), which finishes underneath. */
-export function AccountGate({ gate, recheck, linking }: { gate: Gate; recheck: (refresh?: boolean) => void; linking: boolean }) {
+type Plan = { dx: number; dy: number; scale: number } | 'fade';
+
+/**
+ * Leaving: the page and the form fade out while the shield flies into the Home button (`shield` is the
+ * shield's own box, measured on screen); `onGone` when it's there.
+ */
+function useFlight(leaving: boolean, onGone?: () => void) {
+  const shield = useRef<View>(null);
+  const gone = useRef(onGone);
+  gone.current = onGone;
+  const [flight] = useState(() => new Animated.Value(0));   // 0 → 1 on the way to the Home button
+  const [page] = useState(() => new Animated.Value(1));     // the page behind the shield, and the form
+  const [plan, setPlan] = useState<Plan | null>(null);
+
+  // Where to: put the keyboard away first so the page stops moving, then measure both ends.
+  useEffect(() => {
+    if (!leaving) return;
+    let stop = false;
+    const settle = native && Keyboard.isVisible() ? new Promise((r) => { Keyboard.dismiss(); setTimeout(r, 300); }) : Promise.resolve();
+    settle.then(() => Promise.all([frameOf(shield.current), homeButtonFrame(), AccessibilityInfo.isReduceMotionEnabled().catch(() => false)]))
+      .then(([from, to, still]) => { if (!stop) setPlan(from && to && !still ? flightPath(from, to) : 'fade'); });
+    return () => { stop = true; };
+  }, [leaving]);
+
+  useEffect(() => {
+    if (!plan) return;
+    const fly = plan !== 'fade';
+    if (fly) hideHomeButton(true);   // only one shield: the button shows again as this one lands on it
+    const run = Animated.parallel([
+      Animated.timing(page, { toValue: 0, duration: fly ? 420 : 250, easing: Easing.out(Easing.quad), useNativeDriver: native }),
+      ...(fly ? [Animated.timing(flight, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.cubic), useNativeDriver: native })] : []),
+    ]);
+    run.start(({ finished }) => { if (finished) { hideHomeButton(false); gone.current?.(); } });
+    return () => { run.stop(); hideHomeButton(false); };
+  }, [plan, page, flight]);
+
+  // A little lift first, then down into the button, shrinking to its size.
+  const style = plan && plan !== 'fade' ? { transform: [
+    { translateX: flight.interpolate({ inputRange: [0, 1], outputRange: [0, plan.dx] }) },
+    { translateY: flight.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, -14, plan.dy] }) },
+    { scale: flight.interpolate({ inputRange: [0, 0.18, 1], outputRange: [1, 1.06, plan.scale] }) },
+  ] } : plan === 'fade' ? { opacity: page } : null;
+  return { shield, page, style };
+}
+
+/**
+ * `linking`: the app opened on a sign-in link (/auth), which finishes underneath. `leaving`: they're in;
+ * the shield flies into the Home button and `onGone` takes the welcome screen away.
+ */
+export function AccountGate({ gate, recheck, linking, leaving = false, onGone }: {
+  gate: Gate; recheck: (refresh?: boolean) => void; linking: boolean; leaving?: boolean; onGone?: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const fade = useWelcomeFade();
+  const flight = useFlight(leaving, onGone);
   const checking = gate === 'checking' || (gate === 'out' && linking);
   return (
-    <View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg }]} accessibilityViewIsModal>
+    <View style={StyleSheet.absoluteFill} pointerEvents={leaving ? 'none' : 'auto'} accessibilityViewIsModal={!leaving}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg, opacity: flight.page }]} />
       <ScrollView keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 24, padding: 16, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 32,
           width: '100%', maxWidth: 480, alignSelf: 'center' }}>
-        <Animated.View style={{ alignItems: 'center', opacity: fade.shield }}><Shield size={160} /></Animated.View>
-        <Animated.View style={{ opacity: fade.rest }}>
+        <Animated.View style={{ alignItems: 'center', opacity: fade.shield }}>
+          <Animated.View ref={flight.shield} collapsable={false} style={flight.style}><Shield size={160} /></Animated.View>
+        </Animated.View>
+        <Animated.View style={{ opacity: Animated.multiply(fade.rest, flight.page) }}>
           {checking ? <ActivityIndicator color={C.primary} />
             : gate === 'waiting' ? <Waiting recheck={recheck} />
             : <SignIn embedded onDone={() => recheck()} />}

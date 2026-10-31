@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { bottomArc } from '../../src/arcText';
+import { setHomeButton, watchHomeButton } from '../../src/homeShield';
 import { headerDate } from '../../src/info/today';
 import { edgeLayout, TabBarEdge } from '../../src/ScreenEdge';
 import { C } from '../../src/ui';
@@ -15,12 +17,19 @@ const LETTER = { width: LABEL_SIZE * 1.2, height: LABEL_SIZE * 1.4 };
 
 const icon = (e: string) => ({ focused }: { focused: boolean }) => <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{e}</Text>;
 
-/** The raised Kingdom Heights shield in the middle of the tab bar, labeled "Home"; opens the Apps page. */
+/**
+ * The raised Kingdom Heights shield in the middle of the tab bar, labeled "Home"; opens the Apps page.
+ * It registers itself so the welcome screen's shield can fly into it after sign-in (src/homeShield.ts).
+ */
 function AppsTabButton({ onPress, 'aria-selected': selected }: { onPress?: (e: any) => void; 'aria-selected'?: boolean }) {
   const on = !!selected;
+  const button = useRef<View>(null);
+  const [hidden, setHidden] = useState(false);   // the welcome screen's shield is flying in to take its place
+  useEffect(() => { setHomeButton(button); return () => setHomeButton(null); }, []);
+  useEffect(() => watchHomeButton(setHidden), []);
   return (
     <View style={hs.appsSlot}>
-      <View style={hs.appsButton}>
+      <View ref={button} collapsable={false} style={[hs.appsButton, hidden && { opacity: 0 }]}>
         <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Home" accessibilityState={{ selected: on }}
           hitSlop={{ bottom: 16 }}
           style={({ pressed }) => [hs.apps, on && { borderColor: C.accent }, pressed && { transform: [{ scale: 0.94 }] }]}>
