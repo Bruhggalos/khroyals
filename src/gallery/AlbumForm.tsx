@@ -5,7 +5,10 @@ import { errorText, saveAlbum, type AlbumVisibility, type GalleryCategory } from
 import { DateField } from '../forms/DateTimeField';
 import { Button, C, Card, Field, H, P, s } from '../ui';
 
-export type AlbumDraft = { id?: string | null; title: string; description: string; takenOn: string; categoryId: string | null; visibility: AlbumVisibility };
+/** `grade`: a grade album's grade (its families and staff see it); left as it is when saved. */
+export type AlbumDraft = {
+  id?: string | null; title: string; description: string; takenOn: string; categoryId: string | null; visibility: AlbumVisibility; grade?: number | null;
+};
 
 export const chip = (label: string, on: boolean, onPress: () => void, key = label) => (
   <Text key={key} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
@@ -23,7 +26,7 @@ export function AlbumForm({ initial, categories, canNotify, onSaved, onCancel }:
   const save = async () => {
     if (!d.categoryId) return Alert.alert('Category', 'Pick a category for the album.');
     setBusy(true);
-    try { onSaved(await saveAlbum({ ...d, categoryId: d.categoryId, notify: notify && d.visibility === 'everyone' })); }
+    try { onSaved(await saveAlbum({ id: d.id, title: d.title, description: d.description, takenOn: d.takenOn, categoryId: d.categoryId, visibility: d.visibility, notify: notify && d.visibility === 'everyone' })); }
     catch (e) { Alert.alert('Album not saved', errorText(e)); }
     setBusy(false);
   };
@@ -43,18 +46,18 @@ export function AlbumForm({ initial, categories, canNotify, onSaved, onCancel }:
       <View style={{ gap: 6 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>Who sees it</Text>
         <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
-          {chip('👪 Everyone at school', d.visibility === 'everyone', () => set({ visibility: 'everyone' }))}
+          {chip(d.grade != null ? "👪 The grade's families" : '👪 Everyone at school', d.visibility === 'everyone', () => set({ visibility: 'everyone' }))}
           {chip('🔒 Staff only', d.visibility === 'staff', () => set({ visibility: 'staff' }))}
         </View>
         <P muted>{d.visibility === 'everyone'
-          ? 'Parents, students, family and staff can see it.'
+          ? (d.grade != null ? "This grade's students and parents, and staff, can see it." : 'Parents, students, family and staff can see it.')
           : 'Only teachers and staff can see it, e.g. while you put it together. Switch to Everyone when it\'s ready.'}</P>
       </View>
       {canNotify && d.visibility === 'everyone' && (
         <View style={[s.row, { justifyContent: 'space-between' }]}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: '600', color: C.ink }}>Let everyone know</Text>
-            <P muted>Sends a notification to every family and staff member.</P>
+            <Text style={{ fontWeight: '600', color: C.ink }}>{d.grade != null ? 'Let its families know' : 'Let everyone know'}</Text>
+            <P muted>{d.grade != null ? 'Sends a notification to the students and parents on this album.' : 'Sends a notification to every family and staff member.'}</P>
           </View>
           <Switch value={notify} onValueChange={setNotify} trackColor={{ true: C.primary }} accessibilityLabel="Let everyone know" />
         </View>

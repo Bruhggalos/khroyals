@@ -1,24 +1,32 @@
 /**
  * One photo album: a grid of thumbnails; tap one for the full picture (swipe-free: arrows and
  * Close). Staff add photos; whoever posted a photo, the album's creator or gallery.manage remove.
+ * A grade album says who sees it; the people on it can take it off their account, and gallery.manage
+ * holders see the list of people and put people on or take them off.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Modal, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, isSchoolStaff, listCategories, me, myAccess, saveAlbum, session,
+  addGalleryPhotos, deleteAlbum, deleteGalleryPhoto, errorText, getAlbum, isSchoolStaff, leaveAlbum, listCategories, me, myAccess, saveAlbum, session,
   type GalleryAlbum, type GalleryCategory, type GalleryPhoto,
 } from '../../src/api/connect';
 import { albumDate } from '../../src/gallery/AlbumCard';
 import { AlbumForm } from '../../src/gallery/AlbumForm';
+import { AlbumPeople } from '../../src/gallery/AlbumPeople';
+import { schoolYearLabel } from '../../src/gallery/years';
+import { gradeLabel } from '../../src/comms/grades';
 import { pickGalleryPhotos } from '../../src/photos';
 import { Button, C, Card, Loading, P, s } from '../../src/ui';
 
-const confirm = (title: string, msg: string, onYes: () => void) => {
+const confirm = (title: string, msg: string, onYes: () => void, yes = 'Delete') => {
   if (Platform.OS === 'web') { if (globalThis.confirm?.(`${title}\n\n${msg}`)) onYes(); return; }
-  Alert.alert(title, msg, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: onYes }]);
+  Alert.alert(title, msg, [{ text: 'Cancel', style: 'cancel' }, { text: yes, style: 'destructive', onPress: onYes }]);
 };
+
+/** "the 3rd grade", "Kindergarten", "K4". */
+const gradeWords = (g: number) => (g <= 0 ? gradeLabel(g) : `the ${gradeLabel(g)} grade`);
 
 export default function Album() {
   const { id, add } = useLocalSearchParams<{ id: string; add?: string }>();
@@ -68,8 +76,11 @@ export default function Album() {
   if (data === undefined) return <>{header}<Loading /></>;
   if (!data) return <View style={[s.screen, s.pad]}>{header}<P>That album isn't here anymore.</P></View>;
   const { album, photos } = data;
-  const mine = album.createdBy === me()?.id;
-  const canRemove = (ph: GalleryPhoto) => staff && (ph.createdBy === me()?.id || mine || manage);
+  const started = album.createdBy === me()?.id;
+  const canRemove = (ph: GalleryPhoto) => staff && (ph.createdBy === me()?.id || started || manage);
+  const leave = () => confirm('Remove this album from your Photos?',
+    `You won't see "${album.title}" anymore. The school office can give it back.`,
+    () => leaveAlbum(album.id).then(() => router.back()).catch((e) => Alert.alert('Not removed', errorText(e))), 'Remove');
   const cat = categories.find((c) => c.id === album.categoryId);
   const showToEveryone = () => saveAlbum({
     id: album.id, title: album.title, description: album.description, takenOn: album.takenOn,
@@ -84,7 +95,7 @@ export default function Album() {
       {header}
       {editing ? (
         <AlbumForm categories={categories} canNotify={canNotify}
-          initial={{ id: album.id, title: album.title, description: album.description, takenOn: album.takenOn, categoryId: album.categoryId, visibility: album.visibility }}
+          initial={{ id: album.id, title: album.title, description: album.description, takenOn: album.takenOn, categoryId: album.categoryId, visibility: album.visibility, grade: album.grade }}
           onSaved={() => { setEditing(false); load(); }} onCancel={() => setEditing(false)} />
       ) : (
         <View style={{ gap: 2 }}>
@@ -94,14 +105,23 @@ export default function Album() {
           {!!album.description && <P>{album.description}</P>}
         </View>
       )}
+      {album.grade !== null && !editing && (
+        <Card style={{ gap: 6 }}>
+          <Text style={{ fontWeight: '700', color: C.ink }}>🎒 {gradeLabel(album.grade)} · {schoolYearLabel(album.schoolYear)}</Text>
+          <P muted>{`Only staff and the families of ${gradeWords(album.grade)} in ${schoolYearLabel(album.schoolYear)} see this album: `
+            + 'the students and their parents. They keep it after the year ends.'}</P>
+          {album.mine && <Text style={{ color: C.danger, fontWeight: '600' }} accessibilityRole="button" onPress={leave}>Remove from my Photos</Text>}
+        </Card>
+      )}
+      {album.grade !== null && manage && !editing && <AlbumPeople albumId={album.id} />}
       {staff && album.visibility === 'staff' && !editing && (
         <Card style={{ gap: 6, backgroundColor: '#FFFBEB' }}>
           <Text style={{ fontWeight: '700', color: C.ink }}>🔒 Staff only</Text>
           <P muted>Families and students can't see this album yet.</P>
-          {(mine || manage) && <Button label="Show to everyone at school" onPress={() => showToEveryone()} />}
+          {(started || manage) && <Button label="Show to everyone at school" onPress={() => showToEveryone()} />}
         </Card>
       )}
-      {staff && (mine || manage) && !editing && (
+      {staff && (started || manage) && !editing && (
         <Text style={{ color: C.primary, fontWeight: '700' }} accessibilityRole="button" onPress={() => setEditing(true)}>Edit album (name, category, who sees it)</Text>
       )}
       {staff && (upload
@@ -115,7 +135,7 @@ export default function Album() {
           </Pressable>
         ))}
       </View>
-      {staff && (mine || manage) && (
+      {staff && (started || manage) && (
         <Text style={{ color: C.danger, fontWeight: '600', marginTop: 8 }} accessibilityRole="button"
           onPress={() => confirm('Delete this album?', `"${album.title}" and its ${photos.length} photos will be removed for everyone.`,
             () => deleteAlbum(album.id).then(() => router.back()).catch((e) => Alert.alert('Not deleted', errorText(e))))}>Delete album…</Text>

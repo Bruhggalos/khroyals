@@ -7,6 +7,7 @@ import { Alert, ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { errorText, isVolunteerLead, listVolunteerEvents, volunteerEventSave, type VolunteerEvent } from '../../../src/api/connect';
 import { DateField } from '../../../src/forms/DateTimeField';
+import { EventAlbumSwitch, makeAlbumFor } from '../../../src/gallery/EventAlbumSwitch';
 import { isDate } from '../../../src/forms/dates';
 import { todayIso } from '../../../src/volunteer/format';
 import { VolunteerGate } from '../../../src/volunteer/VolunteerGate';
@@ -37,6 +38,7 @@ function Form({ event }: { event?: VolunteerEvent }) {
   const [date, setDate] = useState(event?.startsOn ?? todayIso());
   const [endDate, setEndDate] = useState(event?.endsOn ?? '');
   const [location, setLocation] = useState(event?.location ?? '');
+  const [album, setAlbum] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
@@ -51,8 +53,9 @@ function Form({ event }: { event?: VolunteerEvent }) {
         id: event?.id, title: title.trim(), description: description.trim(), startsOn: date,
         endsOn: endDate && endDate !== date ? endDate : null, location: location.trim() || null,
       });
-      if (event) router.back();
-      else router.replace(`/volunteer/event/${id}`);
+      if (event) return router.back();
+      if (album) await makeAlbumFor({ kind: 'volunteer', id });
+      router.replace(`/volunteer/event/${id}`);
     } catch (e) {
       Alert.alert("Couldn't save", errorText(e));
     } finally {
@@ -80,6 +83,7 @@ function Form({ event }: { event?: VolunteerEvent }) {
         </View>
         <Field label="Where (optional)" placeholder="e.g. Front lawn" value={location} onChangeText={setLocation} maxLength={120} />
       </Card>
+      {!event && <EventAlbumSwitch value={album} onChange={setAlbum} />}
       <Button label={busy ? 'Saving…' : event ? 'Save changes' : 'Create event'} disabled={busy} onPress={save} />
     </ScrollView>
   );

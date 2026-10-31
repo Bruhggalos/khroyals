@@ -138,12 +138,13 @@ function usePerson() {
  * picks children up; and a teacher's or staff member's own calendar. Each part loads on its own and is left out if it fails. Reloads
  * when the screen comes back into view and when assignments change.
  */
-/** The newest photo albums, for signed-in, approved people; again whenever the Planner comes into view. */
+/** The newest photo albums with photos in them, for signed-in, approved people; again whenever the Planner comes into view. */
 function useLatestPhotos(person: Person | null) {
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
   const ok = !!person && !person.pending;
   useFocusEffect(useCallback(() => {
-    if (ok) listAlbums({ limit: 6 }).then(setAlbums).catch(() => {}); else setAlbums([]);
+    // A new grade or event album is empty until staff add photos.
+    if (ok) listAlbums({ limit: 30 }).then((list) => setAlbums(list.filter((a) => a.count > 0).slice(0, 6))).catch(() => {}); else setAlbums([]);
   }, [ok]));
   return albums;
 }

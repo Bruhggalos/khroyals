@@ -222,7 +222,16 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   and Latest Photos on the Planner. Albums have a category (`gallery_categories`, kept by
   `gallery.manage`) and a visibility: `everyone` or `staff`; `app.sees_album` applies it to albums,
   photos **and** the storage files (thumbnails `_t.jpg` follow their photo). Search is by album name,
-  description, category and photo captions.
+  description, category and photo captions. The Photos app goes by school year (`src/gallery/years.ts`).
+  **Grade albums** (`gallery_albums.grade` + `school_year`): `app.make_grade_albums` (daily) makes K2–12th
+  for a school year a week before its first day (the school calendar's "First Day of School", else Aug 1),
+  once per year (`app.grade_album_years`). Only staff and the people in `gallery_album_members` see one: the
+  grade's students that year (by `class_of`) and their parents, never Family accounts (`app.grant_grade_album`;
+  triggers on `guardians` and `profiles` add anyone new during the year). They keep it until their account is
+  deleted or it's taken off, by them (`gallery_album_leave`) or `gallery.manage` (`gallery_album_set_member`);
+  a removal stays (`removed_at`). A grade album's news goes only to its people. **Event albums**
+  (`volunteer_event_id` / `calendar_event_id`, one per event): made with a Volunteer event or a school
+  calendar event when its maker switches it on (`gallery_event_album`), for everyone.
 - **Dates and times are picked, never typed.** Use `DateField` / `TimeField`
   (`src/forms/DateTimeField.tsx`): a calendar for dates, a time wheel for times, the
   browser's pickers on the web. Values are always `YYYY-MM-DD` and 24-hour `HH:MM`

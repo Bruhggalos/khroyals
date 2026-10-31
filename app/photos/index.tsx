@@ -1,7 +1,8 @@
 /**
- * Photo gallery: albums of school photos (events, games, field trips), newest first, by category,
- * with search. Approved accounts see albums shown to everyone; staff also see staff-only ones and
- * start albums. gallery.manage holders keep the category list.
+ * Photo gallery, by school year: each grade's album (only its families and staff see it; staff in the Standard
+ * view see just their own children's, as a parent would), then the year's other albums (events, games, field
+ * trips) by category. Search looks through every year. Staff start albums; gallery.manage holders keep the
+ * category list.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, Text, View } from 'react-native';
@@ -11,8 +12,10 @@ import {
   type GalleryAlbum, type GalleryCategory, type Person,
 } from '../../src/api/connect';
 import { schoolToday } from '../../src/calendar/past';
-import { AlbumCard } from '../../src/gallery/AlbumCard';
+import { AlbumCard, GradeTile } from '../../src/gallery/AlbumCard';
 import { AlbumForm, chip } from '../../src/gallery/AlbumForm';
+import { schoolYearLabel, schoolYearOf } from '../../src/gallery/years';
+import { useStaffView } from '../../src/staffView';
 import { Button, C, Card, Field, H, Loading, P, s } from '../../src/ui';
 
 export default function Photos() {
@@ -20,17 +23,19 @@ export default function Photos() {
   const [categories, setCategories] = useState<GalleryCategory[]>([]);
   const [person, setPerson] = useState<Person | null>(null);
   const [perms, setPerms] = useState<string[]>([]);
+  const [year, setYear] = useState(() => schoolYearOf(schoolToday()));
   const [category, setCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const [editCats, setEditCats] = useState(false);
+  const staffView = useStaffView(person);
 
   const load = useCallback(async () => {
     try {
       const p = live ? await session() : null;
       setPerson(p);
       if (!p || p.pending) { setAlbums([]); return; }
-      const [cats, list] = await Promise.all([listCategories(), listAlbums({ category, search })]);
+      const [cats, list] = await Promise.all([listCategories(), listAlbums({ search })]);
       setCategories(cats);
       setAlbums(list);
       if (isSchoolStaff(p)) setPerms((await myAccess().catch(() => null))?.permissions ?? []);
@@ -38,7 +43,7 @@ export default function Photos() {
       Alert.alert('Photos didn\'t load', errorText(e));
       setAlbums([]);
     }
-  }, [category, search]);
+  }, [search]);
   useFocusEffect(useCallback(() => { load(); }, [load]));
   // Search as you type, a moment after the last key.
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,37 +55,67 @@ export default function Photos() {
   }
   const staff = isSchoolStaff(person);
   const iconOf = new Map(categories.map((c) => [c.id, `${c.icon} ${c.name}`]));
-  const filtering = !!category || !!search.trim();
+  // Staff in the Standard view see grade albums as a parent does: only the ones on their account.
+  const shown = staffView ? albums : albums.filter((a) => a.grade === null || a.mine);
+  const searching = !!search.trim();
+  const thisYear = schoolYearOf(schoolToday());
+  const years = [...new Set([thisYear, ...shown.map((a) => a.schoolYear)])].sort((a, b) => b - a);
+  const inView = searching ? shown : shown.filter((a) => a.schoolYear === year);
+  const grades = searching ? [] : inView.filter((a) => a.grade !== null).sort((a, b) => a.grade! - b.grade!);
+  const rest = inView.filter((a) => searching || a.grade === null);
+  const restCats = categories.filter((c) => rest.some((a) => a.categoryId === c.id));
+  const others = rest.filter((a) => !category || a.categoryId === category);
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={[s.pad, { gap: 12 }]} keyboardShouldPersistTaps="handled">
       {header}
-      <P muted>Photos from school events, games and trips, shared by teachers and staff.</P>
+      <P muted>Photos from each grade and from school events, games and trips, shared by teachers and staff.</P>
       {staff && !creating && <Button label="+ New album" onPress={() => setCreating(true)} />}
       {creating && (
         <AlbumForm categories={categories} canNotify={perms.includes('push.send')}
-          initial={{ title: '', description: '', takenOn: schoolToday(), categoryId: category ?? categories[0]?.id ?? null, visibility: 'everyone' }}
+          initial={{ title: '', description: '', takenOn: schoolToday(), categoryId: category ?? categories.find((c) => c.name === 'Events')?.id ?? categories[0]?.id ?? null, visibility: 'everyone' }}
           onSaved={(id) => { setCreating(false); router.push(`/photos/${id}?add=1`); }} onCancel={() => setCreating(false)} />
       )}
 
-      <Field label="Search photos" placeholder="Fall Fest, volleyball, 3rd grade…" value={search} onChangeText={setSearch}
+      <Field label="Search photos" placeholder="Harvest Fest, volleyball, 3rd grade…" value={search} onChangeText={setSearch}
         autoCorrect={false} returnKeyType="search" />
-      <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
-        {chip('All', !category, () => setCategory(null))}
-        {categories.map((c) => chip(`${c.icon} ${c.name}`, category === c.id, () => setCategory(category === c.id ? null : c.id), c.id))}
-      </View>
-      {perms.includes('gallery.manage') && (
-        <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setEditCats(!editCats)}>{editCats ? 'Done with categories' : 'Edit categories'}</Text>
-      )}
-      {editCats && <CategoryEditor categories={categories} onChange={load} />}
-
-      {!albums.length ? (
-        <Card><P muted>{filtering ? 'No albums match. Try another word or category.' : `No photos yet.${staff ? ' Start an album above.' : ''}`}</P></Card>
-      ) : (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {albums.map((a) => <AlbumCard key={a.id} a={a} category={a.categoryId ? iconOf.get(a.categoryId) : undefined} />)}
+      {!searching && (
+        <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
+          {years.map((y) => chip(y === thisYear ? `This year · ${schoolYearLabel(y)}` : schoolYearLabel(y), y === year, () => { setYear(y); setCategory(null); }, String(y)))}
         </View>
       )}
+
+      {grades.length > 0 && (
+        <View style={{ gap: 8 }}>
+          <H>🎒 Grades</H>
+          <P muted>{staffView ? "Every grade's album. Families see only the grades their children are in." : "Your children's grades. Only their classmates' families and staff see these."}</P>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {grades.map((a) => <GradeTile key={a.id} a={a} />)}
+          </View>
+        </View>
+      )}
+
+      <View style={{ gap: 8 }}>
+        {!searching && <H>📷 {grades.length ? 'Events and more' : 'Albums'}</H>}
+        {restCats.length > 1 && (
+          <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
+            {chip('All', !category, () => setCategory(null))}
+            {restCats.map((c) => chip(`${c.icon} ${c.name}`, category === c.id, () => setCategory(category === c.id ? null : c.id), c.id))}
+          </View>
+        )}
+        {perms.includes('gallery.manage') && (
+          <Text style={{ color: C.primary, fontWeight: '700' }} onPress={() => setEditCats(!editCats)}>{editCats ? 'Done with categories' : 'Edit categories'}</Text>
+        )}
+        {editCats && <CategoryEditor categories={categories} onChange={load} />}
+        {!others.length ? (
+          <Card><P muted>{searching ? 'No albums match. Try another word.'
+            : `No ${grades.length ? 'other ' : ''}albums for ${schoolYearLabel(year)} yet.${staff ? ' Start one above.' : ''}`}</P></Card>
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {others.map((a) => <AlbumCard key={a.id} a={a} category={a.categoryId ? iconOf.get(a.categoryId) : undefined} />)}
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 }

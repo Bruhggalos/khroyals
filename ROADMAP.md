@@ -197,7 +197,8 @@ Working in the app and on the server today.
 | Notifications | Bell page | Inbox of everything sent to you, swipe to delete, clear all |
 | Admin portal | People and roles | Directors, custom roles, single permissions, authenticator-app code required |
 | Accounts | Student logins | Parents (or the office) give a child their own login by adding their email; the child is emailed how to sign in and keeps their classes and links |
-| Photos | Photo gallery | Staff post albums by category, for everyone or staff only; everyone approved browses and searches them (Apps → Photos, Latest Photos on the Planner) |
+| Photos | Photo gallery | Staff post albums by category, for everyone or staff only; everyone approved browses and searches them by school year (Apps → Photos, Latest Photos on the Planner) |
+| Photos | Grade and event albums | Every grade K2–12th gets an album a week before each school year starts; only that grade's students, their parents and staff see it, and families keep it until their account is deleted or they (or the office) take it off. Volunteer and school calendar events can get an album when they're made |
 | Planner | Royal News archive | Every newsletter issue in the app (sections, pictures, links); staff add one by pasting its Smore link |
 | Planner | Dress-up days | Staff add Spirit Week themes (per day, optionally by grade); the Planner shows them above the uniform |
 | Admin portal | Delete accounts | Holders of Delete accounts (directors by default) remove someone's login, profile, posts and comments; never yourself or a director; admins need Manage admins too |

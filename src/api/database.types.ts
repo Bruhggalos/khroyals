@@ -542,36 +542,54 @@ export type Database = {
           },
         ]
       }
+      gallery_album_members: {
+        Row: { added_at: string; album_id: string; removed_at: string | null; removed_by: string | null; user_id: string }
+        Insert: { added_at?: string; album_id: string; removed_at?: string | null; removed_by?: string | null; user_id: string }
+        Update: { added_at?: string; album_id?: string; removed_at?: string | null; removed_by?: string | null; user_id?: string }
+        Relationships: []
+      }
       gallery_albums: {
         Row: {
+          calendar_event_id: string | null
           category_id: string | null
           created_at: string
           created_by: string | null
           description: string
+          grade: number | null
           id: string
+          school_year: number | null
           taken_on: string
           title: string
           visibility: string
+          volunteer_event_id: string | null
         }
         Insert: {
+          calendar_event_id?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
+          grade?: number | null
           id?: string
+          school_year?: number | null
           taken_on?: string
           title: string
           visibility?: string
+          volunteer_event_id?: string | null
         }
         Update: {
+          calendar_event_id?: string | null
           category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string
+          grade?: number | null
           id?: string
+          school_year?: number | null
           taken_on?: string
           title?: string
           visibility?: string
+          volunteer_event_id?: string | null
         }
         Relationships: [
           {
@@ -3559,12 +3577,19 @@ export type Database = {
       form_status: { Args: { p_form: string }; Returns: Json }
       gallery_add_photos: { Args: { p_album: string; p_photos: Json }; Returns: number }
       gallery_album_delete: { Args: { p_album: string }; Returns: string[] }
+      gallery_album_leave: { Args: { p_album: string }; Returns: undefined }
+      gallery_album_people: {
+        Args: { p_album: string }
+        Returns: { name: string; removed: boolean; removed_by_self: boolean; school_role: string; user_id: string }[]
+      }
       gallery_album_save: {
         Args: { p_category?: string; p_description: string; p_id: string | null; p_notify?: boolean; p_taken_on: string; p_title: string; p_visibility?: string }
         Returns: string
       }
+      gallery_album_set_member: { Args: { p_album: string; p_on: boolean; p_user: string }; Returns: undefined }
       gallery_category_delete: { Args: { p_id: string; p_move_to: string }; Returns: undefined }
       gallery_category_save: { Args: { p_icon?: string; p_id: string | null; p_name: string; p_position?: number }; Returns: string }
+      gallery_event_album: { Args: { p_calendar_event?: string; p_volunteer_event?: string }; Returns: string }
       gallery_photo_delete: { Args: { p_photo: string }; Returns: string }
       group_abilities: { Args: { p_group: string }; Returns: Json }
       group_post_stats: {

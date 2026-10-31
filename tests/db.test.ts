@@ -3222,6 +3222,134 @@ test("volunteer events: the event's leader puts its opportunities in order", asy
     delete from volunteer_opportunities where id in ('${water}', '${setup}', '${booths}'); delete from volunteer_events`);
 });
 
+test("grade albums: only that grade's families and staff see them, and keep them; event albums are for everyone", async () => {
+  await asSuper();
+  const y = (await one('select app.school_year_end() as y')).y as number;
+  await one(`select app.make_grade_albums(${y})`);
+  const made = await rows(`select grade, title from gallery_albums where school_year = ${y} order by grade`);
+  assert.deepEqual(made.map((a) => a.grade), [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'K2 through 12th');
+  assert.equal(made.find((a) => a.grade === 3).title, `3rd Grade ${y - 1}–${String(y).slice(2)}`);
+  assert.equal(made.find((a) => a.grade === -1).title, `K4 ${y - 1}–${String(y).slice(2)}`);
+  const album = async (g: number, year = y) => {
+    await asSuper();
+    return (await one(`select id from gallery_albums where grade = ${g} and school_year = ${year}`)).id as string;
+  };
+  const [ninth, tenth] = [await album(9), await album(10)];
+  const sees = async (u: string, a: string, mfa = false) => {
+    await as(u, mfa);
+    return (await rows(`select 1 from gallery_albums where id = '${a}'`)).length === 1;
+  };
+
+  // A 9th grader's parent (and the 9th grader) see the 9th grade album, not 10th; a 10th grader's parent the other way round.
+  assert.equal(await sees('u-p07', ninth), true, 'Priya Shah: Emma is in 9th');
+  assert.equal(await sees('u-p07', tenth), false);
+  assert.equal(await sees('u-s09', ninth), true);
+  assert.equal(await sees('u-s09', tenth), false);
+  assert.equal(await sees('u-p04', tenth), true, 'Sun Kim: Noah is in 10th');
+  assert.equal(await sees('u-p04', ninth), false);
+  assert.equal(await sees('u-p04', await album(3)), false);
+  // Staff see every grade; Family accounts (June is linked to Ava, 10th) see none.
+  assert.equal(await sees('u-eng', ninth), true);
+  assert.equal(await sees('u-libr', await album(-3)), true);
+  assert.equal(await sees('u-gran', tenth), false);
+
+  // Photos and their files follow the album.
+  await as('u-eng');
+  const me = (await one(`select auth.uid()::text as u`)).u;
+  await one(`select gallery_add_photos('${tenth}', '[{"path":"${me}/g10.jpg","width":10,"height":10,"caption":"Science fair"}]')`);
+  await asSuper();
+  await db.exec(`insert into storage.objects (bucket_id, name, owner) values ('gallery', '${me}/g10.jpg', '${me}'), ('gallery', '${me}/g10_t.jpg', '${me}')`);
+  for (const [u, n] of [['u-p07', 0], ['u-p04', 1], ['u-s01', 1]] as const) {
+    await as(u);
+    assert.equal((await rows(`select 1 from gallery_photos where album_id = '${tenth}'`)).length, n, u);
+    assert.equal((await rows(`select 1 from storage.objects where bucket_id = 'gallery' and name like '${me}/g10%'`)).length, n * 2, u);
+  }
+
+  // Joining during the year: a parent linked now gets the album at once, and keeps it after the link goes.
+  await asSuper();
+  await db.exec(`insert into guardians (guardian_id, student_id) values (${id('u-p02')}, ${id('u-s09')})`);
+  assert.equal(await sees('u-p02', ninth), true);
+  await asSuper();
+  await db.exec(`delete from guardians where guardian_id = ${id('u-p02')} and student_id = ${id('u-s09')}`);
+  assert.equal(await sees('u-p02', ninth), true, 'kept until it is taken off');
+
+  // Moving up: last year's albums stay too (Emma, in 9th now, was in 8th).
+  await asSuper();
+  await one(`select app.make_grade_albums(${y - 1})`);
+  assert.equal(await sees('u-p07', await album(8, y - 1)), true);
+  assert.equal(await sees('u-p07', await album(9, y - 1)), false);
+
+  // Taking it off your own account: it doesn't come back with the next daily run.
+  await as('u-p07');
+  await one(`select gallery_album_leave('${ninth}')`);
+  await rejects(`select gallery_album_leave('${ninth}')`, /isn't on your account/);
+  await asSuper();
+  await one(`select app.make_grade_albums(${y})`);
+  assert.equal(await sees('u-p07', ninth), false);
+  assert.equal(await sees('u-s09', ninth), true, 'Emma keeps hers');
+
+  // The office (gallery.manage, with the authenticator) sees who's on it and puts people on or takes them off.
+  await as('u-eng');
+  await rejects(`select * from gallery_album_people('${ninth}')`, /permission/);
+  await as('u-ap');
+  await rejects(`select * from gallery_album_people('${ninth}')`, /MFA_REQUIRED/);
+  await as('u-ap', true);
+  const people = await rows(`select * from gallery_album_people('${ninth}')`);
+  const priya = people.find((p) => p.name === 'Priya Shah');
+  assert.deepEqual([priya.removed, priya.removed_by_self], [true, true]);
+  assert.equal(people.find((p) => p.name === 'Emma Shah').removed, false);
+  await one(`select gallery_album_set_member('${ninth}', ${id('u-p07')}, true)`);
+  assert.equal(await sees('u-p07', ninth), true);
+  await as('u-ap', true);
+  await one(`select gallery_album_set_member('${ninth}', ${id('u-p02')}, false)`);
+  assert.equal(await sees('u-p02', ninth), false);
+  await rejects(`insert into gallery_album_members (album_id, user_id) values ('${ninth}', ${id('u-p01')})`, /permission denied/);
+
+  // News of new photos in a grade album goes to its people only.
+  await as('u-ap', true);
+  const grades = (await one(`select id from gallery_categories where name = 'Grades'`)).id;
+  await one(`select gallery_album_save('${tenth}', '10th Grade', '', null, true, '${grades}', 'everyone')`);
+  await asSuper();
+  const told = (await rows(`select user_id from notifications where data->>'albumId' = '${tenth}'`)).map((n) => n.user_id);
+  const [kim, shah] = [(await one(`select ${id('u-p04')} as u`)).u, (await one(`select ${id('u-p07')} as u`)).u];
+  assert.ok(told.includes(kim) && !told.includes(shah) && !told.includes(null), 'only the 10th grade');
+
+  // Leaving the school (the account deleted): their place on the album goes with it.
+  const temp = (await one(`insert into profiles (first_name, last_name, school_role, grade, managed) values ('Temp', 'Kid', 'student', 10, true) returning id`)).id;
+  assert.equal((await rows(`select 1 from gallery_album_members where album_id = '${tenth}' and user_id = '${temp}'`)).length, 1);
+  await db.exec(`delete from profiles where id = '${temp}'`);
+  assert.equal((await rows(`select 1 from gallery_album_members where user_id = '${temp}'`)).length, 0);
+
+  // Event albums: a Volunteer Leader (a parent here) makes Harvest Fest's with the event; once per event; everyone sees it.
+  await db.exec(`update profiles set volunteer_lead = true where id = ${id('u-p05')}`);
+  await as('u-p05');
+  const fest = (await one(`select volunteer_event_save(null, 'Harvest Fest', '', app.school_today() + 10) as id`)).id;
+  const festAlbum = (await one(`select gallery_event_album(p_volunteer_event => '${fest}') as a`)).a;
+  assert.equal((await one(`select gallery_event_album(p_volunteer_event => '${fest}') as a`)).a, festAlbum);
+  await as('u-p01');
+  await rejects(`select gallery_event_album(p_volunteer_event => '${fest}')`, /leader or staff/);
+  for (const u of ['u-p01', 'u-s09', 'u-gran', 'u-eng']) assert.equal(await sees(u, festAlbum), true, u);
+  await asSuper();
+  assert.equal((await one(`select title from gallery_albums where id = '${festAlbum}'`)).title, 'Harvest Fest');
+
+  // And for school calendar events: staff make them (not parents, and not for a group's calendar).
+  await as('u-ap', true);
+  const program = (await one(`insert into events (title, starts_on) values ('Christmas Program', '2026-12-10') returning id`)).id;
+  const dinner = (await one(`insert into events (group_id, title, starts_on) values (${id('g-vb')}, 'Team dinner 2', '2026-12-11') returning id`)).id;
+  await as('u-p01');
+  await rejects(`select gallery_event_album(p_calendar_event => '${program}')`, /Only staff/);
+  await as('u-eng');
+  const programAlbum = (await one(`select gallery_event_album(p_calendar_event => '${program}') as a`)).a;
+  await rejects(`select gallery_event_album(p_calendar_event => '${dinner}')`, /school calendar/);
+  await rejects(`select gallery_album_set_member('${programAlbum}', ${id('u-p01')}, true)`, /permission|MFA_REQUIRED/);
+  assert.equal(await sees('u-p04', programAlbum), true);
+
+  await asSuper();
+  await db.exec(`update profiles set volunteer_lead = false where id = ${id('u-p05')};
+    delete from gallery_albums where id in ('${festAlbum}', '${programAlbum}'); delete from volunteer_events where id = '${fest}';
+    delete from events where id in ('${program}', '${dinner}')`);
+});
+
 test('the bell counts new notifications until the bell page opens them', async () => {
   await as('u-p04');
   await one('select clear_my_notifications()');

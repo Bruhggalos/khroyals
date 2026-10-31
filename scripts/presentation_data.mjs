@@ -3,8 +3,8 @@
  * Sample data for showing the app to the school: made-up teachers, a coach, a director,
  * front office staff and ten families (parents and students without logins), with classes,
  * assignments, forms (signed, paid and still to do), marketplace listings, activities and
- * volunteering (Harvest Fest, an event with its ways to help inside, and a few opportunities
- * on their own). It centers on one real test account: their children are in the
+ * volunteering (Harvest Fest, an event with its ways to help inside and its photo album, and a few
+ * opportunities on their own). The grade albums are the school's own (made each year), not sample data. It centers on one real test account: their children are in the
  * classes and get the forms, they teach one class themselves (the Staff view), and a second
  * login can become a 6th grader in two of the classes (the student view). The school's real
  * activities stay as they are; the younger child (and two made-up classmates) join Royals
@@ -245,6 +245,7 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   // --- Volunteer (led by the front office): Harvest Fest, with its ways to help in the leader's order, and some on their own
   const fest = { id: uid('vevent:harvest'), title: 'Harvest Fest', on: saturdayFrom(sd(7)), location: 'Front lawn',
     description: 'Our fall festival for the whole Kingdom Heights family: games, hayrides, a bake sale and a chili cook-off.\n\nGood to know:\nFamilies are welcome. Park on the back lot.' };
+  const festAlbum = uid('album:harvest');
   const festOpps = [
     { key: 'fest-setup', title: 'Set up the day of', on: fest.on, start: '07:30', end: '09:30', location: 'Front lawn', spots: 10, kind: 'help',
       description: 'Tables, tents and hay bales before the gates open.\n\nWhat to bring:\nWork gloves.', signups: [['me'], ['rivera'], ['johnson'], ['kim']] },
@@ -274,10 +275,16 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
       join public.profiles p on p.id = s.user_id where s.opportunity_id in ${inList(ids.opps)} and not p.managed;` : '',
     `delete from public.volunteer_opportunities where id in ${inList(ids.opps)};`,
     `delete from public.volunteer_events where id = ${lit(fest.id)};`,
+    // Harvest Fest's photo album (with any photos testers added) stays through a refresh; --remove takes it out.
+    keep ? '' : `delete from public.gallery_albums where id = ${lit(festAlbum)};`,
   ];
   const volunteerAdd = () => [
       insert('volunteer_events', ['id', 'lead_id', 'title', 'description', 'starts_on', 'location', 'created_at'],
         [[fest.id, staff('garcia'), fest.title, fest.description, fest.on, fest.location, at(sd(-4), '09:00')]]),
+      `insert into public.gallery_albums (id, title, description, taken_on, created_by, category_id, visibility, volunteer_event_id)
+        values (${lit(festAlbum)}, ${lit(fest.title)}, '', ${lit(fest.on)}, ${lit(staff('garcia'))},
+          (select id from public.gallery_categories where name = 'Events'), 'everyone', ${lit(fest.id)})
+        on conflict (id) do update set volunteer_event_id = excluded.volunteer_event_id, taken_on = excluded.taken_on, created_by = excluded.created_by;`,
       insert('volunteer_opportunities', ['id', 'lead_id', 'title', 'description', 'starts_on', 'start_time', 'end_time', 'location', 'spots', 'kind', 'item', 'quantity',
         'event_id', 'position', 'created_at'],
         opps.map((o) => [uid(`opp:${o.key}`), staff('garcia'), o.title, o.description, o.on, o.start ?? null, o.end ?? null, o.location, o.spots ?? null, o.kind,

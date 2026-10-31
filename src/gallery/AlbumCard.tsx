@@ -3,7 +3,8 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { GalleryAlbum } from '../api/connect';
-import { C } from '../ui';
+import { gradeLabel } from '../comms/grades';
+import { C, useContentWidth } from '../ui';
 
 export const albumDate = (iso: string) => new Date(`${iso}T12:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -29,3 +30,23 @@ export function AlbumCard({ a, width, category }: { a: GalleryAlbum; width?: num
   );
 }
 
+/** A grade album, small (staff see all sixteen): its cover, the grade and the photo count. Three across on a phone, six on a tablet. */
+export function GradeTile({ a }: { a: GalleryAlbum }) {
+  const name = gradeLabel(a.grade);
+  const room = useContentWidth();
+  const cols = room > 520 ? 6 : 3;
+  return (
+    <Pressable onPress={() => router.push(`/photos/${a.id}`)} accessibilityRole="button" accessibilityLabel={`${a.title}, ${a.count} photos`}
+      style={({ pressed }) => [{ width: (room - (cols - 1) * 8) / cols, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1,
+        borderColor: C.line, overflow: 'hidden' }, pressed && { opacity: 0.8 }]}>
+      <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: C.bg }}>
+        {a.cover ? <Image source={{ uri: a.cover }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} resizeMode="cover" />
+          : <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 24 }}>🎒</Text></View>}
+      </View>
+      <View style={{ paddingHorizontal: 8, paddingVertical: 6 }}>
+        <Text style={{ fontWeight: '800', color: C.ink }} numberOfLines={1}>{name}</Text>
+        <Text style={{ color: C.muted, fontSize: 12 }}>{a.count} photo{a.count === 1 ? '' : 's'}</Text>
+      </View>
+    </Pressable>
+  );
+}

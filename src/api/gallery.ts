@@ -3,16 +3,38 @@
  * Each photo is stored twice in the private 'gallery' bucket: "<uid>/<id>.jpg" (up to 1600 px)
  * and a thumbnail "<uid>/<id>_t.jpg" (400 px) for grids, so browsing stays light.
  */
+import { schoolYearOf } from '../gallery/years';
 import { live, rpc, run, sb } from './client';
+import type { Database } from './database.types';
 import { current } from './session';
 
 export type GalleryCategory = { id: string; name: string; icon: string };
 /** 'everyone': every approved account; 'staff': staff only (e.g. while it's being put together). */
 export type AlbumVisibility = 'everyone' | 'staff';
+/**
+ * `grade`: a grade album (only that grade's students and parents, and staff, see it); `schoolYear`: the year its
+ * school year ends in (2027 = 2026–27); `event`: the Volunteer or school calendar event it's for; `mine`: it's on
+ * the signed-in person's account (a grade album they were given and haven't taken off).
+ */
 export type GalleryAlbum = {
   id: string; title: string; description: string; takenOn: string; createdBy: string | null;
   count: number; cover: string | null; categoryId: string | null; visibility: AlbumVisibility;
+  grade: number | null; schoolYear: number; event: { kind: 'volunteer' | 'calendar'; id: string } | null; mine: boolean;
 };
+type AlbumRow = Database['public']['Tables']['gallery_albums']['Row'];
+const albumFields = (a: AlbumRow, mine: Set<string>) => ({
+  id: a.id, title: a.title, description: a.description, takenOn: a.taken_on, createdBy: a.created_by,
+  categoryId: a.category_id, visibility: a.visibility as AlbumVisibility, grade: a.grade, schoolYear: a.school_year ?? schoolYearOf(a.taken_on),
+  event: a.volunteer_event_id ? { kind: 'volunteer' as const, id: a.volunteer_event_id } : a.calendar_event_id ? { kind: 'calendar' as const, id: a.calendar_event_id } : null,
+  mine: mine.has(a.id),
+});
+
+/** The grade albums on the signed-in person's account. */
+async function myAlbumIds(): Promise<Set<string>> {
+  if (!current) return new Set();
+  const rows = await run(sb().from('gallery_album_members').select('album_id').eq('user_id', current.id).is('removed_at', null));
+  return new Set(rows.map((r) => r.album_id));
+}
 export type GalleryPhoto = { id: string; path: string; width: number; height: number; caption: string; createdBy: string | null; thumb: string; full: string };
 export type NewGalleryPhoto = { full: string; thumb: string; width: number; height: number; caption?: string };
 
@@ -46,7 +68,8 @@ export async function listAlbums(opts: { limit?: number; category?: string | nul
   let q = sb().from('gallery_albums').select('*, gallery_photos(path, created_at)')
     .order('taken_on', { ascending: false }).order('created_at', { ascending: false }).limit(opts.limit ?? 200);
   if (opts.category) q = q.eq('category_id', opts.category);
-  let albums = await run(q);
+  const [found, mine] = await Promise.all([run(q), myAlbumIds()]);
+  let albums = found;
   const terms = words(opts.search ?? '').map((w) => w.toLowerCase());
   if (terms.length) {
     const cats = new Map((await listCategories()).map((c) => [c.id, c.name.toLowerCase()]));
@@ -65,15 +88,13 @@ export async function listAlbums(opts: { limit?: number; category?: string | nul
   const covers = albums.map((a) => [...a.gallery_photos].sort((x, y) => x.created_at.localeCompare(y.created_at))[0]?.path ?? null);
   const u = await signed(covers.filter((c): c is string => !!c).map(thumbPath));
   return albums.map((a, i) => ({
-    id: a.id, title: a.title, description: a.description, takenOn: a.taken_on, createdBy: a.created_by,
-    count: a.gallery_photos.length, cover: covers[i] ? u[thumbPath(covers[i]!)] ?? null : null,
-    categoryId: a.category_id, visibility: a.visibility as AlbumVisibility,
+    ...albumFields(a, mine), count: a.gallery_photos.length, cover: covers[i] ? u[thumbPath(covers[i]!)] ?? null : null,
   }));
 }
 
 export async function getAlbum(id: string): Promise<{ album: GalleryAlbum; photos: GalleryPhoto[] } | null> {
   if (!live) return null;
-  const [a] = await run(sb().from('gallery_albums').select('*').eq('id', id));
+  const [[a], mine] = await Promise.all([run(sb().from('gallery_albums').select('*').eq('id', id)), myAlbumIds()]);
   if (!a) return null;
   const rows = await run(sb().from('gallery_photos').select('*').eq('album_id', id).order('created_at'));
   const u = await signed(rows.flatMap((r) => [r.path, thumbPath(r.path)]));
@@ -82,10 +103,7 @@ export async function getAlbum(id: string): Promise<{ album: GalleryAlbum; photo
     thumb: u[thumbPath(r.path)] ?? u[r.path] ?? '', full: u[r.path] ?? '',
   }));
   return {
-    album: {
-      id: a.id, title: a.title, description: a.description, takenOn: a.taken_on, createdBy: a.created_by, count: photos.length,
-      cover: photos[0]?.thumb ?? null, categoryId: a.category_id, visibility: a.visibility as AlbumVisibility,
-    },
+    album: { ...albumFields(a, mine), count: photos.length, cover: photos[0]?.thumb ?? null },
     photos,
   };
 }
@@ -139,4 +157,33 @@ export async function deleteGalleryPhoto(id: string) {
 export async function deleteAlbum(id: string) {
   const paths = (await rpc('gallery_album_delete', { p_album: id })) ?? [];
   if (paths.length) await sb().storage.from('gallery').remove(paths.flatMap((p) => [p, thumbPath(p)])).catch(() => {});
+}
+
+/** Take a grade album off your own account (the office can give it back). */
+export async function leaveAlbum(id: string) { await rpc('gallery_album_leave', { p_album: id }); }
+
+export type AlbumPerson = { id: string; name: string; role: string; removed: boolean; removedBySelf: boolean };
+
+/** gallery.manage: the people on a grade album, and anyone taken off. */
+export async function albumPeople(id: string): Promise<AlbumPerson[]> {
+  return (await rpc('gallery_album_people', { p_album: id })).map((p) => ({
+    id: p.user_id, name: p.name, role: p.school_role, removed: p.removed, removedBySelf: !!p.removed_by_self,
+  }));
+}
+
+/** gallery.manage: put someone on a grade album (or back on it), or take them off. */
+export async function setAlbumMember(albumId: string, userId: string, on: boolean) {
+  await rpc('gallery_album_set_member', { p_album: albumId, p_user: userId, p_on: on });
+}
+
+/** Make the photo album for a Volunteer event or a school calendar event (or get the one it has). */
+export async function makeEventAlbum(event: { kind: 'volunteer' | 'calendar'; id: string }): Promise<string> {
+  return rpc('gallery_event_album', event.kind === 'volunteer' ? { p_volunteer_event: event.id } : { p_calendar_event: event.id });
+}
+
+/** The album of a Volunteer event or a school calendar event, if it has one you can see. */
+export async function eventAlbumId(event: { kind: 'volunteer' | 'calendar'; id: string }): Promise<string | null> {
+  if (!live || !current) return null;
+  const rows = await run(sb().from('gallery_albums').select('id').eq(event.kind === 'volunteer' ? 'volunteer_event_id' : 'calendar_event_id', event.id));
+  return rows[0]?.id ?? null;
 }

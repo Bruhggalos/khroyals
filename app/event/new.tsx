@@ -6,6 +6,7 @@ import { Stack, router } from 'expo-router';
 import { createEvent, editableCalendars } from '../../src/api/connect';
 import { Button, C, Card, Field, H, Loading, P, s } from '../../src/ui';
 import { DateField, TimeField, toDateString } from '../../src/forms/DateTimeField';
+import { EventAlbumSwitch, makeAlbumFor } from '../../src/gallery/EventAlbumSwitch';
 
 const CATEGORIES = ['Event', 'No School', 'Academic', 'Special Student Day', 'Teacher In-Service', 'E-Learning', 'Athletics', 'Fine Arts'];
 
@@ -19,6 +20,7 @@ export default function NewEvent() {
   const [end, setEnd] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('Event');
+  const [album, setAlbum] = useState(false);
   useEffect(() => { editableCalendars().then(setCals); }, []);
   if (!cals) return <Loading />;
   if (!cals.length) return <View style={s.center}><P>You can't add events to any calendar.</P></View>;
@@ -28,7 +30,11 @@ export default function NewEvent() {
   const save = () => createEvent({
     groupId: cals[cal].groupId, title: title.trim(), date, endDate: endDate || null, startTime: start || null, endTime: end || null,
     allDay: !start, location: location.trim() || null, category: cals[cal].groupId ? 'Group' : category,
-  }).then(() => router.back()).catch((e) => Alert.alert('Not allowed', e.message));
+  }).then(async (id) => {
+    // School calendar events can have a photo album, made with the event.
+    if (album && cals[cal].groupId === null) await makeAlbumFor({ kind: 'calendar', id });
+    router.back();
+  }).catch((e) => Alert.alert('Not allowed', e.message));
 
   const pill = (label: string, on: boolean, onPress: () => void) => (
     <Text key={label} onPress={onPress} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', borderWidth: 1,
@@ -61,6 +67,7 @@ export default function NewEvent() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>{CATEGORIES.map((c) => pill(c, c === category, () => setCategory(c)))}</View>
         </Card>
       )}
+      {cals[cal].groupId === null && <EventAlbumSwitch value={album} onChange={setAlbum} />}
       <Button label="Add event" onPress={save} disabled={!valid} />
     </ScrollView>
   );

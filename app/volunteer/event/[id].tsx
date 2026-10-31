@@ -3,14 +3,15 @@
  * opportunities that are part of it (bringing bottled water, setting up the day of), each
  * opening as usual, in the order its leader chose (most important first). Volunteer Leaders
  * add opportunities to it; the leader who started it puts them in order (Reorder), and
- * changes or removes the event (its opportunities stay, on their own).
+ * changes or removes the event (its opportunities stay, on their own). Its photo album, if it has one, opens from
+ * Photos; the leader and staff can make one here if it wasn't made with the event.
  */
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  errorText, isVolunteerLead, listVolunteer, subscribeVolunteer, volunteerEventDelete, volunteerEventReorder,
+  errorText, eventAlbumId, isSchoolStaff, isVolunteerLead, listVolunteer, makeEventAlbum, subscribeVolunteer, volunteerEventDelete, volunteerEventReorder,
   type Opportunity, type Person, type Signup, type VolunteerEvent,
 } from '../../../src/api/connect';
 import { PastToggle, usePastToggle } from '../../../src/calendar/PastToggle';
@@ -36,7 +37,11 @@ function EventDetail({ id, me }: { id: string; me: Person }) {
   const showPast = usePastToggle();
   const bottomInset = useBottomInset();
 
-  const load = useCallback(() => listVolunteer().then(setData).catch(() => setData({ events: [], opportunities: [], signups: [] })), []);
+  const [album, setAlbum] = useState<string | null>(null);
+  const load = useCallback(() => {
+    eventAlbumId({ kind: 'volunteer', id }).then(setAlbum).catch(() => {});
+    return listVolunteer().then(setData).catch(() => setData({ events: [], opportunities: [], signups: [] }));
+  }, [id]);
   useFocusEffect(useCallback(() => { load(); return subscribeVolunteer(load); }, [load]));
 
   if (!data) return <Loading />;
@@ -56,6 +61,11 @@ function EventDetail({ id, me }: { id: string; me: Person }) {
       setBusy(true);
       volunteerEventDelete(e.id).then(() => router.back()).catch((err) => Alert.alert('Volunteer', errorText(err))).finally(() => setBusy(false));
     });
+  const makeAlbum = () => {
+    setBusy(true);
+    makeEventAlbum({ kind: 'volunteer', id: e.id }).then((a) => router.push(`/photos/${a}`))
+      .catch((err) => Alert.alert("Couldn't make the album", errorText(err))).finally(() => setBusy(false));
+  };
   const saveOrder = (ids: string[]) => {
     setBusy(true);
     volunteerEventReorder(e.id, ids).then(() => { setOrder(null); return load(); })
@@ -88,6 +98,18 @@ function EventDetail({ id, me }: { id: string; me: Person }) {
           {d.paragraphs.map((text, j) => <Text key={j} style={paragraph}>{text}</Text>)}
         </Section>
       ))}
+
+      {(album || started || isSchoolStaff(me)) && (
+        <Section icon="images-outline" title="Photos">
+          {album ? (
+            <Text style={{ color: C.primary, fontWeight: '800', fontSize: 16 }} accessibilityRole="button"
+              onPress={() => router.push(`/photos/${album}`)}>See the event's photo album</Text>
+          ) : (
+            <Text style={{ color: C.primary, fontWeight: '800', fontSize: 16 }} accessibilityRole="button"
+              onPress={busy ? undefined : makeAlbum}>Make a photo album for this event</Text>
+          )}
+        </Section>
+      )}
 
       <View style={{ marginTop: 8 }}>
         <SectionTitle icon="hand-left-outline" title={`Ways to help (${coming.length})`} tint={GREEN}

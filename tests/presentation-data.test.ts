@@ -77,12 +77,19 @@ test('loads, shows up for the parent, their class and the student, loads again, 
   assert.equal(await count(`select 1 from volunteer_opportunities where event_id is null`), 3);
   assert.equal(await count(`select 1 from volunteer_signups s join volunteer_opportunities o on o.id = s.opportunity_id
     where s.user_id = '${ME}' and o.event_id = '${fest.id}'`), 1, 'the parent helps set up');
+  // Photos: Harvest Fest's album, and the school's own grade albums, each on its grade's families' accounts.
+  assert.equal((await one(`select title from gallery_albums where volunteer_event_id = '${fest.id}'`)).title, 'Harvest Fest');
+  const grades = async (who: string) => (await db.query<any>(`select a.grade from gallery_album_members m join gallery_albums a on a.id = m.album_id
+    where m.user_id = '${who}' and m.removed_at is null and a.school_year = app.school_year_end() order by a.grade`)).rows.map((r) => r.grade);
+  assert.deepEqual(await grades(ME), [2, 6], "the parent: their children's grades");
+  assert.deepEqual(await grades(STUDENT), [6], 'the student login: their own grade');
   // Refreshing only the volunteering leaves the rest alone, and keeps sign-ups made from real accounts.
   const library = (await one(`select id from volunteer_opportunities where title = 'Library book shelving'`)).id;
   await db.exec(`insert into volunteer_signups (opportunity_id, user_id) values ('${library}', '${STUDENT}')`);
   await load(false, 'volunteer');
   assert.equal(await count(`select 1 from volunteer_signups where opportunity_id = '${library}' and user_id = '${STUDENT}'`), 1);
   assert.equal(await count(`select 1 from volunteer_opportunities`), 8);
+  assert.equal(await count(`select 1 from gallery_albums where volunteer_event_id is not null`), 1, "Harvest Fest's album, still linked");
   assert.equal(await count(`select 1 from forms`), 4);
   assert.equal((await one(`select school_role, grade from profiles where id = '${STUDENT}'`)).school_role, 'student');
 
@@ -114,6 +121,8 @@ test('loads, shows up for the parent, their class and the student, loads again, 
     assert.equal(await count(`select 1 from ${t}`), 0, t);
   }
   assert.equal(await count(`select 1 from sports`), 3, 'the real activities stay');
+  assert.equal(await count(`select 1 from gallery_albums where grade is null`), 0, "Harvest Fest's album is gone");
+  assert.equal(await count(`select 1 from gallery_albums where grade is not null and school_year = app.school_year_end()`), 16, 'the grade albums stay');
   assert.equal(await count(`select 1 from sport_follows`), 0);
   assert.equal(await count(`select 1 from profiles where id in ('${ME}', '${STUDENT}', '${OLDER}', '${YOUNGER}')`), 4);
 });

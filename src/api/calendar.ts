@@ -10,12 +10,14 @@ export async function listEvents(): Promise<GroupEvent[]> {
   return (await run(sb().from('events').select('*, groups(name, icon)').order('starts_on'))).map(toEvent);
 }
 
-export async function createEvent(e: NewEvent) {
-  await run(sb().from('events').insert({
+/** Add an event to the school calendar or a group's; returns its id. */
+export async function createEvent(e: NewEvent): Promise<string> {
+  const [made] = await run(sb().from('events').insert({
     group_id: e.groupId, title: e.title, description: e.description ?? null, starts_on: e.date, ends_on: e.endDate,
     start_time: e.startTime || null, end_time: e.endTime || null, all_day: !e.startTime, location: e.location || null,
     category: e.category, created_by: current?.id,
-  }));
+  }).select('id'));
+  return made.id;
 }
 
 export async function deleteEvent(id: string) { await run(sb().from('events').delete().eq('id', id)); }
