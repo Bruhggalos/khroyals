@@ -3,16 +3,18 @@
  * Sample data for showing the app to the school: made-up teachers, a coach, a director,
  * front office staff and ten families (parents and students without logins), with classes,
  * assignments, forms (signed, paid and still to do), marketplace listings, activities and
- * volunteer opportunities. It centers on one real test account: their children are in the
+ * volunteering (Harvest Fest, an event with its ways to help inside, and a few opportunities
+ * on their own). It centers on one real test account: their children are in the
  * classes and get the forms, they teach one class themselves (the Staff view), and a second
  * login can become a 6th grader in two of the classes (the student view). The school's real
  * activities stay as they are; the younger child (and two made-up classmates) join Royals
  * Cheer and the parent follows Basketball, if those exist.
  *
  *   SUPABASE_ACCESS_TOKEN=… node scripts/presentation_data.mjs --parent <email> [--student <email>]
- *     [--day 2026-10-27] [--remove] [--print]
+ *     [--day 2026-10-27] [--only volunteer] [--remove] [--print]
  *
  * --day is the day it'll be shown (dates are around it; default: the next school day).
+ * --only volunteer refreshes just the volunteering (the rest of the sample data must be there).
  * Nothing is sent: rows are written directly, so nobody gets a notification, and forms and
  * classes only reach the parent's children and the made-up families. Every row has a fixed
  * id, so running it again replaces it, and --remove takes all of it out (the student login
@@ -53,6 +55,8 @@ export function schoolDay(day, n) {
   return d;
 }
 const at = (date, time) => ({ ts: `${date} ${time} America/Chicago` });
+/** The Saturday on or after a day. */
+const saturdayFrom = (iso) => { let d = iso; while (new Date(`${d}T12:00:00Z`).getUTCDay() !== 6) d = addDays(d, 1); return d; };
 const pretty = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
 const ordinal = (g) => (g === 0 ? 'Kindergarten' : g < 0 ? ['K2', 'K3', 'K4'][g + 3] : `${g}${g === 1 ? 'st' : g === 2 ? 'nd' : g === 3 ? 'rd' : 'th'}`);
 
@@ -91,11 +95,12 @@ const kid = (k) => uid(`kid:${k}`);
  * `me` is the test parent's profile id, `children` their children ({ id, grade }, older
  * first), `student` an optional student login's id, `volleyball` an existing season id,
  * `cheer` the real Royals Cheer season's id and `basketball` the real Basketball activity's id.
+ * `only: 'volunteer'` limits it to the volunteering.
  * @param {{ day: string, me: string, children: { id: string, grade: number }[], student?: string | null,
- *   volleyball?: string | null, cheer?: string | null, basketball?: string | null, remove?: boolean }} options
+ *   volleyball?: string | null, cheer?: string | null, basketball?: string | null, remove?: boolean, only?: string | null }} options
  * @returns {string}
  */
-export function buildSql({ day, me, children, student = null, volleyball = null, cheer = null, basketball = null, remove = false }) {
+export function buildSql({ day, me, children, student = null, volleyball = null, cheer = null, basketball = null, remove = false, only = null }) {
   const [older, younger] = children;
   const sd = (n) => schoolDay(day, n);
   const ids = { forms: [], threads: [], assignments: [], rosters: [], events: [], sports: [], opps: [], listings: [], people: [] };
@@ -237,11 +242,23 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   ];
   const regId = (s, st) => uid(`registration:${s}:${st}`);
 
-  // --- Volunteer (led by the front office)
+  // --- Volunteer (led by the front office): Harvest Fest, with its ways to help in the leader's order, and some on their own
+  const fest = { id: uid('vevent:harvest'), title: 'Harvest Fest', on: saturdayFrom(sd(7)), location: 'Front lawn',
+    description: 'Our fall festival for the whole Kingdom Heights family: games, hayrides, a bake sale and a chili cook-off.\n\nGood to know:\nFamilies are welcome. Park on the back lot.' };
+  const festOpps = [
+    { key: 'fest-setup', title: 'Set up the day of', on: fest.on, start: '07:30', end: '09:30', location: 'Front lawn', spots: 10, kind: 'help',
+      description: 'Tables, tents and hay bales before the gates open.\n\nWhat to bring:\nWork gloves.', signups: [['me'], ['rivera'], ['johnson'], ['kim']] },
+    { key: 'fest-booths', title: 'Game booth helpers', on: fest.on, start: '10:00', end: '13:00', location: 'Front lawn', spots: 12, kind: 'help',
+      description: 'Run a game booth for an hour or two: ring toss, the cake walk or face painting.', signups: [['chen'], ['thompson'], ['patel'], ['moore'], ['adams']] },
+    { key: 'fest-water', title: 'Bottled water', on: addDays(fest.on, -1), location: 'Front office', kind: 'items', item: 'cases of bottled water', quantity: 20,
+      description: 'Drop the cases at the front office by Friday afternoon.', signups: [['wright', 4], ['bennett', 3]] },
+    { key: 'fest-bake', title: 'Bake sale treats', on: fest.on, location: 'Bake sale table', kind: 'items', item: 'dozen cookies or brownies', quantity: 40,
+      description: 'Wrapped by the dozen, with a label if they have nuts. Drop them at the bake sale table by 9 AM.', signups: [['rivera', 2], ['patel', 3], ['johnson', 2]] },
+    { key: 'fest-cleanup', title: 'Clean-up crew', on: fest.on, start: '13:00', end: '15:00', location: 'Front lawn', spots: 8, kind: 'help',
+      description: 'Take down the tents and tables and leave the lawn the way we found it.', signups: [['wright']] },
+  ].map((o, i) => ({ ...o, event: fest.id, position: i + 1 }));
   const opps = [
-    { key: 'festival', title: 'Fall Festival booth helpers', on: sd(3), start: '16:00', end: '19:00', location: 'Front lawn', spots: 10, kind: 'help',
-      description: 'Help run a game or treat booth at the Fall Festival.\n\nWhat you’ll do:\nGreet families, hand out tickets and keep the line moving.\n\nWhat to bring:\nA smile and comfortable shoes.',
-      signups: [['rivera'], ['johnson'], ['chen'], ['thompson'], ['me']] },
+    ...festOpps,
     { key: 'library', title: 'Library book shelving', on: sd(6), start: '09:00', end: '11:00', location: 'Library', spots: 3, kind: 'help',
       description: 'Help our librarian shelve returns and set up the new book display.', signups: [['kim']] },
     { key: 'tissues', title: 'Tissues for every homeroom', on: sd(5), location: 'Front office', kind: 'items', item: 'boxes of tissues', quantity: 24,
@@ -249,7 +266,27 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
     { key: 'food', title: 'Canned food drive', on: sd(8), location: 'Front office', kind: 'items', item: 'canned goods', quantity: 200,
       description: 'For the Huntsville food bank. Soups, vegetables and beans are most needed.', signups: [['wright', 24], ['adams', 12], ['chen', 30]] },
   ];
-  ids.opps = opps.map((o) => uid(`opp:${o.key}`));
+  // Fall Festival booth helpers was on its own before Harvest Fest; taken out with the rest.
+  ids.opps = [...opps.map((o) => uid(`opp:${o.key}`)), uid('opp:festival')];
+  // Sign-ups from real accounts (testers trying the app) survive a refresh; the made-up families' are written again.
+  const volunteerDrop = (keep) => [
+    keep ? `create temp table kept_signups on commit drop as select s.opportunity_id, s.user_id, s.quantity from public.volunteer_signups s
+      join public.profiles p on p.id = s.user_id where s.opportunity_id in ${inList(ids.opps)} and not p.managed;` : '',
+    `delete from public.volunteer_opportunities where id in ${inList(ids.opps)};`,
+    `delete from public.volunteer_events where id = ${lit(fest.id)};`,
+  ];
+  const volunteerAdd = () => [
+      insert('volunteer_events', ['id', 'lead_id', 'title', 'description', 'starts_on', 'location', 'created_at'],
+        [[fest.id, staff('garcia'), fest.title, fest.description, fest.on, fest.location, at(sd(-4), '09:00')]]),
+      insert('volunteer_opportunities', ['id', 'lead_id', 'title', 'description', 'starts_on', 'start_time', 'end_time', 'location', 'spots', 'kind', 'item', 'quantity',
+        'event_id', 'position', 'created_at'],
+        opps.map((o) => [uid(`opp:${o.key}`), staff('garcia'), o.title, o.description, o.on, o.start ?? null, o.end ?? null, o.location, o.spots ?? null, o.kind,
+          o.item ?? null, o.quantity ?? null, o.event ?? null, o.position ?? null, at(sd(-4), '09:00')])),
+      insert('volunteer_signups', ['opportunity_id', 'user_id', 'quantity'],
+        opps.flatMap((o) => o.signups.map(([k, n]) => [uid(`opp:${o.key}`), who(k), n ?? null]))),
+      `insert into public.volunteer_signups (opportunity_id, user_id, quantity) select k.opportunity_id, k.user_id, k.quantity from kept_signups k
+        where exists (select 1 from public.volunteer_opportunities o where o.id = k.opportunity_id) on conflict do nothing;`,
+  ];
 
   // --- Marketplace
   const listings = [
@@ -267,6 +304,7 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   ];
   ids.listings = listings.map(([k]) => uid(`listing:${k}`));
   const who = (k) => (k === 'me' ? me : parent(k));
+  if (only === 'volunteer') return ['begin;', ...volunteerDrop(!remove), ...(remove ? [] : volunteerAdd()), 'commit;'].filter(Boolean).join('\n');
 
   // ----------------------------------------------------------------------------
   // Remove (the order keeps foreign keys happy), then add.
@@ -280,7 +318,7 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   // On the school's real activities: only the rows added here (sign-ups and the parent's follow).
   out.push(`delete from public.sport_registrations where id in ${inList(registrations.map(([s, st]) => regId(s, st)))};`);
   if (basketball) out.push(`delete from public.sport_follows where sport_id = ${lit(basketball)} and user_id = ${lit(me)};`);
-  out.push(`delete from public.volunteer_opportunities where id in ${inList(ids.opps)};`);
+  out.push(...volunteerDrop(!remove));
   out.push(`delete from public.market_listings where id in ${inList(ids.listings)};`);
   out.push(`delete from public.profiles where id in ${inList(ids.people)};`);
   if (remove) { out.push('commit;'); return out.join('\n'); }
@@ -330,10 +368,7 @@ export function buildSql({ day, me, children, student = null, volleyball = null,
   out.push(insert('sport_events', ['id', 'season_id', 'kind', 'title', 'starts_at', 'ends_at', 'location', 'home', 'created_by'],
     events.map((e) => [e.id, e.season, e.kind, e.title, e.start, e.end, e.location, e.home, null])));
 
-  out.push(insert('volunteer_opportunities', ['id', 'lead_id', 'title', 'description', 'starts_on', 'start_time', 'end_time', 'location', 'spots', 'kind', 'item', 'quantity', 'created_at'],
-    opps.map((o) => [uid(`opp:${o.key}`), staff('garcia'), o.title, o.description, o.on, o.start ?? null, o.end ?? null, o.location, o.spots ?? null, o.kind, o.item ?? null, o.quantity ?? null, at(sd(-4), '09:00')])));
-  out.push(insert('volunteer_signups', ['opportunity_id', 'user_id', 'quantity'],
-    opps.flatMap((o) => o.signups.map(([k, n]) => [uid(`opp:${o.key}`), who(k), n ?? null]))));
+  out.push(...volunteerAdd());
 
   out.push(insert('market_listings', ['id', 'seller_id', 'title', 'description', 'price_cents', 'quantity', 'condition', 'created_at'],
     listings.map(([k, s, title, desc, cents, qty, cond], i) => [uid(`listing:${k}`), who(s), title, desc, cents, qty, cond, at(addDays(day, -1 - (i % 5)), `${8 + i}:15`)])));
@@ -354,7 +389,7 @@ async function main() {
   const args = process.argv.slice(2);
   const flag = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
   const parentEmail = flag('--parent');
-  if (!parentEmail) { console.error('Usage: node scripts/presentation_data.mjs --parent <email> [--student <email>] [--day YYYY-MM-DD] [--remove] [--print]'); process.exit(1); }
+  if (!parentEmail) { console.error('Usage: node scripts/presentation_data.mjs --parent <email> [--student <email>] [--day YYYY-MM-DD] [--only volunteer] [--remove] [--print]'); process.exit(1); }
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   if (!token) { console.error('Set SUPABASE_ACCESS_TOKEN (a Supabase personal access token).'); process.exit(1); }
   const app = JSON.parse(readFileSync(new URL('../app.json', import.meta.url)));
@@ -385,10 +420,16 @@ async function main() {
   const [basketball] = await q(`select id from public.sports where name = 'Basketball' and id <> ${lit(uid('sport:basketball'))}`);
 
   const sql = buildSql({ day, me: me.id, children, student: student?.id ?? null, volleyball: vb?.id ?? null,
-    cheer: cheer?.id ?? null, basketball: basketball?.id ?? null, remove: args.includes('--remove') });
+    cheer: cheer?.id ?? null, basketball: basketball?.id ?? null, remove: args.includes('--remove'), only: flag('--only') ?? null });
   if (args.includes('--print')) { console.log(sql); return; }
   await q(sql);
   if (args.includes('--remove')) { console.log('Removed the presentation data.'); return; }
+  if (flag('--only') === 'volunteer') {
+    const [v] = await q(`select (select count(*) from public.volunteer_events where status = 'open') as events,
+      (select count(*) from public.volunteer_opportunities where status = 'open') as opportunities, (select count(*) from public.volunteer_signups) as signups`);
+    console.log(`Volunteering refreshed for ${pretty(day)}: ${JSON.stringify(v)}`);
+    return;
+  }
   const [n] = await q(`select (select count(*) from public.profiles where id in ${inList([...STAFF.map((s) => staff(s.key)), ...FAMILIES.flatMap((f) => [parent(f.key), kid(f.key)])])}) as people,
     (select count(*) from public.assignments where id::text like '%') as assignments,
     (select count(*) from public.forms) as forms, (select count(*) from public.market_listings where status = 'open') as listings,

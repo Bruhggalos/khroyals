@@ -27,9 +27,9 @@ async function as(who: string) {
 }
 const one = async (q: string) => (await db.query<any>(q)).rows[0];
 const count = async (q: string) => Number((await one(`select count(*) as n from (${q}) x`)).n);
-const load = (remove = false) => db.exec(buildSql({
+const load = (remove = false, only: string | null = null) => db.exec(buildSql({
   day: DAY, me: ME, children: [{ id: OLDER, grade: 6 }, { id: YOUNGER, grade: 2 }], student: STUDENT, volleyball: VB_SEASON,
-  cheer: CHEER_SEASON, basketball: BASKETBALL, remove,
+  cheer: CHEER_SEASON, basketball: BASKETBALL, remove, only,
 }));
 
 before(async () => {
@@ -68,7 +68,22 @@ test('loads, shows up for the parent, their class and the student, loads again, 
   assert.equal(await count(`select 1 from sports`), 6, 'Volleyball, Basketball, Royals Cheer and three made-up ones');
   assert.equal(await count(`select 1 from sport_registrations where season_id = '${CHEER_SEASON}'`), 3, 'the younger child and two classmates in Cheer');
   assert.equal(await count(`select 1 from sport_follows where sport_id = '${BASKETBALL}' and user_id = '${ME}'`), 1);
-  assert.equal(await count(`select 1 from volunteer_opportunities`), 4);
+  // Volunteering: Harvest Fest (a Saturday) with five ways to help in order, and three on their own.
+  const fest = await one(`select id, title, starts_on::text as on from volunteer_events`);
+  assert.equal(fest.title, 'Harvest Fest');
+  assert.equal(new Date(`${fest.on}T12:00:00Z`).getUTCDay(), 6, 'a Saturday');
+  assert.deepEqual((await db.query<any>(`select title from volunteer_opportunities where event_id = '${fest.id}' order by position`)).rows.map((r) => r.title),
+    ['Set up the day of', 'Game booth helpers', 'Bottled water', 'Bake sale treats', 'Clean-up crew']);
+  assert.equal(await count(`select 1 from volunteer_opportunities where event_id is null`), 3);
+  assert.equal(await count(`select 1 from volunteer_signups s join volunteer_opportunities o on o.id = s.opportunity_id
+    where s.user_id = '${ME}' and o.event_id = '${fest.id}'`), 1, 'the parent helps set up');
+  // Refreshing only the volunteering leaves the rest alone, and keeps sign-ups made from real accounts.
+  const library = (await one(`select id from volunteer_opportunities where title = 'Library book shelving'`)).id;
+  await db.exec(`insert into volunteer_signups (opportunity_id, user_id) values ('${library}', '${STUDENT}')`);
+  await load(false, 'volunteer');
+  assert.equal(await count(`select 1 from volunteer_signups where opportunity_id = '${library}' and user_id = '${STUDENT}'`), 1);
+  assert.equal(await count(`select 1 from volunteer_opportunities`), 8);
+  assert.equal(await count(`select 1 from forms`), 4);
   assert.equal((await one(`select school_role, grade from profiles where id = '${STUDENT}'`)).school_role, 'student');
 
   // The parent: forms for both children (none signed yet), and the children's class assignments.
@@ -95,7 +110,7 @@ test('loads, shows up for the parent, their class and the student, loads again, 
   await db.exec('reset role');
   await load(true);
   assert.equal(await count(`select 1 from profiles where managed and id not in ('${OLDER}', '${YOUNGER}')`), 0);
-  for (const t of ['forms', 'market_listings', 'volunteer_opportunities', 'assignments', 'rosters', 'teacher_threads', 'sport_events', 'sport_registrations']) {
+  for (const t of ['forms', 'market_listings', 'volunteer_opportunities', 'volunteer_events', 'assignments', 'rosters', 'teacher_threads', 'sport_events', 'sport_registrations']) {
     assert.equal(await count(`select 1 from ${t}`), 0, t);
   }
   assert.equal(await count(`select 1 from sports`), 3, 'the real activities stay');
