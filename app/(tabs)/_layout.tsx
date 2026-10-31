@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { bottomArc } from '../../src/arcText';
+import { useUnreadCount } from '../../src/comms/unread';
 import { setHomeButton, watchHomeButton } from '../../src/homeShield';
 import { headerDate } from '../../src/info/today';
 import { edgeLayout, TabBarEdge } from '../../src/ScreenEdge';
@@ -48,13 +49,19 @@ function AppsTabButton({ onPress, 'aria-selected': selected }: { onPress?: (e: a
   );
 }
 
-/** Round bell in the top bar; opens the signed-in person's notifications. */
+/** Round bell in the top bar; opens the signed-in person's notifications. A red count shows how many are new. */
 function NotificationsButton() {
+  const unread = useUnreadCount();
   return (
     <Pressable onPress={() => router.push('/notifications')} hitSlop={8}
-      accessibilityRole="button" accessibilityLabel="Notifications"
+      accessibilityRole="button" accessibilityLabel={unread ? `Notifications, ${unread} new` : 'Notifications'}
       style={({ pressed }) => [hs.bell, pressed && { opacity: 0.6 }]}>
-      <Ionicons name="notifications-outline" size={20} color="#fff" />
+      <Ionicons name={unread ? 'notifications' : 'notifications-outline'} size={20} color="#fff" />
+      {unread > 0 && (
+        <View style={hs.badge} pointerEvents="none">
+          <Text style={hs.badgeText} accessible={false}>{unread > 9 ? '9+' : unread}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -110,4 +117,9 @@ const hs = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18, marginRight: 16,
     alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)',
   },
+  badge: {
+    position: 'absolute', top: -3, right: -5, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
+    alignItems: 'center', justifyContent: 'center', backgroundColor: C.danger, borderWidth: 1.5, borderColor: C.primary,
+  },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '800', lineHeight: 13 },
 });

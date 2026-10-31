@@ -4,6 +4,18 @@ import type { Notice } from './types';
 import { live, run, sb, rpc } from './client';
 import { current } from './session';
 import { toNotice } from './mappers';
+import { subscribeChanges } from './realtime';
+
+/** How many notifications on the bell page this person hasn't opened yet. */
+export async function unreadNotificationCount(): Promise<number> {
+  if (!live) return 0;
+  return Number(await rpc('my_unread_count'));
+}
+
+/** New notifications this person can see (row-level security sends only theirs). */
+export function subscribeNotifications(onChange: () => void): () => void {
+  return subscribeChanges('subscribeNotifications', [{ event: 'INSERT', table: 'notifications' }], onChange);
+}
 
 /** Every notification this person may see (admin portal history). */
 export async function listNotifications(limit = 50): Promise<Notice[]> {

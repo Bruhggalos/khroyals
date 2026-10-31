@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import users from '../mock-db/comms/users.json';
 import { accessSchema } from '../src/api/schemas';
+import { notificationHref } from '../src/comms/inbox';
 
 const ROOT = join(__dirname, '..');
 const sql = (p: string) => readFileSync(join(ROOT, p), 'utf8');
@@ -52,6 +53,8 @@ before(async () => {
   await db.exec(`update profiles set school_role = 'admin' where id in (${id('u-admin')}, ${id('u-ap')});
                  select app.bootstrap_director('u-admin@demo.khroyals.test');
                  update profiles set admin_tier = 'administrator' where id = ${id('u-ap')};`);
+  // Every notification the tests send is logged with who it reached (the last test checks them all).
+  await db.exec(sql('supabase/tests/notification_log.sql'));
 });
 
 test('grade restrictions retain Kindergarten and reject empty or invalid audiences', async () => {
@@ -3217,4 +3220,81 @@ test("volunteer events: the event's leader puts its opportunities in order", asy
   await asSuper();
   await db.exec(`update profiles set volunteer_lead = false where id = ${id('u-sci')};
     delete from volunteer_opportunities where id in ('${water}', '${setup}', '${booths}'); delete from volunteer_events`);
+});
+
+test('the bell counts new notifications until the bell page opens them', async () => {
+  await as('u-p04');
+  await one('select clear_my_notifications()');
+  assert.equal((await one('select my_unread_count() as n')).n, 0);
+  await asSuper();
+  await db.exec(`select app.notify_user(${id('u-p04')}, 'One', '', '{}'), app.notify_user(${id('u-p04')}, 'Two', '', '{}')`);
+  await as('u-p04');
+  assert.equal((await one('select my_unread_count() as n')).n, 2);
+  const [first] = await rows('select id from my_notifications(50)');
+  await one(`select mark_notifications_opened(array['${first.id}']::uuid[])`);
+  assert.equal((await one('select my_unread_count() as n')).n, 1);
+  await one('select clear_my_notifications()');
+  assert.equal((await one('select my_unread_count() as n')).n, 0);
+  // Only your own: someone else's count is theirs, and signed-out visitors have none.
+  await as('u-p07');
+  await one('select my_unread_count() as n');
+  await asSuper();
+  await db.exec('set role anon');
+  await rejects('select my_unread_count()', /permission denied/);
+  await asSuper();
+});
+
+/** Functions that send notifications, by their latest definition (the helpers that pass one on are left out). */
+function notificationSenders(): string[] {
+  const latest = new Map<string, string>();
+  const create = /create\s+(?:or\s+replace\s+)?function\s+([\w.]+)\s*\((.*?)\)\s*returns.*?(\$\w*\$)(.*?)\3/gis;
+  const drop = /drop\s+function\s+(?:if\s+exists\s+)?([\w.]+)/gi;
+  for (const f of readdirSync(join(ROOT, 'supabase/migrations')).sort()) {
+    const text = sql(join('supabase/migrations', f));
+    const made = new Set<string>();
+    const found = [...text.matchAll(create)].map((m) => ({ at: m.index!, name: m[1], body: m[4] as string | null }))
+      .concat([...text.matchAll(drop)].map((m) => ({ at: m.index!, name: m[1], body: null })))
+      .sort((a, b) => a.at - b.at);
+    for (const x of found) {
+      if (x.body !== null) { latest.set(x.name, x.body); made.add(x.name); }
+      else if (!made.has(x.name)) latest.delete(x.name);  // a drop after the new version is the old overload
+    }
+  }
+  const sends = /notify_user|insert\s+into\s+(?:public\.)?notifications\b|app\.notify_parents|app\.question_note/i;
+  const helpers = ['app.notify_user', 'app.notify_parents', 'app.question_note', 'app.alerts_reach_subs'];
+  return [...latest].filter(([name, body]) => sends.test(body) && !helpers.includes(name)).map(([name]) => name).sort();
+}
+
+// Notifications that only tell (the bell shows the whole message) and have no screen to open: the admin portal's
+// announcements to everyone or to roles.
+const TELL_ONLY = new Set(['send_notification']);
+
+test('notifications: everything the app sends reaches a bell and a phone, and opens what it\'s about', async () => {
+  await asSuper();
+  const log = await rows<{ title: string; data: any; audience: string; recipients: number; pushes: number; reachable: number; sent_from: string }>(
+    'select * from test_log.notifications');
+  // The function that sent it: the innermost call on the stack that isn't a helper passing it on (by bare name;
+  // the stack leaves the schema off some).
+  const bare = (n: string) => n.replace(/^\w+\./, '');
+  const passOn = ['notify_user', 'notify_parents', 'question_note', 'record'];
+  const sender = (ctx: string) => [...ctx.matchAll(/function ([\w.]+)\(|SQL function "(\w+)"/g)]
+    .map((m) => bare(m[1] ?? m[2])).find((n) => !passOn.includes(n)) ?? '(direct)';
+  const sent = log.map((n) => ({ ...n, from: sender(n.sent_from) }));
+
+  // Every function that sends one is exercised here, so the checks below cover it.
+  const senders = notificationSenders().map(bare);
+  const seen = new Set(sent.map((n) => n.from));
+  assert.deepEqual(senders.filter((n) => !seen.has(n)), [], 'notification senders no test exercises');
+
+  // Each reaches at least one person's bell (a group post, anyone it could), and their phone (the settings they
+  // start with push it).
+  const nobody = sent.filter((n) => n.from !== '(direct)' && n.reachable === 0).map((n) => `${n.from}: ${n.title}`);
+  assert.deepEqual([...new Set(nobody)], [], 'notifications that reached nobody');
+  const silent = sent.filter((n) => n.from !== '(direct)' && n.recipients > 0 && n.pushes === 0).map((n) => `${n.from}: ${n.title}`);
+  assert.deepEqual([...new Set(silent)], [], 'notifications that pushed to nobody');
+
+  // Tapping one opens what it's about.
+  const nowhere = sent.filter((n) => n.from !== '(direct)' && !TELL_ONLY.has(n.from) && !notificationHref(n.data))
+    .map((n) => `${n.from}: ${JSON.stringify(n.data)}`);
+  assert.deepEqual([...new Set(nowhere)], [], 'notifications with nothing to open');
 });

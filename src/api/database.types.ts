@@ -3907,6 +3907,7 @@ export type Database = {
           unread: boolean
         }[]
       }
+      my_unread_count: { Args: never; Returns: number }
       newsletter_delete: { Args: { p_id: string }; Returns: undefined }
       newsletter_save: {
         Args: { p_blocks: Json; p_sent_on: string; p_source_url: string; p_title: string }

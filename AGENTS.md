@@ -238,7 +238,13 @@ strict. Backend is Supabase (Postgres + Auth + Realtime + Edge Functions).
   `public.notifications` (`app.notify_user()` for one person). Ones the phone shows
   by itself must use `notifyLocal()` (`src/comms/localInbox.ts`), never
   `scheduleNotificationAsync` directly (`tests/inbox.test.ts` checks). Add tap
-  targets to `notificationHref()` in `src/comms/inbox.ts`.
+  targets to `notificationHref()` in `src/comms/inbox.ts`. `notify_user` marks the person
+  acting as the sender, and nobody is shown their own notification, so one meant for the
+  person acting (a free ticket order) is inserted with no sender. The last DB test checks
+  every notification the tests send (`supabase/tests/notification_log.sql`): each sender is
+  exercised, reaches someone's bell and phone, and opens something (or is listed as tell-only).
+  The bell's red count (`my_unread_count`, `src/comms/unread.ts`) is the unopened ones on the
+  bell page, kept live by realtime; opening the bell page clears it.
 - **New tables need explicit grants.** Supabase no longer auto-grants new `public`
   tables to the Data API (from Oct 30, 2026), so the migration that creates a table must
   `grant select … to authenticated` (and `anon` if signed-out visitors read it) and

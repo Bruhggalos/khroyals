@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Linking, Platform, Pressable, RefreshControl, Text, View } from 'react-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import * as Notifications from 'expo-notifications';
-import { clearMyNotifications, dismissNotifications, markNotificationsOpened, myNotifications, openedNotifications, session, type Notice, type Person } from '../src/api/connect';
+import { clearMyNotifications, dismissNotifications, markNotificationsOpened, myNotifications, openedNotifications, session, subscribeNotifications, type Notice, type Person } from '../src/api/connect';
 import { notificationHref } from '../src/comms/inbox';
 import { clearLocalNotifications, dismissLocal, localNotifications } from '../src/comms/localInbox';
 import { enablePush, pushStatus, type Permission } from '../src/comms/push';
+import { clearUnread, refreshUnread } from '../src/comms/unread';
 import { SwipeToDelete } from '../src/comms/SwipeToDelete';
 import { Button, C, Card, H, Loading, P, s } from '../src/ui';
 
@@ -74,7 +75,9 @@ export default function NotificationsScreen() {
       const seen = await openedNotifications(ids).catch(() => new Set<string>());
       local.forEach((n) => seen.add(n.id));
       setOpened(seen);
-      markNotificationsOpened(ids).catch(() => {});
+      // The bell's count goes back to zero.
+      clearUnread();
+      markNotificationsOpened(ids).then(refreshUnread).catch(() => {});
       setPerson(p);
       setStatus(await pushStatus().catch(() => null));
       setError(null);
@@ -82,8 +85,9 @@ export default function NotificationsScreen() {
       setError(e.message ?? String(e));
     }
   }, []);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
-  // A notification arriving while this page is open joins the list.
+  // A notification arriving while this page is open joins the list (from the server as it's sent, and when the
+  // phone shows its push).
+  useFocusEffect(useCallback(() => { load(); return subscribeNotifications(load); }, [load]));
   useEffect(() => {
     if (Platform.OS === 'web') return;
     const sub = Notifications.addNotificationReceivedListener(() => { setTimeout(load, 500); });

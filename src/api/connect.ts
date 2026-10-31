@@ -28,7 +28,7 @@ export {
   ticketSetup, ticketsOnSale, ticketEvent, saveTicketEvent, ticketSales, admitTicket, myTickets, startTicketCheckout, ticketOrderStatus,
   cancelTicketOrder, walletLink,
 } from './tickets';
-export { listNotifications, myNotifications, sendNotification, setNotificationPref, registerPushToken, unregisterPushToken, markNotificationsOpened, openedNotifications, notificationOpenCounts, dismissNotifications, clearMyNotifications } from './notifications';
+export { listNotifications, myNotifications, unreadNotificationCount, subscribeNotifications, sendNotification, setNotificationPref, registerPushToken, unregisterPushToken, markNotificationsOpened, openedNotifications, notificationOpenCounts, dismissNotifications, clearMyNotifications } from './notifications';
 export { updateMyName, uploadMyAvatar, removeMyAvatar, adminClearAvatar, mySettings, updateMySettings, myGroupPrefs } from './profile';
 export { recordPostViews, postStats, groupPostStats, myFollows, setPostFollow } from './stats';
 export { myChildProfiles, updateChildDetails, uploadChildPhoto, removeChildPhoto, requestChild, requestChildEdit, cancelFamilyRequest, myFamilyRequests, studentLoginStatus, giveStudentLogin, removeStudentLogin, type StudentLogin } from './children';
